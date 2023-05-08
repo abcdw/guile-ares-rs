@@ -1,0 +1,7 @@
+# -*- mode: org -*-
+
+* Introduction
+Guile imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol for future REPL development.
+
+* Links
+- https://nrepl.org/nrepl/index.html
