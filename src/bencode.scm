@@ -7,20 +7,25 @@
 (define (bencode-exception port)
   (throw 'bencode-invalid port))
 
-(define (integer->bencode int)
-  (format #f "i~ae" int))
+(define (integer->bencode int port)
+  (format port "i~ae" int))
 
-(define (string->bencode str)
-  (format #f "~a:~a" (string-length str) str))
+(define (string->bencode str port)
+  (format port "~a:~a" (string-length str) str))
+
+(define (list->bencode lst port)
+  (format port "l")
+  (for-each (lambda (x) (scm->bencode x port)) lst)
+  (format port "e"))
 
 (define* (scm->bencode scm #:optional (port (current-output-port)))
-  (display
-   (cond
-    ((integer? scm)
-     (integer->bencode scm))
-    ((string? scm)
-     (string->bencode scm)))
-   port))
+  (cond
+   ((integer? scm)
+    (integer->bencode scm port))
+   ((string? scm)
+    (string->bencode scm port))
+   ((list? scm)
+    (list->bencode scm port))))
 
 (define* (scm->bencode-string scm)
   (call-with-output-string

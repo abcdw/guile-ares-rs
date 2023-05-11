@@ -16,7 +16,13 @@
     (test-equal "-42" "i-42e" (scm->bencode-string -42)))
   (test-group "strings"
     (test-equal "\"spam\"" "4:spam" (scm->bencode-string "spam"))
-    (test-equal "empty string" "0:" (scm->bencode-string ""))))
+    (test-equal "empty string" "0:" (scm->bencode-string "")))
+  (test-group "lists"
+    (test-equal "empty list" "le" (scm->bencode-string '()))
+    (test-equal "list with number and string"
+      "l4:spami-42ee" (scm->bencode-string '("spam" -42)))
+    (test-equal "list with nested list, number and string"
+      "ll4:spamelei-42ee" (scm->bencode-string '(("spam") () -42)))))
 
 (define-test decode
   (test-group "integers"
