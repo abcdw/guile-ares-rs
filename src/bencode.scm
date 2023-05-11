@@ -1,4 +1,5 @@
 (define-module (bencode)
+  #:use-module (srfi srfi-43)
   #:export (scm->bencode
             scm->bencode-string
             bencode->scm
@@ -13,9 +14,10 @@
 (define (string->bencode str port)
   (format port "~a:~a" (string-length str) str))
 
-(define (list->bencode lst port)
+(define (vector->bencode lst port)
   (format port "l")
-  (for-each (lambda (x) (scm->bencode x port)) lst)
+  (vector-for-each (lambda (i x) (scm->bencode x port)) lst)
+  (format port "e"))
   (format port "e"))
 
 (define* (scm->bencode scm #:optional (port (current-output-port)))
@@ -24,8 +26,8 @@
     (integer->bencode scm port))
    ((string? scm)
     (string->bencode scm port))
-   ((list? scm)
-    (list->bencode scm port))))
+   ((vector? scm)
+    (vector->bencode scm port))))
 
 (define* (scm->bencode-string scm)
   (call-with-output-string
