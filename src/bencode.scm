@@ -10,8 +10,17 @@
 (define (integer->bencode int)
   (format #f "i~ae" int))
 
+(define (string->bencode str)
+  (format #f "~a:~a" (string-length str) str))
+
 (define* (scm->bencode scm #:optional (port (current-output-port)))
-  (display (integer->bencode scm) port))
+  (display
+   (cond
+    ((integer? scm)
+     (integer->bencode scm))
+    ((string? scm)
+     (string->bencode scm)))
+   port))
 
 (define* (scm->bencode-string scm)
   (call-with-output-string

@@ -13,7 +13,10 @@
   (test-group "integers"
     (test-equal "0" "i0e" (scm->bencode-string 0))
     (test-equal "42" "i42e" (scm->bencode-string 42))
-    (test-equal "-42" "i-42e" (scm->bencode-string -42))))
+    (test-equal "-42" "i-42e" (scm->bencode-string -42)))
+  (test-group "strings"
+    (test-equal "\"spam\"" "4:spam" (scm->bencode-string "spam"))
+    (test-equal "empty string" "0:" (scm->bencode-string ""))))
 
 (define-test decode
   (test-group "integers"
