@@ -26,6 +26,23 @@
     (test-equal "list with nested list, number and string"
       "ll4:spamelei-42ee" (scm->bencode-string #(#("spam") #() -42))))
 
+  (test-group "dictionaries"
+    (test-equal "empty dict" "de" (scm->bencode-string '()))
+    (test-equal "dict with number and string"
+      "d4:spami-42ee" (scm->bencode-string '(("spam" . -42))))
+    (test-error
+     "dict with non-string key"
+     #t (scm->bencode-string '((42 . -42))))
+    (test-equal "dict without value"
+     "d4:listde4:spami-42ee" (scm->bencode-string '(("list")
+                                                    ("spam" . -42))))
+    (test-error
+     "malformed dict with empty key"
+     #t (scm->bencode-string '(("spam") ())))
+    (test-error
+     "malformed dict with number"
+     #t (scm->bencode-string '(("spam") -42)))))
+
 (define-test decode
   (test-group "integers"
     (test-equal "i0e :: zero" 0 (bencode-string->scm "i0e"))
