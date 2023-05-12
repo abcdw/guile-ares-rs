@@ -74,4 +74,17 @@
         #("spam" 34) (bencode-string->scm "l4:spami34ee"))
       (test-equal "lllel2:hilei34eeee :: nested lists"
         #(#() #("hi" #() 34)) (bencode-string->scm "llel2:hilei34eee"))
-      (test-error "l :: unexpected EOF" #t (bencode-string->scm "l")))))
+      (test-error "l :: unexpected EOF" #t (bencode-string->scm "l")))
+
+    (test-group "dictionaries"
+      (test-equal "de :: empty string"
+        '() (bencode-string->scm "de"))
+      (test-equal "d4:spami34e2:hil2:hoee :: simple string something dict"
+        `(("spam" . 34) ("hi" . #("ho")))
+        (bencode-string->scm "d4:spami34e2:hil2:hoee"))
+      (test-equal "lllel2:hilei34eeee :: nested dictionaries"
+        '(("hey" . (("ho" . 44))))
+         (bencode-string->scm "d3:heyd2:hoi44eee"))
+      (test-error "di34e2:hie :: non-string key" #t
+                  (bencode-string->scm "di34e2:hie"))
+      (test-error "d :: unexpected EOF" #t (bencode-string->scm "d")))))

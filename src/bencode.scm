@@ -100,6 +100,19 @@
        (vector-append res `#(,(bencode->scm port)))
        (peek-char port))))))
 
+(define (read-bencode-dictionary port)
+  (let loop ((res '())
+             (next-ch (peek-char port)))
+    (cond
+     ((char=? #\e next-ch)
+      (read-char port)
+      (reverse res))
+
+     (else
+      (loop
+       (cons (cons (read-bencode-string port) (bencode->scm port)) res)
+       (peek-char port))))))
+
 (define* (bencode->scm #:optional (port (current-input-port)))
   (let ((ch (peek-char port)))
     (cond
@@ -109,6 +122,9 @@
      ((char=? #\l ch)
       (read-char port)
       (read-bencode-list port))
+     ((char=? #\d ch)
+      (read-char port)
+      (read-bencode-dictionary port))
      (else
       (read-bencode-string port)))))
 
