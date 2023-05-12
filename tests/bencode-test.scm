@@ -63,5 +63,15 @@
         "" (bencode-string->scm "0:"))
       (test-equal "4:spam :: simple string"
         "spam" (bencode-string->scm "4:spam"))
-      (test-error "2:sp2:am :: two strings" #t (bencode-string->scm "2:sp2:am"))
-      (test-error "4:spa :: unexpected EOF" #t (bencode-string->scm "4:spa")))))
+      (test-equal "2:sp2:am :: two strings"
+        "sp" (bencode-string->scm "2:sp2:am"))
+      (test-error "4:spa :: unexpected EOF" #t (bencode-string->scm "4:spa")))
+
+    (test-group "lists"
+      (test-equal "le :: empty list"
+        #() (bencode-string->scm "le"))
+      (test-equal "l4:spami34ee :: simple list with string and integer"
+        #("spam" 34) (bencode-string->scm "l4:spami34ee"))
+      (test-equal "lllel2:hilei34eeee :: nested lists"
+        #(#() #("hi" #() 34)) (bencode-string->scm "llel2:hilei34eee"))
+      (test-error "l :: unexpected EOF" #t (bencode-string->scm "l")))))

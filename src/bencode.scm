@@ -1,5 +1,6 @@
 (define-module (bencode)
   #:use-module (srfi srfi-43)
+  #:use-module (ice-9 textual-ports)
   #:export (scm->bencode
             scm->bencode-string
             bencode->scm
@@ -61,12 +62,12 @@
     ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9) #t)
     (else #f)))
 
-(define (read-bencode-integer port)
-  (expect-char (lambda (x) (char=? #\i x)) port)
-  (read-char port)
+(define* (read-bencode-integer
+          port
+          #:key (delimeter #\e))
   (let loop ((ch (read-char port))
              (res ""))
-    (cond ((and (char=? #\e ch)
+    (cond ((and (char=? delimeter ch)
                 (not (string-null? res))
                 (not (string=? res "-")))
            (string->number res))
@@ -79,14 +80,41 @@
           (else
            (bencode-exception port)))))
 
+(define (read-bencode-string port)
+  (let* ((str-length (read-bencode-integer port #:delimeter #\:))
+         (res (get-string-n port str-length)))
+    (if (= (string-length res) str-length)
+        res
+        (bencode-exception port))))
+
+(define (read-bencode-list port)
+  (let loop ((res #())
+             (next-ch (peek-char port)))
+    (cond
+     ((char=? #\e next-ch)
+      (read-char port)
+      res)
+
+     (else
+      (loop
+       (vector-append res `#(,(bencode->scm port)))
+       (peek-char port))))))
+
 (define* (bencode->scm #:optional (port (current-input-port)))
-  ;; (peek-char )
-  (read-bencode-integer port)
-  )
+  (let ((ch (peek-char port)))
+    (cond
+     ((char=? #\i ch)
+      (read-char port)
+      (read-bencode-integer port))
+     ((char=? #\l ch)
+      (read-char port)
+      (read-bencode-list port))
+     (else
+      (read-bencode-string port)))))
 
 (define* (bencode-string->scm str)
   (call-with-input-string str
     (lambda (p)
       (bencode->scm p))))
 
-;; (bencode-string->scm "i43e")
+;; (bencode-string->scm "l2:hilei34ee")
