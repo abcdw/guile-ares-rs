@@ -9,28 +9,28 @@
 (define (bencode-exception port)
   (throw 'bencode-invalid port))
 
-(define (integer->bencode int port)
+(define (write-bencode-integer int port)
   (when (not (integer? int))
     (bencode-exception port))
   (format port "i~ae" int))
 
-(define (string->bencode str port)
+(define (write-bencode-string str port)
   (when (not (string? str))
     (bencode-exception port))
   (format port "~a:~a" (string-length str) str))
 
-(define (vector->bencode lst port)
+(define (write-bencode-list lst port)
   (format port "l")
   (vector-for-each (lambda (i x) (scm->bencode x port)) lst)
   (format port "e"))
 
-(define (alist->bencode lst port)
+(define (write-bencode-dictionary lst port)
   (format port "d")
   (for-each
    (lambda (x)
      (when (not (pair? x))
        (bencode-exception port))
-     (string->bencode (car x) port)
+     (write-bencode-string (car x) port)
      (scm->bencode (cdr x) port))
    lst)
   (format port "e"))
@@ -38,13 +38,13 @@
 (define* (scm->bencode scm #:optional (port (current-output-port)))
   (cond
    ((integer? scm)
-    (integer->bencode scm port))
+    (write-bencode-integer scm port))
    ((string? scm)
-    (string->bencode scm port))
+    (write-bencode-string scm port))
    ((vector? scm)
-    (vector->bencode scm port))
+    (write-bencode-list scm port))
    ((list? scm)
-    (alist->bencode scm port))))
+    (write-bencode-dictionary scm port))))
 
 (define* (scm->bencode-string scm)
   (call-with-output-string
