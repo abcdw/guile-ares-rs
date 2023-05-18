@@ -18,6 +18,12 @@
 
     (test-group "strings"
       (test-equal "\"spam\"" "4:spam" (scm->bencode-string "spam"))
+
+      (test-expect-fail 1)
+      ;; (use-modules (ice-9 iconv) (rnrs bytevectors))
+      ;; (bytevector-length (string->bytevector "naïve" "UTF-8"))
+      (test-equal "\"naïve\"" "6:naïve" (scm->bencode-string "naïve"))
+
       (test-equal "empty string" "0:" (scm->bencode-string "")))
 
     (test-group "lists"
@@ -63,6 +69,10 @@
         "" (bencode-string->scm "0:"))
       (test-equal "4:spam :: simple string"
         "spam" (bencode-string->scm "4:spam"))
+
+      (test-expect-fail 1)
+      (test-equal "6:naïve" "naïve" (bencode-string->scm "6:naïve"))
+
       (test-equal "2:sp2:am :: two strings"
         "sp" (bencode-string->scm "2:sp2:am"))
       (test-error "4:spa :: unexpected EOF" #t (bencode-string->scm "4:spa")))
