@@ -1,2 +1,7 @@
+GUILE=guix shell guile guile-fibers-next -- guile
+
 repl:
-	guile -L ./src -L ./tests --listen
+	${GUILE} -L ./src -L ./tests --listen
+
+server:
+	${GUILE} -L ./src -c "((@ (nrepl-server) run-nrepl-server))"
