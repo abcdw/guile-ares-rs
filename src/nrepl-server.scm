@@ -10,17 +10,6 @@
              (srfi srfi-26)
              (srfi srfi-1))
 
-(define nrepl-prompt
-  (make-parameter (lambda () "scheme@(module-here-someday)> ")))
-
-(define (make-default-socket family addr port)
-  (let ((sock (socket PF_INET SOCK_STREAM 0)))
-    (setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
-    (fcntl sock F_SETFD FD_CLOEXEC)
-    (fcntl sock F_SETFL (logior O_NONBLOCK (fcntl sock F_GETFL)))
-    (bind sock family addr port)
-    sock))
-
 (define (self-quoting? x)
   "Return #t if X is self-quoting."
   (letrec-syntax ((one-of (syntax-rules ()
@@ -59,6 +48,9 @@
     (display str output-port)
     (newline output-port)
     (close output-port)))
+
+(define nrepl-prompt
+  (make-parameter (lambda () "scheme@(module-here-someday)> ")))
 
 (define* (client-loop client addr store)
   (setvbuf client 'block 1024)
@@ -137,28 +129,39 @@
         (lambda () (client-loop client addr store)))
        (loop)))))
 
-(define host #f)
-(define family AF_INET)
-(define addr (if host (inet-pton family host) INADDR_LOOPBACK))
-(define port 11211)
-
 ;; (define-once nrepl-socket
 ;;   (make-default-socket family addr port))
 
-(define* (run-tcp-repl-server
-          #:key
-          (socket (make-default-socket family addr port)))
+(define (make-default-socket family addr port)
+  (let ((sock (socket PF_INET SOCK_STREAM 0)))
+    (setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
+    (fcntl sock F_SETFD FD_CLOEXEC)
+    (fcntl sock F_SETFL (logior O_NONBLOCK (fcntl sock F_GETFL)))
+    (bind sock family addr port)
+    sock))
+
+(define* (run-tcp-nrepl-server socket addr)
   (listen socket 1024)
   (sigaction SIGPIPE SIG_IGN)
   (socket-loop socket addr (make-hash-table)))
 
-(define-public (run-nrepl-server)
+(define* (run-nrepl-server
+          #:key
+          (host #f)
+          (family AF_INET)
+          (addr (if host (inet-pton family host) INADDR_LOOPBACK))
+          (port 11211))
+  (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
   (define hostname (hostent:name host))
   (format #t "nREPL server started on port ~a on host ~a - nrepl://~a:~a\n"
           port hostname hostname port)
-  (run-fibers run-tcp-repl-server)
+
+  (run-fibers
+   (lambda ()
+     (run-tcp-nrepl-server socket addr)))
   'my-super-value)
+(export run-nrepl-server)
 
 ;; (use-modules (ice-9 threads))
 
