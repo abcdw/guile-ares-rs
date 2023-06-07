@@ -60,11 +60,10 @@
     (newline output-port)
     (close output-port)))
 
-(define* (client-loop port addr store
-                      #:key output)
-  (setvbuf port 'block 1024)
+(define* (client-loop client addr store)
+  (setvbuf client 'block 1024)
   ;; Disable Nagle's algorithm.  We buffer ourselves.
-  (setsockopt port IPPROTO_TCP TCP_NODELAY 1)
+  (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
 
   (define (handle-exception key . args)
     (define reply
@@ -86,19 +85,20 @@
          ;; Protocol (0 0).
          `(exception ,key ,@(map value->sexp args)))))
 
-    (write reply port)
-    (newline port)
-    (force-output port))
+    (write reply client)
+    (newline client)
+    (force-output client))
 
-  (log (format #f "new connection: ~a" port))
+  (log (format #f "new connection: ~a" client))
+
   (let loop ()
     ;; TODO: Restrict read-line to 512 chars.
-    (put-string port ((nrepl-prompt)))
-    (force-output port)
-    (let ((line (read-line port)))
+    (put-string client ((nrepl-prompt)))
+    (force-output client)
+    (let ((line (read-line client)))
       (cond
        ((eof-object? line)
-        (close-port port))
+        (close-port client))
        (else
         (log (format #f "new request: ~a" line))
         (let* ((input ;; (bencode-string->scm line)
@@ -117,25 +117,24 @@
                                  (lambda ()
                                    (primitive-eval exp))
                                list)))
-                (write `(values ,@(map value->sexp results)) port)
-                (newline port)
-                (force-output port)))
+                (write `(values ,@(map value->sexp results)) client)
+                (newline client)
+                (force-output client)))
             (const #t)
             handle-exception))
 
-        ;; (put-char port #\newline)
-        (force-output port)
+        ;; (put-char client #\newline)
+        (force-output client)
         (loop))))))
 
 (define op (current-output-port))
 
-(define (socket-loop socket store)
+(define (socket-loop socket addr store)
   (let loop ()
     (match (accept socket SOCK_NONBLOCK)
       ((client . addr)
        (spawn-fiber
-        (lambda () (client-loop client addr store
-                                #:output op)))
+        (lambda () (client-loop client addr store)))
        (loop)))))
 
 (define host #f)
@@ -146,16 +145,18 @@
 ;; (define-once nrepl-socket
 ;;   (make-default-socket family addr port))
 
-(define* (run-tcp-repl-server #:key (socket
-                                     (make-default-socket family addr port)
-                                     ;; nrepl-socket
-                                     ))
+(define* (run-tcp-repl-server
+          #:key
+          (socket (make-default-socket family addr port)))
   (listen socket 1024)
   (sigaction SIGPIPE SIG_IGN)
-  (socket-loop socket (make-hash-table)))
+  (socket-loop socket addr (make-hash-table)))
 
 (define-public (run-nrepl-server)
-  (display "starting tcp repl server...")
+  (define host (gethostbyaddr addr))
+  (define hostname (hostent:name host))
+  (format #t "nREPL server started on port ~a on host ~a - nrepl://~a:~a\n"
+          port hostname hostname port)
   (run-fibers run-tcp-repl-server)
   'my-super-value)
 
