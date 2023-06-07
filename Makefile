@@ -13,7 +13,7 @@ nrepl-proxy:
 
 server:
 	${GUILE} -L ./src -c \
-	"((@ (nrepl-server) run-nrepl-server) #:port ${NREPL_PORT})"
+	"((@ (nrepl server) run-nrepl-server) #:port ${NREPL_PORT})"
 
 check:
 	./tests/dumb-client.sh ${NREPL_PORT}

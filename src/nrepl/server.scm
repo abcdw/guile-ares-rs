@@ -1,4 +1,4 @@
-(define-module (nrepl-server)
+(define-module (nrepl server)
   #:use-module (bencode))
 
 (use-modules (fibers)
