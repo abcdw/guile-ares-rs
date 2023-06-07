@@ -5,10 +5,19 @@ Guile imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol fo
 
 * Links
 ** NREPL
+*** Servers
 - https://nrepl.org/nrepl/1.0/building_servers.html
 - https://gitlab.com/technomancy/ogion/-/blob/master/main.rkt
+- https://gitlab.com/technomancy/jeejah
+- https://github.com/kristianlm/chicken-nrepl
 
-** Bencode
+*** Tools
+- https://github.com/lambdaisland/nrepl-proxy
+
+*** Clients
+- https://github.com/sanel/monroe/
+
+*** Bencode
 - https://github.com/flatwhatson/grump/blob/master/grump-lib/bencode.scm
 - https://github.com/caolan/chicken-bencode
 - http://www.bittorrent.org/beps/bep_0003.html#bencoding
