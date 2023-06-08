@@ -43,11 +43,14 @@
         '(#f #f #f)))))
 
 (define (log str)
-  (let* ((file "nrepl.log")
-         (output-port (open-file file "a")))
-    (display str output-port)
-    (newline output-port)
-    (close output-port)))
+  (display str)
+  (newline)
+  ;; (let* ((file "nrepl.log")
+  ;;        (output-port (open-file file "a")))
+  ;;   (display str output-port)
+  ;;   (newline output-port)
+  ;;   (close output-port))
+  )
 
 (define nrepl-prompt
   (make-parameter (lambda () "scheme@(module-here-someday)> ")))
