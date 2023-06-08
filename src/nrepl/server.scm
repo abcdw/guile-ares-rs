@@ -132,9 +132,6 @@
         (lambda () (client-loop client addr store)))
        (loop)))))
 
-;; (define-once nrepl-socket
-;;   (make-default-socket family addr port))
-
 (define (make-default-socket family addr port)
   (let ((sock (socket PF_INET SOCK_STREAM 0)))
     (setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
