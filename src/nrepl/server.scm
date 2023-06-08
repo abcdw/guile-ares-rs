@@ -55,11 +55,7 @@
 (define nrepl-prompt
   (make-parameter (lambda () "scheme@(module-here-someday)> ")))
 
-(define* (client-loop client addr store)
-  (setvbuf client 'block 1024)
-  ;; Disable Nagle's algorithm.  We buffer ourselves.
-  (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
-
+(define (eval-expression output expression)
   (define (handle-exception key . args)
     (define reply
       (match version
@@ -80,14 +76,28 @@
          ;; Protocol (0 0).
          `(exception ,key ,@(map value->sexp args)))))
 
-    (write reply client)
-    (newline client)
-    (force-output client))
+    (write reply output)
+    (newline output)
+    (force-output output))
+
+  (catch #t
+    (lambda ()
+      (let ((results (call-with-values (lambda () (primitive-eval expression))
+                       list)))
+        (write `(values ,@(map value->sexp results)) output)
+        (newline output)
+        (force-output output)))
+    (const #t)
+    handle-exception))
+
+(define* (client-loop client addr store)
+  (setvbuf client 'block 1024)
+  ;; Disable Nagle's algorithm.  We buffer ourselves.
+  (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
 
   (log (format #f "new connection: ~a" client))
 
   (let loop ()
-    ;; TODO: Restrict read-line to 512 chars.
     (put-string client ((nrepl-prompt)))
     (force-output client)
     (let ((line (read-line client)))
@@ -96,7 +106,7 @@
         (close-port client))
        (else
         (log (format #f "new request: ~a" line))
-        (let* ((input ;; (bencode-string->scm line)
+        (let* ((input
                 (catch #t
                   (lambda ()
                     (bencode-string->scm line))
@@ -106,19 +116,7 @@
                (exp (if (and op (string=? "eval" op))
                         (with-input-from-string (assoc-ref input "code") read)
                         "'not-eval-op")))
-          (catch #t
-            (lambda ()
-              (let ((results (call-with-values
-                                 (lambda ()
-                                   (primitive-eval exp))
-                               list)))
-                (write `(values ,@(map value->sexp results)) client)
-                (newline client)
-                (force-output client)))
-            (const #t)
-            handle-exception))
-
-        ;; (put-char client #\newline)
+          (eval-expression client exp))
         (force-output client)
         (loop))))))
 
