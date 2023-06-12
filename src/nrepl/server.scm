@@ -49,8 +49,7 @@
 (define (nrepl-prompt-message)
   "scheme@(module-here-someday)> ")
 
-
-(define (eval-expression output expression)
+(define (eval-expression expression)
   (define (handle-exception key . args)
     (define reply
       (let ((stack (make-stack #t)
@@ -79,6 +78,28 @@
     (const "exception happened")
     handle-exception))
 
+(define (eval-op input)
+  (let ((code (assoc-ref input "code")))
+    (eval-expression (with-input-from-string code read))))
+
+(define (describe-op input)
+  `(lol))
+
+(define default-operations
+  `(("eval" . ,eval-op)
+    ("describe" . ,describe-op)))
+
+(define (get-operation operations op)
+  (assoc-ref operations op))
+
+(define (run-operation operations input)
+  (log (format #f "input: ~s" input))
+  (let* ((op (assoc-ref input "op"))
+         (operation (get-operation operations op)))
+    (if operation
+        (operation input)
+        "no-such-operation")))
+
 (define* (client-loop client addr store)
   (setvbuf client 'block 1024)
   ;; Disable Nagle's algorithm.  We buffer ourselves.
@@ -100,12 +121,9 @@
                   (lambda ()
                     (bencode-string->scm line))
                   (const "invalid-bencode")))
-               (_ (log (format #f "input: ~a" input)))
-               (op (assoc-ref input "op"))
-               (exp (if (and op (string=? "eval" op))
-                        (with-input-from-string (assoc-ref input "code") read)
-                        "'not-eval-op")))
-          (eval-expression client exp))
+               (result (run-operation default-operations input)))
+          (write result client)
+          (newline client))
         (force-output client)
         (loop))))))
 
