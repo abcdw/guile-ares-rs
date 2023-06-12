@@ -58,36 +58,30 @@
 (define (eval-expression output expression)
   (define (handle-exception key . args)
     (define reply
-      (match version
-        ((0 1 (? positive?) _ ...)
-         ;; Protocol (0 1 1) and later.
-         (let ((stack (if (nrepl-prompt)
-                          (make-stack #t handle-exception (nrepl-prompt))
-                          (make-stack #t))))
-           ;; Note: 'make-stack' returns #f if there's no 'handle-exception'
-           ;; stack frame, which is the case when this file is being
-           ;; interpreted as with 'primitive-load'.
-           `(exception (arguments ,key ,@(map value->sexp args))
-                       (stack ,@(map frame->sexp
-                                     (if stack
-                                         (stack->frames stack)
-                                         '()))))))
-        (_
-         ;; Protocol (0 0).
-         `(exception ,key ,@(map value->sexp args)))))
+      (let ((stack (make-stack #t)
+                   ;; (if (nrepl-prompt)
+                   ;;     (make-stack #t handle-exception (nrepl-prompt))
+                   ;;     (make-stack #t))
+                   ))
+        ;; Note: 'make-stack' returns #f if there's no 'handle-exception'
+        ;; stack frame, which is the case when this file is being
+        ;; interpreted as with 'primitive-load'.
+        `(exception (arguments ,key ,@(map value->sexp args))
+                    (stack ,@(map frame->sexp
+                                  (if stack
+                                      (stack->frames stack)
+                                      '()))))))
+    (log reply)
+    reply)
 
-    (write reply output)
-    (newline output)
-    (force-output output))
-
+  ;; TODO: Rewrite to with-exception-handler
   (catch #t
     (lambda ()
       (let ((results (call-with-values (lambda () (primitive-eval expression))
                        list)))
-        (write `(values ,@(map value->sexp results)) output)
-        (newline output)
-        (force-output output)))
-    (const #t)
+        `(values ,@(map value->sexp results))))
+    ;; TODO: Return a real exception
+    (const "exception happened")
     handle-exception))
 
 (define* (client-loop client addr store)
