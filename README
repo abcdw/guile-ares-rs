@@ -1,7 +1,8 @@
 # -*- mode: org -*-
 
 * Introduction
-Guile imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol for future REPL development.
+Asyncronous, Extensible, Reliable Scheme network REPL and Guile
+imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol.
 
 * Links
 ** NREPL
