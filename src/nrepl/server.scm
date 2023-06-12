@@ -10,6 +10,11 @@
              (srfi srfi-26)
              (srfi srfi-1))
 
+(define (log str)
+  (display str)
+  (newline))
+
+
 (define (self-quoting? x)
   "Return #t if X is self-quoting."
   (letrec-syntax ((one-of (syntax-rules ()
@@ -33,7 +38,6 @@
           1+
           0))
 
-
 (define (frame->sexp frame)
   `(,(frame-procedure-name frame)
     ,(match (frame-source frame)
@@ -42,15 +46,6 @@
        (_
         '(#f #f #f)))))
 
-(define (log str)
-  (display str)
-  (newline)
-  ;; (let* ((file "nrepl.log")
-  ;;        (output-port (open-file file "a")))
-  ;;   (display str output-port)
-  ;;   (newline output-port)
-  ;;   (close output-port))
-  )
 (define (nrepl-prompt-message)
   "scheme@(module-here-someday)> ")
 
