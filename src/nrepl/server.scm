@@ -51,9 +51,9 @@
   ;;   (newline output-port)
   ;;   (close output-port))
   )
+(define (nrepl-prompt-message)
+  "scheme@(module-here-someday)> ")
 
-(define nrepl-prompt
-  (make-parameter (lambda () "scheme@(module-here-someday)> ")))
 
 (define (eval-expression output expression)
   (define (handle-exception key . args)
@@ -92,7 +92,7 @@
   (log (format #f "new connection: ~a" client))
 
   (let loop ()
-    (put-string client ((nrepl-prompt)))
+    (put-string client (nrepl-prompt-message))
     (force-output client)
     (let ((line (read-line client)))
       (cond
