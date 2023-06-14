@@ -138,6 +138,16 @@
 ;;; loop
 ;;;
 
+(define (process-request client input)
+  ;; Make process request asyncronous
+  (;; spawn-fiber
+   (lambda ()
+     (let ((result (if input (run-operation default-operations input) #f)))
+       (log "response: ~s" (bencode-string->scm result))
+       (write result client)
+       (newline client))
+     (force-output client))))
+
 (define* (client-loop client addr store)
   (setvbuf client 'block 1024)
   ;; Disable Nagle's algorithm.  We buffer ourselves.
@@ -149,17 +159,14 @@
     (if (eof-object? (peek-u8 client))
         (begin
           (log "closing connection: ~a" client)
+          ;; Don't close until all session are finished
           (close-port client))
         (let ((input (catch #t
                        (lambda ()
                          (bencode->scm client))
                        (const #f))))
           (log "input is read")
-          (let ((result (if input (run-operation default-operations input) #f)))
-            (log "response: ~s" (bencode-string->scm result))
-            (write result client)
-            (newline client))
-          (force-output client)
+          (process-request client input)
           (loop)))))
 
 (define (socket-loop socket addr store)
