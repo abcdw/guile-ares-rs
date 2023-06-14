@@ -155,7 +155,7 @@
           (host #f)
           (family AF_INET)
           (addr (if host (inet-pton family host) INADDR_LOOPBACK))
-          (port 11211))
+          (port 7888))
   (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
   (define hostname (hostent:name host))

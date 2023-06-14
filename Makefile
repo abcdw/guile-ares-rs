@@ -1,6 +1,6 @@
 GUILE=guix shell guile guile-fibers-next -- guile
 
-NREPL_PORT=11211
+NREPL_PORT=7888
 
 repl:
 	${GUILE} -L ./src -L ./tests --listen
