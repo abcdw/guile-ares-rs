@@ -94,8 +94,15 @@
 ;;;
 
 (define (eval-op input)
-  (let ((code (assoc-ref input "code")))
-    (eval-expression (with-input-from-string code read))))
+  (let* ((id (assoc-ref input "id"))
+         (code (assoc-ref input "code"))
+         (result (eval-expression (with-input-from-string code read)))
+         (value (format #f "~a" result))
+         (response `(("status" . #("done"))
+                     ("value" . ,value)
+                     ("id" . ,id))))
+
+    (scm->bencode-string response)))
 
 (define (describe-op input)
   `(lol))
