@@ -104,12 +104,24 @@
 
     (scm->bencode-string response)))
 
+(define (clone-op input)
+  (scm->bencode-string
+   `(("new-session" . "1"))))
+
+(define (completions-op input)
+  (let* ((id (assoc-ref input "id"))
+         (response `(("id" . ,id)
+                     ("completions" . #()))))
+    (scm->bencode-string response)))
+
 (define (describe-op input)
   `(lol))
 
 (define default-operations
   `(("eval" . ,eval-op)
-    ("describe" . ,describe-op)))
+    ("describe" . ,describe-op)
+    ("completions" . ,completions-op)
+    ("clone" . ,clone-op)))
 
 (define (get-operation operations op)
   (assoc-ref operations op))
