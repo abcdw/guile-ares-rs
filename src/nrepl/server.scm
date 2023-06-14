@@ -20,6 +20,10 @@
       (apply format #t args))
   (newline))
 
+
+;;;
+;;; REPL
+;;;
 
 (define (self-quoting? x)
   "Return #t if X is self-quoting."
@@ -84,6 +88,11 @@
     (const "exception happened")
     handle-exception))
 
+
+;;;
+;;; Operations
+;;;
+
 (define (eval-op input)
   (let ((code (assoc-ref input "code")))
     (eval-expression (with-input-from-string code read))))
@@ -105,6 +114,11 @@
     (if operation
         (operation input)
         "no-such-operation")))
+
+
+;;;
+;;; loop
+;;;
 
 (define* (client-loop client addr store)
   (setvbuf client 'block 1024)
