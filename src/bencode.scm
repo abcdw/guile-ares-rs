@@ -1,7 +1,7 @@
 (define-module (bencode)
-  #:use-module (srfi srfi-43)
-  #:use-module (ice-9 textual-ports)
+  #:use-module (scheme base)
   #:use-module (ice-9 exceptions)
+
   #:export (scm->bencode
             scm->bencode-string
             bencode->scm
@@ -18,23 +18,35 @@
                    (make-exception-with-message "bencode is invalid")
                    (make-exception-with-irritants port))))
 
+(define (write-u8-char char port)
+  (write-u8 (char->integer char) port))
+
+(define (write-u8-integer int port)
+  (write-bytevector (string->utf8 (number->string int)) port))
+
 (define (write-bencode-integer int port)
   (when (not (integer? int))
     (bencode-exception port))
-  (format port "i~ae" int))
+  (write-u8-char #\i port)
+  (write-u8-integer int port)
+  (write-u8-char #\e port))
 
 (define (write-bencode-string str port)
   (when (not (string? str))
     (bencode-exception port))
-  (format port "~a:~a" (string-length str) str))
+  (let* ((utf8-str (string->utf8 str))
+         (utf8-str-len (bytevector-length utf8-str)))
+    (write-u8-integer utf8-str-len port)
+    (write-u8-char #\: port)
+    (write-bytevector utf8-str port)))
 
-(define (write-bencode-list lst port)
-  (format port "l")
-  (vector-for-each (lambda (i x) (scm->bencode x port)) lst)
-  (format port "e"))
+(define (write-bencode-list vec port)
+  (write-u8-char #\l port)
+  (vector-for-each (lambda (x) (scm->bencode x port)) vec)
+  (write-u8-char #\e port))
 
 (define (write-bencode-dictionary lst port)
-  (format port "d")
+  (write-u8-char #\d port)
   (for-each
    (lambda (x)
      (when (not (pair? x))
@@ -42,7 +54,7 @@
      (write-bencode-string (car x) port)
      (scm->bencode (cdr x) port))
    lst)
-  (format port "e"))
+  (write-u8-char #\e port))
 
 (define* (scm->bencode scm #:optional (port (current-output-port)))
   (cond
@@ -91,9 +103,9 @@
 
 (define (read-bencode-string port)
   (let* ((str-length (read-bencode-integer port #:delimeter #\:))
-         (res (get-string-n port str-length)))
-    (if (= (string-length res) str-length)
-        res
+         (res (read-bytevector str-length port)))
+    (if (= (bytevector-length res) str-length)
+        (utf8->string res)
         (bencode-exception port))))
 
 (define (read-bencode-list port)
@@ -142,4 +154,8 @@
     (lambda (p)
       (bencode->scm p))))
 
+(call-with-input-string "6:naïve"
+  (lambda (p)
+    (utf8->string (read-bytevector 8 p))))
+(bencode-string->scm "6:naïve")
 ;; (bencode-string->scm "l2:hilei34ee")
