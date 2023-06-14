@@ -3,10 +3,9 @@
 
 (use-modules (fibers)
              (rnrs bytevectors)
+             (scheme base)
              (ice-9 match)
-             (ice-9 textual-ports)
              (ice-9 rdelim)
-
              (srfi srfi-26)
              (srfi srfi-1))
 
@@ -147,25 +146,21 @@
   (log "new connection: ~a" client)
 
   (let loop ()
-    (let ((input (catch #t
-                   (lambda ()
-                     (bencode->scm client))
-                   (const #f))))
-      (log "input is read")
-      (cond
-       ((eof-object? input)
+    (if (eof-object? (peek-u8 client))
         (begin
           (log "closing connection: ~a" client)
-          (close-port client)))
-       (else
-        (let ((result (if input (run-operation default-operations input) #f)))
-          (log "response: ~s" (bencode-string->scm result))
-          (write result client)
-          (newline client))
-        (force-output client)
-        (loop))))))
-
-(define op (current-output-port))
+          (close-port client))
+        (let ((input (catch #t
+                       (lambda ()
+                         (bencode->scm client))
+                       (const #f))))
+          (log "input is read")
+          (let ((result (if input (run-operation default-operations input) #f)))
+            (log "response: ~s" (bencode-string->scm result))
+            (write result client)
+            (newline client))
+          (force-output client)
+          (loop)))))
 
 (define (socket-loop socket addr store)
   (let loop ()
