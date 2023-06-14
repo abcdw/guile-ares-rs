@@ -10,8 +10,14 @@
              (srfi srfi-26)
              (srfi srfi-1))
 
-(define (log str)
-  (display str)
+
+
+(define (log . args)
+  (define (repeat str n)
+    (string-join (map (lambda (x) str) (iota n)) " "))
+  (if (not (string? (car args)))
+      (apply format #t (repeat "~s" (length args)) args)
+      (apply format #t args))
   (newline))
 
 
@@ -93,7 +99,7 @@
   (assoc-ref operations op))
 
 (define (run-operation operations input)
-  (log (format #f "input: ~s" input))
+  (log "input: ~s" input)
   (let* ((op (assoc-ref input "op"))
          (operation (get-operation operations op)))
     (if operation
@@ -105,7 +111,7 @@
   ;; Disable Nagle's algorithm.  We buffer ourselves.
   (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
 
-  (log (format #f "new connection: ~a" client))
+  (log "new connection: ~a" client)
 
   (let loop ()
     (put-string client (nrepl-prompt-message))
