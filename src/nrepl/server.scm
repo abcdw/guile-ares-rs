@@ -161,11 +161,8 @@
           (log "closing connection: ~a" client)
           ;; Don't close until all session are finished
           (close-port client))
-        (let ((input (catch #t
-                       (lambda ()
-                         (bencode->scm client))
-                       (const #f))))
-          (log "input is read")
+        (let ((input (guard (ex (else #f)) (bencode->scm client))))
+          (if input (log "input is read") (log "input is malformed"))
           (process-request client input)
           (loop)))))
 

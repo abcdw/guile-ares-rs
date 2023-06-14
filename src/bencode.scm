@@ -1,13 +1,22 @@
 (define-module (bencode)
   #:use-module (srfi srfi-43)
   #:use-module (ice-9 textual-ports)
+  #:use-module (ice-9 exceptions)
   #:export (scm->bencode
             scm->bencode-string
             bencode->scm
             bencode-string->scm))
 
+(define-exception-type
+  &read-exception &exception make-read-exception read-exception?
+  (read-reason read-exception-reason)
+  (read-severity read-exception-severity))
+
 (define (bencode-exception port)
-  (throw 'bencode-invalid port))
+  (raise-exception
+   (make-exception (make-read-exception 'bencode-invalid 'high)
+                   (make-exception-with-message "bencode is invalid")
+                   (make-exception-with-irritants port))))
 
 (define (write-bencode-integer int port)
   (when (not (integer? int))
