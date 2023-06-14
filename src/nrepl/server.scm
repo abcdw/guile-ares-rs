@@ -147,20 +147,19 @@
   (log "new connection: ~a" client)
 
   (let loop ()
-    (put-string client (nrepl-prompt-message))
-    (force-output client)
-    (let ((line (read-line client)))
+    (let ((input (catch #t
+                   (lambda ()
+                     (bencode->scm client))
+                   (const #f))))
+      (log "input is read")
       (cond
-       ((eof-object? line)
-        (close-port client))
+       ((eof-object? input)
+        (begin
+          (log "closing connection: ~a" client)
+          (close-port client)))
        (else
-        (log (format #f "new request: ~a" line))
-        (let* ((input
-                (catch #t
-                  (lambda ()
-                    (bencode-string->scm line))
-                  (const "invalid-bencode")))
-               (result (run-operation default-operations input)))
+        (let ((result (if input (run-operation default-operations input) #f)))
+          (log "response: ~s" (bencode-string->scm result))
           (write result client)
           (newline client))
         (force-output client)
