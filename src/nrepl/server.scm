@@ -100,18 +100,23 @@
          (response `(("status" . #("done"))
                      ("value" . ,value)
                      ("id" . ,id))))
-
-    (scm->bencode-string response)))
+    response))
 
 (define (clone-op input)
-  (scm->bencode-string
-   `(("new-session" . "1"))))
+  (let ((id (assoc-ref input "id"))
+        (session (assoc-ref input "session")))
+    `(("id" . ,id)
+      ("status" . #("done"))
+      ,@(if session
+            `(("session" . ,session))
+            '())
+      ("new-session" . "1"))))
 
 (define (completions-op input)
   (let* ((id (assoc-ref input "id"))
          (response `(("id" . ,id)
                      ("completions" . #()))))
-    (scm->bencode-string response)))
+    response))
 
 (define (describe-op input)
   `(lol))
@@ -143,9 +148,9 @@
   (;; spawn-fiber
    (lambda ()
      (let ((result (if input (run-operation default-operations input) #f)))
-       (log "response: ~s" (bencode-string->scm result))
-       (write result client)
-       (newline client))
+       (log "response: ~s" result)
+
+       (scm->bencode result client))
      (force-output client))))
 
 (define* (client-loop client addr store)
