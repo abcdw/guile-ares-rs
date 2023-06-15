@@ -2,12 +2,11 @@
   #:use-module (bencode))
 
 (use-modules (fibers)
-             (rnrs bytevectors)
              (scheme base)
              (ice-9 match)
-             (ice-9 rdelim)
-             (srfi srfi-26)
-             (srfi srfi-1))
+             (ice-9 receive)
+             (srfi srfi-1)
+             (srfi srfi-26))
 
 
 
@@ -79,10 +78,7 @@
 
   ;; TODO: Rewrite to with-exception-handler
   (catch #t
-    (lambda ()
-      (let ((results (call-with-values (lambda () (primitive-eval expression))
-                       list)))
-        `(values ,@(map value->sexp results))))
+    (lambda () (primitive-eval expression))
     ;; TODO: Return a real exception
     (const "exception happened")
     handle-exception))
@@ -95,9 +91,14 @@
 (define (eval-op input)
   (let* ((id (assoc-ref input "id"))
          (code (assoc-ref input "code"))
-         (result (eval-expression (with-input-from-string code read)))
-         (value (format #f "~a" result))
+         (result (receive (. vals)
+                     (eval-expression (with-input-from-string code read))
+                   ;; TODO: handle multiple return values
+                   (car vals)))
+         (value (format #f "~s" result))
          (response `(("status" . #("done"))
+                     ("session" . "1")
+                     ("ns" . "user")
                      ("value" . ,value)
                      ("id" . ,id))))
     response))
