@@ -17,6 +17,7 @@ imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol.
 
 *** Clients
 - https://github.com/sanel/monroe/
+- https://github.com/Sasanidas/Rail
 
 *** Bencode
 - https://github.com/flatwhatson/grump/blob/master/grump-lib/bencode.scm
