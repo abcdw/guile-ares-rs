@@ -147,12 +147,19 @@ side effects."
                      ("completions" . #()))))
     response))
 
+(define (ls-sessions-op input)
+  (response-for
+   input
+   `(("status" . #("done"))
+     ("sessions" . ,(get-session-ids sessions)))))
+
 (define (describe-op input)
   `(lol))
 
 (define default-operations
   `(("eval" . ,eval-op)
     ("describe" . ,describe-op)
+    ("ls-sessions" . ,ls-sessions-op)
     ("completions" . ,completions-op)
     ("clone" . ,clone-op)))
 
