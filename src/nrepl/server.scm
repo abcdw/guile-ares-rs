@@ -6,6 +6,7 @@
              (ice-9 match)
              (ice-9 receive)
              (ice-9 atomic)
+             (uuid)
              (srfi srfi-1)
              (srfi srfi-26)
              (srfi srfi-197))
@@ -120,11 +121,25 @@ side effects."
           new-value
           (loop)))))
 
+(define sessions (make-atomic-box '()))
+
+(define (register-session! sessions session-id new-session)
+  (atomic-box-update!
+   sessions
+   (lambda (s) (acons session-id new-session s))))
+
+(define (get-session-ids sessions)
+  "Returns a vector of session ids suitable for bencoding."
+  (list->vector (map car (atomic-box-ref sessions))))
+
 (define (clone-op input)
-  (response-for
-   input
-   `(("status" . #("done"))
-     ("new-session" . "1"))))
+  (let ((new-session-id (uuid))
+        (new-session #f))
+    (register-session! sessions new-session-id new-session)
+    (response-for
+     input
+     `(("status" . #("done"))
+       ("new-session" . ,new-session-id)))))
 
 (define (completions-op input)
   (let* ((id (assoc-ref input "id"))
