@@ -5,6 +5,7 @@
              (scheme base)
              (ice-9 match)
              (ice-9 receive)
+             (ice-9 atomic)
              (srfi srfi-1)
              (srfi srfi-26)
              (srfi srfi-197))
@@ -107,6 +108,17 @@
                      ("ns" . "user")
                      ("value" . ,value))))
     (response-for input response)))
+
+(define (atomic-box-update! box proc)
+  "Atomically updates value of BOX to (PROC BOX), returns new value.
+PROC may be called multiple times, and thus PROC should be free of
+side effects."
+  (let loop ()
+    (let* ((old-value (atomic-box-ref box))
+           (new-value (proc old-value)))
+      (if (eq? old-value (atomic-box-compare-and-swap! box old-value new-value))
+          new-value
+          (loop)))))
 
 (define (clone-op input)
   (response-for
