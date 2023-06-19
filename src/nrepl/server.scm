@@ -111,7 +111,7 @@
     (response-for input response)))
 
 (define (atomic-box-update! box proc)
-  "Atomically updates value of BOX to (PROC BOX), returns new value.
+  "Atomically updates value of BOX to (PROC BOX-VALUE), returns new value.
 PROC may be called multiple times, and thus PROC should be free of
 side effects."
   (let loop ()
