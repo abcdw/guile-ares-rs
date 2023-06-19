@@ -6,7 +6,8 @@
              (ice-9 match)
              (ice-9 receive)
              (srfi srfi-1)
-             (srfi srfi-26))
+             (srfi srfi-26)
+             (srfi srfi-197))
 
 
 
@@ -88,30 +89,30 @@
 ;;; Operations
 ;;;
 
+(define (response-for input msg)
+  (let ((id (assoc-ref input "id"))
+        (session (assoc-ref input "session")))
+    (chain msg
+           (acons "id" (or id "unknown") _)
+           (acons "session" (or session "none") _))))
+
 (define (eval-op input)
-  (let* ((id (assoc-ref input "id"))
-         (code (assoc-ref input "code"))
+  (let* ((code (assoc-ref input "code"))
          (result (receive (. vals)
                      (eval-expression (with-input-from-string code read))
                    ;; TODO: handle multiple return values
                    (car vals)))
          (value (format #f "~s" result))
          (response `(("status" . #("done"))
-                     ("session" . "1")
                      ("ns" . "user")
-                     ("value" . ,value)
-                     ("id" . ,id))))
-    response))
+                     ("value" . ,value))))
+    (response-for input response)))
 
 (define (clone-op input)
-  (let ((id (assoc-ref input "id"))
-        (session (assoc-ref input "session")))
-    `(("id" . ,id)
-      ("status" . #("done"))
-      ,@(if session
-            `(("session" . ,session))
-            '())
-      ("new-session" . "1"))))
+  (response-for
+   input
+   `(("status" . #("done"))
+     ("new-session" . "1"))))
 
 (define (completions-op input)
   (let* ((id (assoc-ref input "id"))
