@@ -16,7 +16,7 @@ server:
 	"((@ (nrepl server) run-nrepl-server) #:port ${NREPL_PORT})"
 
 check:
-	${GUILE} -L ./src -L ./tests -c "(())" # implement it
+	${GUILE} -L ./src -L ./tests -c "((@ (integration-test) tmp-fn))"
 
 dumb-client:
 	./tests/dumb-client.sh ${NREPL_PORT}
