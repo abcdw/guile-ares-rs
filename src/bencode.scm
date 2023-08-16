@@ -1,4 +1,8 @@
 (define-module (bencode)
+  ;; TODO: Make explicit overrides if possible to supress warnings
+  ;; This is too much broad, better to list somehow all functions that
+  ;; we are ovirriding
+  #:duplicates (replace last) ; for-each
   #:use-module (scheme base)
   #:use-module (ice-9 exceptions)
 

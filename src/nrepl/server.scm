@@ -1,8 +1,10 @@
 (define-module (nrepl server)
-  #:use-module (bencode))
+  #:duplicates (replace last)
+  #:use-module (bencode)
+  #:use-module (scheme base)
+  #:export (run-nrepl-server))
 
 (use-modules (fibers)
-             (scheme base)
              (ice-9 match)
              (ice-9 receive)
              (ice-9 atomic)
