@@ -263,3 +263,84 @@ side effects."
 ;; server-thread
 ;; (cancel-thread server-thread)
 ;; (join-thread server-thread 1)
+
+
+(use-modules (fibers))
+(use-modules (fibers channels))
+(use-modules (fibers operations))
+(use-modules (fibers timers))
+(use-modules (fibers conditions))
+(use-modules (fibers scheduler))
+(use-modules (ice-9 threads))
+(use-modules (ice-9 match))
+(use-modules (ice-9 atomic))
+(use-modules (ice-9 exceptions))
+
+(define (eval-thread code finished-cnd)
+  ;; TODO: Handle the case with output flush
+  (call-with-new-thread
+   (lambda ()
+     (dynamic-wind
+       (lambda () 'hi)
+       (lambda ()
+         (let ((res (with-exception-handler
+                        (lambda (exception)
+                          `(exception-value ,exception))
+                      (lambda ()
+                        `(eval-value . ,(primitive-eval code)) )
+                      #:unwind? #t)))
+           res))
+       (lambda () (signal-condition! finished-cnd))))))
+
+(define sample-code
+  '(begin
+     (display "hi\n")
+     (display "hello\n")
+     (sleep 4) 'some-value))
+
+(define (async-program)
+  (let ((ch (make-channel))
+        (cnd (make-condition)))
+    (spawn-fiber
+     (lambda ()
+       (let* ((eval-cnd (make-condition))
+              (eval-th (eval-thread sample-code eval-cnd)))
+         (put-message
+          ch
+          (perform-operation
+           (choice-operation
+            (wrap-operation
+             (wait-operation cnd)
+             (lambda ()
+               (cancel-thread eval-th)
+               `(inerrupted . #t)))
+            (wrap-operation
+             (wait-operation eval-cnd)
+             (lambda (. v)
+               `(thread-value . ,(join-thread eval-th))))))))))
+
+    ;; sending eval interrupt
+    (spawn-fiber
+     (lambda ()
+       (sleep 5)
+       (format #t "sending signal\n")
+       (signal-condition! cnd)))
+     (get-message ch)))
+
+
+(use-modules (fibers io-wakeup))
+
+;; (define (printer port message)
+;;   (let loop ()
+;;     (perform-operation
+;;      (wait-until-port-readable-operation port))
+;;     (when (not (port-closed? port))
+;;       (format #t "~a: ~a\n" message
+;;               ((@ (ice-9 rdelim) read-delimited) "" port))
+;;       (loop))))
+
+
+;; (printer #f "stdout")
+
+;; (format #t "return value: ~a\n"
+;;         (run-fibers async-program))
