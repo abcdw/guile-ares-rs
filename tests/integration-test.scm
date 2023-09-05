@@ -18,7 +18,7 @@
     ((_ client-socket e ...)
      (let* ((nrepl-server (call-with-new-thread
                            (lambda () (run-nrepl-server #:port 1134))))
-            ;; (_ (sleep 1))
+            (_ (sleep 1))
             (client-socket (make-nrepl-client-socket #:port 1134))
             (res e ...))
        (when (port? client-socket)
@@ -35,21 +35,28 @@
     client)
   (assoc-ref (bencode->scm client) "value"))
 
+;; This a draft/stub for future implementation of integration tests
 (define-test simple-eval
-  (with-nrepl-setup nrepl-client
-   (test-group "simple eval"
-     (test-group "arithmetics"
-       (test-equal "(+ 1 2 3)" "6"
-                   (nrepl-eval-code nrepl-client "(+ 1 2 3)"))))))
+  (with-nrepl-setup
+   nrepl-client
+   (begin
+     (test-group "simple eval"
+       (test-group "arithmetics"
+         (test-equal "(+ 1 2 3)" "6"
+                     (nrepl-eval-code nrepl-client "(+ 1 2 3)"))))
+     (test-group "read error"
+       (test-group "arithmetics"
+         (test-equal "(+ 1 2 3)" "\"Couldn't read the code\""
+                     (nrepl-eval-code nrepl-client "(+ 1 2 3")))))))
 
 ;; TODO: Make it execute both calls properly
-(define-public (tmp-fn)
-  (with-nrepl-setup
-   nrepl-client
-   (nrepl-eval-code nrepl-client "(+ 1 2 3)"))
+;; (define-public (tmp-fn)
+;;   (with-nrepl-setup
+;;    nrepl-client
+;;    (nrepl-eval-code nrepl-client "(+ 1 2 3)"))
 
-  (with-nrepl-setup
-   nrepl-client
-   (nrepl-eval-code nrepl-client "(+ 1 2 3)")))
+;;   (with-nrepl-setup
+;;    nrepl-client
+;;    (nrepl-eval-code nrepl-client "(+ 1 2 3)")))
 
 ;; (simple-eval)
