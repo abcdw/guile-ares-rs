@@ -242,11 +242,21 @@ side effects."
   (format #t "nREPL server started on port ~a on host ~a - nrepl://~a:~a\n"
           port hostname hostname port)
 
-  (run-fibers
-   (lambda ()
-     (run-tcp-nrepl-server socket addr)))
+  (dynamic-wind
+    (lambda () 'hi)
+    (lambda ()
+      (run-fibers
+       (lambda ()
+         (run-tcp-nrepl-server socket addr))
+       #:drain? #t))
+    (lambda ()
+      (false-if-exception (close-port socket))))
+  ;; (close-port socket)
+  ;; (display "the socket is closed?")
   'my-super-value)
-(export run-nrepl-server)
+
+;; dynamic-wind solution for closing socket
+;; https://git.savannah.gnu.org/cgit/guix.git/tree/guix/scripts/repl.scm?h=a831efb52f49a8424a915f30486730e0fd4ba4e2#n139
 
 ;; (use-modules (ice-9 threads))
 
