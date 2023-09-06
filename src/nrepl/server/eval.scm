@@ -81,7 +81,7 @@ signaled or INPUT-PORT is closed."
     (close-port (car p)))
   (map (lambda (p) (close-pipe p)) pipes))
 
-(define (with-pipes pipes proc)
+(define (call-with-pipes pipes proc)
   (call-with-values
       (lambda () (proc pipes))
     (lambda vals
