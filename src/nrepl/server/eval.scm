@@ -22,6 +22,7 @@
   #:use-module (fibers channels)
   #:use-module (fibers conditions)
   #:use-module (fibers io-wakeup)
+  #:use-module (ice-9 threads)
   #:export (output-stream-manager))
 
 
@@ -93,3 +94,28 @@ signaled or INPUT-PORT is closed."
                  (current-error-port error-port)
                  (current-input-port input-port))
     (thunk)))
+
+
+;;;
+;;; Eval Thread
+;;;
+
+(define (make-evaluation-thread code finished-condition)
+  "Evaluate code in a separate thread.  Signals FINISHED-CONDITION
+ even if thread is cancelled."
+  (call-with-new-thread
+   (lambda ()
+     (dynamic-wind
+       (const #t)
+       (lambda ()
+         ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
+         (with-exception-handler
+             (lambda (exception)
+               `((status . interrupted)
+                 (exception-value . ,exception)
+                 (stack . ,(make-stack #t))))
+           (lambda ()
+             `((status . done)
+               (eval-value . ,(primitive-eval code))))
+           #:unwind? #t))
+       (lambda () (signal-condition! finished-condition))))))
