@@ -1,8 +1,25 @@
 # -*- mode: org -*-
 
 * Introduction
-Asyncronous, Extensible, Reliable Scheme network REPL and Guile
+Asyncronous Reliable Extensible Scheme Network REPL and Guile
 imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol.
+
+* Open Questions
+- How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
+  the clonned session with fibers spawned.
+
+* Other REPLs Quirks
+One of the reasons this project started is unfortunate missbehave of
+current REPL soultions in different situation and here is a list of
+some of them:
+- call/cc works when pasted into prompt of the repl, but fails when
+  evaling from buffer with C-x C-e.
+- It's not possible to interrupt evaluation if geiser-connect is used.
+- It's not possible to see stdout until evaluation completed.
+- Gider tests hangs repl on errors.
+- CAPF function is injected, even if there is no connection to REPL
+  and throws errors preventing other CAPFs to work.
+- There is no way to provide stdin input to running expression.
 
 * Links
 ** NREPL
