@@ -1,4 +1,4 @@
-GUILE=guix shell guile guile-fibers-next -- guile
+GUILE=guix shell guile guile-fibers -- guile
 
 NREPL_PORT=7888
 
