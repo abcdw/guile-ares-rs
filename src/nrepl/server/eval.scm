@@ -87,3 +87,9 @@ signaled or INPUT-PORT is closed."
     (lambda vals
       (close-pipes pipes)
       (apply values vals))))
+
+(define (with-current-ports output-port error-port input-port thunk)
+  (parameterize ((current-output-port output-port)
+                 (current-error-port error-port)
+                 (current-input-port input-port))
+    (thunk)))
