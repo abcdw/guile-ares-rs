@@ -67,3 +67,23 @@ signaled or INPUT-PORT is closed."
         (if (and (equal? 'ready op-value) (port-open? input-port))
             (loop)
             'finished)))))
+
+(define (make-pipes n)
+  "Creates a list of N pipes."
+  (map (lambda _ (pipe)) (iota n)))
+
+(define (close-pipes pipes)
+  "Takes a list of pipes and close all the related ports."
+  (define (close-pipe p)
+    ;; the order is important, otherwise it can lead to
+    ;; fport_write: Broken pipe
+    (close-port (cdr p))
+    (close-port (car p)))
+  (map (lambda (p) (close-pipe p)) pipes))
+
+(define (with-pipes pipes proc)
+  (call-with-values
+      (lambda () (proc pipes))
+    (lambda vals
+      (close-pipes pipes)
+      (apply values vals))))
