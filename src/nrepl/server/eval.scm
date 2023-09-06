@@ -26,7 +26,7 @@
 
 
 ;;;
-;;; Output Stream Handling
+;;; I/O Handling
 ;;;
 
 (define (read-all-chars-as-string port)
@@ -40,26 +40,30 @@
           (loop))))))
 
 ;; Do channel accepts nrepl messages or just strings?
-;; Probably strings, so we delay nrepl related logic further to top level.
-
-
-(define (output-stream-manager port channel finished-condition)
+;; Probably strings, so we delay nrepl related logic further up the stack.
+(define (output-stream-manager-thunk input-port output-channel
+                                     process-finished-condition)
+  "Watches INPUT-PORT and when something arrives sends it as a string to
+the OUTPUT-CHANNEL.  Works until PROCESS-FINISHED-CONDITION is
+signaled or INPUT-PORT is closed."
+  (define (port-open? port) (not (port-closed? port)))
   (lambda ()
     (let loop ()
       (let ((op-value
              (perform-operation
               (choice-operation
                (wrap-operation
-                (wait-until-port-readable-operation port)
+                (wait-until-port-readable-operation input-port)
                 (const 'ready))
                (wrap-operation
-                (wait-operation finished-condition)
+                (wait-operation process-finished-condition)
                 (const 'finished))))))
-        ;; Do we need to handle #<eof> somehow? even it appears
 
-        ;; Try to read anyway, in case something
-        (when (char-ready? port)
-          (put-message channel (read-all-chars-as-string port)))
-        (if (equal? 'ready op-value)
+        ;; Try to read anyway, in case something came before process finished
+        (when (and (port-open? input-port) (char-ready? input-port))
+          (put-message output-channel (read-all-chars-as-string input-port)))
+
+        ;; It doesn't make sense to keep watching port if it's already closed
+        (if (and (equal? 'ready op-value) (port-open? input-port))
             (loop)
-            (close-port port))))))
+            'finished)))))

@@ -49,25 +49,36 @@
     operation)))
 
 (define-test test-output-stream-manager
-  (let* ((msg-ch (make-channel))
-         (stdout (current-output-port))
-         (finished-cnd (make-condition))
-         (msgs-recieved (make-condition))
-         (pout (pipe))
-         (_ (setvbuf (cdr pout) 'none)))
+  (test-group "Testing Output Stream Manager"
     (run-fibers
      (lambda ()
-       (spawn-fiber
-        (output-stream-manager (car pout) msg-ch finished-cnd))
-       (spawn-fiber
-        (lambda ()
-          (parameterize ((current-output-port (cdr pout)))
-            (display "hi"))
-          (signal-condition! finished-cnd)))
-       (test-group
-           "Testing Output Stream Manager"
-           (test-equal "Received message hi"
-             "hi" (get-message msg-ch))))
+       (let* ((message-channel (make-channel))
+              (finished-condition (make-condition))
+              (stdout-pipe (pipe))
+              (stdout-input-port (car stdout-pipe))
+              (stdout-output-port (cdr stdout-pipe))
+              (_ (setvbuf stdout-output-port 'none)))
+
+         (spawn-fiber
+          (output-stream-manager-thunk stdout-input-port
+                                       message-channel finished-condition))
+
+         (spawn-fiber
+          (lambda ()
+            (parameterize ((current-output-port stdout-output-port))
+              (display "hi"))
+            (signal-condition! finished-condition)))
+
+         (test-equal "Received message hi"
+           "hi" (get-message message-channel))
+
+         (close-port stdout-input-port)
+         (close-port stdout-output-port)
+
+         (test-assert "Pipe Closed (input)"
+           (port-closed? stdout-input-port))
+         (test-assert "Pipe Closed (output)"
+           (port-closed? stdout-output-port))))
      #:drain? #t)))
 
 ;; (test-output-stream-manager)
