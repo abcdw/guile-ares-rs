@@ -78,6 +78,10 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
   "Creates a list of N pipes."
   (map (lambda _ (pipe)) (iota n)))
 
+(define (unbuffer-pipes! pipes)
+  (for-each (lambda (p) (setvbuf (cdr p) 'none)) pipes)
+  pipes)
+
 (define (close-pipes pipes)
   "Takes a list of pipes and close all the related ports."
   (define (close-pipe p)
@@ -89,6 +93,7 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
 
 (define (call-with-pipes pipes proc)
   (call-with-values
+      ;; MAYBE: [Andrew Tropin, 2023-09-06] Handle non-local exit?
       (lambda () (proc pipes))
     (lambda vals
       (close-pipes pipes)
