@@ -42,10 +42,14 @@
   (lset<= equal? template data))
 
 (define* (quickly operation
-                  #:key (timeout 1))
+                  #:key
+                  (timeout 1)
+                  (default-value 'nothing))
   (perform-operation
    (choice-operation
-    (sleep-operation timeout)
+    (wrap-operation
+     (sleep-operation timeout)
+     (const default-value))
     operation)))
 
 (define-test test-output-stream-manager
@@ -79,7 +83,39 @@
          (test-assert "Pipe Closed (input)"
            (port-closed? stdout-input-port))
          (test-assert "Pipe Closed (output)"
-           (port-closed? stdout-output-port))))
+           (port-closed? stdout-output-port)))))
+    #:drain? #t))
+
+;; TODO: [Andrew Tropin, 2023-09-06] Try CIDER interrupt and Add Interrupt Test
+(define-test test-eval-manager
+  (define sample-code
+    `(begin
+       (display "hi-err" (current-error-port))
+       (display "hi-out")
+       'code-value))
+  (test-group "Testing Eval Manager"
+    (run-fibers
+     (lambda ()
+       (let* ((downstream-channel (make-channel))
+              (finished-condition (make-condition))
+              (interrupt-condition (make-condition)))
+
+         (spawn-fiber
+          (eval-manager-thunk sample-code
+                              downstream-channel
+                              interrupt-condition
+                              finished-condition))
+         ;; TODO: [Andrew Tropin, 2023-09-07] Read messages to queue
+         ;; and perform checks on it.
+         (test-equal "Received message hi-err"
+           `(("err" . "hi-err")) (quickly (get-operation downstream-channel)))
+         (test-equal "Received message hi-out"
+           `(("out" . "hi-out")) (quickly (get-operation downstream-channel)))
+
+         ;; (test-equal "Received evaluation result"
+         ;;   `(("status" . #("done")))
+         ;;   (quickly (get-operation downstream-channel)))
+         ))
      #:drain? #t)))
 
 ;; (test-output-stream-manager)

@@ -18,12 +18,19 @@
 ;;; along with guile-nrepl.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl server eval)
+  #:use-module (fibers)
   #:use-module (fibers operations)
   #:use-module (fibers channels)
   #:use-module (fibers conditions)
   #:use-module (fibers io-wakeup)
   #:use-module (ice-9 threads)
-  #:export (output-stream-manager-thunk)
+  #:use-module (ice-9 match)
+  #:use-module (srfi srfi-1)
+  #:export (output-stream-manager-thunk
+            eval-manager-thunk))
+
+;; Managers should be lambdas, because spawn-fiber can have scheduler
+;; argument.
 
 
 ;;;
@@ -129,3 +136,78 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
                (eval-value . ,(primitive-eval code))))
            #:unwind? #t))
        (lambda () (signal-condition! finished-condition))))))
+
+(define (eval-manager-thunk code downstream-channel
+                            interrupt-condition
+                            finished-condition)
+  "Evaluates the CODE in non-blocking way, sends stdout, stderr,
+evaluation result messages to DOWNSTREAM-CHANNEL.  Evaluation can be
+interrupted by signaling INTERRUPT-CONDITION.  When evaluation
+finished the FINISHED-CONDITION is signalled by eval-manager."
+
+  (define (get-thread-value-operation thread
+                                      interrupt-condition
+                                      thread-finished-condition)
+    (choice-operation
+     (wrap-operation
+      (wait-operation interrupt-condition)
+      (lambda ()
+        (cancel-thread thread)
+        ;; TODO: [Andrew Tropin, 2023-09-07] Maybe
+        ;; join-thread is needed here to ensure that the
+        ;; thread interruption is complete.
+        `((status . #("interrupted")))
+        'interrupted))
+     (wrap-operation
+      (wait-operation thread-finished-condition)
+      (lambda ()
+        `()
+        `((thread-value . ,(join-thread thread)))))))
+
+  (define (wrap-output-with tag)
+    "Return a function, which wraps argument into alist."
+    (lambda (v) `((,tag . ,v))))
+
+  (lambda ()
+    (call-with-pipes ; Ensure pipes are closed
+     (unbuffer-pipes! (make-pipes 3))
+     (match-lambda
+       ;; Destructure a list of 3 pipes into 6 separate variables
+       (((stdout-input-port . stdout-output-port)
+         (stderr-input-port . stderr-output-port)
+         (stdin-input-port . stdin-output-port))
+        (let* ((thread-finished-condition (make-condition))
+               (output-channel (make-channel))
+               (error-channel (make-channel))
+
+               (eval-thread-thunk
+                (lambda ()
+                  (make-evaluation-thread code thread-finished-condition)))
+
+               (evaluation-thread (with-current-ports
+                                   stdout-output-port
+                                   stderr-output-port
+                                   stdin-input-port
+                                   eval-thread-thunk))
+
+               (thread-value-operation
+                (get-thread-value-operation evaluation-thread
+                                            interrupt-condition
+                                            thread-finished-condition)))
+
+          ;; TODO: [Andrew Tropin, 2023-09-06] Add input-stream-manager
+          (spawn-fiber
+           (output-stream-manager-thunk stdout-input-port
+                                        (wrap-output-with "out")
+                                        downstream-channel
+                                        thread-finished-condition))
+
+          (spawn-fiber
+           (output-stream-manager-thunk stderr-input-port
+                                        (wrap-output-with "err")
+                                        downstream-channel
+                                        thread-finished-condition))
+
+          (put-message downstream-channel
+                       (perform-operation thread-value-operation))
+          (signal-condition! finished-condition)))))))
