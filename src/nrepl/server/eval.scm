@@ -23,7 +23,7 @@
   #:use-module (fibers conditions)
   #:use-module (fibers io-wakeup)
   #:use-module (ice-9 threads)
-  #:export (output-stream-manager))
+  #:export (output-stream-manager-thunk)
 
 
 ;;;
@@ -40,13 +40,17 @@
           (write-char (read-char port))
           (loop))))))
 
-;; Do channel accepts nrepl messages or just strings?
-;; Probably strings, so we delay nrepl related logic further up the stack.
-(define (output-stream-manager-thunk input-port output-channel
+;; Do channel accepts nrepl messages or just strings?  Strings can
+;; help to delay nrepl related logic further up the stack.  But will
+;; require additional actor to wrap messages for each output port or
+;; one aggregating actor with non-trivial syncronization logic.
+(define (output-stream-manager-thunk input-port
+                                     wrap-function
+                                     downstream-channel
                                      process-finished-condition)
-  "Watches INPUT-PORT and when something arrives sends it as a string to
-the OUTPUT-CHANNEL.  Works until PROCESS-FINISHED-CONDITION is
-signaled or INPUT-PORT is closed."
+  "Watches INPUT-PORT and when something arrives reads it as a string,
+wraps with WRAP-FUNCTION and sends to the DOWNSTREAM-CHANNEL.  Works
+until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
   (define (port-open? port) (not (port-closed? port)))
   (lambda ()
     (let loop ()
@@ -62,7 +66,8 @@ signaled or INPUT-PORT is closed."
 
         ;; Try to read anyway, in case something came before process finished
         (when (and (port-open? input-port) (char-ready? input-port))
-          (put-message output-channel (read-all-chars-as-string input-port)))
+          (put-message downstream-channel
+                       (wrap-function (read-all-chars-as-string input-port))))
 
         ;; It doesn't make sense to keep watching port if it's already closed
         (if (and (equal? 'ready op-value) (port-open? input-port))

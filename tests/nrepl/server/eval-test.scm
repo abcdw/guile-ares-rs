@@ -61,6 +61,7 @@
 
          (spawn-fiber
           (output-stream-manager-thunk stdout-input-port
+                                       identity
                                        message-channel finished-condition))
 
          (spawn-fiber
