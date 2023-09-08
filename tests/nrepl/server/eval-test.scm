@@ -86,9 +86,7 @@
            (port-closed? stdout-output-port)))))
     #:drain? #t))
 
-;; TODO: [Andrew Tropin, 2023-09-06] Try CIDER interrupt and Add Interrupt Test
 (define-test test-eval-manager
-
   (test-group "Testing Eval Manager"
     (test-group "Simple Evaluation with output streams capture"
       (define sample-code
@@ -113,6 +111,34 @@
            (test-equal "Received evaluation result"
              `(("status" . #("done"))
                ("value" . code-value))
+             (quickly (get-operation downstream-channel)))))
+       #:drain? #t))
+
+    (test-group "Evaluation Interruption"
+      (define sample-code-2
+        `(begin
+           (display "before sleep")
+           (sleep 10)
+           (display "after sleep")
+           'code-value))
+      (run-fibers
+       (lambda ()
+         (let* ((downstream-channel (make-channel))
+                (interrupt-condition (make-condition)))
+
+           (spawn-fiber
+            (eval-manager-thunk sample-code-2
+                                downstream-channel
+                                #:interrupt-condition interrupt-condition))
+
+           (test-equal "Received message hi-out"
+             `(("out" . "before sleep"))
+             (quickly (get-operation downstream-channel)))
+
+           (signal-condition! interrupt-condition)
+
+           (test-equal "Received evaluation interrupt"
+             `(("status" . #("done" "interrupted")))
              (quickly (get-operation downstream-channel)))))
        #:drain? #t))))
 
