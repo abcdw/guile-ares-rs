@@ -137,9 +137,10 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
            #:unwind? #t))
        (lambda () (signal-condition! finished-condition))))))
 
-(define (eval-manager-thunk code downstream-channel
-                            interrupt-condition
-                            finished-condition)
+(define* (eval-manager-thunk code downstream-channel
+                             #:key
+                             (interrupt-condition (make-condition))
+                             (finished-condition (make-condition)))
   "Evaluates the CODE in non-blocking way, sends stdout, stderr,
 evaluation result messages to DOWNSTREAM-CHANNEL.  Evaluation can be
 interrupted by signaling INTERRUPT-CONDITION.  When evaluation
@@ -156,13 +157,16 @@ finished the FINISHED-CONDITION is signalled by eval-manager."
         ;; TODO: [Andrew Tropin, 2023-09-07] Maybe
         ;; join-thread is needed here to ensure that the
         ;; thread interruption is complete.
-        `((status . #("interrupted")))
-        'interrupted))
+        `(("status" . #("done" "interrupted")))))
      (wrap-operation
       (wait-operation thread-finished-condition)
       (lambda ()
-        `()
-        `((thread-value . ,(join-thread thread)))))))
+        (let* ((res (join-thread thread))
+               (eval-value (assoc-ref res 'eval-value)))
+          (if eval-value
+              `(("status" . #("done"))
+                ("value" . ,eval-value))
+              'exception))))))
 
   (define (wrap-output-with tag)
     "Return a function, which wraps argument into alist."

@@ -88,34 +88,34 @@
 
 ;; TODO: [Andrew Tropin, 2023-09-06] Try CIDER interrupt and Add Interrupt Test
 (define-test test-eval-manager
-  (define sample-code
-    `(begin
-       (display "hi-err" (current-error-port))
-       (display "hi-out")
-       'code-value))
+
   (test-group "Testing Eval Manager"
-    (run-fibers
-     (lambda ()
-       (let* ((downstream-channel (make-channel))
-              (finished-condition (make-condition))
-              (interrupt-condition (make-condition)))
+    (test-group "Simple Evaluation with output streams capture"
+      (define sample-code
+        `(begin
+           (display "hi-err" (current-error-port))
+           (display "hi-out")
+           'code-value))
+      (run-fibers
+       (lambda ()
+         (let* ((downstream-channel (make-channel)))
 
-         (spawn-fiber
-          (eval-manager-thunk sample-code
-                              downstream-channel
-                              interrupt-condition
-                              finished-condition))
-         ;; TODO: [Andrew Tropin, 2023-09-07] Read messages to queue
-         ;; and perform checks on it.
-         (test-equal "Received message hi-err"
-           `(("err" . "hi-err")) (quickly (get-operation downstream-channel)))
-         (test-equal "Received message hi-out"
-           `(("out" . "hi-out")) (quickly (get-operation downstream-channel)))
+           (spawn-fiber
+            (eval-manager-thunk sample-code
+                                downstream-channel))
+           ;; TODO: [Andrew Tropin, 2023-09-07] Read messages to queue
+           ;; and perform checks on it.
+           (test-equal "Received message hi-err"
+             `(("err" . "hi-err")) (quickly (get-operation downstream-channel)))
+           (test-equal "Received message hi-out"
+             `(("out" . "hi-out")) (quickly (get-operation downstream-channel)))
 
-         ;; (test-equal "Received evaluation result"
-         ;;   `(("status" . #("done")))
-         ;;   (quickly (get-operation downstream-channel)))
-         ))
-     #:drain? #t)))
+           (test-equal "Received evaluation result"
+             `(("status" . #("done"))
+               ("value" . code-value))
+             (quickly (get-operation downstream-channel)))))
+       #:drain? #t))))
 
-;; (test-output-stream-manager)
+(use-modules (gider test-runners))
+(test-begin "hi")
+(test-eval-manager)
