@@ -12,22 +12,33 @@ imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol.
 One of the reasons this project started is unfortunate missbehave of
 current REPL soultions in different situation and here is a list of
 some of them:
+- Text based REPL over socket is not interruptable.
 - call/cc works when pasted into prompt of the repl, but fails when
   evaling from buffer with C-x C-e.
-- It's not possible to interrupt evaluation if geiser-connect is used.
 - It's not possible to see stdout until evaluation completed.
 - Gider tests hangs repl on errors.
 - CAPF function is injected, even if there is no connection to REPL
   and throws errors preventing other CAPFs to work.
 - There is no way to provide stdin input to running expression.
+- Go to definition doesn't work for with-input-from-port.
 
 * Links
 ** NREPL
 *** Servers
 - https://nrepl.org/nrepl/1.0/building_servers.html
-- https://gitlab.com/technomancy/ogion/-/blob/master/main.rkt
-- https://gitlab.com/technomancy/jeejah
-- https://github.com/kristianlm/chicken-nrepl
+- https://gitlab.com/technomancy/ogion/-/blob/master/main.rkt :: very
+  simple Racket nREPL.
+- https://gitlab.com/technomancy/jeejah :: lua nREPL server.
+- https://github.com/babashka/babashka.nrepl :: probably most advanced
+  3rd party nREPL server implementation, doesn't support interrupts.
+
+*** Debugging Tool
+- https://github.com/clojure-emacs/sayid
+- https://github.com/philoskim/debux
+- https://github.com/jpmonettas/flow-storm-debugger
+- https://docs.cider.mx/cider/debugging/debugger.html
+- https://www.gnu.org/software/guile/manual/html_node/Interactive-Debugging.html
+- https://www.gnu.org/software/guile/manual/html_node/Debugging.html
 
 *** Tools
 - https://github.com/lambdaisland/nrepl-proxy
