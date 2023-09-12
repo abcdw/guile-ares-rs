@@ -2,18 +2,16 @@
   #:duplicates (replace last)
   #:use-module (bencode)
   #:use-module (scheme base)
+  #:use-module (fibers)
+  #:use-module (fibers conditions)
+  #:use-module (ice-9 match)
+  #:use-module (ice-9 receive)
+  #:use-module (ice-9 atomic)
+  #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-26)
+  #:use-module (srfi srfi-197)
+  #:use-module (uuid)
   #:export (run-nrepl-server))
-
-(use-modules (fibers)
-             (ice-9 match)
-             (ice-9 receive)
-             (ice-9 atomic)
-             (uuid)
-             (srfi srfi-1)
-             (srfi srfi-26)
-             (srfi srfi-197))
-
-
 
 (define (log . args)
   (define (repeat str n)
