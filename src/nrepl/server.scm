@@ -13,14 +13,16 @@
   #:use-module (uuid)
   #:export (run-nrepl-server))
 
-(define (log . args)
+(define (simple-log . args)
   ""
   (define (repeat str n)
     (string-join (map (lambda (x) str) (iota n)) " "))
   (if (not (string? (car args)))
-      (apply format #t (repeat "~s" (length args)) args)
-      (apply format #t args))
+      (apply format (current-error-port) (repeat "~s" (length args)) args)
+      (apply format (current-error-port) args))
   (newline))
+
+(define log (make-parameter simple-log))
 
 
 ;;;
@@ -77,7 +79,7 @@
                                   (if stack
                                       (stack->frames stack)
                                       '()))))))
-    (log "repl result: ~s" reply)
+    ((log) "repl result: ~s" reply)
     reply)
 
   ;; TODO: Rewrite to with-exception-handler
@@ -174,7 +176,7 @@ side effects."
 ;; :status 'interrupted' if a request was identified and interruption will be attempted 'session-idle' if the session is not currently executing any request 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value 'session-ephemeral' if the session is an ephemeral session
 
 (define (interrupt-op input)
-  (log "~a" sessions)
+  ((log) "~a" sessions)
   (response-for
    input
    '("status" . "session-idle")))
@@ -194,7 +196,7 @@ side effects."
   (assoc-ref operations op))
 
 (define (run-operation operations input)
-  (log "input: ~s" input)
+  ((log) "input: ~s" input)
   (let* ((op (assoc-ref input "op"))
          (operation (get-operation operations op)))
     (if operation
@@ -211,7 +213,7 @@ side effects."
   (;; spawn-fiber
    (lambda ()
      (let ((result (if input (run-operation default-operations input) #f)))
-       (log "response: ~s" result)
+       ((log) "response: ~s" result)
 
        (scm->bencode result client))
      (force-output client))))
@@ -221,18 +223,18 @@ side effects."
   ;; Disable Nagle's algorithm.  We buffer ourselves.
   (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
 
-  (log "new connection: ~a" client)
-  ;; (log (port-filename client) (port->fdes client))
+  ((log) "new connection: ~a" client)
+  ;; ((log) (port-filename client) (port->fdes client))
 
   (let loop ()
     (if (eof-object? (peek-u8 client))
         (begin
-          (log "closing connection: ~a" client)
+          ((log) "closing connection: ~a" client)
           ;; Don't close until all session are finished
           ;; (cleanup-sessions! client)
           (close-port client))
         (let ((input (guard (ex (else #f)) (bencode->scm client))))
-          (unless input (log "input is malformed"))
+          (unless input ((log) "input is malformed"))
           (process-request client input)
           (loop)))))
 
@@ -262,7 +264,8 @@ side effects."
           (family AF_INET)
           (addr (if host (inet-pton family host) INADDR_LOOPBACK))
           (port 7888)
-          (started? (make-condition)))
+          (started? (make-condition))
+          (log-function simple-log))
 
   (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
@@ -277,7 +280,8 @@ side effects."
     (lambda ()
       (run-fibers
        (lambda ()
-         (socket-loop socket addr (make-hash-table)))
+         (parameterize ((log log-function))
+           (socket-loop socket addr (make-hash-table))))
        #:drain? #t))
     (lambda ()
       (false-if-exception (close-port socket)))))
