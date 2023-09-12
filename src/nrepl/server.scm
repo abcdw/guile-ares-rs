@@ -107,7 +107,7 @@
            (acons "id" (or id "unknown") _)
            (acons "session" (or session "none") _))))
 
-(define (eval-op input)
+(define (eval-op sessions input)
   (let* ((code (assoc-ref input "code"))
          (result (receive (. vals)
                      (eval-expression
@@ -131,8 +131,6 @@ side effects."
           new-value
           (loop)))))
 
-(define sessions (make-atomic-box '()))
-
 (define (register-session! sessions session-id new-session)
   (atomic-box-update!
    sessions
@@ -142,7 +140,7 @@ side effects."
   "Returns a vector of session ids suitable for bencoding."
   (list->vector (map car (atomic-box-ref sessions))))
 
-(define (clone-op input)
+(define (clone-op sessions input)
   (let ((new-session-id (uuid))
         (new-session #f))
     (register-session! sessions new-session-id new-session)
@@ -151,13 +149,13 @@ side effects."
      `(("status" . #("done"))
        ("new-session" . ,new-session-id)))))
 
-(define (completions-op input)
+(define (completions-op sessions input)
   (let* ((id (assoc-ref input "id"))
          (response `(("id" . ,id)
                      ("completions" . #()))))
     response))
 
-(define (ls-sessions-op input)
+(define (ls-sessions-op sessions input)
   (response-for
    input
    `(("status" . #("done"))
@@ -175,13 +173,13 @@ side effects."
 ;; Returns
 ;; :status 'interrupted' if a request was identified and interruption will be attempted 'session-idle' if the session is not currently executing any request 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value 'session-ephemeral' if the session is an ephemeral session
 
-(define (interrupt-op input)
+(define (interrupt-op sessions input)
   ((log) "~a" sessions)
   (response-for
    input
    '("status" . "session-idle")))
 
-(define (describe-op input)
+(define (describe-op sessions input)
   `(lol))
 
 (define default-operations
@@ -195,12 +193,12 @@ side effects."
 (define (get-operation operations op)
   (assoc-ref operations op))
 
-(define (run-operation operations input)
+(define (run-operation sessions operations input)
   ((log) "input: ~s" input)
   (let* ((op (assoc-ref input "op"))
          (operation (get-operation operations op)))
     (if operation
-        (operation input)
+        (operation sessions input)
         "no-such-operation")))
 
 
@@ -208,17 +206,19 @@ side effects."
 ;;; loop
 ;;;
 
-(define (process-request client input)
+(define (process-request sessions client input)
   ;; Make process request asyncronous
-  (;; spawn-fiber
+  (spawn-fiber
    (lambda ()
-     (let ((result (if input (run-operation default-operations input) #f)))
+     (let ((result (if input
+                       (run-operation sessions default-operations input)
+                       #f)))
        ((log) "response: ~s" result)
 
        (scm->bencode result client))
      (force-output client))))
 
-(define* (client-loop client addr store)
+(define* (client-loop client addr sessions)
   ((log) "new connection: ~a" client)
   ;; ((log) (port-filename client) (port->fdes client))
 
@@ -226,15 +226,15 @@ side effects."
     (if (eof-object? (peek-u8 client))
         (begin
           ((log) "closing connection: ~a" client)
-          ;; Don't close until all session are finished
+          ;; Don't close until all session are finished ????
           ;; (cleanup-sessions! client)
           (close-port client))
         (let ((input (guard (ex (else #f)) (bencode->scm client))))
           (unless input ((log) "input is malformed"))
-          (process-request client input)
+          (process-request sessions client input)
           (loop)))))
 
-(define (socket-loop socket addr store)
+(define (socket-loop socket addr sessions)
   (let loop ()
     (match (accept socket SOCK_NONBLOCK)
       ((client . addr)
@@ -244,7 +244,7 @@ side effects."
           ;; Disable Nagle's algorithm.  We buffer ourselves.
           (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
 
-          (client-loop client addr store)))
+          (client-loop client addr sessions)))
        (loop)))))
 
 (define (make-default-socket family addr port)
@@ -276,13 +276,15 @@ side effects."
           port hostname hostname port)
   (signal-condition! started?)
 
+  (define sessions (make-atomic-box '()))
+
   (dynamic-wind
     (lambda () 'hi)
     (lambda ()
       (run-fibers
        (lambda ()
          (parameterize ((log log-function))
-           (socket-loop socket addr (make-hash-table))))
+           (socket-loop socket addr sessions)))
        #:drain? #t))
     (lambda ()
       (false-if-exception (close-port socket)))))
