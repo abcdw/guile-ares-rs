@@ -223,35 +223,35 @@ side effects."
     (bind sock family addr port)
     sock))
 
-(define* (run-tcp-nrepl-server socket addr)
+(define* (listen-socket socket addr)
   (listen socket 1024)
-  (sigaction SIGPIPE SIG_IGN)
-  (socket-loop socket addr (make-hash-table)))
+  (sigaction SIGPIPE SIG_IGN))
 
 (define* (run-nrepl-server
           #:key
           (host #f)
           (family AF_INET)
           (addr (if host (inet-pton family host) INADDR_LOOPBACK))
-          (port 7888))
+          (port 7888)
+          (started? (make-condition)))
+
   (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
   (define hostname (hostent:name host))
+  (listen-socket socket addr)
   (format #t "nREPL server started on port ~a on host ~a - nrepl://~a:~a\n"
           port hostname hostname port)
+  (signal-condition! started?)
 
   (dynamic-wind
     (lambda () 'hi)
     (lambda ()
       (run-fibers
        (lambda ()
-         (run-tcp-nrepl-server socket addr))
+         (socket-loop socket addr (make-hash-table)))
        #:drain? #t))
     (lambda ()
-      (false-if-exception (close-port socket))))
-  ;; (close-port socket)
-  ;; (display "the socket is closed?")
-  'my-super-value)
+      (false-if-exception (close-port socket)))))
 
 ;; dynamic-wind solution for closing socket
 ;; https://git.savannah.gnu.org/cgit/guix.git/tree/guix/scripts/repl.scm?h=a831efb52f49a8424a915f30486730e0fd4ba4e2#n139
