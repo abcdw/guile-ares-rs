@@ -153,6 +153,24 @@ side effects."
    `(("status" . #("done"))
      ("sessions" . ,(get-session-ids sessions)))))
 
+;; interrupt
+;; Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions.
+
+;; Required parameters
+;; :session The ID of the session used to start the request to be interrupted.
+
+;; Optional parameters
+;; :interrupt-id The opaque message ID sent with the request to be interrupted.
+
+;; Returns
+;; :status 'interrupted' if a request was identified and interruption will be attempted 'session-idle' if the session is not currently executing any request 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value 'session-ephemeral' if the session is an ephemeral session
+
+(define (interrupt-op input)
+  (log "~a" sessions)
+  (response-for
+   input
+   '("status" . "session-idle")))
+
 (define (describe-op input)
   `(lol))
 
@@ -160,6 +178,7 @@ side effects."
   `(("eval" . ,eval-op)
     ("describe" . ,describe-op)
     ("ls-sessions" . ,ls-sessions-op)
+    ("interrupt" . ,interrupt-op)
     ("completions" . ,completions-op)
     ("clone" . ,clone-op)))
 
