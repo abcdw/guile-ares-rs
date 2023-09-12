@@ -4,6 +4,8 @@
   #:use-module (scheme base)
   #:use-module (fibers)
   #:use-module (fibers conditions)
+  #:use-module (fibers channels)
+  #:use-module (fibers operations)
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
   #:use-module (ice-9 atomic)
@@ -107,8 +109,9 @@
            (acons "id" (or id "unknown") _)
            (acons "session" (or session "none") _))))
 
-(define (eval-op sessions input)
+(define (eval-op sessions channel finished? input)
   (let* ((code (assoc-ref input "code"))
+         (session-id (assoc-ref input "session"))
          (result (receive (. vals)
                      (eval-expression
                       (read-expression code))
@@ -118,7 +121,10 @@
          (response `(("status" . #("done"))
                      ("ns" . "user")
                      ("value" . ,value))))
-    (response-for input response)))
+    (put-message
+     channel
+     (response-for input response))
+    (signal-condition! finished?)))
 
 (define (atomic-box-update! box proc)
   "Atomically updates value of BOX to (PROC BOX-VALUE), returns new value.
@@ -140,26 +146,35 @@ side effects."
   "Returns a vector of session ids suitable for bencoding."
   (list->vector (map car (atomic-box-ref sessions))))
 
-(define (clone-op sessions input)
+(define (clone-op sessions channel finished? input)
   (let ((new-session-id (uuid))
         (new-session #f))
     (register-session! sessions new-session-id new-session)
-    (response-for
-     input
-     `(("status" . #("done"))
-       ("new-session" . ,new-session-id)))))
+    (put-message
+     channel
+     (response-for
+      input
+      `(("status" . #("done"))
+        ("new-session" . ,new-session-id))))
+    (signal-condition! finished?)))
 
-(define (completions-op sessions input)
-  (let* ((id (assoc-ref input "id"))
-         (response `(("id" . ,id)
-                     ("completions" . #()))))
-    response))
+(define (completions-op sessions channel finished? input)
+  (put-message
+   channel
+   (let* ((id (assoc-ref input "id"))
+          (response `(("id" . ,id)
+                      ("completions" . #()))))
+     response))
+  (signal-condition! finished?))
 
-(define (ls-sessions-op sessions input)
-  (response-for
-   input
-   `(("status" . #("done"))
-     ("sessions" . ,(get-session-ids sessions)))))
+(define (ls-sessions-op sessions channel finished? input)
+  (put-message
+   channel
+   (response-for
+    input
+    `(("status" . #("done"))
+      ("sessions" . ,(get-session-ids sessions)))))
+  (signal-condition! finished?))
 
 ;; interrupt
 ;; Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions.
@@ -173,14 +188,18 @@ side effects."
 ;; Returns
 ;; :status 'interrupted' if a request was identified and interruption will be attempted 'session-idle' if the session is not currently executing any request 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value 'session-ephemeral' if the session is an ephemeral session
 
-(define (interrupt-op sessions input)
-  ((log) "~a" sessions)
-  (response-for
-   input
-   '("status" . "session-idle")))
+(define (interrupt-op sessions channel finished? input)
+  ;; ((log) "~a" sessions)
+  (put-message
+   channel
+   (response-for
+    input
+    '("status" . "session-idle")))
+  (signal-condition! finished?))
 
-(define (describe-op sessions input)
-  `(lol))
+(define (describe-op sessions channel finished? input)
+  `(lol)
+  (signal-condition! finished?))
 
 (define default-operations
   `(("eval" . ,eval-op)
@@ -190,15 +209,17 @@ side effects."
     ("completions" . ,completions-op)
     ("clone" . ,clone-op)))
 
-(define (get-operation operations op)
+(define (get-op operations op)
   (assoc-ref operations op))
 
-(define (run-operation sessions operations input)
+(define (run-operation sessions channel finished? operations input)
   ((log) "input: ~s" input)
   (let* ((op (assoc-ref input "op"))
-         (operation (get-operation operations op)))
+         (operation (get-op operations op)))
     (if operation
-        (operation sessions input)
+        (operation sessions channel finished? input)
+        ;; TODO: [Andrew Tropin, 2023-09-12] Send the no such op
+        ;; message to the channel
         "no-such-operation")))
 
 
@@ -210,13 +231,28 @@ side effects."
   ;; Make process request asyncronous
   (spawn-fiber
    (lambda ()
-     (let ((result (if input
-                       (run-operation sessions default-operations input)
-                       #f)))
-       ((log) "response: ~s" result)
-
-       (scm->bencode result client))
-     (force-output client))))
+     (let* ((channel (make-channel))
+            (finished? (make-condition))
+            (get-message (choice-operation
+                          (wrap-operation
+                           (wait-operation finished?)
+                           (const 'finished))
+                          (get-operation channel))))
+       (spawn-fiber
+        (lambda ()
+          (run-operation sessions channel finished?
+                         default-operations input)))
+       (let loop ()
+         (match (perform-operation get-message)
+           ('finished
+            ;; TODO: [Andrew Tropin, 2023-09-12] Maybe check if there
+            ;; is something in the channel
+            'finished-processing-request)
+           (response
+            ((log) "response: ~s" response)
+            (scm->bencode response client)
+            (force-output client)
+            (loop))))))))
 
 (define* (client-loop client addr sessions)
   ((log) "new connection: ~a" client)
@@ -231,7 +267,10 @@ side effects."
           (close-port client))
         (let ((input (guard (ex (else #f)) (bencode->scm client))))
           (unless input ((log) "input is malformed"))
-          (process-request sessions client input)
+          ;; TODO: [Andrew Tropin, 2023-09-12] Send a message about
+          ;; malformed input?
+          (when input
+            (process-request sessions client input))
           (loop)))))
 
 (define (socket-loop socket addr sessions)
