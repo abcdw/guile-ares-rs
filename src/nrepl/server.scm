@@ -14,6 +14,7 @@
   #:export (run-nrepl-server))
 
 (define (log . args)
+  ""
   (define (repeat str n)
     (string-join (map (lambda (x) str) (iota n)) " "))
   (if (not (string? (car args)))
@@ -76,7 +77,7 @@
                                   (if stack
                                       (stack->frames stack)
                                       '()))))))
-    (log reply)
+    (log "repl result: ~s" reply)
     reply)
 
   ;; TODO: Rewrite to with-exception-handler
@@ -85,6 +86,12 @@
     ;; TODO: Return a real exception
     (const "exception happened")
     handle-exception))
+
+(define (read-expression code)
+  (catch #t
+    (lambda () (with-input-from-string code read))
+    ;; TODO: Return a real exception and handle it properly
+    (const "Couldn't read the code")))
 
 
 ;;;
@@ -101,7 +108,8 @@
 (define (eval-op input)
   (let* ((code (assoc-ref input "code"))
          (result (receive (. vals)
-                     (eval-expression (with-input-from-string code read))
+                     (eval-expression
+                      (read-expression code))
                    ;; TODO: handle multiple return values
                    (car vals)))
          (value (format #f "~s" result))
@@ -214,15 +222,17 @@ side effects."
   (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
 
   (log "new connection: ~a" client)
+  ;; (log (port-filename client) (port->fdes client))
 
   (let loop ()
     (if (eof-object? (peek-u8 client))
         (begin
           (log "closing connection: ~a" client)
           ;; Don't close until all session are finished
+          ;; (cleanup-sessions! client)
           (close-port client))
         (let ((input (guard (ex (else #f)) (bencode->scm client))))
-          (if input (log "input is read") (log "input is malformed"))
+          (unless input (log "input is malformed"))
           (process-request client input)
           (loop)))))
 
