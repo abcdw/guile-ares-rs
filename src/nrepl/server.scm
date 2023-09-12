@@ -219,10 +219,6 @@ side effects."
      (force-output client))))
 
 (define* (client-loop client addr store)
-  (setvbuf client 'block 1024)
-  ;; Disable Nagle's algorithm.  We buffer ourselves.
-  (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
-
   ((log) "new connection: ~a" client)
   ;; ((log) (port-filename client) (port->fdes client))
 
@@ -243,7 +239,12 @@ side effects."
     (match (accept socket SOCK_NONBLOCK)
       ((client . addr)
        (spawn-fiber
-        (lambda () (client-loop client addr store)))
+        (lambda ()
+          (setvbuf client 'block 1024)
+          ;; Disable Nagle's algorithm.  We buffer ourselves.
+          (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
+
+          (client-loop client addr store)))
        (loop)))))
 
 (define (make-default-socket family addr port)
