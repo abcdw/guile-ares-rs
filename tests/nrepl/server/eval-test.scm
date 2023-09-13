@@ -86,7 +86,7 @@
            (port-closed? stdout-output-port)))))
     #:drain? #t))
 
-(define-test test-eval-manager
+(define-test test-evaluation-manager
   (test-group "Testing Eval Manager"
     (test-group "Simple Evaluation with output streams capture"
       (define sample-code
@@ -99,8 +99,8 @@
          (let* ((downstream-channel (make-channel)))
 
            (spawn-fiber
-            (eval-manager-thunk sample-code
-                                downstream-channel))
+            (evaluation-manager-thunk sample-code
+                                      downstream-channel))
            ;; TODO: [Andrew Tropin, 2023-09-07] Read messages to queue
            ;; and perform checks on it.
            (test-equal "Received message hi-err"
@@ -127,9 +127,9 @@
                 (interrupt-condition (make-condition)))
 
            (spawn-fiber
-            (eval-manager-thunk sample-code-2
-                                downstream-channel
-                                #:interrupt-condition interrupt-condition))
+            (evaluation-manager-thunk sample-code-2
+                                      downstream-channel
+                                      #:interrupt-condition interrupt-condition))
 
            (test-equal "Received message hi-out"
              `(("out" . "before sleep"))
@@ -141,7 +141,3 @@
              `(("status" . #("done" "interrupted")))
              (quickly (get-operation downstream-channel)))))
        #:drain? #t))))
-
-(use-modules (gider test-runners))
-(test-begin "hi")
-(test-eval-manager)

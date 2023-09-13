@@ -27,7 +27,7 @@
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
   #:export (output-stream-manager-thunk
-            eval-manager-thunk))
+            evaluation-manager-thunk))
 
 ;; Managers should be lambdas, because spawn-fiber can have scheduler
 ;; argument.
@@ -137,14 +137,14 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
            #:unwind? #t))
        (lambda () (signal-condition! finished-condition))))))
 
-(define* (eval-manager-thunk code downstream-channel
-                             #:key
-                             (interrupt-condition (make-condition))
-                             (finished-condition (make-condition)))
+(define* (evaluation-manager-thunk code downstream-channel
+                                   #:key
+                                   (interrupt-condition (make-condition))
+                                   (finished-condition (make-condition)))
   "Evaluates the CODE in non-blocking way, sends stdout, stderr,
 evaluation result messages to DOWNSTREAM-CHANNEL.  Evaluation can be
 interrupted by signaling INTERRUPT-CONDITION.  When evaluation
-finished the FINISHED-CONDITION is signalled by eval-manager."
+finished the FINISHED-CONDITION is signalled by evaluation-manager."
 
   (define (get-thread-value-operation thread
                                       interrupt-condition
