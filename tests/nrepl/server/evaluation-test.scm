@@ -17,8 +17,8 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-nrepl.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl server eval-test)
-  #:use-module (nrepl server eval)
+(define-module (nrepl server evaluation-test)
+  #:use-module (nrepl server evaluation)
   #:use-module (fibers)
   #:use-module (fibers channels)
   #:use-module (fibers operations)

@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-nrepl.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl server eval)
+(define-module (nrepl server evaluation)
   #:use-module (fibers)
   #:use-module (fibers operations)
   #:use-module (fibers channels)
@@ -215,3 +215,9 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
           (put-message downstream-channel
                        (perform-operation thread-value-operation))
           (signal-condition! finished-condition)))))))
+
+;; (let ((x 34))
+;;   (interrupt)) -> new nrepl session #2
+
+
+;; (+ x x) C-2 C-c C-e
