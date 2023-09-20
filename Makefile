@@ -30,3 +30,7 @@ check-integration:
 
 dumb-client:
 	./tests/dumb-client.sh ${NREPL_PORT}
+
+check-bootstrap:
+	${GUILE} -L ./src -L ./tests -L ${GIDER} \
+	-c "((@@ (nrepl bootstrap-test) check-bootstrap))"

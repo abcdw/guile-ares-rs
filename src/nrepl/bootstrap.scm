@@ -22,7 +22,8 @@
   #:use-module (nrepl extensions)
   #:use-module (nrepl extensions state)
   #:use-module (nrepl extensions bencode)
-  #:use-module (nrepl extensions session))
+  #:use-module (nrepl extensions session)
+  #:export (bootstrap-nrepl))
 
 ;;;
 ;;; Entry point for nrepl, setup basic state and fundamental extensions
@@ -35,7 +36,7 @@
     eval))
 
 (define* (bootstrap-nrepl
-          ;; input-port output-port
+          input-port output-port
           #:key
           (initial-extensions
            (list
@@ -43,13 +44,7 @@
             bencode-extension
             session-extension)))
 
-  (let ((input-port (open-input-string
-                     ((@ (bencode) scm->bencode-string)
-                      `(("id". 1)
-                        ("op" . "eval")
-                        ("code" . "(+ 1 2)")))))
-        (output-port (open-output-string)))
-    (let ((state (make-atomic-box '()))
+  (let ((state (make-atomic-box '()))
           (handler (make-atomic-box (make-handler initial-extensions))))
       (let loop ()
         ((car (atomic-box-ref handler))
@@ -58,9 +53,5 @@
            (nrepl/state . ,state)
            (nrepl/handler . ,handler)))
 
-        ((@ (ice-9 pretty-print) pretty-print)
-         ((@ (bencode) bencode-string->scm)
-          (get-output-string output-port)))
-        ;; (if (char-ready? input-port)
-        ;;     (loop))
-        ))))
+        (when (not (eof-object? (peek-char input-port)))
+          (loop)))))
