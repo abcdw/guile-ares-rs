@@ -32,7 +32,7 @@
 (define (sort-extensions extentions)
   ;; TODO: [Andrew Tropin, 2023-09-20] Ensure transport is present
   ;; TODO: [Andrew Tropin, 2023-09-20] Implement dependency resolution
-  extentions)
+  (reverse extentions))
 
 (define (make-handler extensions)
   (fold (lambda (extension handler)
