@@ -28,6 +28,4 @@
     (map list->hex-str _)
     (string-join _ "-")))
 
-;; Local Variables:
-;; eval: (put 'chain 'scheme-indent-function 'defun)
-;; End:
+;; end of uuid.scm

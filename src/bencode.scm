@@ -158,8 +158,4 @@
     (lambda (p)
       (bencode->scm p))))
 
-(call-with-input-string "6:naïve"
-  (lambda (p)
-    (utf8->string (read-bytevector 8 p))))
-(bencode-string->scm "6:naïve")
-;; (bencode-string->scm "l2:hilei34ee")
+;; end of bencode.scm
