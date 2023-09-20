@@ -27,15 +27,15 @@
     (let* ((input-port (assoc-ref context 'nrepl/input-port))
            (output-port (assoc-ref context 'nrepl/output-port))
            (message (bencode->scm input-port))
-           (reply (lambda (reply) (scm->bencode reply output-port))))
+           (transport-reply (lambda (reply) (scm->bencode reply output-port))))
       (handler
        (chain context
          ;; Why nrepl/message and not transport/message?  While the
          ;; message produced by transport underlying extension don't
          ;; care how it was added, it's already in scm.
          (acons 'nrepl/message message _)
-         (acons 'transport/reply reply _)
-         (acons 'reply reply _))))))
+         (acons 'transport/reply transport-reply _)
+         (acons 'reply transport-reply _))))))
 
 (define bencode-extension
   `((name . "nrepl/extension")
