@@ -19,8 +19,21 @@
 
 (define-module (nrepl extensions session)
   #:use-module (ice-9 atomic)
+  #:use-module (nrepl atomic)
+  #:use-module (uuid)
+  #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:export (session-extension))
+
+(define (register-session! state-atom session-id new-session)
+  (atomic-box-update!
+   state-atom
+   (lambda (state)
+     (let* ((sessions (or (assoc-ref state 'sessions) '()))
+            (new-sessions (alist-cons session-id new-session sessions)))
+       (chain state
+         (alist-delete 'sessions _)
+         (alist-cons 'sessions new-sessions _))))))
 
 (define (response-for message reply)
   (let ((id (assoc-ref message "id"))
@@ -29,20 +42,18 @@
            (acons "id" (or id "unknown") _)
            (acons "session" (or session "none") _))))
 
-;; (define (clone-session sessions channel finished? input)
-;;   (let ((new-session-id (uuid))
-;;         (new-session #f))
-;;     (register-session! sessions new-session-id new-session)
-;;     (put-message
-;;      channel
-;;      (response-for
-;;       input
-;;       `(("status" . #("done"))
-;;         ("new-session" . ,new-session-id))))
-;;     (signal-condition! finished?)))
+(define (clone-session context)
+  (let ((new-session-id (uuid))
+        (new-session '())
+        (state (assoc-ref context 'nrepl/state))
+        (reply (assoc-ref context 'reply)))
+    (register-session! state new-session-id new-session)
+    (reply
+     `(("status" . #("done"))
+       ("new-session" . ,new-session-id)))))
 
 
-(define (add-session-reply context)
+(define (add-session-reply-function context)
   (let* ((message (assoc-ref context 'nrepl/message))
          (transport-reply (assoc-ref context 'transport/reply))
          (session-reply (lambda (reply)
@@ -51,14 +62,20 @@
       (acons 'session/reply session-reply _)
       (acons 'reply session-reply _))))
 
+(define session-operations
+  `(("clone" . ,clone-session)))
+
 (define (wrap-session handler)
   (lambda (context)
-    (let ((state (assoc-ref context 'nrepl/state))
-          (message (assoc-ref context 'nrepl/message)))
-      (case (assoc-ref message "op")
-        ;; ("clone" clone-operation)
-        ;; ("ls-sessions" ls-session-operation)
-        (else (handler (add-session-reply context)))))))
+    (let* ((state (assoc-ref context 'nrepl/state))
+           (message (assoc-ref context 'nrepl/message))
+           (new-context (add-session-reply-function context))
+           (operation-function
+            (assoc-ref session-operations (assoc-ref message "op"))))
+      (if operation-function
+          (operation-function new-context)
+          (handler new-context)))))
+
 
 (define session-extension
   `((name . "nrepl/session")
