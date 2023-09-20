@@ -35,7 +35,9 @@
   (reverse extentions))
 
 (define (make-handler extensions)
-  (fold (lambda (extension handler)
-          ((assoc-ref extension 'wrap) handler))
-        unknown-op
-        (sort-extensions extensions)))
+  (cons
+   (fold (lambda (extension handler)
+           ((assoc-ref extension 'wrap) handler))
+         unknown-op
+         (sort-extensions extensions))
+   extensions))
