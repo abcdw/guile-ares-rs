@@ -1,12 +1,15 @@
 # -*- mode: org -*-
 
 * Introduction
-Asyncronous Reliable Extensible Scheme Network REPL and Guile
-imlementation of [[https://nrepl.org/nrepl/index.html][NREPL]] protocol.
+Asyncronous Reliable Extensible Scheme Network REPL.  Highly inspired
+by [[https://nrepl.org/nrepl/index.html][nREPL]].
 
 * Open Questions
 - How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
   the clonned session with fibers spawned.
+- Bootstrap from guile network repl? (Send guile-nrepl
+  implementation to remote network repl server to make it nrepl).
+- Multiple guile languages support.
 
 * Other REPLs Quirks
 One of the reasons this project started is unfortunate missbehave of
@@ -25,12 +28,15 @@ some of them:
 * Links
 ** NREPL
 *** Servers
-- https://nrepl.org/nrepl/1.0/building_servers.html
+- https://github.com/nrepl/nrepl :: default clojure implementation.
+- https://nrepl.org/nrepl/1.0/building_servers.html :: some tips.
 - https://gitlab.com/technomancy/ogion/-/blob/master/main.rkt :: very
   simple Racket nREPL.
 - https://gitlab.com/technomancy/jeejah :: lua nREPL server.
 - https://github.com/babashka/babashka.nrepl :: probably most advanced
   3rd party nREPL server implementation, doesn't support interrupts.
+- https://docs.cider.mx/cider-nrepl/nrepl-api/ops.html#info :: extensions
+  of nREPL for CIDER.
 
 *** Debugging Tool
 - https://github.com/clojure-emacs/sayid
@@ -52,3 +58,8 @@ some of them:
 - https://github.com/caolan/chicken-bencode
 - http://www.bittorrent.org/beps/bep_0003.html#bencoding
 - https://wiki.theory.org/BitTorrentSpecification#Bencoding
+
+* Acknowledgements
+Thanks for inspiration, help and motivation to Nikita Domnitskii,
+Maxime Devos, Andy Wingo, Bozhidar Batsov, Andrey Listopadov.
+
