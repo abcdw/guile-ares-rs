@@ -21,7 +21,8 @@
   #:use-module (ice-9 atomic)
   #:use-module (nrepl extensions)
   #:use-module (nrepl extensions state)
-  #:use-module (nrepl extensions bencode))
+  #:use-module (nrepl extensions bencode)
+  #:use-module (nrepl extensions session))
 
 ;;;
 ;;; Entry point for nrepl, setup basic state and fundamental extensions
@@ -39,9 +40,14 @@
           (initial-extensions
            (list
             state-extension
-            bencode-extension)))
+            bencode-extension
+            session-extension)))
 
-  (let ((input-port (open-input-string "d2:id1:12:op4:eval4:code1:+e"))
+  (let ((input-port (open-input-string
+                     ((@ (bencode) scm->bencode-string)
+                      `(("id". 1)
+                        ("op" . "eval")
+                        ("code" . "(+ 1 2)")))))
         (output-port (open-output-string)))
     (let ((state (make-atomic-box '()))
           (extensions (make-atomic-box initial-extensions))
@@ -54,7 +60,9 @@
            (nrepl/handler . ,handler)
            (nrepl/extensions . ,extensions)))
 
-        (format #t "output:<|~a|>\n" (get-output-string output-port))
+        ((@ (ice-9 pretty-print) pretty-print)
+         ((@ (bencode) bencode-string->scm)
+          (get-output-string output-port)))
         ;; (if (char-ready? input-port)
         ;;     (loop))
         ))))
