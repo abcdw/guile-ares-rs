@@ -15,7 +15,7 @@ server:
 	${GUILE} -L ./src -c \
 	"((@ (nrepl server) run-nrepl-server) #:port ${NREPL_PORT})"
 
-check: check-evaluation check-integration
+check: check-evaluation check-bootstrap check-integration
 
 check-module:
 	${GUILE} -L ./src -L ./tests -L ${GIDER} \
@@ -25,12 +25,12 @@ check-module:
 check-evaluation:
 	make check-module TEST_MODULE="(nrepl server evaluation-test)"
 
+check-bootstrap:
+	make check-module TEST_MODULE="(nrepl bootstrap-test)"
+
 check-integration:
 	make check-module TEST_MODULE="(integration-test)"
 
 dumb-client:
 	./tests/dumb-client.sh ${NREPL_PORT}
 
-check-bootstrap:
-	${GUILE} -L ./src -L ./tests -L ${GIDER} \
-	-c "((@@ (nrepl bootstrap-test) check-bootstrap))"
