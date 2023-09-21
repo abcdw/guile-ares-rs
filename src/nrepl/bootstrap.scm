@@ -55,3 +55,8 @@
 
         (when (not (eof-object? (peek-char input-port)))
           (loop)))))
+
+;; TODO: [Andrew Tropin, 2023-09-21] Initialize random number generator for
+;; uuid
+
+;; (set! *random-state* (random-state-from-platform))
