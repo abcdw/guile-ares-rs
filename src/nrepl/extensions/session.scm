@@ -37,6 +37,16 @@
          (alist-delete 'sessions _)
          (alist-cons 'sessions new-sessions _))))))
 
+(define (unregister-session! state-atom session-id)
+  (atomic-box-update!
+   state-atom
+   (lambda (state)
+     (let* ((sessions (or (assoc-ref state 'sessions) '()))
+            (new-sessions (alist-delete session-id sessions)))
+       (chain state
+         (alist-delete 'sessions _)
+         (alist-cons 'sessions new-sessions _))))))
+
 (define (response-for message reply)
   (let ((id (assoc-ref message "id"))
         (session (assoc-ref message "session")))
@@ -45,6 +55,8 @@
            (acons "session" (or session "none") _))))
 
 (define (make-new-session)
+  ;; Downstream extensions can rely on this condition to know, when
+  ;; they have to shutdown.
   (let* ((shutdown-condition (make-condition))
          (shutdown (lambda () (signal-condition! shutdown-condition))))
     (make-atomic-box `((shutdown-condition . ,shutdown-condition)
@@ -65,8 +77,27 @@
      `(("status" . #("done"))
        ("new-session" . ,new-session-id)))))
 
+(define (close-session context)
+  (let* ((state (assoc-ref context 'nrepl/state))
+         (message (assoc-ref context 'nrepl/message))
+         (session-id (assoc-ref message "session"))
+         (session (and=> (get-session state session-id) atomic-box-ref))
+         (reply (assoc-ref context 'reply)))
+    (if session
+        (begin
+         ((assoc-ref session 'shutdown))
+         (unregister-session! state session-id)
+         (reply
+          `(("status" . #("done" "session-closed")))))
+        (reply
+         `(("status" . #("error" "no-such-session")))))))
 
-(define (add-session-reply-function context)
+(define session-operations
+  `(("clone" . ,clone-session)
+    ("close" . ,close-session)))
+
+(define (wrap-session handler)
+  (define (add-session-reply-function context)
   (let* ((message (assoc-ref context 'nrepl/message))
          (transport-reply (assoc-ref context 'transport/reply))
          (session-reply (lambda (reply)
@@ -75,10 +106,6 @@
       (acons 'session/reply session-reply _)
       (acons 'reply session-reply _))))
 
-(define session-operations
-  `(("clone" . ,clone-session)))
-
-(define (wrap-session handler)
   (lambda (context)
     (let* ((state (assoc-ref context 'nrepl/state))
            (message (assoc-ref context 'nrepl/message))
