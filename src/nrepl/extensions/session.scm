@@ -20,8 +20,8 @@
 (define-module (nrepl extensions session)
   #:use-module (ice-9 atomic)
   #:use-module (nrepl atomic)
+  #:use-module (nrepl alist)
   #:use-module (uuid)
-  #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:export (session-extension))
 
