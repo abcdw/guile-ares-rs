@@ -7,13 +7,13 @@
 ;;; Module containing experimental code not intended for public use
 ;;;
 
-(define cider-nrepl (make-nrepl-client-socket #:port 1234))
+(define nrepl-client (make-nrepl-client-socket #:port 38019))
 (scm->bencode
  `(("op" . "clone"))
- cider-nrepl)
+ nrepl-client)
 
 (define session
-  (bencode->scm cider-nrepl))
+  (bencode->scm nrepl-client))
 
 (define session-id (assoc-ref session "new-session"))
 
@@ -23,18 +23,18 @@
      ("id" . "1")
      ("session" . ,session-id)
      ("code" . "(do (println \"hi1\") (Thread/sleep 4000) (println \"finished1\"))"))
-   cider-nrepl)
+   nrepl-client)
   ;; (bencode->scm cider-nrepl) ;; read (out)
   (sleep 1)
   (scm->bencode
    `(("op" . "interrupt")
      ("interrupt-id" . "1")
      ("session" . ,session-id))
- cider-nrepl))
+   nrepl-client))
 
 (scm->bencode
  `(("op" . "ls-sessions"))
-   cider-nrepl)
+ nrepl-client)
 ;; (begin
 ;;   (scm->bencode
 ;;    `(("op" . "eval")
@@ -47,8 +47,8 @@
 ;;      ("code" . "(do (println \"hi2\") (Thread/sleep 2000) (println \"finished2\"))"))
 ;;    cider-nrepl))
 
-(when (char-ready? cider-nrepl)
-  (bencode->scm cider-nrepl))
+(when (char-ready? nrepl-client)
+  (bencode->scm nrepl-client))
 
 (define number-cruncher-code
   `(begin
@@ -85,3 +85,18 @@
 current-input-port"))))))
   (display "hi"))
 (procedure-properties test-mw)
+
+(use-modules (language tree-il))
+
+(tree-il->scheme
+ (macroexpand
+  '(define (f a)
+     (define b 5)
+     (display b))))
+
+(datum->syntax kek 1)
+(gensym "prefix-")
+
+(tree-il->scheme
+ (macroexpand
+  '(define-module (foo))))
