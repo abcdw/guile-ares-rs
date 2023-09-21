@@ -18,6 +18,7 @@
 ;;; along with guile-nrepl.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl extensions session)
+  #:use-module (fibers conditions)
   #:use-module (ice-9 atomic)
   #:use-module (nrepl atomic)
   #:use-module (nrepl alist)
@@ -44,7 +45,10 @@
            (acons "session" (or session "none") _))))
 
 (define (make-new-session)
-  (make-atomic-box '()))
+  (let* ((shutdown-condition (make-condition))
+         (shutdown (lambda () (signal-condition! shutdown-condition))))
+    (make-atomic-box `((shutdown-condition . ,shutdown-condition)
+                       (shutdown . ,shutdown)))))
 
 (define (get-session state session-id)
   (alist-get-in
