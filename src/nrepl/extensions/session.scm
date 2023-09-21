@@ -23,7 +23,8 @@
   #:use-module (nrepl alist)
   #:use-module (uuid)
   #:use-module (srfi srfi-197)
-  #:export (session-extension))
+  #:export (session-extension
+            get-session))
 
 (define (register-session! state-atom session-id new-session)
   (atomic-box-update!
@@ -42,9 +43,17 @@
            (acons "id" (or id "unknown") _)
            (acons "session" (or session "none") _))))
 
+(define (make-new-session)
+  (make-atomic-box '()))
+
+(define (get-session state session-id)
+  (alist-get-in
+   `(sessions ,session-id)
+   (atomic-box-ref state)))
+
 (define (clone-session context)
   (let ((new-session-id (uuid))
-        (new-session '())
+        (new-session (make-new-session))
         (state (assoc-ref context 'nrepl/state))
         (reply (assoc-ref context 'reply)))
     (register-session! state new-session-id new-session)
