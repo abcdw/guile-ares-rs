@@ -32,6 +32,11 @@
   "Check if all of the TEMPLATE's key-values pairs are presesnt in DATA."
   (lset<= equal? template data))
 
+(define* (lset-contains?
+          obj list
+          #:key (predicate equal?))
+  (lset<= predicate `(,obj) list))
+
 (define* (quickly operation
                   #:key
                   (timeout 1)
@@ -92,17 +97,26 @@
 
            (spawn-fiber
             (evaluation-manager-thunk sample-code replies-channel))
-           ;; TODO: [Andrew Tropin, 2023-09-07] Read messages to queue
-           ;; and perform checks on it.
-           (test-equal "Received message hi-err"
-             `(("err" . "hi-err")) (quickly (get-operation replies-channel)))
-           (test-equal "Received message hi-out"
-             `(("out" . "hi-out")) (quickly (get-operation replies-channel)))
 
-           (test-equal "Received evaluation result"
-             `(("status" . #("done"))
-               ("value" . code-value))
-             (quickly (get-operation replies-channel)))))
+           (define replies
+             (map
+              (lambda (_)
+                (quickly (get-operation replies-channel)))
+              (iota 3)))
+
+           (test-assert "Received message hi-err"
+             (lset-contains?
+              `(("err" . "hi-err"))
+              replies))
+           (test-assert "Received message hi-out"
+             (lset-contains?
+              `(("out" . "hi-out"))
+              replies))
+           (test-assert "Received evaluation result"
+             (lset-contains?
+              `(("status" . #("done"))
+                ("value" . code-value))
+              replies))))
        #:drain? #t))
 
     (test-group "Evaluation Interruption"
