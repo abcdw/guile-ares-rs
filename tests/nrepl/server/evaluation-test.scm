@@ -25,17 +25,8 @@
   #:use-module (fibers timers)
   #:use-module (fibers conditions)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-64))
-
-(define-syntax define-test
-  (syntax-rules ()
-    ((_ test-name e ...)
-     (begin
-       (define-public (test-name) e ...)
-       (set-procedure-property! test-name 'srfi-64-test? #t)))))
-
-;; TODO: Make a printer test, which genenrates eval responses with
-;; stdout stderr content.
+  #:use-module (srfi srfi-64)
+  #:use-module (test-utils))
 
 (define (alist-include? template data)
   "Check if all of the TEMPLATE's key-values pairs are presesnt in DATA."
