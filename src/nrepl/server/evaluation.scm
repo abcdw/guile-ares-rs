@@ -217,6 +217,14 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
                        (perform-operation thread-value-operation))
           (signal-condition! finished-condition)))))))
 
+(define (replies-manager-thunk replies-channel reply)
+  (lambda ()
+    (let loop ()
+      ;; TODO: [Andrew Tropin, 2023-09-22] buffer those messages in
+      ;; case reply blocks?
+      (reply (get-message replies-channel))
+      (loop))))
+
 (define* (evaluation-supervisor-thunk
           control-channel
           #:key
