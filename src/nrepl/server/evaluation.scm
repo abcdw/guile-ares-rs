@@ -27,7 +27,8 @@
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
   #:export (output-stream-manager-thunk
-            evaluation-manager-thunk))
+            evaluation-manager-thunk
+            evaluation-supervisor-thunk))
 
 ;; Managers should be lambdas, because spawn-fiber can have scheduler
 ;; argument.
@@ -215,6 +216,59 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
           (put-message replies-channel
                        (perform-operation thread-value-operation))
           (signal-condition! finished-condition)))))))
+
+(define* (evaluation-supervisor-thunk
+          control-channel
+          #:key
+          ;; Maybe add #:drain? argument to control shutdown behavior
+          (shutdown-condition (make-condition))
+          (finished-condition (make-condition)))
+
+  (define (get-action command)
+    (assoc-ref command 'action))
+
+  ;; We can combine it with other blocking operation to extend the
+  ;; possible sources of commands.  For example when thread evaluation
+  ;; is finished, we can return a "run-evaluation" command.
+  (define recieve-command-operation
+    (choice-operation
+     (wrap-operation
+      (wait-operation shutdown-condition)
+      (lambda ()
+        `((internal? . #t)
+          (action . shutdown))))
+     (wrap-operation
+      (get-operation control-channel)
+      (lambda (x)
+        (alist-cons 'internal? #f x)))))
+
+  (define (make-queue)
+    '())
+
+  (lambda ()
+    (let loop ((get-next-command-operation recieve-command-operation)
+               (evaluation-finished? (make-condition))
+               (evaluation-queue (make-queue)))
+      (let* ((command (perform-operation get-next-command-operation))
+             (action (assoc-ref command 'action)))
+        (format #t "command: ~a\n" command)
+        (case action
+          ('shutdown
+           (signal-condition! finished-condition)
+           'finished)
+          ;; 'run-evaluation
+          ;; 'enqueue evaluation
+          ))
+
+
+      ;; (if command
+      ;;     (let ((reply (assoc-ref command 'reply)))
+      ;;       (reply 'hi)))
+
+      ;; (if (equal? 'shutdown (get-action command))
+      ;;     'finished
+      ;;     (loop (get-next-command)))
+      )))
 
 ;; (let ((x 34))
 ;;   (interrupt)) -> new nrepl session #2

@@ -83,7 +83,7 @@
     #:drain? #t))
 
 (define-test test-evaluation-manager
-  (test-group "Testing Eval Manager"
+  (test-group "Testing Evaluation Manager"
     (test-group "Simple Evaluation with output streams capture"
       (define sample-code
         `(begin
@@ -144,3 +144,44 @@
            (test-equal "Received evaluation interrupt"
              `(("status" . #("done" "interrupted")))
              (quickly (get-operation replies-channel)))))))))
+
+
+(define-test test-evaluation-supervisor
+  (test-group "Testing Evaluation Supervisor"
+    (test-group "Shutdown with command"
+      (run-fibers
+       (lambda ()
+         (let* ((finished-condition (make-condition))
+                (command-channel (make-channel)))
+
+           (spawn-fiber
+            (evaluation-supervisor-thunk
+             command-channel
+             #:finished-condition finished-condition))
+
+           (put-message command-channel '((action . shutdown)))
+
+           (test-assert "Finish condition signalled"
+             (quickly
+              (wrap-operation (wait-operation finished-condition) (const #t))
+              #:default-value #f))))))
+
+    (test-group "Shutdown with shutdown-condition"
+      (run-fibers
+       (lambda ()
+         (let* ((finished-condition (make-condition))
+                (shutdown-condition (make-condition))
+                (command-channel (make-channel)))
+
+           (spawn-fiber
+            (evaluation-supervisor-thunk
+             command-channel
+             #:finished-condition finished-condition
+             #:shutdown-condition shutdown-condition))
+
+           (signal-condition! shutdown-condition)
+
+           (test-assert "Finish condition signalled"
+             (quickly
+              (wrap-operation (wait-operation finished-condition) (const #t))
+              #:default-value #f))))))))
