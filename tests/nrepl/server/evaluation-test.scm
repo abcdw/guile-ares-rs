@@ -187,3 +187,45 @@
               (wrap-operation
                (wait-operation finished-condition)
                (const #t))))))))
+
+    (test-group "Simple evaluation"
+      (run-fibers
+       (lambda ()
+         (let* ((finished-condition (make-condition))
+                (shutdown-condition (make-condition))
+                (command-channel (make-channel))
+                (replies-channel (make-channel))
+                (reply-function (lambda (reply)
+                                  (put-message replies-channel reply))))
+
+           (spawn-fiber
+            (evaluation-supervisor-thunk
+             command-channel
+             #:finished-condition finished-condition
+             #:shutdown-condition shutdown-condition))
+
+           (put-message
+            command-channel
+            `((action . process-nrepl-message)
+              (message . (("code" . (+ 1 2))
+                          ("op" . "eval")))
+              (reply . ,reply-function)))
+
+           (put-message
+            command-channel
+            `((action . evaluate)))
+
+           (put-message
+            command-channel
+            `((action . shutdown)))
+
+           (test-assert "Finish condition signalled"
+             (quickly
+              (wrap-operation
+               (wait-operation finished-condition)
+               (const #t))))
+
+           (test-equal "Returned evaluation value"
+             `(("status" . #("done"))
+               ("value" . 3))
+             (quickly (get-operation replies-channel)))))))))

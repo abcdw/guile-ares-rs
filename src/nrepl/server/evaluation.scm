@@ -26,6 +26,7 @@
   #:use-module (ice-9 threads)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
+  #:use-module (nrepl alist)
   #:export (output-stream-manager-thunk
             evaluation-manager-thunk
             evaluation-supervisor-thunk))
@@ -228,7 +229,7 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
 (define* (evaluation-supervisor-thunk
           control-channel
           #:key
-          ;; Maybe add #:drain? argument to control shutdown behavior
+          ;; shutdown is graceful operation
           (shutdown-condition (make-condition))
           (finished-condition (make-condition)))
 
@@ -253,30 +254,64 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
   (define (make-queue)
     '())
 
+  (define (enqueue queue object)
+    (cons object queue))
+
+  (define (dequeue queue)
+    (drop-right queue 1))
+
+  (define (front queue)
+    (last queue))
+
+
+  (define (make-signaled-condition)
+    (let ((condition (make-condition)))
+      (signal-condition! condition)
+      condition))
+
   (lambda ()
     (let loop ((get-next-command-operation recieve-command-operation)
-               (evaluation-finished? (make-condition))
+               (evaluation-finished? (make-signaled-condition))
                (evaluation-queue (make-queue)))
       (let* ((command (perform-operation get-next-command-operation))
              (action (assoc-ref command 'action)))
         (format #t "command: ~a\n" command)
-        (case action
-          ('shutdown
+        (cond
+         ((equal? 'shutdown action)
            (signal-condition! finished-condition)
            'finished)
-          ;; 'run-evaluation
-          ;; 'enqueue evaluation
-          ))
 
+         ((equal? 'evaluate action)
+          (let* ((finished? (make-condition))
+                 (replies-channel (make-channel))
+                 (command (front evaluation-queue))
+                 (reply (assoc-ref command 'reply))
+                 (code (alist-get-in '(message "code") command)))
+            (spawn-fiber
+             (replies-manager-thunk replies-channel reply))
+            (spawn-fiber
+             (evaluation-manager-thunk code replies-channel))
 
-      ;; (if command
-      ;;     (let ((reply (assoc-ref command 'reply)))
-      ;;       (reply 'hi)))
+            (loop
+             ;; TODO: [Andrew Tropin, 2023-09-22] Wait for evaluation
+             ;; completion and issue next evalute command, when done
+             get-next-command-operation
+             evaluation-finished?
+             (enqueue evaluation-queue command))))
 
-      ;; (if (equal? 'shutdown (get-action command))
-      ;;     'finished
-      ;;     (loop (get-next-command)))
-      )))
+         ((equal? 'process-nrepl-message action)
+            (let* ((message (assoc-ref command 'message))
+                   (op (assoc-ref message "op")))
+              (cond
+               ((equal? "eval" op)
+                (loop
+                 get-next-command-operation
+                 evaluation-finished?
+                 (enqueue evaluation-queue command)))
+
+               ;; ((equal? "interrupt" op))
+               (else
+                (throw 'kawabanga))))))))))
 
 ;; (let ((x 34))
 ;;   (interrupt)) -> new nrepl session #2
