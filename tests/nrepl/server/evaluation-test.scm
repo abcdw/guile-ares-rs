@@ -116,8 +116,7 @@
              (lset-contains?
               `(("status" . #("done"))
                 ("value" . code-value))
-              replies))))
-       #:drain? #t))
+              replies))))))
 
     (test-group "Evaluation Interruption"
       (define sample-code-2
@@ -144,5 +143,4 @@
 
            (test-equal "Received evaluation interrupt"
              `(("status" . #("done" "interrupted")))
-             (quickly (get-operation replies-channel)))))
-       #:drain? #t))))
+             (quickly (get-operation replies-channel)))))))))
