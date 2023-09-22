@@ -40,7 +40,7 @@
 (define* (quickly operation
                   #:key
                   (timeout 1)
-                  (default-value 'nothing))
+                  (default-value #f))
   (perform-operation
    (choice-operation
     (wrap-operation
@@ -163,8 +163,9 @@
 
            (test-assert "Finish condition signalled"
              (quickly
-              (wrap-operation (wait-operation finished-condition) (const #t))
-              #:default-value #f))))))
+              (wrap-operation
+               (wait-operation finished-condition)
+               (const #t))))))))
 
     (test-group "Shutdown with shutdown-condition"
       (run-fibers
@@ -183,5 +184,6 @@
 
            (test-assert "Finish condition signalled"
              (quickly
-              (wrap-operation (wait-operation finished-condition) (const #t))
-              #:default-value #f))))))))
+              (wrap-operation
+               (wait-operation finished-condition)
+               (const #t))))))))
