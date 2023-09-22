@@ -62,10 +62,10 @@
     (make-atomic-box `((shutdown-condition . ,shutdown-condition)
                        (shutdown . ,shutdown)))))
 
-(define (get-session state session-id)
+(define (get-session state-atom session-id)
   (alist-get-in
    `(sessions ,session-id)
-   (atomic-box-ref state)))
+   (atomic-box-ref state-atom)))
 
 (define (clone-session context)
   (let ((new-session-id (uuid))
