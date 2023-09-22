@@ -53,10 +53,10 @@
 ;; one aggregating actor with non-trivial syncronization logic.
 (define (output-stream-manager-thunk input-port
                                      wrap-function
-                                     downstream-channel
+                                     replies-channel
                                      process-finished-condition)
   "Watches INPUT-PORT and when something arrives reads it as a string,
-wraps with WRAP-FUNCTION and sends to the DOWNSTREAM-CHANNEL.  Works
+wraps with WRAP-FUNCTION and sends to the REPLIES-CHANNEL.  Works
 until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
   (define (port-open? port) (not (port-closed? port)))
   (lambda ()
@@ -73,7 +73,7 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
 
         ;; Try to read anyway, in case something came before process finished
         (when (and (port-open? input-port) (char-ready? input-port))
-          (put-message downstream-channel
+          (put-message replies-channel
                        (wrap-function (read-all-chars-as-string input-port))))
 
         ;; It doesn't make sense to keep watching port if it's already closed
@@ -137,12 +137,12 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
            #:unwind? #t))
        (lambda () (signal-condition! finished-condition))))))
 
-(define* (evaluation-manager-thunk code downstream-channel
+(define* (evaluation-manager-thunk code replies-channel
                                    #:key
                                    (interrupt-condition (make-condition))
                                    (finished-condition (make-condition)))
   "Evaluates the CODE in non-blocking way, sends stdout, stderr,
-evaluation result messages to DOWNSTREAM-CHANNEL.  Evaluation can be
+evaluation result messages to REPLIES-CHANNEL.  Evaluation can be
 interrupted by signaling INTERRUPT-CONDITION.  When evaluation
 finished the FINISHED-CONDITION is signalled by evaluation-manager."
 
@@ -203,16 +203,16 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
           (spawn-fiber
            (output-stream-manager-thunk stdout-input-port
                                         (wrap-output-with "out")
-                                        downstream-channel
+                                        replies-channel
                                         thread-finished-condition))
 
           (spawn-fiber
            (output-stream-manager-thunk stderr-input-port
                                         (wrap-output-with "err")
-                                        downstream-channel
+                                        replies-channel
                                         thread-finished-condition))
 
-          (put-message downstream-channel
+          (put-message replies-channel
                        (perform-operation thread-value-operation))
           (signal-condition! finished-condition)))))))
 

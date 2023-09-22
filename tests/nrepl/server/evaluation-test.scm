@@ -85,24 +85,24 @@
            (display "hi-err" (current-error-port))
            (display "hi-out")
            'code-value))
+
       (run-fibers
        (lambda ()
-         (let* ((downstream-channel (make-channel)))
+         (let* ((replies-channel (make-channel)))
 
            (spawn-fiber
-            (evaluation-manager-thunk sample-code
-                                      downstream-channel))
+            (evaluation-manager-thunk sample-code replies-channel))
            ;; TODO: [Andrew Tropin, 2023-09-07] Read messages to queue
            ;; and perform checks on it.
            (test-equal "Received message hi-err"
-             `(("err" . "hi-err")) (quickly (get-operation downstream-channel)))
+             `(("err" . "hi-err")) (quickly (get-operation replies-channel)))
            (test-equal "Received message hi-out"
-             `(("out" . "hi-out")) (quickly (get-operation downstream-channel)))
+             `(("out" . "hi-out")) (quickly (get-operation replies-channel)))
 
            (test-equal "Received evaluation result"
              `(("status" . #("done"))
                ("value" . code-value))
-             (quickly (get-operation downstream-channel)))))
+             (quickly (get-operation replies-channel)))))
        #:drain? #t))
 
     (test-group "Evaluation Interruption"
@@ -114,21 +114,21 @@
            'code-value))
       (run-fibers
        (lambda ()
-         (let* ((downstream-channel (make-channel))
+         (let* ((replies-channel (make-channel))
                 (interrupt-condition (make-condition)))
 
            (spawn-fiber
-            (evaluation-manager-thunk sample-code-2
-                                      downstream-channel
-                                      #:interrupt-condition interrupt-condition))
+            (evaluation-manager-thunk
+             sample-code-2 replies-channel
+             #:interrupt-condition interrupt-condition))
 
            (test-equal "Received message hi-out"
              `(("out" . "before sleep"))
-             (quickly (get-operation downstream-channel)))
+             (quickly (get-operation replies-channel)))
 
            (signal-condition! interrupt-condition)
 
            (test-equal "Received evaluation interrupt"
              `(("status" . #("done" "interrupted")))
-             (quickly (get-operation downstream-channel)))))
+             (quickly (get-operation replies-channel)))))
        #:drain? #t))))
