@@ -30,7 +30,9 @@
   #:use-module (nrepl alist)
   #:export (output-stream-manager-thunk
             evaluation-manager-thunk
-            evaluation-supervisor-thunk))
+            evaluation-supervisor-thunk
+            evaluation-supervisor-shutdown
+            evaluation-supervisor-process-nrepl-message))
 
 ;; Managers should be lambdas, because spawn-fiber can have scheduler
 ;; argument.
@@ -355,6 +357,16 @@ evaluation finish, interrupt-condition and rest of the queue."
                         "What is going on in evaluation supervisor: ~a\n"
                         message)
                 (throw 'kawabanga))))))))))
+
+(define (evaluation-supervisor-shutdown control-channel)
+  (put-message control-channel '((action . shutdown))))
+
+(define (evaluation-supervisor-process-nrepl-message control-channel
+                                                     message
+                                                     reply)
+  (put-message control-channel `((action . process-nrepl-message)
+                                 (message . ,message)
+                                 (reply . ,reply))))
 
 ;; (let ((x 34))
 ;;   (interrupt)) -> new nrepl session #2

@@ -159,7 +159,7 @@
              command-channel
              #:finished-condition finished-condition))
 
-           (put-message command-channel '((action . shutdown)))
+           (evaluation-supervisor-shutdown command-channel)
 
            (test-assert "Finish condition signalled"
              (quickly
@@ -204,16 +204,13 @@
              #:finished-condition finished-condition
              #:shutdown-condition shutdown-condition))
 
-           (put-message
+           (evaluation-supervisor-process-nrepl-message
             command-channel
-            `((action . process-nrepl-message)
-              (message . (("code" . "(+ 1 2)")
-                          ("op" . "eval")))
-              (reply . ,reply-function)))
+            `(("code" . "(+ 1 2)")
+              ("op" . "eval"))
+            reply-function)
 
-           (put-message
-            command-channel
-            `((action . shutdown)))
+           (evaluation-supervisor-shutdown command-channel)
 
            (test-assert "Finish condition signalled"
              (quickly
