@@ -29,32 +29,27 @@
 ;;; Entry point for nrepl, setup basic state and fundamental extensions
 ;;;
 
-(define default-extensions
-  `(extension
-    bencode-transport
-    session
-    eval))
-
 (define* (bootstrap-nrepl
           input-port output-port
           #:key
           (initial-extensions
            (list
+            ;; TODO: [Andrew Tropin, 2023-09-25] Add extension and evaluation
             state-extension
             bencode-extension
             session-extension)))
 
   (let ((state (make-atomic-box '()))
-          (handler (make-atomic-box (make-handler initial-extensions))))
-      (let loop ()
-        ((car (atomic-box-ref handler))
-         `((nrepl/input-port . ,input-port)
-           (nrepl/output-port . ,output-port)
-           (nrepl/state . ,state)
-           (nrepl/handler . ,handler)))
+        (handler (make-atomic-box (make-handler initial-extensions))))
+    (let loop ()
+      ((car (atomic-box-ref handler))
+       `((nrepl/input-port . ,input-port)
+         (nrepl/output-port . ,output-port)
+         (nrepl/state . ,state)
+         (nrepl/handler . ,handler)))
 
-        (when (not (eof-object? (peek-char input-port)))
-          (loop)))))
+      (when (not (eof-object? (peek-char input-port)))
+        (loop)))))
 
 ;; TODO: [Andrew Tropin, 2023-09-21] Initialize random number generator for
 ;; uuid
