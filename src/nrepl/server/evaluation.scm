@@ -22,6 +22,7 @@
   #:use-module (fibers operations)
   #:use-module (fibers channels)
   #:use-module (fibers conditions)
+  #:use-module (fibers timers)
   #:use-module (fibers io-wakeup)
   #:use-module (ice-9 threads)
   #:use-module (ice-9 match)
@@ -263,41 +264,67 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
   (define (front queue)
     (last queue))
 
+  (define (queue-empty? queue)
+    (null? queue))
 
   (define (make-signaled-condition)
     (let ((condition (make-condition)))
       (signal-condition! condition)
       condition))
 
+  (define evaluate-command-operation
+    (wrap-operation
+     (sleep-operation 0)
+     (const `((action . evaluate)))))
+
+  (define (run-evaluation get-next-command-operation evaluation-queue)
+    "Starts evaluation, return operation which unblocks on next command or
+evaluation finish, interrupt-condition and rest of the queue."
+    (let* ((finished-condition (make-condition))
+           (interrupt-condition (make-condition))
+           (replies-channel (make-channel))
+           (command (front evaluation-queue))
+           (reply (assoc-ref command 'reply))
+           (code (alist-get-in '(message "code") command)))
+      (spawn-fiber
+       (replies-manager-thunk replies-channel reply))
+      (spawn-fiber
+       (evaluation-manager-thunk
+        code replies-channel
+        #:interrupt-condition interrupt-condition
+        #:finished-condition finished-condition))
+      interrupt-condition
+      (list
+       (choice-operation
+        get-next-command-operation
+        (wrap-operation
+         (wait-operation finished-condition)
+         (const `((action . evaluate)))))
+       interrupt-condition
+       (dequeue evaluation-queue))))
+
   (lambda ()
     (let loop ((get-next-command-operation recieve-command-operation)
-               (evaluation-finished? (make-signaled-condition))
+               (interrupt-condition #f)
                (evaluation-queue (make-queue)))
       (let* ((command (perform-operation get-next-command-operation))
              (action (assoc-ref command 'action)))
         (format #t "command: ~a\n" command)
         (cond
+         ((equal? 'terminate action)
+          (signal-condition! interrupt-condition)
+          (signal-condition! finished-condition)
+          'finished)
+
          ((equal? 'shutdown action)
            (signal-condition! finished-condition)
            'finished)
 
          ((equal? 'evaluate action)
-          (let* ((finished? (make-condition))
-                 (replies-channel (make-channel))
-                 (command (front evaluation-queue))
-                 (reply (assoc-ref command 'reply))
-                 (code (alist-get-in '(message "code") command)))
-            (spawn-fiber
-             (replies-manager-thunk replies-channel reply))
-            (spawn-fiber
-             (evaluation-manager-thunk code replies-channel))
-
-            (loop
-             ;; TODO: [Andrew Tropin, 2023-09-22] Wait for evaluation
-             ;; completion and issue next evalute command, when done
-             get-next-command-operation
-             evaluation-finished?
-             (enqueue evaluation-queue command))))
+          (if (queue-empty? evaluation-queue)
+              (loop recieve-command-operation #f evaluation-queue)
+              (apply loop (run-evaluation get-next-command-operation
+                                          evaluation-queue))))
 
          ((equal? 'process-nrepl-message action)
             (let* ((message (assoc-ref command 'message))
@@ -305,12 +332,23 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
               (cond
                ((equal? "eval" op)
                 (loop
-                 get-next-command-operation
-                 evaluation-finished?
+                 (if interrupt-condition
+                     get-next-command-operation
+                     evaluate-command-operation)
+                 interrupt-condition
                  (enqueue evaluation-queue command)))
 
-               ;; ((equal? "interrupt" op))
+               ((equal? "interrupt" op)
+                (signal-condition! interrupt-condition)
+                (loop
+                 get-next-command-operation
+                 interrupt-condition
+                 evaluation-queue))
+
                (else
+                (format (current-error-port)
+                        "What is going on in evaluation supervisor: ~a\n"
+                        message)
                 (throw 'kawabanga))))))))))
 
 ;; (let ((x 34))

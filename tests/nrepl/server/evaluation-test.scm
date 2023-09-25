@@ -213,10 +213,6 @@
 
            (put-message
             command-channel
-            `((action . evaluate)))
-
-           (put-message
-            command-channel
             `((action . shutdown)))
 
            (test-assert "Finish condition signalled"
