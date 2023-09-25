@@ -115,7 +115,7 @@
            (test-assert "Received evaluation result"
              (lset-contains?
               `(("status" . #("done"))
-                ("value" . code-value))
+                ("value" . "code-value"))
               replies))))))
 
     (test-group "Evaluation Interruption"
@@ -207,7 +207,7 @@
            (put-message
             command-channel
             `((action . process-nrepl-message)
-              (message . (("code" . (+ 1 2))
+              (message . (("code" . "(+ 1 2)")
                           ("op" . "eval")))
               (reply . ,reply-function)))
 
@@ -223,5 +223,5 @@
 
            (test-equal "Returned evaluation value"
              `(("status" . #("done"))
-               ("value" . 3))
+               ("value" . "3"))
              (quickly (get-operation replies-channel)))))))))

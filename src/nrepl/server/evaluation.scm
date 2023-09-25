@@ -168,7 +168,9 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
                (eval-value (assoc-ref res 'eval-value)))
           (if eval-value
               `(("status" . #("done"))
-                ("value" . ,eval-value))
+                ;; TODO: [Andrew Tropin, 2023-09-25] Pass
+                ;; format/pprint to evaluation-manager-thunk
+                ("value" . ,(format #f "~s" eval-value)))
               'exception))))))
 
   (define (wrap-output-with tag)
@@ -285,7 +287,10 @@ evaluation finish, interrupt-condition and rest of the queue."
            (replies-channel (make-channel))
            (command (front evaluation-queue))
            (reply (assoc-ref command 'reply))
-           (code (alist-get-in '(message "code") command)))
+           ;; TODO: [Andrew Tropin, 2023-09-25] Handle non-readable code
+           (code (with-input-from-string
+                     (alist-get-in '(message "code") command)
+                   read)))
       (spawn-fiber
        (replies-manager-thunk replies-channel reply))
       (spawn-fiber
