@@ -98,23 +98,28 @@
 
 (define (wrap-session handler)
   (define (add-session-reply-function context)
-  (let* ((message (assoc-ref context 'nrepl/message))
-         (transport-reply (assoc-ref context 'transport/reply))
-         (session-reply (lambda (reply)
-                          (transport-reply (response-for message reply)))))
-    (chain context
-      (acons 'session/reply session-reply _)
-      (acons 'reply session-reply _))))
+    (let* ((message (assoc-ref context 'nrepl/message))
+           (transport-reply (assoc-ref context 'transport/reply))
+           (session-reply (lambda (reply)
+                            (transport-reply (response-for message reply)))))
+      (chain context
+             (acons 'session/reply session-reply _)
+             (acons 'reply session-reply _))))
 
   (lambda (context)
     (let* ((state (assoc-ref context 'nrepl/state))
            (message (assoc-ref context 'nrepl/message))
            (new-context (add-session-reply-function context))
+           (session-id (assoc-ref message "session"))
            (operation-function
             (assoc-ref session-operations (assoc-ref message "op"))))
       (if operation-function
           (operation-function new-context)
-          (handler new-context)))))
+          ;; Short-circuit if there is no such session
+          (if (and session-id (not (get-session state session-id)))
+              ((assoc-ref new-context 'reply)
+               `(("status" . #("error" "no-such-session"))))
+              (handler new-context))))))
 
 
 (define session-extension
