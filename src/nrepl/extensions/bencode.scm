@@ -27,7 +27,11 @@
     (let* ((input-port (assoc-ref context 'nrepl/input-port))
            (output-port (assoc-ref context 'nrepl/output-port))
            (message (bencode->scm input-port))
-           (transport-reply (lambda (reply) (scm->bencode reply output-port))))
+           (transport-reply (lambda (reply)
+                              (scm->bencode reply output-port)
+                              ;; Otherwise bencode message won't be
+                              ;; flashed to the socket
+                              (force-output output-port))))
       (handler
        (chain context
          ;; Why nrepl/message and not transport/message?  While the
