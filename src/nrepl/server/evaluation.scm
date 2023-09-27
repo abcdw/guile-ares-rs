@@ -24,6 +24,7 @@
   #:use-module (fibers conditions)
   #:use-module (fibers timers)
   #:use-module (fibers io-wakeup)
+  #:use-module (ice-9 exceptions)
   #:use-module (ice-9 threads)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
@@ -39,18 +40,25 @@
 
 
 ;;;
-;;; I/O Handling
+;;; Helpers
 ;;;
 
-(define (read-all-chars-as-string port)
-  "Reads all available characters from the PORT and returns a string produced
- out of them."
-  (with-output-to-string
-    (lambda ()
-      (let loop ()
-        (when (char-ready? port)
-          (write-char (read-char port))
-          (loop))))))
+(define (exception->replies exception)
+  (let ((error (apply format #f
+                      (string-append (exception-message exception) "\n")
+                      (caddr (exception-args exception)))))
+    `((("err" . ,error))
+      (("ex" . ,(symbol->string (exception-kind exception)))
+       ("status" . #("eval-error")))
+      (("status" . #("done"))))))
+
+(define (reply-with-exception reply exception)
+  (for-each reply (exception->replies exception)))
+
+
+;;;
+;;; I/O Handling
+;;;
 
 ;; Do channel accepts nrepl messages or just strings?  Strings can
 ;; help to delay nrepl related logic further up the stack.  But will
