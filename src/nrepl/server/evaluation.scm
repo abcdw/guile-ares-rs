@@ -111,12 +111,10 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
          ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
          (with-exception-handler
              (lambda (exception)
-               `((status . interrupted)
-                 (exception-value . ,exception)
+               `((exception-value . ,exception)
                  (stack . ,(make-stack #t))))
            (lambda ()
-             `((status . done)
-               (eval-value . ,(primitive-eval code))))
+             `((eval-value . ,(primitive-eval code))))
            #:unwind? #t))
        (lambda () (signal-condition! finished-condition))))))
 
@@ -140,18 +138,18 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
         ;; TODO: [Andrew Tropin, 2023-09-07] Maybe
         ;; join-thread is needed here to ensure that the
         ;; thread interruption is complete.
-        `(("status" . #("done" "interrupted")))))
+        `((("status" . #("done" "interrupted"))))))
      (wrap-operation
       (wait-operation thread-finished-condition)
       (lambda ()
         (let* ((res (join-thread thread))
                (eval-value (assoc-ref res 'eval-value)))
-              `(("status" . #("done"))
-                ;; TODO: [Andrew Tropin, 2023-09-25] Pass
-                ;; format/pprint to evaluation-manager-thunk
-                ("value" . ,(format #f "~s" eval-value)))
-              'exception))))))
           (if (assoc 'eval-value res)
+              `((("status" . #("done"))
+                 ;; TODO: [Andrew Tropin, 2023-09-25] Pass
+                 ;; format/pprint to evaluation-manager-thunk
+                 ("value" . ,(format #f "~s" eval-value))))
+              (exception->replies (assoc-ref res 'exception-value))))))))
 
   (define (wrap-output-with tag)
     "Return a function, which wraps argument into alist."
@@ -185,6 +183,7 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
                                             thread-finished-condition)))
 
           ;; TODO: [Andrew Tropin, 2023-09-06] Add input-stream-manager
+          ;; use custom or soft ports?
           (spawn-fiber
            (output-stream-manager-thunk stdout-input-port
                                         (wrap-output-with "out")
@@ -197,8 +196,9 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
                                         replies-channel
                                         thread-finished-condition))
 
-          (put-message replies-channel
-                       (perform-operation thread-value-operation))
+          (for-each
+           (lambda (reply) (put-message replies-channel reply))
+           (perform-operation thread-value-operation))
           (signal-condition! finished-condition)))))))
 
 (define (replies-manager-thunk replies-channel reply)
