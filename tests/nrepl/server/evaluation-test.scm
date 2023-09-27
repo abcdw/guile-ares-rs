@@ -114,8 +114,8 @@
               replies))
            (test-assert "Received evaluation result"
              (lset-contains?
-              `(("status" . #("done"))
-                ("value" . "code-value"))
+              `(("value" . "code-value")
+                ("status" . #("done")))
               replies))))))
 
     (test-group "Evaluation Interruption"
@@ -211,8 +211,8 @@
             reply-function)
 
            (test-equal "Returned #f evaluation value"
-             `(("status" . #("done"))
-               ("value" . "#f"))
+             `(("value" . "#f")
+               ("status" . #("done")))
              (quickly (get-operation replies-channel)))
 
            (evaluation-supervisor-process-nrepl-message
@@ -236,7 +236,7 @@
             reply-function)
 
            (test-equal "Interrupt idle session"
-             `(("status" . #("done" "session-idle")))
+             `(("status" . #("session-idle" "done")))
              (quickly (get-operation replies-channel)))
 
            (evaluation-supervisor-process-nrepl-message
@@ -254,6 +254,6 @@
                (const #t))))
 
            (test-equal "Returned evaluation value after shutdown"
-             `(("status" . #("done"))
-               ("value" . "3"))
+             `(("value" . "3")
+               ("status" . #("done")))
              (quickly (get-operation replies-channel)))))))))

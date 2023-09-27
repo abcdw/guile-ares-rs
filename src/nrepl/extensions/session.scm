@@ -118,7 +118,7 @@
           ;; Short-circuit if there is no such session
           (if (and session-id (not (get-session state session-id)))
               ((assoc-ref new-context 'reply)
-               `(("status" . #("error" "no-such-session"))))
+               `(("status" . #("error" "unknown-session" "done"))))
               (handler new-context))))))
 
 

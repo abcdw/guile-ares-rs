@@ -145,10 +145,10 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
         (let* ((res (join-thread thread))
                (eval-value (assoc-ref res 'eval-value)))
           (if (assoc 'eval-value res)
-              `((("status" . #("done"))
-                 ;; TODO: [Andrew Tropin, 2023-09-25] Pass
-                 ;; format/pprint to evaluation-manager-thunk
-                 ("value" . ,(format #f "~s" eval-value))))
+              ;; TODO: [Andrew Tropin, 2023-09-25] Pass
+              ;; format/pprint to evaluation-manager-thunk
+              `((("value" . ,(format #f "~s" eval-value))
+                 ("status" . #("done"))))
               (exception->replies (assoc-ref res 'exception-value))))))))
 
   (define (wrap-output-with tag)
@@ -355,7 +355,7 @@ evaluation finish, interrupt-condition and rest of the queue."
                     ;; https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/middleware/session.clj#L344
                     (signal-condition! interrupt-condition)
                     ((assoc-ref command 'reply)
-                     `(("status" . #("done" "session-idle")))))
+                     `(("status" . #("session-idle" "done")))))
                 (loop
                  get-next-command-operation
                  interrupt-condition
