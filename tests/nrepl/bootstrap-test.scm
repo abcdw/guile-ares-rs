@@ -23,92 +23,109 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-64)
   #:use-module (test-utils)
+  #:use-module (fibers)
+  #:use-module (fibers operations)
+  #:use-module (fibers io-wakeup)
+  #:use-module (ice-9 match)
+  #:use-module (nrepl ports)
   #:use-module (nrepl extensions state)
   #:use-module (nrepl extensions bencode)
-  #:use-module (nrepl extensions session))
+  #:use-module (nrepl extensions session)
+  #:use-module (nrepl extensions evaluation))
 
-(define (check-bootstrap)
-  (let ((input-port (open-input-string
-                     (string-append
-                      (scm->bencode-string
-                       `(("id". 1)
-                         ("op" . "clone")))
-                      (scm->bencode-string
-                       `(("id". 2)
-                         ("op" . "eval")
-                         ("code" . "(+ 1 2)"))))))
-        (output-port (open-output-string)))
+(define (repl-with-io-port start-repl function)
+  (call-with-pipes
+   (unbuffer-pipes! (make-pipes 2))
+   (match-lambda
+     (((input-input-port . input-output-port)
+       (output-input-port . output-output-port))
+      (run-fibers
+       (lambda ()
+         (spawn-fiber
+          (lambda () (start-repl input-input-port output-output-port)))
+         (function input-output-port output-input-port)))))))
 
-    (bootstrap-nrepl input-port output-port)
+(define (read-when-ready port)
+  (perform-operation
+   (wait-until-port-readable-operation port))
+  (bencode->scm port))
 
-    (call-with-input-string (get-output-string output-port)
-      (lambda (port)
-        (let loop ()
-          ((@ (ice-9 pretty-print) pretty-print)
-           (bencode->scm port))
-          (newline)
-          (when (not (eof-object? (peek-char port)))
-            (loop)))))))
-
-(define* (run-repl
-          input-messages
-          #:key
-          (extensions
-           (list
-            state-extension
-            bencode-extension
-            session-extension)))
-  (let ((input-port (open-input-string
-                     (fold (lambda (x result)
-                             (string-append result (scm->bencode-string x)))
-                           ""
-                           input-messages)))
-        (output-port (open-output-string)))
-
-    (bootstrap-nrepl input-port output-port
-                     #:initial-extensions extensions)
-
-    (reverse
-     (call-with-input-string (get-output-string output-port)
-       (lambda (port)
-         (let loop ((result '()))
-           (if (not (eof-object? (peek-char port)))
-               (loop (cons (bencode->scm port) result))
-               result)))))))
+(define (session-repl input-port output-port)
+  (bootstrap-nrepl input-port output-port
+                   #:initial-extensions
+                   (list
+                    state-extension
+                    bencode-extension
+                    session-extension)))
 
 (define (compare-messages list1 list2)
  (lset= equal? list1 list2))
 
 (define-test session-extension-test
-  (define input-messages
-    `((("id". "1")
-       ("op" . "clone"))
-      (("id". "2")
-       ("op" . "eval")
-       ("code" . "(+ 1 2)"))))
+  (test-group "session-extension"
+    (repl-with-io-port
+     session-repl
+     (lambda (input output)
+       (scm->bencode `(("op" . "clone")) input)
 
-  (define expected-output-messages
-    `((("session" . "none")
-       ("id" . "1")
-       ("status" . #("done"))
-       ("new-session"
-        .
-        "92ad654d-a72c-4e50-b55c-523fdebfe29c"))
-      (("session" . "none")
-       ("id" . "2")
-       ("status" . #("error" "unknown-op" "done")))))
+       (define session-id
+         (assoc-ref
+          (read-when-ready output) "new-session"))
+       (test-assert "Received session-id" session-id)
 
-  (define output-messages
-    (run-repl input-messages
-              #:extensions
-              (list
-               state-extension
-               bencode-extension
-               session-extension)))
+       (scm->bencode `(("id". "2")
+                       ("op" . "eval")
+                       ("code" . "(+ 1 2)"))
+                     input)
+       (test-equal "Received unknow-op"
+         `(("session" . "none")
+           ("id" . "2")
+           ("status" . #("error" "unknown-op" "done")))
+         (read-when-ready output))
 
-  (test-group
-      "session-extension"
-      (test-assert
-          "clone and eval messages"
-        (compare-messages expected-output-messages
-                          output-messages))))
+       (scm->bencode `(("id". "3")
+                       ("op" . "close")
+                       ("session" . ,session-id))
+                     input)
+       (test-equal "Received session-closed"
+         `(("session" . ,session-id)
+           ("id" . "3")
+           ("status" . #("done" "session-closed")))
+         (read-when-ready output))))))
+
+(define (base-repl input-port output-port)
+  (bootstrap-nrepl input-port output-port))
+
+(define-test evaluation-extension-test
+  (test-group "evaluation-extension"
+    (repl-with-io-port
+     base-repl
+     (lambda (input output)
+       (scm->bencode `(("op" . "clone")) input)
+
+       (define session-id
+         (assoc-ref
+          (read-when-ready output) "new-session"))
+       (test-assert "Received session-id" session-id)
+
+       (scm->bencode `(("id". "2")
+                       ("op" . "eval")
+                       ("code" . "(+ 1 2)"))
+                     input)
+       (test-equal "Received error"
+         `(("session" . "none")
+           ("id" . "2")
+           ("status" . #("error" "no-session-id-provided" "done")))
+         (read-when-ready output))
+
+       (scm->bencode `(("id". "3")
+                       ("op" . "eval")
+                       ("code" . "(+ 1 2 3)")
+                       ("session" . ,session-id))
+                     input)
+       (test-equal "Received evaluation value"
+         `(("session" . ,session-id)
+           ("id" . "3")
+           ("value" . "6")
+           ("status" . #("done")))
+         (read-when-ready output))))))
