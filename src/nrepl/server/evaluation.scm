@@ -146,12 +146,12 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
       (lambda ()
         (let* ((res (join-thread thread))
                (eval-value (assoc-ref res 'eval-value)))
-          (if eval-value
               `(("status" . #("done"))
                 ;; TODO: [Andrew Tropin, 2023-09-25] Pass
                 ;; format/pprint to evaluation-manager-thunk
                 ("value" . ,(format #f "~s" eval-value)))
               'exception))))))
+          (if (assoc 'eval-value res)
 
   (define (wrap-output-with tag)
     "Return a function, which wraps argument into alist."
