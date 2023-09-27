@@ -210,9 +210,24 @@
               ("op" . "eval"))
             reply-function)
 
-           (test-equal "Returned evaluation value"
+           (test-equal "Returned #f evaluation value"
              `(("status" . #("done"))
                ("value" . "#f"))
+             (quickly (get-operation replies-channel)))
+
+           (evaluation-supervisor-process-nrepl-message
+            command-channel
+            `(("code" . "(])")
+              ("op" . "eval"))
+            reply-function)
+
+           (quickly (get-operation replies-channel))
+           (test-equal "Returned read-error exception"
+             "read-error"
+             (assoc-ref (quickly (get-operation replies-channel)) "ex"))
+
+           (test-equal "Returned evaluation value"
+             `(("status" . #("done")))
              (quickly (get-operation replies-channel)))
 
            (evaluation-supervisor-process-nrepl-message
@@ -238,7 +253,7 @@
                (wait-operation finished-condition)
                (const #t))))
 
-           (test-equal "Returned evaluation value"
+           (test-equal "Returned evaluation value after shutdown"
              `(("status" . #("done"))
                ("value" . "3"))
              (quickly (get-operation replies-channel)))))))))

@@ -222,7 +222,7 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
   ;; We can combine it with other blocking operation to extend the
   ;; possible sources of commands.  For example when thread evaluation
   ;; is finished, we can return a "run-evaluation" command.
-  (define recieve-command-operation
+  (define receive-command-operation
     (choice-operation
      (wrap-operation
       (wait-operation shutdown-condition)
@@ -257,20 +257,26 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
   (define evaluate-command-operation
     (wrap-operation
      (sleep-operation 0)
-     (const `((action . evaluate)))))
+     (const `((internal? . #t)
+              (action . evaluate)))))
 
-  (define (run-evaluation get-next-command-operation evaluation-queue)
+  (define (try-read reply code)
+    (with-exception-handler
+        (lambda (exception)
+          (reply-with-exception reply exception)
+          #f)
+      (lambda ()
+        (list (cons 'code (with-input-from-string code read))))
+      #:unwind? #t))
+
+  (define (run-evaluation code get-next-command-operation evaluation-queue)
     "Starts evaluation, return operation which unblocks on next command or
 evaluation finish, interrupt-condition and rest of the queue."
     (let* ((finished-condition (make-condition))
            (interrupt-condition (make-condition))
            (replies-channel (make-channel))
            (command (front evaluation-queue))
-           (reply (assoc-ref command 'reply))
-           ;; TODO: [Andrew Tropin, 2023-09-25] Handle non-readable code
-           (code (with-input-from-string
-                     (alist-get-in '(message "code") command)
-                   read)))
+           (reply (assoc-ref command 'reply)))
       (spawn-fiber
        (replies-manager-thunk replies-channel reply))
       (spawn-fiber
@@ -281,20 +287,23 @@ evaluation finish, interrupt-condition and rest of the queue."
       interrupt-condition
       (list
        (choice-operation
-        get-next-command-operation
         (wrap-operation
          (wait-operation finished-condition)
-         (const `((action . evaluate)))))
+         (const `((internal? #t)
+                  (action . finished))))
+        get-next-command-operation)
        interrupt-condition
        (dequeue evaluation-queue))))
 
   (lambda ()
-    (let loop ((get-next-command-operation recieve-command-operation)
+    (let loop ((get-next-command-operation receive-command-operation)
                (interrupt-condition #f)
                (evaluation-queue (make-queue)))
       (let* ((command (perform-operation get-next-command-operation))
              (action (assoc-ref command 'action)))
-        (format #t "command: ~a\n" command)
+        ;; (format #t "operation: ~s\ncommand: ~s\ninterrupt: ~a\n\n"
+        ;;         get-next-command-operation
+        ;;         command interrupt-condition)
         (cond
          ((equal? 'terminate action)
           (signal-condition! interrupt-condition)
@@ -305,11 +314,27 @@ evaluation finish, interrupt-condition and rest of the queue."
            (signal-condition! finished-condition)
            'finished)
 
+         ((equal? 'finished action)
+          (loop
+           (if (queue-empty? evaluation-queue)
+               receive-command-operation
+               evaluate-command-operation)
+           #f evaluation-queue))
+
          ((equal? 'evaluate action)
-          (if (queue-empty? evaluation-queue)
-              (loop recieve-command-operation #f evaluation-queue)
-              (apply loop (run-evaluation get-next-command-operation
-                                          evaluation-queue))))
+          (let* ((command (front evaluation-queue))
+                 (code-string (alist-get-in '(message "code") command))
+                 (reply (assoc-ref command 'reply))
+                 (read-result (try-read reply code-string)))
+            (if read-result
+                (apply loop (run-evaluation
+                             (assoc-ref read-result 'code)
+                             receive-command-operation
+                             evaluation-queue))
+                (loop
+                 receive-command-operation
+                 interrupt-condition
+                 (dequeue evaluation-queue)))))
 
          ((equal? 'process-nrepl-message action)
             (let* ((message (assoc-ref command 'message))
