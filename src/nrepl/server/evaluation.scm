@@ -324,7 +324,13 @@ evaluation finish, interrupt-condition and rest of the queue."
                  (enqueue evaluation-queue command)))
 
                ((equal? "interrupt" op)
-                (signal-condition! interrupt-condition)
+                (if interrupt-condition
+                    ;; TODO: [Andrew Tropin, 2023-09-26] Add
+                    ;; interrupt-id-mismatch.
+                    ;; https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/middleware/session.clj#L344
+                    (signal-condition! interrupt-condition)
+                    ((assoc-ref command 'reply)
+                     `(("status" . #("done" "session-idle")))))
                 (loop
                  get-next-command-operation
                  interrupt-condition

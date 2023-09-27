@@ -188,7 +188,7 @@
                (wait-operation finished-condition)
                (const #t))))))))
 
-    (test-group "Simple evaluation"
+    (test-group "Simple evaluation and idle interruption"
       (run-fibers
        (lambda ()
          (let* ((finished-condition (make-condition))
@@ -203,6 +203,26 @@
              command-channel
              #:finished-condition finished-condition
              #:shutdown-condition shutdown-condition))
+
+           (evaluation-supervisor-process-nrepl-message
+            command-channel
+            `(("code" . "#f")
+              ("op" . "eval"))
+            reply-function)
+
+           (test-equal "Returned evaluation value"
+             `(("status" . #("done"))
+               ("value" . "#f"))
+             (quickly (get-operation replies-channel)))
+
+           (evaluation-supervisor-process-nrepl-message
+            command-channel
+            `(("op" . "interrupt"))
+            reply-function)
+
+           (test-equal "Interrupt idle session"
+             `(("status" . #("done" "session-idle")))
+             (quickly (get-operation replies-channel)))
 
            (evaluation-supervisor-process-nrepl-message
             command-channel
