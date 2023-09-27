@@ -29,6 +29,7 @@
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
   #:use-module (nrepl alist)
+  #:use-module (nrepl ports)
   #:export (output-stream-manager-thunk
             evaluation-manager-thunk
             evaluation-supervisor-thunk
@@ -93,37 +94,6 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
         (if (and (equal? 'ready op-value) (port-open? input-port))
             (loop)
             'finished)))))
-
-(define (make-pipes n)
-  "Creates a list of N pipes."
-  (map (lambda _ (pipe)) (iota n)))
-
-(define (unbuffer-pipes! pipes)
-  (for-each (lambda (p) (setvbuf (cdr p) 'none)) pipes)
-  pipes)
-
-(define (close-pipes pipes)
-  "Takes a list of pipes and close all the related ports."
-  (define (close-pipe p)
-    ;; the order is important, otherwise it can lead to
-    ;; fport_write: Broken pipe
-    (close-port (cdr p))
-    (close-port (car p)))
-  (map (lambda (p) (close-pipe p)) pipes))
-
-(define (call-with-pipes pipes proc)
-  (call-with-values
-      ;; MAYBE: [Andrew Tropin, 2023-09-06] Handle non-local exit?
-      (lambda () (proc pipes))
-    (lambda vals
-      (close-pipes pipes)
-      (apply values vals))))
-
-(define (with-current-ports output-port error-port input-port thunk)
-  (parameterize ((current-output-port output-port)
-                 (current-error-port error-port)
-                 (current-input-port input-port))
-    (thunk)))
 
 
 ;;;
