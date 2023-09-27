@@ -1,279 +1,16 @@
 (define-module (nrepl server)
-  #:duplicates (replace last)
-  #:use-module (bencode)
-  #:use-module (scheme base)
+  #:use-module ((nrepl bootstrap) #:prefix bootstrap:)
   #:use-module (fibers)
   #:use-module (fibers conditions)
-  #:use-module (fibers channels)
-  #:use-module (fibers operations)
   #:use-module (ice-9 match)
-  #:use-module (ice-9 receive)
-  #:use-module (ice-9 atomic)
-  #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-26)
-  #:use-module (srfi srfi-197)
-  #:use-module (uuid)
   #:export (run-nrepl-server))
-
-(define (simple-log . args)
-  ""
-  (define (repeat str n)
-    (string-join (map (lambda (x) str) (iota n)) " "))
-  (if (not (string? (car args)))
-      (apply format (current-error-port) (repeat "~s" (length args)) args)
-      (apply format (current-error-port) args))
-  (newline))
-
-(define log (make-parameter simple-log))
-
-
-;;;
-;;; REPL
-;;;
-
-(define (self-quoting? x)
-  "Return #t if X is self-quoting."
-  (letrec-syntax ((one-of (syntax-rules ()
-                            ((_) #f)
-                            ((_ pred rest ...)
-                             (or (pred x)
-                                 (one-of rest ...))))))
-    (one-of symbol? string? keyword? pair? null? array?
-            number? boolean? char?)))
-
-(define (value->sexp value)
-    (if (self-quoting? value)
-        `(value ,value)
-        `(non-self-quoting ,(object-address value)
-                           ,(object->string value))))
-
-(define (stack->frames stack)
-  "Return STACK's frames as a list."
-  (unfold (cute >= <> (stack-length stack))
-          (cut stack-ref stack <>)
-          1+
-          0))
-
-(define (frame->sexp frame)
-  `(,(frame-procedure-name frame)
-    ,(match (frame-source frame)
-       ((_ (? string? file) (? integer? line) . (? integer? column))
-        (list file line column))
-       (_
-        '(#f #f #f)))))
-
-(define (nrepl-prompt-message)
-  "scheme@(module-here-someday)> ")
-
-(define (eval-expression expression)
-  (define (handle-exception key . args)
-    (define reply
-      (let ((stack (make-stack #t)
-                   ;; (if (nrepl-prompt)
-                   ;;     (make-stack #t handle-exception (nrepl-prompt))
-                   ;;     (make-stack #t))
-                   ))
-        ;; Note: 'make-stack' returns #f if there's no 'handle-exception'
-        ;; stack frame, which is the case when this file is being
-        ;; interpreted as with 'primitive-load'.
-        `(exception (arguments ,key ,@(map value->sexp args))
-                    (stack ,@(map frame->sexp
-                                  (if stack
-                                      (stack->frames stack)
-                                      '()))))))
-    ((log) "repl result: ~s" reply)
-    reply)
-
-  ;; TODO: Rewrite to with-exception-handler
-  (catch #t
-    (lambda () (primitive-eval expression))
-    ;; TODO: Return a real exception
-    (const "exception happened")
-    handle-exception))
-
-(define (read-expression code)
-  (catch #t
-    (lambda () (with-input-from-string code read))
-    ;; TODO: Return a real exception and handle it properly
-    (const "Couldn't read the code")))
-
-
-;;;
-;;; Operations
-;;;
-
-(define (response-for input msg)
-  (let ((id (assoc-ref input "id"))
-        (session (assoc-ref input "session")))
-    (chain msg
-           (acons "id" (or id "unknown") _)
-           (acons "session" (or session "none") _))))
-
-(define (eval-op sessions channel finished? input)
-  (let* ((code (assoc-ref input "code"))
-         (session-id (assoc-ref input "session"))
-         (result (receive (. vals)
-                     (eval-expression
-                      (read-expression code))
-                   ;; TODO: handle multiple return values
-                   (car vals)))
-         (value (format #f "~s" result))
-         (response `(("status" . #("done"))
-                     ("ns" . "user")
-                     ("value" . ,value))))
-    (put-message
-     channel
-     (response-for input response))
-    (signal-condition! finished?)))
-
-(define (atomic-box-update! box proc)
-  "Atomically updates value of BOX to (PROC BOX-VALUE), returns new value.
-PROC may be called multiple times, and thus PROC should be free of
-side effects."
-  (let loop ()
-    (let* ((old-value (atomic-box-ref box))
-           (new-value (proc old-value)))
-      (if (eq? old-value (atomic-box-compare-and-swap! box old-value new-value))
-          new-value
-          (loop)))))
-
-(define (register-session! sessions session-id new-session)
-  (atomic-box-update!
-   sessions
-   (lambda (s) (acons session-id new-session s))))
-
-(define (get-session-ids sessions)
-  "Returns a vector of session ids suitable for bencoding."
-  (list->vector (map car (atomic-box-ref sessions))))
-
-(define (clone-op sessions channel finished? input)
-  (let ((new-session-id (uuid))
-        (new-session #f))
-    (register-session! sessions new-session-id new-session)
-    (put-message
-     channel
-     (response-for
-      input
-      `(("status" . #("done"))
-        ("new-session" . ,new-session-id))))
-    (signal-condition! finished?)))
-
-(define (completions-op sessions channel finished? input)
-  (put-message
-   channel
-   (let* ((id (assoc-ref input "id"))
-          (response `(("id" . ,id)
-                      ("completions" . #()))))
-     response))
-  (signal-condition! finished?))
-
-(define (ls-sessions-op sessions channel finished? input)
-  (put-message
-   channel
-   (response-for
-    input
-    `(("status" . #("done"))
-      ("sessions" . ,(get-session-ids sessions)))))
-  (signal-condition! finished?))
-
-;; interrupt
-;; Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions.
-
-;; Required parameters
-;; :session The ID of the session used to start the request to be interrupted.
-
-;; Optional parameters
-;; :interrupt-id The opaque message ID sent with the request to be interrupted.
-
-;; Returns
-;; :status 'interrupted' if a request was identified and interruption will be attempted 'session-idle' if the session is not currently executing any request 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value 'session-ephemeral' if the session is an ephemeral session
-
-(define (interrupt-op sessions channel finished? input)
-  ;; ((log) "~a" sessions)
-  (put-message
-   channel
-   (response-for
-    input
-    '("status" . "session-idle")))
-  (signal-condition! finished?))
-
-(define (describe-op sessions channel finished? input)
-  `(lol)
-  (signal-condition! finished?))
-
-(define default-operations
-  `(("eval" . ,eval-op)
-    ("describe" . ,describe-op)
-    ("ls-sessions" . ,ls-sessions-op)
-    ("interrupt" . ,interrupt-op)
-    ("completions" . ,completions-op)
-    ("clone" . ,clone-op)))
-
-(define (get-op operations op)
-  (assoc-ref operations op))
-
-(define (run-operation sessions channel finished? operations input)
-  ((log) "input: ~s" input)
-  (let* ((op (assoc-ref input "op"))
-         (operation (get-op operations op)))
-    (if operation
-        (operation sessions channel finished? input)
-        ;; TODO: [Andrew Tropin, 2023-09-12] Send the no such op
-        ;; message to the channel
-        "no-such-operation")))
 
 
 ;;;
 ;;; loop
 ;;;
 
-(define (process-request sessions client input)
-  ;; Make process request asyncronous
-  (spawn-fiber
-   (lambda ()
-     (let* ((channel (make-channel))
-            (finished? (make-condition))
-            (get-message (choice-operation
-                          (wrap-operation
-                           (wait-operation finished?)
-                           (const 'finished))
-                          (get-operation channel))))
-       (spawn-fiber
-        (lambda ()
-          (run-operation sessions channel finished?
-                         default-operations input)))
-       (let loop ()
-         (match (perform-operation get-message)
-           ('finished
-            ;; TODO: [Andrew Tropin, 2023-09-12] Maybe check if there
-            ;; is something in the channel
-            'finished-processing-request)
-           (response
-            ((log) "response: ~s" response)
-            (scm->bencode response client)
-            (force-output client)
-            (loop))))))))
-
-(define* (client-loop client addr sessions)
-  ((log) "new connection: ~a" client)
-  ;; ((log) (port-filename client) (port->fdes client))
-
-  (let loop ()
-    (if (eof-object? (peek-u8 client))
-        (begin
-          ((log) "closing connection: ~a" client)
-          ;; Don't close until all session are finished ????
-          ;; (cleanup-sessions! client)
-          (close-port client))
-        (let ((input (guard (ex (else #f)) (bencode->scm client))))
-          (unless input ((log) "input is malformed"))
-          ;; TODO: [Andrew Tropin, 2023-09-12] Send a message about
-          ;; malformed input?
-          (when input
-            (process-request sessions client input))
-          (loop)))))
-
-(define (socket-loop socket addr sessions)
+(define (socket-loop socket addr initial-context)
   (let loop ()
     (match (accept socket SOCK_NONBLOCK)
       ((client . addr)
@@ -282,8 +19,8 @@ side effects."
           (setvbuf client 'block 1024)
           ;; Disable Nagle's algorithm.  We buffer ourselves.
           (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
-
-          (client-loop client addr sessions)))
+          (bootstrap:nrepl-loop
+           (bootstrap:add-ports initial-context client client))))
        (loop)))))
 
 (define (make-default-socket family addr port)
@@ -304,8 +41,7 @@ side effects."
           (family AF_INET)
           (addr (if host (inet-pton family host) INADDR_LOOPBACK))
           (port 7888)
-          (started? (make-condition))
-          (log-function simple-log))
+          (started? (make-condition)))
 
   (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
@@ -315,18 +51,18 @@ side effects."
           port hostname hostname port)
   (signal-condition! started?)
 
-  (define sessions (make-atomic-box '()))
+  (define initial-context (bootstrap:make-initial-context))
 
   (dynamic-wind
     (lambda () 'hi)
     (lambda ()
       (run-fibers
        (lambda ()
-         (parameterize ((log log-function))
-           (socket-loop socket addr sessions)))
+         (socket-loop socket addr initial-context))
        #:drain? #t))
     (lambda ()
       (false-if-exception (close-port socket)))))
+
 
 ;; dynamic-wind solution for closing socket
 ;; https://git.savannah.gnu.org/cgit/guix.git/tree/guix/scripts/repl.scm?h=a831efb52f49a8424a915f30486730e0fd4ba4e2#n139
