@@ -256,4 +256,49 @@
            (test-equal "Returned evaluation value after shutdown"
              `(("value" . "3")
                ("status" . #("done")))
+             (quickly (get-operation replies-channel)))))))
+
+    (test-group "Multiple evaluation"
+      (run-fibers
+       (lambda ()
+         (let* ((finished-condition (make-condition))
+                (shutdown-condition (make-condition))
+                (command-channel (make-channel))
+                (replies-channel (make-channel))
+                (reply-function (lambda (reply)
+                                  (put-message replies-channel reply))))
+
+           (spawn-fiber
+            (evaluation-supervisor-thunk
+             command-channel
+             #:finished-condition finished-condition
+             #:shutdown-condition shutdown-condition))
+
+           (evaluation-supervisor-process-nrepl-message
+            command-channel
+            `(("code" . "(begin (+ 1 2) (display 'hi))")
+              ("op" . "eval"))
+            reply-function)
+
+           (evaluation-supervisor-process-nrepl-message
+            command-channel
+            `(("code" . "(begin (+ 1 2) (display 'hi))")
+              ("op" . "eval"))
+            reply-function)
+
+           (evaluation-supervisor-shutdown command-channel)
+
+           (test-assert "Finish condition signalled"
+             (quickly
+              (wrap-operation
+               (wait-operation finished-condition)
+               (const #t))))
+
+           (list
+            (quickly (get-operation replies-channel))
+            (quickly (get-operation replies-channel))
+            (quickly (get-operation replies-channel)))
+           ;; 2 eval results, 2 out messages
+           ;; (test-expect-fail 1)
+           (test-assert "4th message returned"
              (quickly (get-operation replies-channel)))))))))
