@@ -4,12 +4,23 @@
 Asyncronous Reliable Extensible Scheme Network REPL.  Highly inspired
 by [[https://nrepl.org/nrepl/index.html][nREPL]].
 
+It's at the prototype stage and is not ready for everyday use.
+
+You can try it directly with https://github.com/Sasanidas/Rail client.
+
+* Development
+It depends, on [[https://github.com/wingo/fibers][fibers]], tests are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
+
+Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list.
+
 * Open Questions
 - How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
   the clonned session with fibers spawned.
 - Bootstrap from guile network repl? (Send guile-nrepl
   implementation to remote network repl server to make it nrepl).
 - Multiple guile languages support.
+- How to bypass continuation barrier in evaluation thread, when using
+  previously stored continuation.
 
 * Other REPLs Quirks
 One of the reasons this project started is unfortunate missbehave of
@@ -17,7 +28,8 @@ current REPL soultions in different situation and here is a list of
 some of them:
 - Text based REPL over socket is not interruptable.
 - call/cc works when pasted into prompt of the repl, but fails when
-  evaling from buffer with C-x C-e.
+  evaling from buffer with C-x C-e. (when saving continuation to
+  symbol with set!)
 - It's not possible to see stdout until evaluation completed.
 - Gider tests hangs repl on errors.
 - CAPF function is injected, even if there is no connection to REPL
