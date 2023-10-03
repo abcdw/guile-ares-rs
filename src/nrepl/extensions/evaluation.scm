@@ -28,14 +28,6 @@
   #:use-module (srfi srfi-197)
   #:export (evaluation-extension))
 
-(define (update-alist alist key proc)
-  "Update a key's value to the (PROC VALUE) and place it at the top of
-the alist."
-  (let ((old-value (assoc-ref alist key)))
-    (chain alist
-      (alist-delete key _)
-      (alist-cons key (proc old-value) _))))
-
 (define (make-evaluation-supervisor session)
   (let ((control-channel (make-channel)))
     (spawn-fiber (evaluation-supervisor-thunk
