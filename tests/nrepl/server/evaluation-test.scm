@@ -24,6 +24,7 @@
   #:use-module (fibers operations)
   #:use-module (fibers timers)
   #:use-module (fibers conditions)
+  #:use-module (ice-9 threads)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-64)
   #:use-module (test-utils))
@@ -81,6 +82,41 @@
          (test-assert "Pipe Closed (output)"
            (port-closed? stdout-output-port)))))
     #:drain? #t))
+
+(define-test test-reusable-threads
+  (define make-reusable-thread
+    (@@ (nrepl server evaluation) make-reusable-thread))
+  (define reuse-thread
+    (@@ (nrepl server evaluation) reuse-thread))
+
+  (test-group "Testing reusable thread"
+    (test-group "Basic use case: start, reuse, get channel value, shutdown"
+      (run-fibers
+       (lambda ()
+         (let* ((shutdown-condition (make-condition))
+                (th (make-reusable-thread shutdown-condition))
+                (ch (make-channel)))
+           (reuse-thread th (lambda () (put-message ch 'hello)))
+           (signal-condition! shutdown-condition)
+           (test-equal "Obtained value from channel" 'hello (get-message ch))
+           (join-thread th)
+           ;; Otherwise thread is not yet exited.
+           (usleep 1)
+           (test-assert "Thread exited" (thread-exited? th))))))
+    #;
+    (test-group "Blocking on signal-condition!"
+      (run-fibers
+       (lambda ()
+         (let* ((shutdown-condition (make-condition))
+                (th (make-reusable-thread shutdown-condition))
+                (ch (make-channel))
+                (obtained-value (make-condition)))
+           (sleep 1)
+           (reuse-thread th (lambda () (put-message ch 'hello)))
+           (test-equal "Obtained value from channel" 'hello (get-message ch))
+           (signal-condition! shutdown-condition)
+           (pk 'hello) ; not printed
+           (test-assert "Thread exited" (thread-exited? th))))))))
 
 (define-test test-evaluation-manager
   (test-group "Testing Evaluation Manager"

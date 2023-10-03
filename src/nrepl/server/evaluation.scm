@@ -100,6 +100,59 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
 ;;; Eval Thread
 ;;;
 
+(define thread-entry-point-tag (make-prompt-tag "thread-entry-point"))
+
+(define (pause-thread-thunk shutdown-condition)
+  (lambda ()
+    ;; (format #t "pausing thread ~a\n" (current-thread))
+    (wait shutdown-condition)
+    ;; (format #t "shutdown condition signalled\n")
+    (abort-to-prompt thread-entry-point-tag 'shutdown)))
+
+(define (pause-with-restart-prompt-thunk started-condition shutdown-condition)
+  (lambda ()
+    (let ((default-pause-thread (pause-thread-thunk shutdown-condition)))
+      (let loop ((pause-thread
+                  (lambda ()
+                    ;; The condition will be signalled, when the thread
+                    ;; is inside prompt.
+                    (signal-condition! started-condition)
+                    (default-pause-thread))))
+        (when (equal?
+               'pause
+               (call-with-prompt thread-entry-point-tag
+                 pause-thread
+                 (lambda (k . args) (apply values args))))
+          ;; XXX: The attempt to reuse can happen here and fail
+          ;; and next reuse-thread will not interrupt evaluation.
+          ;; (sleep 3)
+          (loop default-pause-thread))))))
+
+(define (make-reusable-thread shutdown-condition)
+  "Starts a thread and makes sure it entered restart prompt."
+  (let* ((started-condition (make-condition))
+         (thread
+          (call-with-new-thread (pause-with-restart-prompt-thunk
+                                 started-condition
+                                 shutdown-condition))))
+    (wait started-condition)
+    thread))
+
+(define (reuse-thread thread thunk)
+  "Interrupt and reuse THREAD with a new THUNK.  It pauses all current
+computations, starts a THUNK and after THUNK is finished aborts to
+thread entry point tag, which cancels all previous computations."
+  (system-async-mark
+   (lambda ()
+     (thunk)
+     (catch #t
+       (lambda ()
+         (abort-to-prompt thread-entry-point-tag 'pause))
+       (lambda _
+         (format (current-warning-port)
+                 "failed to abort to thread-entry-point-tag\n"))))
+   thread))
+
 (define (make-evaluation-thread code finished-condition)
   "Evaluate code in a separate thread.  Signals FINISHED-CONDITION
  even if thread is cancelled."
