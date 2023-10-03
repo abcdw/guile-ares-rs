@@ -1,8 +1,8 @@
 # -*- mode: org -*-
 
 * Introduction
-Asyncronous Reliable Extensible Scheme Network REPL.  Highly inspired
-by [[https://nrepl.org/nrepl/index.html][nREPL]].
+Asyncronous Reliable Extensible Scheme RPC server, based on [[https://nrepl.org/nrepl/index.html][nREPL]]
+protocol.  Can be used for implementing REPL, IDE or other tools.
 
 It's at the prototype stage and is not ready for everyday use.
 
@@ -21,6 +21,7 @@ Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-
 - Multiple guile languages support.
 - How to bypass continuation barrier in evaluation thread, when using
   previously stored continuation.
+- Translation level for shrothanded nrepl base operations?
 
 * Other REPLs Quirks
 One of the reasons this project started is unfortunate missbehave of
@@ -36,6 +37,9 @@ some of them:
   and throws errors preventing other CAPFs to work.
 - There is no way to provide stdin input to running expression.
 - Go to definition doesn't work for with-input-from-port.
+- After using ~,i~ in REPL, go to definition hangs up.
+- Go to definition opens non-existing file.
+- Rebinds M-. instead of using xref.
 
 * Links
 ** NREPL
