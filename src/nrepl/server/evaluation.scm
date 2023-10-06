@@ -27,10 +27,14 @@
   #:use-module (ice-9 exceptions)
   #:use-module (ice-9 threads)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 atomic)
+  #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-1)
   #:use-module (nrepl alist)
+  #:use-module (nrepl atomic)
   #:use-module (nrepl ports)
   #:export (output-stream-manager-thunk
+            reusable-thread-thread
             evaluation-manager-thunk
             evaluation-supervisor-thunk
             evaluation-supervisor-shutdown
@@ -100,58 +104,94 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
 ;;; Eval Thread
 ;;;
 
+(define-record-type <reusable-thread>
+  (%make-reusable-thread synchronization-point thread)
+  reusable-thread?
+  (synchronization-point reusable-thread-synchronization-point)
+  (thread reusable-thread-thread))
+
 (define thread-entry-point-tag (make-prompt-tag "thread-entry-point"))
 
-(define (pause-thread-thunk shutdown-condition)
+(define (command-loop-thunk initial-thunk shutdown-mutex finished-condition)
   (lambda ()
-    ;; (format #t "pausing thread ~a\n" (current-thread))
-    (wait shutdown-condition)
-    ;; (format #t "shutdown condition signalled\n")
-    (abort-to-prompt thread-entry-point-tag 'shutdown)))
+    (define initial-command
+      `((action . run)
+        (thunk . ,initial-thunk)))
 
-(define (pause-with-restart-prompt-thunk started-condition shutdown-condition)
-  (lambda ()
-    (let ((default-pause-thread (pause-thread-thunk shutdown-condition)))
-      (let loop ((pause-thread
-                  (lambda ()
-                    ;; The condition will be signalled, when the thread
-                    ;; is inside prompt.
-                    (signal-condition! started-condition)
-                    (default-pause-thread))))
-        (when (equal?
-               'pause
-               (call-with-prompt thread-entry-point-tag
-                 pause-thread
-                 (lambda (k . args) (apply values args))))
-          ;; XXX: The attempt to reuse can happen here and fail
-          ;; and next reuse-thread will not interrupt evaluation.
-          ;; (sleep 3)
-          (loop default-pause-thread))))))
+    (define (wait-after-thunk thunk)
+      (lambda ()
+        (thunk)
+        (lock-mutex shutdown-mutex)
+        'finished))
 
-(define (make-reusable-thread shutdown-condition)
+    (let loop ((command initial-command))
+      (when (equal? 'run (assoc-ref command 'action))
+        (loop (call-with-prompt thread-entry-point-tag
+                (wait-after-thunk (assoc-ref command 'thunk))
+                (lambda (k . args) (apply values args))))))
+
+    (signal-condition! finished-condition)))
+
+(define* (make-reusable-thread shutdown-condition
+                               #:key
+                               (finished-condition (make-condition)))
   "Starts a thread and makes sure it entered restart prompt."
-  (let* ((started-condition (make-condition))
-         (thread
-          (call-with-new-thread (pause-with-restart-prompt-thunk
-                                 started-condition
-                                 shutdown-condition))))
-    (wait started-condition)
-    thread))
+  (define (make-locked-mutex)
+    (let ((mutex (make-mutex 'allow-external-unlock)))
+      (lock-mutex mutex)
+      mutex))
 
-(define (reuse-thread thread thunk)
-  "Interrupt and reuse THREAD with a new THUNK.  It pauses all current
-computations, starts a THUNK and after THUNK is finished aborts to
-thread entry point tag, which cancels all previous computations."
-  (system-async-mark
-   (lambda ()
-     (thunk)
-     (catch #t
-       (lambda ()
-         (abort-to-prompt thread-entry-point-tag 'pause))
-       (lambda _
-         (format (current-warning-port)
-                 "failed to abort to thread-entry-point-tag\n"))))
-   thread))
+  (let* ((shutdown-mutex (make-locked-mutex))
+         (synchronization-point (make-atomic-box (make-condition)))
+         (synchronization-condition (atomic-box-ref synchronization-point))
+         (initial-thunk (lambda ()
+                          (signal-condition! synchronization-condition)
+                          (lock-mutex shutdown-mutex)))
+         (thread
+          (call-with-new-thread (command-loop-thunk initial-thunk
+                                                    shutdown-mutex
+                                                    finished-condition))))
+    (wait synchronization-condition)
+    (spawn-fiber (lambda ()
+                   ;; We can't directly wait for condition variable in
+                   ;; thread because when asyncs does non-local exit
+                   ;; the thread is not removed from condition
+                   ;; variable waiters.
+                   (wait shutdown-condition)
+                   (unlock-mutex shutdown-mutex)))
+    (%make-reusable-thread synchronization-point thread)))
+
+(define (reuse-thread reusable-thread thunk)
+  "Interrupt and reuse REUSABLE-THREAD with a new THUNK.  It pauses all
+current computations, starts a THUNK and after THUNK is finished
+aborts to thread entry point tag, which cancels all previous
+computations."
+  (define (lock-synchronization-point point)
+    (define new-condition (make-condition))
+    (define (update-condition old-condition)
+      (wait old-condition)
+      new-condition)
+    (atomic-box-update! point update-condition))
+
+  (let* ((thread (reusable-thread-thread reusable-thread))
+         (synchronization-point (reusable-thread-synchronization-point
+                                 reusable-thread))
+         (synchronization-condition (lock-synchronization-point
+                                     synchronization-point))
+         (new-thunk (lambda ()
+                      "Make thread interruptible again and run THUNK."
+                      (signal-condition! synchronization-condition)
+                      (thunk))))
+    (system-async-mark
+     (lambda ()
+       (catch #t
+         (lambda ()
+           (abort-to-prompt thread-entry-point-tag `((action . run)
+                                                     (thunk . ,new-thunk))))
+         (lambda _
+           (format (current-error-port)
+                   "failed to abort to ~a\n" thread-entry-point-tag))))
+     thread)))
 
 (define (make-evaluation-thread code finished-condition)
   "Evaluate code in a separate thread.  Signals FINISHED-CONDITION

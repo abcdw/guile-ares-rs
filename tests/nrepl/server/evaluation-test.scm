@@ -93,29 +93,23 @@
     (test-group "Basic use case: start, reuse, get channel value, shutdown"
       (run-fibers
        (lambda ()
-         (let* ((shutdown-condition (make-condition))
-                (th (make-reusable-thread shutdown-condition))
+         (let* ((finished-condition (make-condition))
+                (shutdown-condition (make-condition))
+                (rth (make-reusable-thread
+                      shutdown-condition
+                      #:finished-condition finished-condition))
+                (th (reusable-thread-thread rth))
                 (ch (make-channel)))
-           (reuse-thread th (lambda () (put-message ch 'hello)))
+           ;; With this sleep condition based shutdown was failing on
+           ;; (signal-condition! shutdown)
+           ;; (sleep 1)
+           (reuse-thread rth (lambda () (put-message ch 'hello)))
            (signal-condition! shutdown-condition)
            (test-equal "Obtained value from channel" 'hello (get-message ch))
-           (join-thread th)
-           ;; Otherwise thread is not yet exited.
+           ;; We can't use join-thread, because it freezes all fibers
+           ;; on current kernel thread and leads to deadlock.
+           (wait finished-condition)
            (usleep 1)
-           (test-assert "Thread exited" (thread-exited? th))))))
-    #;
-    (test-group "Blocking on signal-condition!"
-      (run-fibers
-       (lambda ()
-         (let* ((shutdown-condition (make-condition))
-                (th (make-reusable-thread shutdown-condition))
-                (ch (make-channel))
-                (obtained-value (make-condition)))
-           (sleep 1)
-           (reuse-thread th (lambda () (put-message ch 'hello)))
-           (test-equal "Obtained value from channel" 'hello (get-message ch))
-           (signal-condition! shutdown-condition)
-           (pk 'hello) ; not printed
            (test-assert "Thread exited" (thread-exited? th))))))))
 
 (define-test test-evaluation-manager
