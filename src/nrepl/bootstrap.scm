@@ -1,4 +1,4 @@
-;;; guile-nrepl --- Asyncronous Reliable Extensible Scheme Network REPL
+;;; guile-nrepl --- Asynchronous Reliable Extensible Scheme RPC Server
 ;;;
 ;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
 ;;;

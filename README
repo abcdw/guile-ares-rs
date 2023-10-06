@@ -1,19 +1,20 @@
 # -*- mode: org -*-
 
 * Introduction
-Asyncronous Reliable Extensible Scheme RPC server, based on [[https://nrepl.org/nrepl/index.html][nREPL]]
+Asynchronous Reliable Extensible Scheme RPC Server, based on [[https://nrepl.org/nrepl/index.html][nREPL]]
 protocol.  Can be used for implementing REPL, IDE or other tools.
 
 It's at the prototype stage and is not ready for everyday use.
 
-You can try it directly with https://github.com/Sasanidas/Rail client.
+You can try it directly with Monroe, Rail or other nREPL clients (see
+the clients section below).
 
 * Development
 It depends, on [[https://github.com/wingo/fibers][fibers]], tests are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
 
 Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list.
 
-* Open Questions
+** Open Questions
 - How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
   the clonned session with fibers spawned.
 - Bootstrap from guile network repl? (Send guile-nrepl
