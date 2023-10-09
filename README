@@ -1,13 +1,22 @@
 # -*- mode: org -*-
 
 * Introduction
-Asynchronous Reliable Extensible Scheme RPC Server, based on [[https://nrepl.org/nrepl/index.html][nREPL]]
-protocol.  Can be used for implementing REPL, IDE or other tools.
+Asynchronous Reliable Extensible Scheme RPC Server for Guile.  It's
+based on [[https://nrepl.org/nrepl/index.html][nREPL]] protocol and can be used for programmable interactions
+with a running guile processes, for implementing REPLs, IDEs, test
+runners or other tools.
 
-It's at the prototype stage and is not ready for everyday use.
+*WARNING:* It's at the prototype stage and is not ready for everyday use.
+
+~guile-ares-rs~ was previously known as ~guile-nrepl~.  It was renamed to
+avoid any confusion with network/socket REPL, ~guile-ares-rs~ is not a
+usual REPL, it's not a REPL, it's an RPC Server, however it's possible
+to implement REPL-experience with it (and respective client).
+
 
 You can try it directly with Monroe, Rail or other nREPL clients (see
 the clients section below).
+
 
 * Development
 It depends, on [[https://github.com/wingo/fibers][fibers]], tests are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
@@ -17,18 +26,20 @@ Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-
 ** Open Questions
 - How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
   the clonned session with fibers spawned.
-- Bootstrap from guile network repl? (Send guile-nrepl
+- Bootstrap from guile network repl? (Send guile-ares-rs
   implementation to remote network repl server to make it nrepl).
 - Multiple guile languages support.
 - How to bypass continuation barrier in evaluation thread, when using
   previously stored continuation.
 - Translation level for shrothanded nrepl base operations?
+- Do we need to support meta-commands? (Probably not, it just
+  functions, which can be exported to user or repl module scope).
 
 * Other REPLs Quirks
 One of the reasons this project started is unfortunate missbehave of
 current REPL soultions in different situation and here is a list of
 some of them:
-- Text based REPL over socket is not interruptable.
+- Text based REPL over socket is not interruptible.
 - call/cc works when pasted into prompt of the repl, but fails when
   evaling from buffer with C-x C-e. (when saving continuation to
   symbol with set!)
@@ -41,6 +52,7 @@ some of them:
 - After using ~,i~ in REPL, go to definition hangs up.
 - Go to definition opens non-existing file.
 - Rebinds M-. instead of using xref.
+- https://spritely.institute/files/docs/guile-goblins/0.11.0/TEMPORARY-Live-hacking-_0060_0060fix_0027_0027.html
 
 * Links
 ** NREPL
@@ -69,6 +81,7 @@ some of them:
 *** Clients
 - https://github.com/sanel/monroe/
 - https://github.com/Sasanidas/Rail
+- conjure
 
 *** Bencode
 - https://github.com/flatwhatson/grump/blob/master/grump-lib/bencode.scm
@@ -76,7 +89,14 @@ some of them:
 - http://www.bittorrent.org/beps/bep_0003.html#bencoding
 - https://wiki.theory.org/BitTorrentSpecification#Bencoding
 
+* FAQ
+Q: Can I use guile-ares-rs with an existing network REPL?  A:
+Theoretically it's possible to upgrade existing REPL to guile-ares-rs,
+see bootstrap and infect modules (they can be not implemented yet).
+
+
 * Acknowledgements
-Thanks for inspiration, help and motivation to Nikita Domnitskii,
-Maxime Devos, Andy Wingo, Bozhidar Batsov, Andrey Listopadov.
+Thanks for inspiration, help, support and motivation to Nikita
+Domnitskii, Maxime Devos, Andy Wingo, Bozhidar Batsov, Andrey
+Listopadov, Dmitrii Bogdanov, David Thompson, Dmitry Polyakov.
 
