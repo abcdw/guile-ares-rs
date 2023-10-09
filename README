@@ -23,6 +23,12 @@ It depends, on [[https://github.com/wingo/fibers][fibers]], tests are executed w
 
 Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list.
 
+** First Release Roadmap
+- Implement eval on top of reusable threads.
+- Implement completion and lookup operations.
+- Implement extension extension (swap-extension, add-extension).
+- Change Scheme to Superior in project description.
+
 ** Open Questions
 - How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
   the clonned session with fibers spawned.
