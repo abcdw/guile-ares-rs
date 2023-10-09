@@ -30,7 +30,7 @@
   #:use-module (test-utils))
 
 (define (alist-include? template data)
-  "Check if all of the TEMPLATE's key-values pairs are presesnt in DATA."
+  "Check if all of the TEMPLATE's key-values pairs are present in DATA."
   (lset<= equal? template data))
 
 (define* (lset-contains?
