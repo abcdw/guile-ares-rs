@@ -391,6 +391,7 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
      (wrap-operation
       (wait-operation thread-finished-condition)
       (lambda ()
+        ;; Join thread blocks the fiber.
         (let* ((res (join-thread thread))
                (eval-value (assoc-ref res 'eval-value)))
           (if (assoc 'eval-value res)
@@ -579,6 +580,8 @@ evaluation finish, interrupt-condition and rest of the queue."
                 (apply loop (run-evaluation
                              (assoc-ref read-result 'code)
                              receive-command-operation
+                             ;; It's not obvious, that element is
+                             ;; removed from the evaluation-queue
                              evaluation-queue))
                 (loop
                  receive-command-operation
