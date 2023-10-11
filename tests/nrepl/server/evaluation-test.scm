@@ -121,6 +121,72 @@
            (usleep 1)
            (test-assert "Thread exited" (thread-exited? th))))))))
 
+(define-test test-evaluation-thread-manager
+  (test-group "Testing Evaluation Thread Manager"
+    (define sample-code
+      `(begin
+         (display "hi-err" (current-error-port))
+         (display "hi-out")
+         'code-value))
+
+    (run-fibers
+     (lambda ()
+       (let* ((replies-channel (make-channel))
+              (command-channel (make-channel)))
+         (spawn-fiber
+          (evaluation-thread-manager-thunk command-channel))
+
+         (test-begin "Simple Evaluation with output streams capture")
+         (put-message
+          command-channel
+          `((action . evaluate)
+            (code . ,sample-code)
+            (replies-channel . ,replies-channel)))
+         (define replies
+           (map
+            (lambda (_)
+              (quickly (get-operation replies-channel)))
+            (iota 3)))
+
+         (test-assert "Received message hi-err"
+           (lset-contains?
+            `(("err" . "hi-err"))
+            replies))
+         (test-assert "Received message hi-out"
+           (lset-contains?
+            `(("out" . "hi-out"))
+            replies))
+         (test-assert "Received evaluation result"
+           (lset-contains?
+            `(("value" . "code-value")
+              ("status" . #("done")))
+            replies))
+         (test-end "Simple Evaluation with output streams capture")
+
+         (test-begin "Evaluation Interruption")
+         (define sample-code-2
+           `(begin
+              (display "before sleep")
+              (sleep 10)
+              (display "after sleep")
+              'code-value))
+
+         (put-message
+          command-channel
+          `((action . evaluate)
+            (code . ,sample-code-2)
+            (replies-channel . ,replies-channel)))
+         (test-equal "Received message hi-out"
+             `(("out" . "before sleep"))
+             (quickly (get-operation replies-channel)))
+         (put-message
+          command-channel
+          `((action . interrupt)))
+         (test-equal "Received evaluation interrupt"
+           `(("status" . #("done" "interrupted")))
+           (quickly (get-operation replies-channel)))
+         (test-end "Evaluation Interruption"))))))
+
 (define-test test-evaluation-manager
   (test-group "Testing Evaluation Manager"
     (test-group "Simple Evaluation with output streams capture"

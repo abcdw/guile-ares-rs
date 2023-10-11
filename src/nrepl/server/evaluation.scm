@@ -19,11 +19,12 @@
 
 (define-module (nrepl server evaluation)
   #:use-module (fibers)
-  #:use-module (fibers operations)
   #:use-module (fibers channels)
   #:use-module (fibers conditions)
-  #:use-module (fibers timers)
   #:use-module (fibers io-wakeup)
+  #:use-module (fibers operations)
+  #:use-module (fibers timers)
+  #:use-module (fibers scheduler)
   #:use-module (ice-9 exceptions)
   #:use-module (ice-9 threads)
   #:use-module (ice-9 match)
@@ -36,6 +37,7 @@
   #:export (output-stream-manager-thunk
             reusable-thread-thread
             evaluation-manager-thunk
+            evaluation-thread-manager-thunk
             evaluation-supervisor-thunk
             evaluation-supervisor-shutdown
             evaluation-supervisor-process-nrepl-message))
@@ -213,6 +215,157 @@ computations."
              `((eval-value . ,(primitive-eval code))))
            #:unwind? #t))
        (lambda () (signal-condition! finished-condition))))))
+
+(define (evaluation-thunk code evaluation-result
+                          started-condition
+                          finished-condition)
+  "Evaluate the code and return the value to EVALUATION-RESULT channel."
+  ;; The thunk will be executed on a separate thread, so to return a
+  ;; value we need to use channel.
+  ;; (define out (current-output-port))
+  (define scheduler (current-scheduler))
+  (define (return value)
+    ;; (format out "returning: ~s\n" value)
+    ;; Prevent suspension inisde dynamic-wind AFTER thunk.
+    (spawn-fiber (lambda () (put-message evaluation-result value)) scheduler))
+  (lambda ()
+    (dynamic-wind
+      (lambda ()
+        (signal-condition! started-condition))
+      (lambda ()
+        ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
+        (return
+         (with-exception-handler
+             (lambda (exception)
+               `((result-type . exception)
+                 (exception-value . ,exception)
+                 (stack . ,(make-stack #t))))
+           (lambda ()
+             `((result-type . value)
+               (eval-value . ,(primitive-eval code))))
+           #:unwind? #t)))
+      (lambda ()
+        ;; Tell evaluation-result channel that thread was interrupted
+        (return `((result-type . interrupted)))
+        (signal-condition! finished-condition)))))
+
+
+(define* (evaluation-result-manager-thunk
+          result-channel replies-channel
+          #:key
+          (pretty-print (lambda (x) (format #f "~s" x))))
+  "Obtains a result from RESULT-CHANNEL, converts it to nrepl messages
+and passes to REPLIES-CHANNEL."
+  (define (evaluation-result->nrepl-messages result)
+    (let ((result-type (assoc-ref result 'result-type)))
+      ;; (pk result)
+      (cond
+       ((equal? 'value result-type)
+        `((("value" . ,(pretty-print (assoc-ref result 'eval-value)))
+           ("status" . #("done")))))
+       ((equal? 'exception result-type)
+        (exception->replies (assoc-ref result 'exception-value)))
+       ((equal? 'interrupted result-type)
+        `((("status" . #("done" "interrupted")))))
+       (else (error (format #f "unknown result-type: ~a\n" result-type))))))
+
+  (lambda ()
+    (for-each
+     (lambda (reply) (put-message replies-channel reply))
+     (evaluation-result->nrepl-messages
+      (get-message result-channel)))))
+
+(define (setup-redirects-for-ports-thunk thunk-finished-condition
+                                         replies-channel
+                                         wrap-with-ports-channel)
+  "Returns a thunk, which setups redirects for ports, spawning respective
+output stream managers and wait until they finished.  After everything
+is set, puts a wrap-with-ports function into WRAP-WITH-PORTS-CHANNEL.
+Stream managers waits until THUNK-FINISHED is signalled."
+
+  (define (wrap-output-with tag)
+    "Return a function, which wraps argument into alist."
+    (lambda (v) `((,tag . ,v))))
+
+  (lambda ()
+    (call-with-pipes ; Ensure pipes are closed
+     ;; TODO: [Andrew Tropin, 2023-10-04] Handle current-warning-port
+     (unbuffer-pipes! (make-pipes 3))
+     (match-lambda
+       ;; Destructure a list of 3 pipes into 6 separate variables
+       (((stdout-input-port . stdout-output-port)
+         (stderr-input-port . stderr-output-port)
+         (stdin-input-port . stdin-output-port))
+        (let ((wrap-with-ports (lambda (thunk)
+                                 (lambda ()
+                                   (with-current-ports
+                                    stdout-output-port
+                                    stderr-output-port
+                                    stdin-input-port
+                                    thunk))))
+              (stdout-finished (make-condition))
+              (stderr-finished (make-condition)))
+          ;; TODO: [Andrew Tropin, 2023-09-06] Add input-stream-manager
+          ;; use custom or soft ports?
+
+          (spawn-fiber
+           (output-stream-manager-thunk stdout-input-port
+                                        (wrap-output-with "out")
+                                        replies-channel
+                                        thunk-finished-condition
+                                        #:finished-condition stdout-finished))
+          (spawn-fiber
+           (output-stream-manager-thunk stderr-input-port
+                                        (wrap-output-with "err")
+                                        replies-channel
+                                        thunk-finished-condition
+                                        #:finished-condition stderr-finished))
+
+          (put-message wrap-with-ports-channel wrap-with-ports)
+          (wait stdout-finished)
+          (wait stderr-finished)))))))
+
+(define* (evaluation-thread-manager-thunk
+          command-channel
+          #:key
+          (shutdown-condition (make-condition))
+          (terminate-condition (make-condition)))
+  "Spawn a thread and can run/interrupt evaluation on it via commands sent to
+COMMAND-CHANNEL."
+  (lambda ()
+    (let* ((evaluation-rethread (make-reusable-thread shutdown-condition)))
+      (let loop ()
+        (define command (get-message command-channel))
+        (define action (assoc-ref command 'action))
+
+        (cond
+         ((equal? 'evaluate action)
+          (let ((code (assoc-ref command 'code))
+                (replies-channel (assoc-ref command 'replies-channel))
+                (evaluation-result-channel (make-channel))
+                (evaluation-thunk-started (make-condition))
+                (evaluation-thunk-finished (make-condition))
+                (wrap-with-ports-thunk-channel (make-channel)))
+            ;; (format #t "starting evaluation of ~s\n" code)
+            (spawn-fiber
+             (evaluation-result-manager-thunk evaluation-result-channel
+                                              replies-channel))
+            (spawn-fiber
+             (setup-redirects-for-ports-thunk
+              evaluation-thunk-finished
+              replies-channel
+              wrap-with-ports-thunk-channel))
+
+            (reuse-thread
+             evaluation-rethread
+             ((get-message wrap-with-ports-thunk-channel)
+              (evaluation-thunk code evaluation-result-channel
+                                evaluation-thunk-started
+                                evaluation-thunk-finished)))
+            (wait evaluation-thunk-started)))
+         ((equal? 'interrupt action)
+          (reuse-thread evaluation-rethread (lambda () 'interrupted))))
+        (loop)))))
 
 (define* (evaluation-manager-thunk code replies-channel
                                    #:key
