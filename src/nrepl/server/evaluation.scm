@@ -68,14 +68,17 @@
 ;; Do channel accepts nrepl messages or just strings?  Strings can
 ;; help to delay nrepl related logic further up the stack.  But will
 ;; require additional actor to wrap messages for each output port or
-;; one aggregating actor with non-trivial syncronization logic.
-(define (output-stream-manager-thunk input-port
-                                     wrap-function
-                                     replies-channel
-                                     process-finished-condition)
+;; one aggregating actor with non-trivial synchronization logic.
+(define* (output-stream-manager-thunk input-port
+                                      wrap-function
+                                      replies-channel
+                                      process-finished-condition
+                                      #:key
+                                      (finished-condition (make-condition)))
   "Watches INPUT-PORT and when something arrives reads it as a string,
 wraps with WRAP-FUNCTION and sends to the REPLIES-CHANNEL.  Works
-until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
+until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed.
+Signals FINISHED-CONDITION, when it is completed."
   (define (port-open? port) (not (port-closed? port)))
   (lambda ()
     (let loop ()
@@ -97,7 +100,7 @@ until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed."
         ;; It doesn't make sense to keep watching port if it's already closed
         (if (and (equal? 'ready op-value) (port-open? input-port))
             (loop)
-            'finished)))))
+            (signal-condition! finished-condition))))))
 
 
 ;;;

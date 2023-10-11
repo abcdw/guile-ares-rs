@@ -55,6 +55,7 @@
      (lambda ()
        (let* ((message-channel (make-channel))
               (finished-condition (make-condition))
+              (process-finished-condition (make-condition))
               (stdout-pipe (pipe))
               (stdout-input-port (car stdout-pipe))
               (stdout-output-port (cdr stdout-pipe))
@@ -63,13 +64,15 @@
          (spawn-fiber
           (output-stream-manager-thunk stdout-input-port
                                        identity
-                                       message-channel finished-condition))
+                                       message-channel
+                                       process-finished-condition
+                                       #:finished-condition finished-condition))
 
          (spawn-fiber
           (lambda ()
             (parameterize ((current-output-port stdout-output-port))
               (display "hi"))
-            (signal-condition! finished-condition)))
+            (signal-condition! process-finished-condition)))
 
          (test-equal "Received message hi"
            "hi" (get-message message-channel))
@@ -80,7 +83,13 @@
          (test-assert "Pipe Closed (input)"
            (port-closed? stdout-input-port))
          (test-assert "Pipe Closed (output)"
-           (port-closed? stdout-output-port)))))
+           (port-closed? stdout-output-port))
+
+         (test-assert "Output Stream Manager Finished"
+           (quickly
+            (wrap-operation
+             (wait-operation finished-condition)
+             (const #t)))))))
     #:drain? #t))
 
 (define-test test-reusable-threads
