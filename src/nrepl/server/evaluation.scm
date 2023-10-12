@@ -344,7 +344,10 @@ COMMAND-CHANNEL."
                 (replies-channel (assoc-ref command 'replies-channel))
                 (evaluation-result-channel (make-channel))
                 (evaluation-thunk-started (make-condition))
-                (evaluation-thunk-finished (make-condition))
+                (evaluation-thunk-finished
+                 (or
+                  (assoc-ref command 'evaluation-finished)
+                  (make-condition)))
                 (wrap-with-ports-thunk-channel (make-channel)))
             ;; (format #t "starting evaluation of ~s\n" code)
             (spawn-fiber
