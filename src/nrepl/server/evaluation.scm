@@ -222,18 +222,17 @@ computations."
   "Evaluate the code and return the value to EVALUATION-RESULT channel."
   ;; The thunk will be executed on a separate thread, so to return a
   ;; value we need to use channel.
-  ;; (define out (current-output-port))
+  (define out (current-output-port))
   (define scheduler (current-scheduler))
   (define (return value)
     ;; (format out "returning: ~s\n" value)
     ;; Prevent suspension inisde dynamic-wind AFTER thunk.
     (spawn-fiber (lambda () (put-message evaluation-result value)) scheduler))
   (lambda ()
-    (dynamic-wind
+    ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
+    (call-with-prompt thread-entry-point-tag
       (lambda ()
-        (signal-condition! started-condition))
-      (lambda ()
-        ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
+        (signal-condition! started-condition)
         (return
          (with-exception-handler
              (lambda (exception)
@@ -242,12 +241,13 @@ computations."
                  (stack . ,(make-stack #t))))
            (lambda ()
              `((result-type . value)
-               (eval-value . ,(primitive-eval code))))
+               (eval-value . ,((@ (system base compile) compile)
+                               code #:env (current-module)))))
            #:unwind? #t)))
-      (lambda ()
-        ;; Tell evaluation-result channel that thread was interrupted
+      (lambda (k . args)
         (return `((result-type . interrupted)))
-        (signal-condition! finished-condition)))))
+        (signal-condition! finished-condition)
+        (apply abort-to-prompt thread-entry-point-tag args)))))
 
 
 (define* (evaluation-result-manager-thunk
