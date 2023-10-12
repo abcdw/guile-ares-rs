@@ -136,56 +136,92 @@
          (spawn-fiber
           (evaluation-thread-manager-thunk command-channel))
 
-         (test-begin "Simple Evaluation with output streams capture")
-         (put-message
-          command-channel
-          `((action . evaluate)
-            (code . ,sample-code)
-            (replies-channel . ,replies-channel)))
-         (define replies
-           (map
-            (lambda (_)
-              (quickly (get-operation replies-channel)))
-            (iota 3)))
+         (begin
+           (test-begin "Simple Evaluation with output streams capture")
+           (put-message
+            command-channel
+            `((action . evaluate)
+              (code . ,sample-code)
+              (replies-channel . ,replies-channel)))
+           (define replies
+             (map
+              (lambda (_)
+                (quickly (get-operation replies-channel)))
+              (iota 3)))
 
-         (test-assert "Received message hi-err"
-           (lset-contains?
-            `(("err" . "hi-err"))
-            replies))
-         (test-assert "Received message hi-out"
-           (lset-contains?
-            `(("out" . "hi-out"))
-            replies))
-         (test-assert "Received evaluation result"
-           (lset-contains?
-            `(("value" . "code-value")
-              ("status" . #("done")))
-            replies))
-         (test-end "Simple Evaluation with output streams capture")
+           (test-assert "Received message hi-err"
+             (lset-contains?
+              `(("err" . "hi-err"))
+              replies))
+           (test-assert "Received message hi-out"
+             (lset-contains?
+              `(("out" . "hi-out"))
+              replies))
+           (test-assert "Received evaluation result"
+             (lset-contains?
+              `(("value" . "code-value")
+                ("status" . #("done")))
+              replies))
+           (test-end "Simple Evaluation with output streams capture"))
 
-         (test-begin "Evaluation Interruption")
-         (define sample-code-2
-           `(begin
-              (display "before sleep")
-              (sleep 10)
-              (display "after sleep")
-              'code-value))
+         (begin
+           (test-begin "Evaluation Interruption")
+           (define sample-code-2
+             `(begin
+                (display "before sleep")
+                (sleep 10)
+                (display "after sleep")
+                'code-value))
 
-         (put-message
-          command-channel
-          `((action . evaluate)
-            (code . ,sample-code-2)
-            (replies-channel . ,replies-channel)))
-         (test-equal "Received message hi-out"
+           (put-message
+            command-channel
+            `((action . evaluate)
+              (code . ,sample-code-2)
+              (replies-channel . ,replies-channel)))
+           (test-equal "Received message hi-out"
              `(("out" . "before sleep"))
              (quickly (get-operation replies-channel)))
-         (put-message
-          command-channel
-          `((action . interrupt)))
-         (test-equal "Received evaluation interrupt"
-           `(("status" . #("done" "interrupted")))
-           (quickly (get-operation replies-channel)))
-         (test-end "Evaluation Interruption"))))))
+           (put-message
+            command-channel
+            `((action . interrupt)))
+           (test-equal "Received evaluation interrupt"
+             `(("status" . #("done" "interrupted")))
+             (quickly (get-operation replies-channel)))
+           (test-end "Evaluation Interruption"))
+
+         (begin
+           (test-begin "Saved continuation evaluation")
+           (put-message
+            command-channel
+            `((action . evaluate)
+              (code . (define kont #f))
+              (replies-channel . ,replies-channel)))
+           (test-equal "Variable declared"
+             `(("value" . "#<unspecified>")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (put-message
+            command-channel
+            `((action . evaluate)
+              (code . (+ 1 (call/cc (lambda (k) (set! kont k) 5))))
+              (replies-channel . ,replies-channel)))
+           (test-equal "Continuation saved and result returned"
+             `(("value" . "6")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (put-message
+            command-channel
+            `((action . evaluate)
+              (code . (kont 41))
+              (replies-channel . ,replies-channel)))
+           (test-expect-fail 1)
+           (test-equal "Continuation called"
+             `(("value" . "42")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+           (test-end "Saved continuation evaluation")))))))
 
 (define-test test-evaluation-manager
   (test-group "Testing Evaluation Manager"
