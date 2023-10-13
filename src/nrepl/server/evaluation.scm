@@ -110,93 +110,165 @@ Signals FINISHED-CONDITION, when it is completed."
 ;;;
 
 (define-record-type <reusable-thread>
-  (%make-reusable-thread synchronization-point thread)
+  (%make-reusable-thread thread nutex result-channel)
   reusable-thread?
-  (synchronization-point reusable-thread-synchronization-point)
-  (thread reusable-thread-thread))
+  (thread reusable-thread-thread)
+  (nutex reusable-thread-nutex)
+  (result-channel reusable-thread-result-channel))
+
+(define (make-nutex)
+  "A syncronization point, similiar to unowned mutex, but it created
+already locked and works without suspending the whole thread."
+  (make-atomic-box (make-condition)))
+
+(define (nutex-lock! nutex)
+  (define new-condition (make-condition))
+  (define (update-condition old-condition)
+    (wait old-condition)
+    new-condition)
+  (atomic-box-update! nutex update-condition))
+
+(define (nutex-unlock! nutex)
+  (signal-condition! (atomic-box-ref nutex)))
+
+(define (nutex-wait nutex)
+  (wait (atomic-box-ref nutex)))
+
+(define (rthread-lock-or-get-value! rthread)
+  (define nutex (reusable-thread-nutex rthread))
+  (define result-channel (reusable-thread-result-channel rthread))
+  (define new-condition (make-condition))
+
+  (define (value-or-new-condition old-condition)
+    (perform-operation
+     (choice-operation
+      (wrap-operation
+       (wait-operation old-condition)
+       (const new-condition))
+      (get-operation result-channel))))
+
+  (let loop ((old-value (atomic-box-ref nutex)))
+    (define new-value (value-or-new-condition old-value))
+    (if (eq? new-condition new-value)
+        (let ((cas-value
+               (atomic-box-compare-and-swap! nutex old-value new-value)))
+          (if (eq? old-value cas-value)
+              new-value ; lock acquired
+              (loop cas-value)))
+
+        ;; Value returned
+        new-value)))
 
 (define thread-entry-point-tag (make-prompt-tag "thread-entry-point"))
 
-(define (command-loop-thunk initial-thunk shutdown-mutex finished-condition)
+(define (command-loop-thunk nutex result-channel)
   (lambda ()
-    (define initial-command
-      `((action . run)
-        (thunk . ,initial-thunk)))
+    ;; (define suspending-mutex (make-mutex))
+    ;; (lock-mutex suspending-mutex)
 
-    (define (wait-after-thunk thunk)
-      (lambda ()
-        (thunk)
-        (lock-mutex shutdown-mutex)
-        'finished))
+    (define (suspending-thunk)
+      ;; (lock-mutex suspending-mutex)
+      (sleep 100)
+      (nutex-lock! nutex)
+      (abort-to-prompt thread-entry-point-tag `((action . shutdown))))
 
-    (let loop ((command initial-command))
-      (when (equal? 'run (assoc-ref command 'action))
-        (loop (call-with-prompt thread-entry-point-tag
-                (wait-after-thunk (assoc-ref command 'thunk))
-                (lambda (k . args) (apply values args))))))
+    (define (return-value value)
+      (put-message result-channel value))
 
-    (signal-condition! finished-condition)))
+    (let loop ((thunk #f))
+      (call-with-prompt thread-entry-point-tag
+        (lambda ()
+          ;; (if thunk
+          ;;     (format #t "=> scheduling: ~a\n" thunk)
+          ;;     (format #t "=> waiting for interrupt\n"))
+          (nutex-unlock! nutex)
+          (define thunk-value ((or thunk suspending-thunk)))
+          ;; it either locked or the thread is interrupted
+          (nutex-lock! nutex)
+          (abort-to-prompt
+           thread-entry-point-tag
+           `((action . return-value)
+             (value . ,thunk-value))))
 
-(define* (make-reusable-thread shutdown-condition
-                               #:key
-                               (finished-condition (make-condition)))
+        (lambda (k command)
+          (define action (assoc-ref command 'action))
+
+          (cond
+           ((equal? 'return-value action)
+            (return-value command))
+           ((equal? 'interrupt action)
+            (return-value `((action . interrupt)
+                            (status . ,(if thunk 'done 'idle))))))
+
+          (cond
+           ((equal? 'run action)
+            (loop (assoc-ref command 'thunk)))
+           ((equal? 'shutdown action) 'finished)
+           (else (loop #f))))))))
+
+(define* (make-reusable-thread result-channel)
   "Starts a thread and makes sure it entered restart prompt."
-  (define (make-locked-mutex)
-    (let ((mutex (make-mutex 'allow-external-unlock)))
-      (lock-mutex mutex)
-      mutex))
-
-  (let* ((shutdown-mutex (make-locked-mutex))
-         (synchronization-point (make-atomic-box (make-condition)))
-         (synchronization-condition (atomic-box-ref synchronization-point))
-         (initial-thunk (lambda ()
-                          (signal-condition! synchronization-condition)
-                          (lock-mutex shutdown-mutex)))
+  (let* ((nutex (make-nutex))
          (thread
-          (call-with-new-thread (command-loop-thunk initial-thunk
-                                                    shutdown-mutex
-                                                    finished-condition))))
-    (wait synchronization-condition)
-    (spawn-fiber (lambda ()
-                   ;; We can't directly wait for condition variable in
-                   ;; thread because when asyncs does non-local exit
-                   ;; the thread is not removed from condition
-                   ;; variable waiters.
-                   (wait shutdown-condition)
-                   (unlock-mutex shutdown-mutex)))
-    (%make-reusable-thread synchronization-point thread)))
+          (call-with-new-thread (command-loop-thunk nutex result-channel))))
+    (nutex-wait nutex)
+    ;; (spawn-fiber (lambda ()
+    ;;                ;; We can't directly wait for condition variable in
+    ;;                ;; thread because when asyncs does non-local exit
+    ;;                ;; the thread is not removed from condition
+    ;;                ;; variable waiters.
+    ;;                (wait shutdown-condition)
+    ;;                (unlock-mutex shutdown-mutex)))
+    (%make-reusable-thread thread nutex result-channel)))
 
-(define (reuse-thread reusable-thread thunk)
+(define (%reusable-thread-do reusable-thread thunk)
+  "Schedule a thunk for execution on REUSABLE-THREAD.  This a helper
+function, don't use it directly, it doesn't guarantee that nutex will
+be unlocked."
+  (let loop ((replies '()))
+    (define lock-or-value (rthread-lock-or-get-value! reusable-thread))
+    (if (condition? lock-or-value)
+        (begin
+          (system-async-mark
+           thunk
+           (reusable-thread-thread reusable-thread))
+          (reverse replies))
+        (loop (cons lock-or-value replies)))))
+
+(define (reusable-thread-get-value-operation reusable-thread)
+  (get-operation (reusable-thread-result-channel reusable-thread)))
+
+(define (reusable-thread-get-value reusable-thread)
+  (perform-operation (reusable-thread-get-value-operation reusable-thread)))
+
+(define (command->thunk command)
+  (lambda ()
+    (abort-to-prompt thread-entry-point-tag command)))
+
+(define (%reusable-thread-schedule-command reusable-thread command)
+  (%reusable-thread-do reusable-thread (command->thunk command)))
+
+(define* (reusable-thread-discard-and-run reusable-thread thunk)
   "Interrupt and reuse REUSABLE-THREAD with a new THUNK.  It pauses all
 current computations, starts a THUNK and after THUNK is finished
 aborts to thread entry point tag, which cancels all previous
 computations."
-  (define (lock-synchronization-point point)
-    (define new-condition (make-condition))
-    (define (update-condition old-condition)
-      (wait old-condition)
-      new-condition)
-    (atomic-box-update! point update-condition))
+  (%reusable-thread-schedule-command
+   reusable-thread
+   `((action . run)
+     (thunk . ,thunk))))
 
-  (let* ((thread (reusable-thread-thread reusable-thread))
-         (synchronization-point (reusable-thread-synchronization-point
-                                 reusable-thread))
-         (synchronization-condition (lock-synchronization-point
-                                     synchronization-point))
-         (new-thunk (lambda ()
-                      "Make thread interruptible again and run THUNK."
-                      (signal-condition! synchronization-condition)
-                      (thunk))))
-    (system-async-mark
-     (lambda ()
-       (catch #t
-         (lambda ()
-           (abort-to-prompt thread-entry-point-tag `((action . run)
-                                                     (thunk . ,new-thunk))))
-         (lambda _
-           (format (current-error-port)
-                   "failed to abort to ~a\n" thread-entry-point-tag))))
-     thread)))
+(define* (reusable-thread-shutdown reusable-thread)
+  (%reusable-thread-schedule-command
+   reusable-thread
+   `((action . shutdown))))
+
+(define* (reusable-thread-interrupt reusable-thread)
+  (append
+   (%reusable-thread-schedule-command
+    reusable-thread
+    `((action . interrupt)))
+   (list (reusable-thread-get-value reusable-thread))))
 
 (define (make-evaluation-thread code finished-condition)
   "Evaluate code in a separate thread.  Signals FINISHED-CONDITION
