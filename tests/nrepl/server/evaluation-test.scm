@@ -234,8 +234,45 @@
              (quickly (get-operation replies-channel)))
 
            (run-eval `(kont 41) finished)
-           (test-equal "Continuation called"
+           (test-equal "Continuation invoked"
              `(("value" . "42")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (test-assert "Finished condition signalled"
+             (quickly (wrap-operation
+                       (wait-operation finished)
+                       (const #t))))
+
+           (test-end "Saved continuation evaluation"))
+
+         (let ((finished (make-condition)))
+           (test-begin "Saved continuation with stdout")
+
+           (run-eval `(define kont #f))
+           (test-equal "Variable declared"
+             `(("value" . "#<unspecified>")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (run-eval `(display (call/cc (lambda (k) (set! kont k) 5))))
+           (test-equal "Result printed"
+             `(("out" . "5"))
+             (quickly (get-operation replies-channel)))
+           (test-equal "Continuation saved"
+             `(("value" . "#<unspecified>")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           ;; TODO: [Andrew Tropin, 2023-10-16] Reuse pipes instead of
+           ;; recreating them every time
+           (test-expect-fail 3)
+           (run-eval `(kont 42) finished)
+           (test-equal "Value displayed"
+             `(("out" . "42"))
+             (quickly (get-operation replies-channel)))
+           (test-equal "Continuation invoked"
+             `(("value" . "#<unspecified>")
                ("status" . #("done")))
              (quickly (get-operation replies-channel)))
 
