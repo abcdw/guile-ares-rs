@@ -288,38 +288,21 @@ computations."
            #:unwind? #t))
        (lambda () (signal-condition! finished-condition))))))
 
-(define (evaluation-thunk code evaluation-result
-                          started-condition
-                          finished-condition)
-  "Evaluate the code and return the value to EVALUATION-RESULT channel."
-  ;; The thunk will be executed on a separate thread, so to return a
-  ;; value we need to use channel.
+(define (evaluation-thunk code)
+  "Return a thunk, which evaluate CODE and handle exceptions."
   (define out (current-output-port))
-  (define scheduler (current-scheduler))
-  (define (return value)
-    ;; (format out "returning: ~s\n" value)
-    ;; Prevent suspension inisde dynamic-wind AFTER thunk.
-    (spawn-fiber (lambda () (put-message evaluation-result value)) scheduler))
   (lambda ()
     ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
-    (call-with-prompt thread-entry-point-tag
+    (with-exception-handler
+        (lambda (exception)
+          `((result-type . exception)
+            (exception-value . ,exception)
+            (stack . ,(make-stack #t))))
       (lambda ()
-        (signal-condition! started-condition)
-        (return
-         (with-exception-handler
-             (lambda (exception)
-               `((result-type . exception)
-                 (exception-value . ,exception)
-                 (stack . ,(make-stack #t))))
-           (lambda ()
-             `((result-type . value)
-               (eval-value . ,((@ (system base compile) compile)
-                               code #:env (current-module)))))
-           #:unwind? #t)))
-      (lambda (k . args)
-        (return `((result-type . interrupted)))
-        (signal-condition! finished-condition)
-        (apply abort-to-prompt thread-entry-point-tag args)))))
+        `((result-type . value)
+          (eval-value . ,((@ (system base compile) compile)
+                          code #:env (current-module)))))
+      #:unwind? #t)))
 
 
 (define* (evaluation-result-manager-thunk
@@ -328,18 +311,7 @@ computations."
           (pretty-print (lambda (x) (format #f "~s" x))))
   "Obtains a result from RESULT-CHANNEL, converts it to nrepl messages
 and passes to REPLIES-CHANNEL."
-  (define (evaluation-result->nrepl-messages result)
-    (let ((result-type (assoc-ref result 'result-type)))
-      ;; (pk result)
-      (cond
-       ((equal? 'value result-type)
-        `((("value" . ,(pretty-print (assoc-ref result 'eval-value)))
-           ("status" . #("done")))))
-       ((equal? 'exception result-type)
-        (exception->replies (assoc-ref result 'exception-value)))
-       ((equal? 'interrupted result-type)
-        `((("status" . #("done" "interrupted")))))
-       (else (error (format #f "unknown result-type: ~a\n" result-type))))))
+
 
   (lambda ()
     (for-each
@@ -397,50 +369,102 @@ Stream managers waits until THUNK-FINISHED is signalled."
           (wait stdout-finished)
           (wait stderr-finished)))))))
 
+(define* (evaluation-result->nrepl-messages
+          result
+          #:key
+          (pretty-print (lambda (x) (format #f "~s" x))))
+    (let ((result-type (assoc-ref result 'result-type)))
+      (cond
+       ((equal? 'value result-type)
+        `((("value" . ,(pretty-print (assoc-ref result 'eval-value)))
+           ("status" . #("done")))))
+       ((equal? 'exception result-type)
+        (exception->replies (assoc-ref result 'exception-value)))
+       ((equal? 'interrupted result-type)
+        `((("status" . #("done" "interrupted")))))
+       (else (error (format #f "unknown result-type: ~a\n" result-type))))))
+
+(define (interrupt-result->nrepl-messages result)
+  (define status (assoc-ref result 'status))
+  (cond
+   ((equal? 'done status)
+    `((("status" . #("done" "interrupted")))))
+   ((equal? 'idle status)
+    `((("status" . #("done" "session-idle")))))))
+
 (define* (evaluation-thread-manager-thunk
           command-channel
           #:key
+          ;; TODO: [Andrew Tropin, 2023-10-16] Implement shutdown
           (shutdown-condition (make-condition))
           (terminate-condition (make-condition)))
   "Spawn a thread and can run/interrupt evaluation on it via commands sent to
 COMMAND-CHANNEL."
+  (define get-command-operation
+    (get-operation command-channel))
   (lambda ()
-    (let* ((evaluation-rethread (make-reusable-thread shutdown-condition)))
-      (let loop ()
-        (define command (get-message command-channel))
+    (let* ((result-channel (make-channel))
+           (evaluation-rethread (make-reusable-thread result-channel)))
+      (let loop ((reply-channel #f)
+                 (evaluation-finished #f))
+
+        (define (reply-with-messages messages)
+          (for-each
+             (lambda (m)
+               (put-message reply-channel m))
+             messages))
+
+        (define command
+          (perform-operation
+           (choice-operation
+            (get-operation result-channel)
+            (get-operation command-channel))))
+
         (define action (assoc-ref command 'action))
 
+        ;; (format #t "command=> ~y" command)
         (cond
+         ((equal? 'return-value action)
+          (let ((value (assoc-ref command 'value)))
+            (reply-with-messages (evaluation-result->nrepl-messages value))
+            ;; We can't directly signal EVALUATION-THUNK-FINISHED
+            ;; inside evaluation thread, because call/cc can restore
+            ;; context, where it is not available, so we need to rely
+            ;; on RESULT-CHANNEL for understanding if evaluation
+            ;; actually finished.
+            (signal-condition! evaluation-finished)
+            (loop #f #f)))
          ((equal? 'evaluate action)
           (let ((code (assoc-ref command 'code))
                 (replies-channel (assoc-ref command 'replies-channel))
-                (evaluation-result-channel (make-channel))
-                (evaluation-thunk-started (make-condition))
+                (wrap-with-ports-thunk-channel (make-channel))
                 (evaluation-thunk-finished
-                 (or
-                  (assoc-ref command 'evaluation-finished)
-                  (make-condition)))
-                (wrap-with-ports-thunk-channel (make-channel)))
-            ;; (format #t "starting evaluation of ~s\n" code)
-            (spawn-fiber
-             (evaluation-result-manager-thunk evaluation-result-channel
-                                              replies-channel))
+                 (assoc-ref command 'evaluation-finished)))
+
+            (or evaluation-thunk-finished
+                (error "evaluation-finished is not provided"))
             (spawn-fiber
              (setup-redirects-for-ports-thunk
               evaluation-thunk-finished
               replies-channel
               wrap-with-ports-thunk-channel))
 
-            (reuse-thread
+            (reusable-thread-discard-and-run
              evaluation-rethread
              ((get-message wrap-with-ports-thunk-channel)
-              (evaluation-thunk code evaluation-result-channel
-                                evaluation-thunk-started
-                                evaluation-thunk-finished)))
-            (wait evaluation-thunk-started)))
+              (evaluation-thunk code)))
+
+            (loop replies-channel evaluation-thunk-finished)))
          ((equal? 'interrupt action)
-          (reuse-thread evaluation-rethread (lambda () 'interrupted))))
-        (loop)))))
+          (reply-with-messages
+           (interrupt-result->nrepl-messages
+            (car
+             (reusable-thread-interrupt evaluation-rethread))))
+          (signal-condition! evaluation-finished)
+          ;; (reuse-thread evaluation-rethread (lambda () 'interrupted))
+          (loop #f #f))
+         (else
+          (error "it sholud not get here")))))))
 
 (define* (evaluation-manager-thunk code replies-channel
                                    #:key
@@ -594,6 +618,9 @@ finished the FINISHED-CONDITION is signalled by evaluation-manager."
         (list (cons 'code (with-input-from-string code read))))
       #:unwind? #t))
 
+  (define evaluation-thread-command-channel (make-channel))
+  (define evaluation-thread-shutdown-condition (make-condition))
+
   (define (run-evaluation code get-next-command-operation evaluation-queue)
     "Starts evaluation, return operation which unblocks on next command or
 evaluation finish, interrupt-condition and rest of the queue."
@@ -604,12 +631,12 @@ evaluation finish, interrupt-condition and rest of the queue."
            (reply (assoc-ref command 'reply)))
       (spawn-fiber
        (replies-manager-thunk replies-channel reply))
-      (spawn-fiber
-       (evaluation-manager-thunk
-        code replies-channel
-        #:interrupt-condition interrupt-condition
-        #:finished-condition finished-condition))
-      interrupt-condition
+      (put-message evaluation-thread-command-channel
+                   `((action . evaluate)
+                     (code . ,code)
+                     (replies-channel . ,replies-channel)
+                     (evaluation-finished . ,finished-condition)))
+
       (list
        (choice-operation
         (wrap-operation
@@ -621,23 +648,28 @@ evaluation finish, interrupt-condition and rest of the queue."
        (dequeue evaluation-queue))))
 
   (lambda ()
+    (spawn-fiber (evaluation-thread-manager-thunk
+                  evaluation-thread-command-channel
+                  #:shutdown-condition evaluation-thread-shutdown-condition))
     (let loop ((get-next-command-operation receive-command-operation)
                (interrupt-condition #f)
                (evaluation-queue (make-queue)))
       (let* ((command (perform-operation get-next-command-operation))
              (action (assoc-ref command 'action)))
-        ;; (format #t "operation: ~s\ncommand: ~s\ninterrupt: ~a\n\n"
-        ;;         get-next-command-operation
+        ;; (format #t "_________\ncommand: ~yinterrupt: ~a\n\n"
+        ;;         ;; get-next-command-operation
         ;;         command interrupt-condition)
         (cond
          ((equal? 'terminate action)
-          (signal-condition! interrupt-condition)
+          ;; (signal-condition! interrupt-condition)
+          ;; (signal-condition! evaluation-thread-terminate-condition)
           (signal-condition! finished-condition)
           'finished)
 
          ((equal? 'shutdown action)
-           (signal-condition! finished-condition)
-           'finished)
+          (signal-condition! evaluation-thread-shutdown-condition)
+          (signal-condition! finished-condition)
+          'finished)
 
          ((equal? 'finished action)
           (loop
@@ -647,6 +679,7 @@ evaluation finish, interrupt-condition and rest of the queue."
            #f evaluation-queue))
 
          ((equal? 'evaluate action)
+          ;; We can't be here if queue is empty
           (let* ((command (front evaluation-queue))
                  (code-string (alist-get-in '(message "code") command))
                  (reply (assoc-ref command 'reply))
@@ -680,7 +713,8 @@ evaluation finish, interrupt-condition and rest of the queue."
                     ;; TODO: [Andrew Tropin, 2023-09-26] Add
                     ;; interrupt-id-mismatch.
                     ;; https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/middleware/session.clj#L344
-                    (signal-condition! interrupt-condition)
+                    (put-message evaluation-thread-command-channel
+                                 `((action . interrupt)))
                     ((assoc-ref command 'reply)
                      `(("status" . #("session-idle" "done")))))
                 (loop

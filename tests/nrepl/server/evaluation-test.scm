@@ -153,13 +153,15 @@
          (spawn-fiber
           (evaluation-thread-manager-thunk command-channel))
 
-         (begin
+         (let ((finished (make-condition)))
            (test-begin "Simple Evaluation with output streams capture")
            (put-message
             command-channel
             `((action . evaluate)
               (code . ,sample-code)
-              (replies-channel . ,replies-channel)))
+              (replies-channel . ,replies-channel)
+              (evaluation-finished . ,finished)))
+
            (define replies
              (map
               (lambda (_)
@@ -179,9 +181,15 @@
               `(("value" . "code-value")
                 ("status" . #("done")))
               replies))
+
+           (test-assert "Finished condition signalled"
+             (quickly (wrap-operation
+                       (wait-operation finished)
+                       (const #t))))
+
            (test-end "Simple Evaluation with output streams capture"))
 
-         (begin
+         (let ((finished (make-condition)))
            (test-begin "Evaluation Interruption")
            (define sample-code-2
              `(begin
@@ -194,7 +202,9 @@
             command-channel
             `((action . evaluate)
               (code . ,sample-code-2)
-              (replies-channel . ,replies-channel)))
+              (replies-channel . ,replies-channel)
+              (evaluation-finished . ,finished)))
+
            (test-equal "Received message hi-out"
              `(("out" . "before sleep"))
              (quickly (get-operation replies-channel)))
@@ -204,15 +214,21 @@
            (test-equal "Received evaluation interrupt"
              `(("status" . #("done" "interrupted")))
              (quickly (get-operation replies-channel)))
+           (test-assert "Finished condition signalled"
+             (quickly (wrap-operation
+                       (wait-operation finished)
+                       (const #t))))
            (test-end "Evaluation Interruption"))
 
-         (begin
+         (let ((finished (make-condition)))
            (test-begin "Saved continuation evaluation")
+
            (put-message
             command-channel
             `((action . evaluate)
               (code . (define kont #f))
-              (replies-channel . ,replies-channel)))
+              (replies-channel . ,replies-channel)
+              (evaluation-finished . ,(make-condition))))
            (test-equal "Variable declared"
              `(("value" . "#<unspecified>")
                ("status" . #("done")))
@@ -222,7 +238,8 @@
             command-channel
             `((action . evaluate)
               (code . (+ 1 (call/cc (lambda (k) (set! kont k) 5))))
-              (replies-channel . ,replies-channel)))
+              (replies-channel . ,replies-channel)
+              (evaluation-finished . ,(make-condition))))
            (test-equal "Continuation saved and result returned"
              `(("value" . "6")
                ("status" . #("done")))
@@ -232,12 +249,19 @@
             command-channel
             `((action . evaluate)
               (code . (kont 41))
-              (replies-channel . ,replies-channel)))
-           (test-expect-fail 1)
+              (replies-channel . ,replies-channel)
+              (evaluation-finished . ,finished)))
+
            (test-equal "Continuation called"
              `(("value" . "42")
                ("status" . #("done")))
              (quickly (get-operation replies-channel)))
+
+           (test-assert "Finished condition signalled"
+             (quickly (wrap-operation
+                       (wait-operation finished)
+                       (const #t))))
+
            (test-end "Saved continuation evaluation")))))))
 
 (define-test test-evaluation-manager
@@ -434,13 +458,13 @@
 
            (evaluation-supervisor-process-nrepl-message
             command-channel
-            `(("code" . "(begin (+ 1 2) (display 'hi))")
+            `(("code" . "(begin (display 'hi) (+ 1))")
               ("op" . "eval"))
             reply-function)
 
            (evaluation-supervisor-process-nrepl-message
             command-channel
-            `(("code" . "(begin (+ 1 2) (display 'hi))")
+            `(("code" . "(begin (display 'hi2) (+ 2))")
               ("op" . "eval"))
             reply-function)
 
@@ -452,11 +476,13 @@
                (wait-operation finished-condition)
                (const #t))))
 
-           (list
-            (quickly (get-operation replies-channel))
-            (quickly (get-operation replies-channel))
-            (quickly (get-operation replies-channel)))
-           ;; 2 eval results, 2 out messages
-           ;; (test-expect-fail 1)
-           (test-assert "4th message returned"
-             (quickly (get-operation replies-channel)))))))))
+           (quickly (get-operation replies-channel))
+           (test-equal "Returned evaluation value after shutdown"
+             `(("value" . "1")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (test-assert "3rd message is empty"
+             (quickly (get-operation replies-channel)
+                      #:timeout 0
+                      #:default-value #t))))))))
