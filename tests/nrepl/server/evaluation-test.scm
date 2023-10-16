@@ -140,12 +140,6 @@
 
 (define-test test-evaluation-thread-manager
   (test-group "Testing Evaluation Thread Manager"
-    (define sample-code
-      `(begin
-         (display "hi-err" (current-error-port))
-         (display "hi-out")
-         'code-value))
-
     (run-fibers
      (lambda ()
        (let* ((replies-channel (make-channel))
@@ -153,14 +147,24 @@
          (spawn-fiber
           (evaluation-thread-manager-thunk command-channel))
 
-         (let ((finished (make-condition)))
-           (test-begin "Simple Evaluation with output streams capture")
+         (define* (run-eval code
+                            #:optional
+                            (finished-condition (make-condition)))
            (put-message
             command-channel
             `((action . evaluate)
-              (code . ,sample-code)
+              (code . ,code)
               (replies-channel . ,replies-channel)
-              (evaluation-finished . ,finished)))
+              (evaluation-finished . ,finished-condition))))
+
+         (let ((finished (make-condition)))
+           (test-begin "Simple Evaluation with output streams capture")
+           (run-eval
+            `(begin
+               (display "hi-err" (current-error-port))
+               (display "hi-out")
+               'code-value)
+            finished)
 
            (define replies
              (map
@@ -191,20 +195,14 @@
 
          (let ((finished (make-condition)))
            (test-begin "Evaluation Interruption")
-           (define sample-code-2
-             `(begin
-                (display "before sleep")
-                (sleep 10)
-                (display "after sleep")
-                'code-value))
 
-           (put-message
-            command-channel
-            `((action . evaluate)
-              (code . ,sample-code-2)
-              (replies-channel . ,replies-channel)
-              (evaluation-finished . ,finished)))
-
+           (run-eval
+            `(begin
+               (display "before sleep")
+               (sleep 10)
+               (display "after sleep")
+               'code-value)
+            finished)
            (test-equal "Received message hi-out"
              `(("out" . "before sleep"))
              (quickly (get-operation replies-channel)))
@@ -223,35 +221,19 @@
          (let ((finished (make-condition)))
            (test-begin "Saved continuation evaluation")
 
-           (put-message
-            command-channel
-            `((action . evaluate)
-              (code . (define kont #f))
-              (replies-channel . ,replies-channel)
-              (evaluation-finished . ,(make-condition))))
+           (run-eval `(define kont #f))
            (test-equal "Variable declared"
              `(("value" . "#<unspecified>")
                ("status" . #("done")))
              (quickly (get-operation replies-channel)))
 
-           (put-message
-            command-channel
-            `((action . evaluate)
-              (code . (+ 1 (call/cc (lambda (k) (set! kont k) 5))))
-              (replies-channel . ,replies-channel)
-              (evaluation-finished . ,(make-condition))))
+           (run-eval `(+ 1 (call/cc (lambda (k) (set! kont k) 5))))
            (test-equal "Continuation saved and result returned"
              `(("value" . "6")
                ("status" . #("done")))
              (quickly (get-operation replies-channel)))
 
-           (put-message
-            command-channel
-            `((action . evaluate)
-              (code . (kont 41))
-              (replies-channel . ,replies-channel)
-              (evaluation-finished . ,finished)))
-
+           (run-eval `(kont 41) finished)
            (test-equal "Continuation called"
              `(("value" . "42")
                ("status" . #("done")))
