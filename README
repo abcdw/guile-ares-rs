@@ -10,11 +10,12 @@ runners or other tools.
 
 ~guile-ares-rs~ was previously known as ~guile-nrepl~.  It was renamed to
 avoid any confusion with network/socket REPL, ~guile-ares-rs~ is not a
-usual REPL, it's not a REPL, it's an RPC Server, however it's possible
-to implement REPL-experience with it (and respective client).
+usual REPL, it's actually not a REPL at all, it's an RPC Server,
+however it's possible to implement REPL-like experience with it (and
+respective client).
 
 
-You can try it directly with Monroe, Rail or other nREPL clients (see
+You can try it directly with Monroe, Rail or other generic nREPL clients (see
 the clients section below).
 
 
@@ -25,6 +26,7 @@ Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-
 
 ** First Release Roadmap
 - Implement eval on top of reusable threads.
+- Implement read interception for current-input-port.
 - Implement completion and lookup operations.
 - Implement extension extension (swap-extension, add-extension).
 - Change Scheme to Superior in project description.
@@ -57,6 +59,8 @@ some of them:
 - Go to definition doesn't work for with-input-from-port.
 - After using ~,i~ in REPL, go to definition hangs up.
 - Go to definition opens non-existing file.
+- If expression being evaluated from buffer requires input from stdin
+  it will be frozen.
 - Rebinds M-. instead of using xref.
 - https://spritely.institute/files/docs/guile-goblins/0.11.0/TEMPORARY-Live-hacking-_0060_0060fix_0027_0027.html
 
