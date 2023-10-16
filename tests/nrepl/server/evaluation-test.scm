@@ -264,9 +264,6 @@
                ("status" . #("done")))
              (quickly (get-operation replies-channel)))
 
-           ;; TODO: [Andrew Tropin, 2023-10-16] Reuse pipes instead of
-           ;; recreating them every time
-           (test-expect-fail 3)
            (run-eval `(kont 42) finished)
            (test-equal "Value displayed"
              `(("out" . "42"))

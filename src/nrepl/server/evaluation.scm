@@ -319,7 +319,8 @@ and passes to REPLIES-CHANNEL."
      (evaluation-result->nrepl-messages
       (get-message result-channel)))))
 
-(define (setup-redirects-for-ports-thunk thunk-finished-condition
+(define (setup-redirects-for-ports-thunk pipes
+                                         thunk-finished-condition
                                          replies-channel
                                          wrap-with-ports-channel)
   "Returns a thunk, which setups redirects for ports, spawning respective
@@ -332,42 +333,39 @@ Stream managers waits until THUNK-FINISHED is signalled."
     (lambda (v) `((,tag . ,v))))
 
   (lambda ()
-    (call-with-pipes ; Ensure pipes are closed
-     ;; TODO: [Andrew Tropin, 2023-10-04] Handle current-warning-port
-     (unbuffer-pipes! (make-pipes 3))
-     (match-lambda
-       ;; Destructure a list of 3 pipes into 6 separate variables
-       (((stdout-input-port . stdout-output-port)
-         (stderr-input-port . stderr-output-port)
-         (stdin-input-port . stdin-output-port))
-        (let ((wrap-with-ports (lambda (thunk)
-                                 (lambda ()
-                                   (with-current-ports
-                                    stdout-output-port
-                                    stderr-output-port
-                                    stdin-input-port
-                                    thunk))))
-              (stdout-finished (make-condition))
-              (stderr-finished (make-condition)))
-          ;; TODO: [Andrew Tropin, 2023-09-06] Add input-stream-manager
-          ;; use custom or soft ports?
+    (match pipes
+      ;; Destructure a list of 3 pipes into 6 separate variables
+      (((stdout-input-port . stdout-output-port)
+        (stderr-input-port . stderr-output-port)
+        (stdin-input-port . stdin-output-port))
+       (let ((wrap-with-ports (lambda (thunk)
+                                (lambda ()
+                                  (with-current-ports
+                                   stdout-output-port
+                                   stderr-output-port
+                                   stdin-input-port
+                                   thunk))))
+             (stdout-finished (make-condition))
+             (stderr-finished (make-condition)))
+         ;; TODO: [Andrew Tropin, 2023-09-06] Add input-stream-manager
+         ;; use custom or soft ports?
 
-          (spawn-fiber
-           (output-stream-manager-thunk stdout-input-port
-                                        (wrap-output-with "out")
-                                        replies-channel
-                                        thunk-finished-condition
-                                        #:finished-condition stdout-finished))
-          (spawn-fiber
-           (output-stream-manager-thunk stderr-input-port
-                                        (wrap-output-with "err")
-                                        replies-channel
-                                        thunk-finished-condition
-                                        #:finished-condition stderr-finished))
+         (spawn-fiber
+          (output-stream-manager-thunk stdout-input-port
+                                       (wrap-output-with "out")
+                                       replies-channel
+                                       thunk-finished-condition
+                                       #:finished-condition stdout-finished))
+         (spawn-fiber
+          (output-stream-manager-thunk stderr-input-port
+                                       (wrap-output-with "err")
+                                       replies-channel
+                                       thunk-finished-condition
+                                       #:finished-condition stderr-finished))
 
-          (put-message wrap-with-ports-channel wrap-with-ports)
-          (wait stdout-finished)
-          (wait stderr-finished)))))))
+         (put-message wrap-with-ports-channel wrap-with-ports)
+         (wait stdout-finished)
+         (wait stderr-finished))))))
 
 (define* (evaluation-result->nrepl-messages
           result
@@ -403,68 +401,72 @@ COMMAND-CHANNEL."
   (define get-command-operation
     (get-operation command-channel))
   (lambda ()
-    (let* ((result-channel (make-channel))
-           (evaluation-rethread (make-reusable-thread result-channel)))
-      (let loop ((reply-channel #f)
-                 (evaluation-finished #f))
+    (call-with-pipes
+     (unbuffer-pipes! (make-pipes 3))
+     (lambda (pipes)
+       (let* ((result-channel (make-channel))
+              (evaluation-rethread (make-reusable-thread result-channel)))
+         (let loop ((reply-channel #f)
+                    (evaluation-finished #f))
 
-        (define (reply-with-messages messages)
-          (for-each
-             (lambda (m)
-               (put-message reply-channel m))
-             messages))
+           (define (reply-with-messages messages)
+             (for-each
+              (lambda (m)
+                (put-message reply-channel m))
+              messages))
 
-        (define command
-          (perform-operation
-           (choice-operation
-            (get-operation result-channel)
-            (get-operation command-channel))))
+           (define command
+             (perform-operation
+              (choice-operation
+               (get-operation result-channel)
+               (get-operation command-channel))))
 
-        (define action (assoc-ref command 'action))
+           (define action (assoc-ref command 'action))
 
-        ;; (format #t "command=> ~y" command)
-        (cond
-         ((equal? 'return-value action)
-          (let ((value (assoc-ref command 'value)))
-            (reply-with-messages (evaluation-result->nrepl-messages value))
-            ;; We can't directly signal EVALUATION-THUNK-FINISHED
-            ;; inside evaluation thread, because call/cc can restore
-            ;; context, where it is not available, so we need to rely
-            ;; on RESULT-CHANNEL for understanding if evaluation
-            ;; actually finished.
-            (signal-condition! evaluation-finished)
-            (loop #f #f)))
-         ((equal? 'evaluate action)
-          (let ((code (assoc-ref command 'code))
-                (replies-channel (assoc-ref command 'replies-channel))
-                (wrap-with-ports-thunk-channel (make-channel))
-                (evaluation-thunk-finished
-                 (assoc-ref command 'evaluation-finished)))
+           ;; (format #t "command=> ~y" command)
+           (cond
+            ((equal? 'return-value action)
+             (let ((value (assoc-ref command 'value)))
+               (reply-with-messages (evaluation-result->nrepl-messages value))
+               ;; We can't directly signal EVALUATION-THUNK-FINISHED
+               ;; inside evaluation thread, because call/cc can restore
+               ;; context, where it is not available, so we need to rely
+               ;; on RESULT-CHANNEL for understanding if evaluation
+               ;; actually finished.
+               (signal-condition! evaluation-finished)
+               (loop #f #f)))
+            ((equal? 'evaluate action)
+             (let ((code (assoc-ref command 'code))
+                   (replies-channel (assoc-ref command 'replies-channel))
+                   (wrap-with-ports-thunk-channel (make-channel))
+                   (evaluation-thunk-finished
+                    (assoc-ref command 'evaluation-finished)))
 
-            (or evaluation-thunk-finished
-                (error "evaluation-finished is not provided"))
-            (spawn-fiber
-             (setup-redirects-for-ports-thunk
-              evaluation-thunk-finished
-              replies-channel
-              wrap-with-ports-thunk-channel))
+               (or evaluation-thunk-finished
+                   (error "evaluation-finished is not provided"))
+               (spawn-fiber
+                (setup-redirects-for-ports-thunk
+                 pipes
+                 evaluation-thunk-finished
+                 replies-channel
+                 wrap-with-ports-thunk-channel))
 
-            (reusable-thread-discard-and-run
-             evaluation-rethread
-             ((get-message wrap-with-ports-thunk-channel)
-              (evaluation-thunk code)))
+               (reusable-thread-discard-and-run
+                evaluation-rethread
+                ((get-message wrap-with-ports-thunk-channel)
+                 (evaluation-thunk code)))
 
-            (loop replies-channel evaluation-thunk-finished)))
-         ((equal? 'interrupt action)
-          (reply-with-messages
-           (interrupt-result->nrepl-messages
-            (car
-             (reusable-thread-interrupt evaluation-rethread))))
-          (signal-condition! evaluation-finished)
-          ;; (reuse-thread evaluation-rethread (lambda () 'interrupted))
-          (loop #f #f))
-         (else
-          (error "it sholud not get here")))))))
+               (loop replies-channel evaluation-thunk-finished)))
+            ((equal? 'interrupt action)
+             (reply-with-messages
+              (interrupt-result->nrepl-messages
+               (car
+                (reusable-thread-interrupt evaluation-rethread))))
+             (signal-condition! evaluation-finished)
+             ;; (reuse-thread evaluation-rethread (lambda () 'interrupted))
+             (loop #f #f))
+            (else
+             (error "it sholud not get here")))))))))
 
 (define (replies-manager-thunk replies-channel reply)
   (lambda ()
