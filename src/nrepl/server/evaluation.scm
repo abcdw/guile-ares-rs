@@ -538,10 +538,9 @@ COMMAND-CHANNEL."
   (define evaluation-thread-shutdown-condition (make-condition))
 
   (define (run-evaluation code get-next-command-operation evaluation-queue)
-    "Starts evaluation, return operation which unblocks on next command or
-evaluation finish, interrupt-condition and rest of the queue."
+    "Starts evaluation, return operation which unblocks on next command
+arrival or when evaluation is finished, #t and rest of the queue."
     (let* ((finished-condition (make-condition))
-           (interrupt-condition (make-condition))
            (replies-channel (make-channel))
            (command (front evaluation-queue))
            (reply (assoc-ref command 'reply)))
@@ -560,7 +559,7 @@ evaluation finish, interrupt-condition and rest of the queue."
          (const `((internal? #t)
                   (action . finished))))
         get-next-command-operation)
-       interrupt-condition
+       (or (alist-get-in '(message "id") command) "0")
        (dequeue evaluation-queue))))
 
   (lambda ()
@@ -568,16 +567,16 @@ evaluation finish, interrupt-condition and rest of the queue."
                   evaluation-thread-command-channel
                   #:shutdown-condition evaluation-thread-shutdown-condition))
     (let loop ((get-next-command-operation receive-command-operation)
-               (interrupt-condition #f)
+               (evaluation-id #f)
                (evaluation-queue (make-queue)))
       (let* ((command (perform-operation get-next-command-operation))
              (action (assoc-ref command 'action)))
-        ;; (format #t "_________\ncommand: ~yinterrupt: ~a\n\n"
+        ;; (format #t "_________\ncommand: ~yevaluation-id: ~a\n\n"
         ;;         ;; get-next-command-operation
-        ;;         command interrupt-condition)
+        ;;         command evaluation-id)
         (cond
          ((equal? 'terminate action)
-          ;; (signal-condition! interrupt-condition)
+          ;; (signal-condition! evaluation-id)
           ;; (signal-condition! evaluation-thread-terminate-condition)
           (signal-condition! finished-condition)
           'finished)
@@ -609,7 +608,7 @@ evaluation finish, interrupt-condition and rest of the queue."
                              evaluation-queue))
                 (loop
                  receive-command-operation
-                 interrupt-condition
+                 evaluation-id
                  (dequeue evaluation-queue)))))
 
          ((equal? 'process-nrepl-message action)
@@ -618,14 +617,14 @@ evaluation finish, interrupt-condition and rest of the queue."
               (cond
                ((equal? "eval" op)
                 (loop
-                 (if interrupt-condition
+                 (if evaluation-id
                      get-next-command-operation
                      evaluate-command-operation)
-                 interrupt-condition
+                 evaluation-id
                  (enqueue evaluation-queue command)))
 
                ((equal? "interrupt" op)
-                (if interrupt-condition
+                (if evaluation-id
                     ;; TODO: [Andrew Tropin, 2023-09-26] Add
                     ;; interrupt-id-mismatch.
                     ;; https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/middleware/session.clj#L344
@@ -635,7 +634,7 @@ evaluation finish, interrupt-condition and rest of the queue."
                      `(("status" . #("session-idle" "done")))))
                 (loop
                  get-next-command-operation
-                 interrupt-condition
+                 evaluation-id
                  evaluation-queue))
 
                (else
