@@ -164,14 +164,12 @@ already locked and works without suspending the whole thread."
 
 (define (command-loop-thunk nutex result-channel)
   (lambda ()
-    ;; (define suspending-mutex (make-mutex))
-    ;; (lock-mutex suspending-mutex)
 
     (define (suspending-thunk)
-      ;; (lock-mutex suspending-mutex)
-      (sleep 100)
-      (nutex-lock! nutex)
-      (abort-to-prompt thread-entry-point-tag `((action . shutdown))))
+      (define seconds-in-day 86400)
+      (let loop ()
+        (sleep seconds-in-day)
+        (loop)))
 
     (define (return-value value)
       (put-message result-channel value))
