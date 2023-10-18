@@ -179,9 +179,6 @@ already locked and works without suspending the whole thread."
     (let loop ((thunk #f))
       (call-with-prompt thread-entry-point-tag
         (lambda ()
-          ;; (if thunk
-          ;;     (format #t "=> scheduling: ~a\n" thunk)
-          ;;     (format #t "=> waiting for interrupt\n"))
           (nutex-unlock! nutex)
           (define thunk-value ((or thunk suspending-thunk)))
           ;; it either locked or the thread is interrupted
@@ -213,13 +210,6 @@ already locked and works without suspending the whole thread."
          (thread
           (call-with-new-thread (command-loop-thunk nutex result-channel))))
     (nutex-wait nutex)
-    ;; (spawn-fiber (lambda ()
-    ;;                ;; We can't directly wait for condition variable in
-    ;;                ;; thread because when asyncs does non-local exit
-    ;;                ;; the thread is not removed from condition
-    ;;                ;; variable waiters.
-    ;;                (wait shutdown-condition)
-    ;;                (unlock-mutex shutdown-mutex)))
     (%make-reusable-thread thread nutex result-channel)))
 
 (define (%reusable-thread-do reusable-thread thunk)
@@ -271,24 +261,6 @@ computations."
     `((action . interrupt)))
    (list (reusable-thread-get-value reusable-thread))))
 
-(define (make-evaluation-thread code finished-condition)
-  "Evaluate code in a separate thread.  Signals FINISHED-CONDITION
- even if thread is cancelled."
-  (call-with-new-thread
-   (lambda ()
-     (dynamic-wind
-       (const #t)
-       (lambda ()
-         ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
-         (with-exception-handler
-             (lambda (exception)
-               `((exception-value . ,exception)
-                 (stack . ,(make-stack #t))))
-           (lambda ()
-             `((eval-value . ,(primitive-eval code))))
-           #:unwind? #t))
-       (lambda () (signal-condition! finished-condition))))))
-
 (define (evaluation-thunk code)
   "Return a thunk, which evaluate CODE and handle exceptions."
   (define out (current-output-port))
@@ -304,21 +276,6 @@ computations."
           (eval-value . ,((@ (system base compile) compile)
                           code #:env (current-module)))))
       #:unwind? #t)))
-
-
-(define* (evaluation-result-manager-thunk
-          result-channel replies-channel
-          #:key
-          (pretty-print (lambda (x) (format #f "~s" x))))
-  "Obtains a result from RESULT-CHANNEL, converts it to nrepl messages
-and passes to REPLIES-CHANNEL."
-
-
-  (lambda ()
-    (for-each
-     (lambda (reply) (put-message replies-channel reply))
-     (evaluation-result->nrepl-messages
-      (get-message result-channel)))))
 
 (define (setup-redirects-for-ports-thunk output-pipes
                                          input-port
@@ -405,6 +362,7 @@ COMMAND-CHANNEL."
     (define position 0)
     (define (length)
       (string-length buffer))
+    ;; https://tonsky.me/blog/unicode/
     (define (code-points-left)
       (- (length) position))
 
@@ -457,6 +415,8 @@ COMMAND-CHANNEL."
            (cond
             ((equal? 'return-value action)
              (let ((value (assoc-ref command 'value)))
+               ;; TODO: [Andrew Tropin, 2023-10-18] Add pretty print
+               ;; for returning value
                (reply-with-messages (evaluation-result->nrepl-messages value))
                ;; We can't directly signal EVALUATION-THUNK-FINISHED
                ;; inside evaluation thread, because call/cc can restore
