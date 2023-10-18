@@ -25,6 +25,7 @@
   #:use-module (nrepl extensions state)
   #:use-module (nrepl extensions bencode)
   #:use-module (nrepl extensions session)
+  #:use-module (nrepl extensions completion)
   #:use-module (nrepl extensions evaluation)
   #:export (bootstrap-nrepl
             make-initial-context
@@ -41,6 +42,7 @@
    state-extension
    bencode-extension
    session-extension
+   completion-extension
    evaluation-extension))
 
 ;; Move to extension state?
@@ -62,8 +64,6 @@
 (define (nrepl-loop context)
   (let ((handler (car (atomic-box-ref (assoc-ref context 'nrepl/handler))))
         (input-port (assoc-ref context 'nrepl/input-port)))
-    (handler context)
-
     ;; Throws an error, when port get closed
     (false-if-exception
      (perform-operation (wait-until-port-readable-operation input-port)))
@@ -71,6 +71,7 @@
     (when (and
            (not (port-closed? input-port))
            (not (eof-object? (peek-char input-port))))
+      (handler context)
       (nrepl-loop context))))
 
 (define* (bootstrap-nrepl
