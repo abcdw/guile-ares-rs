@@ -75,6 +75,7 @@
 
 (define operations
   `(("eval" . ,process-message)
+    ("stdin" . ,process-message)
     ("interrupt" . ,process-message)))
 
 (define (wrap-evaluation handler)

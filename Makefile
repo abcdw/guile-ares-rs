@@ -1,4 +1,4 @@
-GUILE=guix shell guile guile-fibers -- guile
+GUILE=guix shell guile-next guile-fibers -- guile
 GIDER=`guix build -e '(@ (rde packages emacs-xyz) emacs-gider)'`/share/emacs/site-lisp/gider-0.1.0/src
 NREPL_PORT=7888
 

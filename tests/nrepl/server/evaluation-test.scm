@@ -278,7 +278,30 @@
                        (wait-operation finished)
                        (const #t))))
 
-           (test-end "Saved continuation evaluation")))))))
+           (test-end "Saved continuation evaluation"))
+
+         (let ((finished (make-condition)))
+           (test-begin "Get Input")
+
+           (run-eval `((@ (ice-9 rdelim) read-line)) finished)
+           (test-equal "Input requested"
+             `(("status" . #("need-input")))
+             (quickly (get-operation replies-channel)))
+           (put-message
+            command-channel
+            `((action . provide-input)
+              (stdin . "hello\n")))
+           (test-equal "Input read"
+             `(("value" . "\"hello\"")
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (test-assert "Finished condition signalled"
+             (quickly (wrap-operation
+                       (wait-operation finished)
+                       (const #t))))
+
+           (test-end "Get input")))))))
 
 (define-test test-evaluation-supervisor
   (test-group "Testing Evaluation Supervisor"

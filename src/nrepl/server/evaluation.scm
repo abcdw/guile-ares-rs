@@ -29,6 +29,7 @@
   #:use-module (ice-9 threads)
   #:use-module (ice-9 match)
   #:use-module (ice-9 atomic)
+  #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-1)
   #:use-module (nrepl alist)
@@ -319,7 +320,8 @@ and passes to REPLIES-CHANNEL."
      (evaluation-result->nrepl-messages
       (get-message result-channel)))))
 
-(define (setup-redirects-for-ports-thunk pipes
+(define (setup-redirects-for-ports-thunk output-pipes
+                                         input-port
                                          thunk-finished-condition
                                          replies-channel
                                          wrap-with-ports-channel)
@@ -333,17 +335,16 @@ Stream managers waits until THUNK-FINISHED is signalled."
     (lambda (v) `((,tag . ,v))))
 
   (lambda ()
-    (match pipes
-      ;; Destructure a list of 3 pipes into 6 separate variables
+    (match output-pipes
+      ;; Destructure a list of 2 pipes into 4 separate variables
       (((stdout-input-port . stdout-output-port)
-        (stderr-input-port . stderr-output-port)
-        (stdin-input-port . stdin-output-port))
+        (stderr-input-port . stderr-output-port))
        (let ((wrap-with-ports (lambda (thunk)
                                 (lambda ()
                                   (with-current-ports
                                    stdout-output-port
                                    stderr-output-port
-                                   stdin-input-port
+                                   input-port
                                    thunk))))
              (stdout-finished (make-condition))
              (stderr-finished (make-condition)))
@@ -398,16 +399,44 @@ Stream managers waits until THUNK-FINISHED is signalled."
           (terminate-condition (make-condition)))
   "Spawn a thread and can run/interrupt evaluation on it via commands sent to
 COMMAND-CHANNEL."
-  (define get-command-operation
-    (get-operation command-channel))
+
+  (define (open-channel-input-port request-channel input-channel)
+    (define buffer "")
+    (define position 0)
+    (define (length)
+      (string-length buffer))
+    (define (code-points-left)
+      (- (length) position))
+
+    (define (read! dst start count)
+      (when (= 0 (code-points-left))
+        (put-message request-channel `((action . need-input)))
+        (set! buffer (get-message input-channel))
+        (set! position 0))
+      (let ((count (min count (code-points-left))))
+        (string-copy! dst start buffer position (+ position count))
+        (set! position (+ position count))
+        count))
+
+    (make-custom-textual-input-port "channel-port" read! #f #f #f))
+
   (lambda ()
     (call-with-pipes
-     (unbuffer-pipes! (make-pipes 3))
+     (unbuffer-pipes! (make-pipes 2))
      (lambda (pipes)
        (let* ((result-channel (make-channel))
+              (input-request-channel (make-channel))
+              (stdin-channel (make-channel))
+              (input-port (open-channel-input-port
+                           input-request-channel
+                           stdin-channel))
               (evaluation-rethread (make-reusable-thread result-channel)))
          (let loop ((reply-channel #f)
                     (evaluation-finished #f))
+           (define (repeat-loop)
+             (loop reply-channel evaluation-finished))
+           (define (reset-loop)
+             (loop #f #f))
 
            (define (reply-with-messages messages)
              (for-each
@@ -418,6 +447,7 @@ COMMAND-CHANNEL."
            (define command
              (perform-operation
               (choice-operation
+               (get-operation input-request-channel)
                (get-operation result-channel)
                (get-operation command-channel))))
 
@@ -434,7 +464,7 @@ COMMAND-CHANNEL."
                ;; on RESULT-CHANNEL for understanding if evaluation
                ;; actually finished.
                (signal-condition! evaluation-finished)
-               (loop #f #f)))
+               (reset-loop)))
             ((equal? 'evaluate action)
              (let ((code (assoc-ref command 'code))
                    (replies-channel (assoc-ref command 'replies-channel))
@@ -447,6 +477,7 @@ COMMAND-CHANNEL."
                (spawn-fiber
                 (setup-redirects-for-ports-thunk
                  pipes
+                 input-port
                  evaluation-thunk-finished
                  replies-channel
                  wrap-with-ports-thunk-channel))
@@ -464,7 +495,14 @@ COMMAND-CHANNEL."
                 (reusable-thread-interrupt evaluation-rethread))))
              (signal-condition! evaluation-finished)
              ;; (reuse-thread evaluation-rethread (lambda () 'interrupted))
-             (loop #f #f))
+             (reset-loop))
+            ((equal? 'need-input action)
+             (reply-with-messages
+              `((("status" . #("need-input")))))
+             (repeat-loop))
+            ((equal? 'provide-input action)
+             (put-message stdin-channel (assoc-ref command 'stdin))
+             (repeat-loop))
             (else
              (error "it sholud not get here")))))))))
 
@@ -572,7 +610,11 @@ arrival or when evaluation is finished, #t and rest of the queue."
                (evaluation-id #f)
                (evaluation-queue (make-queue)))
       (let* ((command (perform-operation get-next-command-operation))
-             (action (assoc-ref command 'action)))
+             (action (assoc-ref command 'action))
+             (repeat-loop (lambda ()
+                            (loop get-next-command-operation
+                                  evaluation-id
+                                  evaluation-queue))))
         ;; (format #t "_________\ncommand: ~yevaluation-id: ~a\n\n"
         ;;         ;; get-next-command-operation
         ;;         command evaluation-id)
@@ -639,11 +681,19 @@ arrival or when evaluation is finished, #t and rest of the queue."
                  evaluation-id
                  evaluation-queue))
 
+               ((equal? "stdin" op)
+                (put-message evaluation-thread-command-channel
+                             `((action . provide-input)
+                               (stdin . ,(assoc-ref message "stdin"))))
+                ((assoc-ref command 'reply)
+                 `(("status" . #("done"))))
+                (repeat-loop))
+
                (else
                 (format (current-error-port)
                         "What is going on in evaluation supervisor: ~a\n"
                         message)
-                (throw 'kawabanga))))))))))
+                (error "kawabanga"))))))))))
 
 (define (evaluation-supervisor-shutdown control-channel)
   (put-message control-channel '((action . shutdown))))
