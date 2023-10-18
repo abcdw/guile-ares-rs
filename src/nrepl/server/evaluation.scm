@@ -43,26 +43,6 @@
             evaluation-supervisor-shutdown
             evaluation-supervisor-process-nrepl-message))
 
-;; Managers should be lambdas, because spawn-fiber can have scheduler
-;; argument.
-
-
-;;;
-;;; Helpers
-;;;
-
-(define (exception->replies exception)
-  (let ((error (apply format #f
-                      (string-append (exception-message exception) "\n")
-                      (caddr (exception-args exception)))))
-    `((("err" . ,error))
-      (("ex" . ,(symbol->string (exception-kind exception)))
-       ("status" . #("eval-error")))
-      (("status" . #("done"))))))
-
-(define (reply-with-exception reply exception)
-  (for-each reply (exception->replies exception)))
-
 
 ;;;
 ;;; I/O Handling
@@ -323,6 +303,23 @@ Stream managers waits until THUNK-FINISHED is signalled."
          (wait stdout-finished)
          (wait stderr-finished))))))
 
+
+;;;
+;;; nREPL Helpers
+;;;
+
+(define (exception->nrepl-messages exception)
+  (let ((error (apply format #f
+                      (string-append (exception-message exception) "\n")
+                      (caddr (exception-args exception)))))
+    `((("err" . ,error))
+      (("ex" . ,(symbol->string (exception-kind exception)))
+       ("status" . #("eval-error")))
+      (("status" . #("done"))))))
+
+(define (reply-with-exception reply exception)
+  (for-each reply (exception->nrepl-messages exception)))
+
 (define* (evaluation-result->nrepl-messages
           result
           #:key
@@ -333,7 +330,7 @@ Stream managers waits until THUNK-FINISHED is signalled."
         `((("value" . ,(pretty-print (assoc-ref result 'eval-value)))
            ("status" . #("done")))))
        ((equal? 'exception result-type)
-        (exception->replies (assoc-ref result 'exception-value)))
+        (exception->nrepl-messages (assoc-ref result 'exception-value)))
        ((equal? 'interrupted result-type)
         `((("status" . #("done" "interrupted")))))
        (else (error (format #f "unknown result-type: ~a\n" result-type))))))
@@ -345,6 +342,11 @@ Stream managers waits until THUNK-FINISHED is signalled."
     `((("status" . #("done" "interrupted")))))
    ((equal? 'idle status)
     `((("status" . #("done" "session-idle")))))))
+
+
+;;;
+;;; Event Loops
+;;;
 
 (define* (evaluation-thread-manager-thunk
           command-channel
