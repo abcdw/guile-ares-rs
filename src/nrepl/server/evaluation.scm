@@ -259,7 +259,8 @@ computations."
                                          input-port
                                          thunk-finished-condition
                                          replies-channel
-                                         wrap-with-ports-channel)
+                                         wrap-with-ports-channel
+                                         finished-condition)
   "Returns a thunk, which setups redirects for ports, spawning respective
 output stream managers and wait until they finished.  After everything
 is set, puts a wrap-with-ports function into WRAP-WITH-PORTS-CHANNEL.
@@ -301,7 +302,8 @@ Stream managers waits until THUNK-FINISHED is signalled."
 
          (put-message wrap-with-ports-channel wrap-with-ports)
          (wait stdout-finished)
-         (wait stderr-finished))))))
+         (wait stderr-finished)
+         (signal-condition! finished-condition))))))
 
 
 ;;;
@@ -390,11 +392,21 @@ COMMAND-CHANNEL."
                            stdin-channel))
               (evaluation-rethread (make-reusable-thread result-channel)))
          (let loop ((reply-channel #f)
-                    (evaluation-finished #f))
+                    (evaluation-finished #f)
+                    (output-finished-condition #f))
            (define (repeat-loop)
-             (loop reply-channel evaluation-finished))
+             (loop reply-channel evaluation-finished output-finished-condition))
            (define (reset-loop)
-             (loop #f #f))
+             (loop #f #f #f))
+
+           (define (mark-evaluation-finished!)
+               ;; We can't directly signal EVALUATION-THUNK-FINISHED
+               ;; inside evaluation thread, because call/cc can restore
+               ;; context, where it is not available, so we need to rely
+               ;; on RESULT-CHANNEL for understanding if evaluation
+               ;; actually finished.
+               (signal-condition! evaluation-finished)
+               (wait output-finished-condition))
 
            (define (reply-with-messages messages)
              (for-each
@@ -415,20 +427,16 @@ COMMAND-CHANNEL."
            (cond
             ((equal? 'return-value action)
              (let ((value (assoc-ref command 'value)))
+               (mark-evaluation-finished!)
                ;; TODO: [Andrew Tropin, 2023-10-18] Add pretty print
                ;; for returning value
                (reply-with-messages (evaluation-result->nrepl-messages value))
-               ;; We can't directly signal EVALUATION-THUNK-FINISHED
-               ;; inside evaluation thread, because call/cc can restore
-               ;; context, where it is not available, so we need to rely
-               ;; on RESULT-CHANNEL for understanding if evaluation
-               ;; actually finished.
-               (signal-condition! evaluation-finished)
                (reset-loop)))
             ((equal? 'evaluate action)
              (let ((code (assoc-ref command 'code))
                    (replies-channel (assoc-ref command 'replies-channel))
                    (wrap-with-ports-thunk-channel (make-channel))
+                   (output-finished-condition (make-condition))
                    (evaluation-thunk-finished
                     (assoc-ref command 'evaluation-finished)))
 
@@ -440,21 +448,22 @@ COMMAND-CHANNEL."
                  input-port
                  evaluation-thunk-finished
                  replies-channel
-                 wrap-with-ports-thunk-channel))
+                 wrap-with-ports-thunk-channel
+                 output-finished-condition))
 
                (reusable-thread-discard-and-run
                 evaluation-rethread
                 ((get-message wrap-with-ports-thunk-channel)
                  (evaluation-thunk code)))
 
-               (loop replies-channel evaluation-thunk-finished)))
+               (loop replies-channel evaluation-thunk-finished
+                     output-finished-condition)))
             ((equal? 'interrupt action)
              (reply-with-messages
               (interrupt-result->nrepl-messages
                (car
                 (reusable-thread-interrupt evaluation-rethread))))
-             (signal-condition! evaluation-finished)
-             ;; (reuse-thread evaluation-rethread (lambda () 'interrupted))
+             (mark-evaluation-finished!)
              (reset-loop))
             ((equal? 'need-input action)
              (reply-with-messages
