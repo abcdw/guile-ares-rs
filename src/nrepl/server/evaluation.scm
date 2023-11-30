@@ -252,7 +252,8 @@ computations."
       (lambda ()
         `((result-type . value)
           (eval-value . ,((@ (system base compile) compile)
-                          code #:env (current-module)))))
+                          (with-input-from-string code read)
+                           #:env (current-module)))))
       #:unwind? #t)))
 
 (define (setup-redirects-for-ports-thunk output-pipes
@@ -610,11 +611,10 @@ arrival or when evaluation is finished, #t and rest of the queue."
           ;; We can't be here if queue is empty
           (let* ((command (front evaluation-queue))
                  (code-string (alist-get-in '(message "code") command))
-                 (reply (assoc-ref command 'reply))
-                 (read-result (try-read reply code-string)))
-            (if read-result
+                 (reply (assoc-ref command 'reply)))
+            (if code-string
                 (apply loop (run-evaluation
-                             (assoc-ref read-result 'code)
+                             code-string
                              receive-command-operation
                              ;; It's not obvious, that element is
                              ;; removed from the evaluation-queue
