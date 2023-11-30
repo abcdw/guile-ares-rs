@@ -449,7 +449,7 @@ COMMAND-CHANNEL."
                (reset-loop)))
 
             ((equal? 'evaluate action)
-             (let ((nrepl-message (assoc-ref (pk command) 'message))
+             (let ((nrepl-message (assoc-ref command 'message))
                    (replies-channel (assoc-ref command 'replies-channel))
                    (wrap-with-ports-thunk-channel (make-channel))
                    (output-finished-condition (make-condition))
