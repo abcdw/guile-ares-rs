@@ -239,10 +239,12 @@ computations."
     `((action . interrupt)))
    (list (reusable-thread-get-value reusable-thread))))
 
-(define (evaluation-thunk code)
-  "Return a thunk, which evaluate CODE and handle exceptions."
+(define (evaluation-thunk nrepl-message)
+  "Return a thunk, which evaluate code in appropriate module and handle
+exceptions."
   (define out (current-output-port))
   (lambda ()
+    (define (read-from-string str) (with-input-from-string str read))
     ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
     (with-exception-handler
         (lambda (exception)
@@ -250,10 +252,22 @@ computations."
             (exception-value . ,exception)
             (stack . ,(make-stack #t))))
       (lambda ()
-        `((result-type . value)
-          (eval-value . ,((@ (system base compile) compile)
-                          (with-input-from-string code read)
-                           #:env (current-module)))))
+        (let* ((code (assoc-ref nrepl-message "code"))
+               (ns (assoc-ref nrepl-message "ns"))
+               (module
+                ;; If ns is present try to find a respective module,
+                ;; but don't create it if it doesn't exists yet.
+                ;; #:ensure #t creates a module with empty
+                ;; environment, so nothing will be available, which
+                ;; can be even more confusing than fallback to
+                ;; current-module.
+                (or
+                 (if ns (resolve-module (read-from-string ns) #:ensure #t) #f)
+                 (current-module))))
+          `((result-type . value)
+            (eval-value . ,((@ (system base compile) compile)
+                            (read-from-string code)
+                            #:env module)))))
       #:unwind? #t)))
 
 (define (setup-redirects-for-ports-thunk output-pipes
@@ -433,8 +447,9 @@ COMMAND-CHANNEL."
                ;; for returning value
                (reply-with-messages (evaluation-result->nrepl-messages value))
                (reset-loop)))
+
             ((equal? 'evaluate action)
-             (let ((code (assoc-ref command 'code))
+             (let ((nrepl-message (assoc-ref (pk command) 'message))
                    (replies-channel (assoc-ref command 'replies-channel))
                    (wrap-with-ports-thunk-channel (make-channel))
                    (output-finished-condition (make-condition))
@@ -455,7 +470,7 @@ COMMAND-CHANNEL."
                (reusable-thread-discard-and-run
                 evaluation-rethread
                 ((get-message wrap-with-ports-thunk-channel)
-                 (evaluation-thunk code)))
+                 (evaluation-thunk nrepl-message)))
 
                (loop replies-channel evaluation-thunk-finished
                      output-finished-condition)))
@@ -547,7 +562,9 @@ COMMAND-CHANNEL."
   (define evaluation-thread-command-channel (make-channel))
   (define evaluation-thread-shutdown-condition (make-condition))
 
-  (define (run-evaluation code get-next-command-operation evaluation-queue)
+  (define (run-evaluation nrepl-message
+                          get-next-command-operation
+                          evaluation-queue)
     "Starts evaluation, return operation which unblocks on next command
 arrival or when evaluation is finished, #t and rest of the queue."
     (let* ((finished-condition (make-condition))
@@ -558,7 +575,7 @@ arrival or when evaluation is finished, #t and rest of the queue."
        (replies-manager-thunk replies-channel reply))
       (put-message evaluation-thread-command-channel
                    `((action . evaluate)
-                     (code . ,code)
+                     (message . ,nrepl-message)
                      (replies-channel . ,replies-channel)
                      (evaluation-finished . ,finished-condition)))
 
@@ -610,19 +627,14 @@ arrival or when evaluation is finished, #t and rest of the queue."
          ((equal? 'evaluate action)
           ;; We can't be here if queue is empty
           (let* ((command (front evaluation-queue))
-                 (code-string (alist-get-in '(message "code") command))
+                 (nrepl-message (assoc-ref command 'message))
                  (reply (assoc-ref command 'reply)))
-            (if code-string
-                (apply loop (run-evaluation
-                             code-string
-                             receive-command-operation
-                             ;; It's not obvious, that element is
-                             ;; removed from the evaluation-queue
-                             evaluation-queue))
-                (loop
-                 receive-command-operation
-                 evaluation-id
-                 (dequeue evaluation-queue)))))
+            (apply loop (run-evaluation
+                         nrepl-message
+                         receive-command-operation
+                         ;; It's not obvious, that element is
+                         ;; removed from the evaluation-queue
+                         evaluation-queue))))
 
          ((equal? 'process-nrepl-message action)
             (let* ((message (assoc-ref command 'message))
