@@ -262,7 +262,7 @@ exceptions."
                 ;; can be even more confusing than fallback to
                 ;; current-module.
                 (or
-                 (if ns (resolve-module (read-from-string ns) #:ensure #t) #f)
+                 (if ns (resolve-module (read-from-string ns) #:ensure #f) #f)
                  (current-module))))
           `((result-type . value)
             (eval-value . ,((@ (system base compile) compile)
