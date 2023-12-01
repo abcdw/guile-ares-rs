@@ -1,7 +1,7 @@
 # -*- mode: org -*-
 
 * Introduction
-Asynchronous Reliable Extensible Scheme RPC Server for Guile.  It's
+Asynchronous Reliable Extensible Sleek RPC Server for Guile.  It's
 based on [[https://nrepl.org/nrepl/index.html][nREPL]] protocol and can be used for programmable interactions
 with a running guile processes, for implementing REPLs, IDEs, test
 runners or other tools.

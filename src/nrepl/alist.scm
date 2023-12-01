@@ -1,4 +1,4 @@
-;;; guile-ares-rs --- Asynchronous Reliable Extensible Scheme RPC Server
+;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
 ;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
 ;;;
