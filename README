@@ -14,22 +14,23 @@ usual REPL, it's actually not a REPL at all, it's an RPC Server,
 however it's possible to implement REPL-like experience with it (and
 respective client).
 
-
-You can try it directly with Monroe, Rail or other generic nREPL clients (see
-the clients section below).
-
+It's intended for use with [[https://git.sr.ht/~abcdw/emacs-arei][Arei]] IDE, but you can use it with other
+generic nREPL [[https://nrepl.org/nrepl/usage/clients.html][clients]].
 
 * Development
-It depends, on [[https://github.com/wingo/fibers][fibers]], tests are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
+It depends, on [[https://github.com/wingo/fibers][fibers]], and on guile-next (custom textual ports), tests
+are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
 
-Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list.
+Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list in format
+~[PATCH guile-ares-rs 0/3] SUBJECT-HERE~.
 
 ** First Release Roadmap
-- Implement eval on top of reusable threads.
-- Implement read interception for current-input-port.
-- Implement completion and lookup operations.
-- Implement extension extension (swap-extension, add-extension).
-- Change Scheme to Superior in project description.
+- [X] Implement eval on top of reusable threads.
+- [X] Implement read interception for current-input-port.
+- [X] Implement completion
+- [ ] lookup operations.
+- [ ] Implement extension extension (swap-extension, add-extension).
+- [X] Change Scheme to Sleek in project description.
 
 ** Open Questions
 - How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
@@ -37,8 +38,8 @@ Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-
 - Bootstrap from guile network repl? (Send guile-ares-rs
   implementation to remote network repl server to make it nrepl).
 - Multiple guile languages support.
-- How to bypass continuation barrier in evaluation thread, when using
-  previously stored continuation.
+- +How to bypass continuation barrier in evaluation thread, when using
+  previously stored continuation.+
 - Translation level for shrothanded nrepl base operations?
 - Do we need to support meta-commands? (Probably not, it just
   functions, which can be exported to user or repl module scope).
@@ -63,6 +64,7 @@ some of them:
   it will be frozen.
 - Rebinds M-. instead of using xref.
 - https://spritely.institute/files/docs/guile-goblins/0.11.0/TEMPORARY-Live-hacking-_0060_0060fix_0027_0027.html
+- https://www.reddit.com/r/scheme/comments/qyqxcd/geiser_sucks_is_there_a_way_to_make_it_suck_less/
 
 * Links
 ** NREPL
@@ -78,6 +80,7 @@ some of them:
   of nREPL for CIDER.
 
 *** Debugging Tool
+- http://www.flow-storm.org/
 - https://github.com/clojure-emacs/sayid
 - https://github.com/philoskim/debux
 - https://github.com/jpmonettas/flow-storm-debugger
