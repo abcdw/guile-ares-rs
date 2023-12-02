@@ -8,7 +8,8 @@ runners or other tools.
 
 *WARNING:* It's at the prototype stage and is not ready for everyday use.
 
-~guile-ares-rs~ was previously known as ~guile-nrepl~.  It was renamed to
+~guile-ares-rs~ was previously known as ~guile-nrepl~ (because it started
+as just nREPL implementation in Guile Scheme).  It was renamed to
 avoid any confusion with network/socket REPL, ~guile-ares-rs~ is not a
 usual REPL, it's actually not a REPL at all, it's an RPC Server,
 however it's possible to implement REPL-like experience with it (and
@@ -21,8 +22,10 @@ generic nREPL [[https://nrepl.org/nrepl/usage/clients.html][clients]].
 It depends, on [[https://github.com/wingo/fibers][fibers]], and on guile-next (custom textual ports), tests
 are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
 
-Patches and feedback can be sent to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list in format
+[[https://git-send-email.io/][Send]] patches to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list in format:
 ~[PATCH guile-ares-rs 0/3] SUBJECT-HERE~.
+
+[[https://man.sr.ht/lists.sr.ht/etiquette.md][Send]] feedback to [[https://lists.sr.ht/~abcdw/rde-discuss][rde-discuss]].
 
 ** First Release Roadmap
 - [X] Implement eval on top of reusable threads.
