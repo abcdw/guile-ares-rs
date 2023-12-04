@@ -1,4 +1,5 @@
 # -*- mode: org -*-
+#+OPTIONS: toc:nil
 
 * Introduction
 Asynchronous Reliable Extensible Sleek RPC Server for Guile.  It's
@@ -6,7 +7,8 @@ based on [[https://nrepl.org/nrepl/index.html][nREPL]] protocol and can be used 
 with a running guile processes, for implementing REPLs, IDEs, test
 runners or other tools.
 
-*WARNING:* It's at the prototype stage and is not ready for everyday use.
+*WARNING:* It's in early stage of development, the API is a subject to
+change.
 
 ~guile-ares-rs~ was previously known as ~guile-nrepl~ (because it started
 as just nREPL implementation in Guile Scheme).  It was renamed to
@@ -106,9 +108,11 @@ some of them:
 - https://wiki.theory.org/BitTorrentSpecification#Bencoding
 
 * FAQ
-Q: Can I use guile-ares-rs with an existing network REPL?  A:
-Theoretically it's possible to upgrade existing REPL to guile-ares-rs,
-see bootstrap and infect modules (they can be not implemented yet).
+Q: Can I use guile-ares-rs with an existing network REPL?
+
+A: Theoretically it's possible to upgrade existing REPL to
+guile-ares-rs, see bootstrap and infect modules (they can be not
+implemented yet).
 
 
 * Acknowledgements
