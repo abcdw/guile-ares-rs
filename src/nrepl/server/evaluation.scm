@@ -334,9 +334,6 @@ Stream managers waits until THUNK-FINISHED is signalled."
        ("status" . #("eval-error")))
       (("status" . #("done"))))))
 
-(define (reply-with-exception reply exception)
-  (for-each reply (exception->nrepl-messages exception)))
-
 (define* (evaluation-result->nrepl-messages
           result
           #:key
@@ -549,15 +546,6 @@ COMMAND-CHANNEL."
      (sleep-operation 0)
      (const `((internal? . #t)
               (action . evaluate)))))
-
-  (define (try-read reply code)
-    (with-exception-handler
-        (lambda (exception)
-          (reply-with-exception reply exception)
-          #f)
-      (lambda ()
-        (list (cons 'code (with-input-from-string code read))))
-      #:unwind? #t))
 
   (define evaluation-thread-command-channel (make-channel))
   (define evaluation-thread-shutdown-condition (make-condition))
