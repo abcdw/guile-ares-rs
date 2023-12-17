@@ -35,6 +35,7 @@
   #:use-module (nrepl alist)
   #:use-module (nrepl atomic)
   #:use-module (nrepl ports)
+  #:use-module ((system repl debug) #:prefix repl-debug:)
   #:export (output-stream-manager-thunk
             reusable-thread-thread
             evaluation-manager-thunk
@@ -325,10 +326,32 @@ Stream managers waits until THUNK-FINISHED is signalled."
 ;;; nREPL Helpers
 ;;;
 
-(define (exception->nrepl-messages exception)
-  (let ((error (apply format #f
-                      (string-append (exception-message exception) "\n")
-                      (caddr (exception-args exception)))))
+(define (exception->nrepl-messages result)
+  (let* ((exception (assoc-ref result 'exception-value))
+         (error
+          ;; There are no particular special about this way of printing
+          ;; the exception, it's just a simple implementation, which
+          ;; usually provides enough information to understand the
+          ;; problem.
+          (call-with-output-string
+            (lambda (port)
+              ;; TODO: [Andrew Tropin, 2023-12-17] Cat out a meaninful
+              ;; stack part in evaluation thread.
+
+              ;; (false-if-exception
+              ;;  (begin
+              ;;    (repl-debug:print-frames
+              ;;     (repl-debug:stack->vector (assoc-ref result 'stack))
+              ;;     port)
+              ;;    (newline port)))
+              (or
+               (false-if-exception
+                (apply format port
+                       (string-append (exception-message exception) "\n")
+                       (or (exception-irritants exception) '())))
+               (format port "~y\n" exception))))))
+    ;; In the future this function can provide more information in a
+    ;; more structured way to be processed by respective IDEs/clients.
     `((("err" . ,error))
       (("ex" . ,(symbol->string (exception-kind exception)))
        ("status" . #("eval-error")))
@@ -344,7 +367,7 @@ Stream managers waits until THUNK-FINISHED is signalled."
         `((("value" . ,(pretty-print (assoc-ref result 'eval-value)))
            ("status" . #("done")))))
        ((equal? 'exception result-type)
-        (exception->nrepl-messages (assoc-ref result 'exception-value)))
+        (exception->nrepl-messages result))
        ((equal? 'interrupted result-type)
         `((("status" . #("done" "interrupted")))))
        (else (error (format #f "unknown result-type: ~a\n" result-type))))))
