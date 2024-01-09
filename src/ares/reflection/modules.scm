@@ -51,3 +51,8 @@ it."
          (roots (root-modules))
          (children (append-map all-child-modules roots)))
     (filter-map module-with-module-kind children)))
+
+(define (module-filename mod)
+  "Return a path to module if corresponding file found in %load-path."
+  (let* ((name-parts (map symbol->string (module-name mod))))
+    (%search-load-path (string-join name-parts "/"))))
