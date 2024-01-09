@@ -42,8 +42,9 @@ are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76
 ** First Release Roadmap
 - [X] Implement eval on top of reusable threads.
 - [X] Implement read interception for current-input-port.
-- [X] Implement completion
-- [ ] lookup operations.
+- [X] Implement completion.
+- [ ] Multiple value support.
+- [ ] Lookup operations.
 - [ ] Implement extension extension (swap-extension, add-extension).
 - [X] Change Scheme to Sleek in project description.
 
@@ -110,7 +111,7 @@ some of them:
 *** Clients
 - https://github.com/sanel/monroe/
 - https://github.com/Sasanidas/Rail
-- Potentially Conjure, when nREPL for guile will be implemnted in it.
+- Potentially Conjure, when nREPL for guile will be implemented in it.
 
 *** Bencode
 - https://github.com/flatwhatson/grump/blob/master/grump-lib/bencode.scm
