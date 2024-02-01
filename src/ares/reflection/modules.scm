@@ -55,4 +55,6 @@ it."
 (define (module-filename mod)
   "Return a path to module if corresponding file found in %load-path."
   (let* ((name-parts (map symbol->string (module-name mod))))
-    (%search-load-path (string-join name-parts "/"))))
+    (and=>
+     (%search-load-path (string-join name-parts "/"))
+     canonicalize-path)))
