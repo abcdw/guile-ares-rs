@@ -39,6 +39,7 @@ it."
 
 (define (all-modules)
   "Return a list of all modules."
+  (resolve-module '(boot-9))
   (let* ((roots (root-modules))
          (children (append-map all-child-modules roots)))
     children))
@@ -54,7 +55,10 @@ it."
 
 (define (module-filename mod)
   "Return a path to module if corresponding file found in %load-path."
-  (let* ((name-parts (map symbol->string (module-name mod))))
+  (let ((name-parts
+         (cond ((equal? '(boot-9) (module-name mod)) '("ice-9" "boot-9"))
+               ((equal? '(guile) (module-name mod)) '("ice-9" "boot-9"))
+               (else (map symbol->string (module-name mod))))))
     (and=>
      (%search-load-path (string-join name-parts "/"))
      canonicalize-path)))
