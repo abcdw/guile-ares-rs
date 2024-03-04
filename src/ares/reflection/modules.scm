@@ -18,7 +18,9 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares reflection modules)
-  #:use-module (srfi srfi-1))
+  #:use-module (srfi srfi-1)
+  #:export (all-modules
+            module-filename))
 
 (define (submodules mod)
   "Return a list of submodules."
