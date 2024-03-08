@@ -34,8 +34,11 @@
   #:use-module (nrepl atomic)
   #:use-module (nrepl ports)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-9)
+  #:use-module ((system base compile) #:select (read-and-compile))
   #:use-module ((system repl debug) #:prefix repl-debug:)
+  #:use-module ((system vm loader) #:select (load-thunk-from-memory))
   #:export (output-stream-manager-thunk
             reusable-thread-thread
             evaluation-manager-thunk
@@ -266,9 +269,18 @@ exceptions."
                  (if ns (resolve-module (read-from-string ns) #:ensure #f) #f)
                  (current-module))))
           `((result-type . value)
-            (eval-value . ,((@ (system base compile) compile)
-                            (read-from-string code)
-                            #:env module)))))
+            (eval-value
+             .
+             ,(call-with-input-string code
+                (lambda (port)
+                  (and-let* ((file (assoc-ref nrepl-message "file")))
+                    (set-port-filename! port file))
+                  (and-let* ((line (assoc-ref nrepl-message "line")))
+                    (set-port-line! port line))
+                  (and-let* ((column (assoc-ref nrepl-message "column")))
+                    (set-port-column! port column))
+                  ((load-thunk-from-memory
+                    (read-and-compile port #:env module)))))))))
       #:unwind? #t)))
 
 (define (setup-redirects-for-ports-thunk output-pipes
