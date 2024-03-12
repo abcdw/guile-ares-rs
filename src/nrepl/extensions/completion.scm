@@ -67,39 +67,8 @@
               (canonicalize-path candidate)
               (loop (cdr dirs)))))))
 
-(define (symbol->object sym)
-  (and (symbol? sym)
-       (module-defined? (current-module) sym)
-       (module-ref (current-module) sym)))
-
-(use-modules (system vm program))
-
-(define (get-symbol-location sym)
-  (save-module-excursion
-   (lambda ()
-     (set-current-module (resolve-module '(gulie-user)))
-     (let ((src (chain-and (symbol->object sym)
-                           (program-source _  0))))
-       (if (or (not src) (null? src))
-           '()
-            `(("file" . ,(source:file src))
-              ("line" . ,(source:line src))
-              ("column" . ,(source:column src))))))))
-
-(define (get-lookup-information context)
-  (let* ((state (assoc-ref context 'nrepl/state))
-         (message (assoc-ref context 'nrepl/message))
-         (reply (assoc-ref context 'reply))
-         (sym (string->symbol (or (assoc-ref message "prefix") "")))
-         ;; (completions (completions prefix))
-         )
-
-    (reply `(("info" . ,(get-symbol-location sym))
-             ("status" . #("done"))))))
-
 (define operations
-  `(("lookup" . ,get-lookup-information)
-    ("completions" . ,get-completions)))
+  `(("completions" . ,get-completions)))
 
 (define (wrap-completion handler)
   (lambda (context)
