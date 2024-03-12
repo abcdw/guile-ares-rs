@@ -19,8 +19,10 @@
 
 (define-module (ares reflection modules)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-2)
   #:export (all-modules
-            module-filename))
+            module-filename
+            string->resolved-module))
 
 (define (submodules mod)
   "Return a list of submodules."
@@ -64,3 +66,9 @@ it."
     (and=>
      (%search-load-path (string-join name-parts "/"))
      canonicalize-path)))
+
+(define (string->resolved-module str)
+  "Tries to resolve STR to a module object."
+  (and-let* ((module-name (with-input-from-string str read))
+             (_ (pair? module-name)))
+    (resolve-module module-name #:ensure #f)))
