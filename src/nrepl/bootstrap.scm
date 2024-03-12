@@ -18,15 +18,15 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl bootstrap)
-  #:use-module (ice-9 atomic)
   #:use-module (fibers io-wakeup)
   #:use-module (fibers operations)
+  #:use-module (ice-9 atomic)
   #:use-module (nrepl extensions)
-  #:use-module (nrepl extensions state)
   #:use-module (nrepl extensions bencode)
-  #:use-module (nrepl extensions session)
   #:use-module (nrepl extensions completion)
   #:use-module (nrepl extensions evaluation)
+  #:use-module (nrepl extensions session)
+  #:use-module (nrepl extensions state)
   #:export (bootstrap-nrepl
             make-initial-context
             add-ports
