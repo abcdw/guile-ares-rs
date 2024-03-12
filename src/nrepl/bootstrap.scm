@@ -25,6 +25,7 @@
   #:use-module (nrepl extensions bencode)
   #:use-module (nrepl extensions completion)
   #:use-module (nrepl extensions evaluation)
+  #:use-module (nrepl extensions lookup)
   #:use-module (nrepl extensions session)
   #:use-module (nrepl extensions state)
   #:export (bootstrap-nrepl
@@ -43,7 +44,8 @@
    bencode-extension
    session-extension
    completion-extension
-   evaluation-extension))
+   evaluation-extension
+   lookup-extension))
 
 ;; Move to extension state?
 (define (initial-context initial-extensions)
