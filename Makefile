@@ -1,5 +1,7 @@
 GUIXTM=guix time-machine --commit=8b249a1be69874d029cd8a2d2ff170f9007c5fc4
 GUILE=$(GUIXTM) -- shell guile-next guile-fibers -- guile
+EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
+HUT=$(GUIXTM) -- shell hut -- hut
 GIDER=`guix build -e '(@ (rde packages emacs-xyz) emacs-gider)'`/share/emacs/site-lisp/gider-0.1.0/src
 NREPL_PORT=7888
 
@@ -35,3 +37,10 @@ check-integration:
 dumb-client:
 	./tests/dumb-client.sh ${NREPL_PORT}
 
+README.html: README
+	${EMACS} -Q --batch -l docs/html-export-config.el README \
+	--funcall org-html-export-to-html
+
+deploy-README.html: README.html
+	${HUT} git update --readme README.html \
+	--repo https://git.sr.ht/~abcdw/guile-ares-rs
