@@ -1,5 +1,5 @@
-GUILE=guix time-machine --commit=8b249a1be69874d029cd8a2d2ff170f9007c5fc4 \
--- shell guile-next guile-fibers -- guile
+GUIXTM=guix time-machine --commit=8b249a1be69874d029cd8a2d2ff170f9007c5fc4
+GUILE=$(GUIXTM) -- shell guile-next guile-fibers -- guile
 GIDER=`guix build -e '(@ (rde packages emacs-xyz) emacs-gider)'`/share/emacs/site-lisp/gider-0.1.0/src
 NREPL_PORT=7888
 
