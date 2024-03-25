@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -21,6 +21,7 @@
   #:use-module (fibers io-wakeup)
   #:use-module (fibers operations)
   #:use-module (ice-9 atomic)
+  #:use-module (ares extensions load-path)
   #:use-module (nrepl extensions)
   #:use-module (nrepl extensions bencode)
   #:use-module (nrepl extensions completion)
@@ -45,7 +46,8 @@
    session-extension
    completion-extension
    evaluation-extension
-   lookup-extension))
+   lookup-extension
+   load-path-extension))
 
 ;; Move to extension state?
 (define (initial-context initial-extensions)
