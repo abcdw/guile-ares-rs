@@ -1,9 +1,10 @@
-GUIXTM=guix time-machine --commit=8b249a1be69874d029cd8a2d2ff170f9007c5fc4
+GUIXTM=guix time-machine -C ./rde/channels-lock.scm
 GUILE=$(GUIXTM) -- shell guile-next guile-fibers -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
-GIDER=`guix build -e '(@ (rde packages emacs-xyz) emacs-gider)'`/share/emacs/site-lisp/gider-0.1.0/src
-NREPL_PORT=7888
+GUIX=$(GUIXTM) --
+GIDER=`$(GUIX) build -e '(@ (rde packages emacs-xyz) emacs-gider)'`/share/emacs/site-lisp/gider-0.1.0/src
+NREPL_PORT=7889
 
 repl:
 	${GUILE} -L ./src -L ./tests --listen
@@ -18,7 +19,14 @@ server:
 	${GUILE} -L ./src -c \
 	"((@ (nrepl server) run-nrepl-server) #:port ${NREPL_PORT})"
 
+ares-rs: server
+
 check: check-evaluation check-bootstrap check-integration
+
+check-test:
+	${GUILE} -L ./src -L ./tests -L ${GIDER} \
+	-c "((@ (gider test-runners) run-test) \
+	(@@ (nrepl server evaluation-test) test-evaluation-thread-manager))"
 
 check-module:
 	${GUILE} -L ./src -L ./tests -L ${GIDER} \
