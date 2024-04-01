@@ -44,7 +44,7 @@ are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76
 - [X] Implement read interception for current-input-port.
 - [X] Implement completion.
 - [ ] Multiple value support.
-- [ ] Lookup operations.
+- [X] Lookup operations.
 - [ ] Implement extension extension (swap-extension, add-extension).
 - [X] Change Scheme to Sleek in project description.
 
