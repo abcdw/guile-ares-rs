@@ -28,23 +28,33 @@
   #:export (lookup-extension))
 
 (define (lookup-symbol ns sym)
+  (define (var->src var)
+    (cond
+     ((macro? var) (chain-and
+                    (macro-transformer var)
+                    (program-source _ 0)))
+     ((program? var) (program-source var 0))
+     (else #f)))
+
+  (define (src->info src)
+    `(("file" . ,(chain
+                  (source:file src)
+                  (%search-load-path _)
+                  (canonicalize-path _)))
+      ("line" . ,(source:line-for-user src))
+      ("column" . ,(source:column src))))
+
+  (define (module-location module)
+    `(0 ,(module-filename module) 0 . 0))
+
   (apropos-fold
    ;; NOTE: [Nikita Domnitskii, 2024-03-12] Not sure how this would
    ;; affect perfomance, maybe we should add some form of early return?
    (lambda (module name var init)
      (if (eq? sym name)
-         (and-let* ((src (cond
-                          ((macro? var) (chain-and
-                                         (macro-transformer var)
-                                         (program-source _ 0)))
-                          ((program? var) (program-source var 0))
-                          (else #f))))
-           `(("file" . ,(chain
-                         (source:file src)
-                         (%search-load-path _)
-                         (canonicalize-path _)))
-             ("line" . ,(source:line-for-user src))
-             ("column" . ,(source:column src))))
+         (and-let* ((src (or (var->src var)
+                             (and=> module module-location))))
+           (src->info src))
          init))
    #f
    (regexp-quote (symbol->string sym))
