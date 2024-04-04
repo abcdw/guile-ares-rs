@@ -48,8 +48,6 @@
     `(0 ,(module-filename module) 0 . 0))
 
   (apropos-fold
-   ;; NOTE: [Nikita Domnitskii, 2024-03-12] Not sure how this would
-   ;; affect perfomance, maybe we should add some form of early return?
    (lambda (module name var init)
      (if (eq? sym name)
          (and-let* ((src (or (var->src var)
@@ -57,7 +55,9 @@
            (src->info src))
          init))
    #f
-   (regexp-quote (symbol->string sym))
+   ;; Instead of early return we just wrap regexp in ^$ to exactly
+   ;; match the symbol we are interested in
+   (string-append "^" (regexp-quote (symbol->string sym)) "$")
    (apropos-fold-accessible ns)))
 
 (define (get-lookup-information context)
