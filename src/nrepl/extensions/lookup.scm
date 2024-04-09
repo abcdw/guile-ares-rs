@@ -18,6 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl extensions lookup)
+  #:use-module (ares reflection metadata)
   #:use-module (ares reflection modules)
   #:use-module ((ice-9 regex) #:select (regexp-quote))
   #:use-module ((ice-9 session) #:select (apropos-fold
@@ -28,35 +29,29 @@
   #:export (lookup-extension))
 
 (define (lookup-symbol ns sym)
-  (define (var->src var)
-    (cond
-     ((macro? var) (chain-and
-                    (macro-transformer var)
-                    (program-source _ 0)))
-     ((program? var) (program-source var 0))
-     (else #f)))
-
-  (define (src->info src)
-    `(("file" . ,(chain
-                  (source:file src)
-                  (%search-load-path _)
-                  (canonicalize-path _)))
-      ("line" . ,(source:line-for-user src))
-      ("column" . ,(source:column src))))
-
   (define (module-location module)
     `(0 ,(module-filename module) 0 . 0))
 
   (apropos-fold
    (lambda (module name var init)
-     (if (eq? sym name)
-         (and-let* ((src (or (var->src var)
-                             (and=> module module-location))))
-           (src->info src))
-         init))
+     (let ((src (or (get-source var)
+                    (and=> module module-location)))
+           (docstring (get-docstring var))
+           (arglists (and=> (get-arglists var) list->vector)))
+       `(("file" . ,(chain
+                     (source:file src)
+                     (%search-load-path _)
+                     (canonicalize-path _)))
+         ("line" . ,(source:line-for-user src))
+         ("column" . ,(source:column src))
+         ("module" . ,(format #f "~a" (module-name module)))
+         ("arglists" . ,arglists)
+         ("docstring" . ,docstring))))
    #f
    ;; Instead of early return we just wrap regexp in ^$ to exactly
-   ;; match the symbol we are interested in
+   ;; match the symbol we are interested in, to further speed up the
+   ;; implementation it would be necessary to rewrite module traverse
+   ;; in apropos-fold and use early return in it.
    (string-append "^" (regexp-quote (symbol->string sym)) "$")
    (apropos-fold-accessible ns)))
 
