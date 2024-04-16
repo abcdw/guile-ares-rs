@@ -18,42 +18,43 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl extensions completion)
+  #:use-module (ares reflection metadata)
+  #:use-module (ares reflection modules)
   #:use-module (ice-9 regex)
   #:use-module (ice-9 session)
   #:use-module (srfi srfi-197)
   #:export (completion-extension))
 
-
-(define (->nrepl-completion-entry x)
-  ;; (module-ref (current-module) 'string-append)
-  `(("candidate" . ,x)
-    ("type" . "function")))
-
 (define (simple-completions prefix module)
-  (save-module-excursion
-   (lambda ()
-     (set-current-module module)
-     (if (string? prefix)
-         (let ((prefix (string-append "^" (regexp-quote prefix))))
-           (chain
-            (apropos-internal prefix)
-            (map symbol->string _)
-            (sort! _ string<?)
-            (map ->nrepl-completion-entry _)
-            (list->vector _)))
-         #()))))
+  (define (get-candidates)
+    (apropos-fold
+     (lambda (module name var acc)
+       (let ((cand `(("candidate" . ,(symbol->string name))
+                     ("type" . ,(cond
+                                 ((macro? var) "macro")
+                                 ((procedure? var) "function")
+                                 (else "var")))
+                     ("ns" . ,(object->string (module-name module))))))
+         (cons cand acc)))
+     '()
+     (string-append "^" (regexp-quote prefix))
+     (apropos-fold-accessible module)))
+
+  (define (candidate<? a b)
+    (string<? (assoc-ref a "candidate")
+              (assoc-ref b "candidate")))
+
+  (chain
+   (get-candidates)
+   (sort! _ candidate<?)
+   (list->vector _)))
 
 (define (get-completions context)
   (let* ((state (assoc-ref context 'nrepl/state))
-         (message (assoc-ref context 'nrepl/message))
-         (ns (assoc-ref message "ns"))
-         (module
-          (or
-           (if ns
-               (resolve-module (with-input-from-string ns read) #:ensure #f)
-               #f)
-           (current-module)))
          (reply (assoc-ref context 'reply))
+         (message (assoc-ref context 'nrepl/message))
+         (module (or (string->resolved-module (assoc-ref message "ns"))
+                     (current-module)))
          (prefix (or (assoc-ref message "prefix") ""))
          (completions (simple-completions prefix module)))
     (reply `(("completions" . ,completions)
