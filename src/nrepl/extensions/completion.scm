@@ -60,14 +60,6 @@
     (reply `(("completions" . ,completions)
              ("status" . #("done"))))))
 
-(define (find-file path)
-  (let loop ((dirs %load-path))
-    (if (null? dirs) #f
-        (let ((candidate (string-append (car dirs) "/" path)))
-          (if (file-exists? candidate)
-              (canonicalize-path candidate)
-              (loop (cdr dirs)))))))
-
 (define operations
   `(("completions" . ,get-completions)))
 
