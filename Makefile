@@ -3,7 +3,6 @@ GUILE=$(GUIXTM) -- shell guile-next guile-fibers -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
-GIDER=`$(GUIX) build -e '(@ (rde packages emacs-xyz) emacs-gider)'`/share/emacs/site-lisp/gider-0.1.0/src
 NREPL_PORT=7889
 
 repl:
@@ -24,13 +23,13 @@ ares-rs: server
 check: check-evaluation check-bootstrap check-integration
 
 check-test:
-	${GUILE} -L ./src -L ./tests -L ${GIDER} \
-	-c "((@ (gider test-runners) run-test) \
+	${GUILE} -L ./src -L ./tests \
+	-c "((@ (ares srfi-64 test-runners) run-test) \
 	(@@ (nrepl server evaluation-test) test-evaluation-thread-manager))"
 
 check-module:
-	${GUILE} -L ./src -L ./tests -L ${GIDER} \
-	-c "((@ (gider test-runners) run-module-tests) \
+	${GUILE} -L ./src -L ./tests \
+	-c "((@ (ares srfi-64 test-runners) run-module-tests) \
 	(resolve-module '${TEST_MODULE}))"
 
 check-evaluation:
