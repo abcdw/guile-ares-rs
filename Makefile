@@ -15,7 +15,7 @@ nrepl-proxy:
 	-X lambdaisland.nrepl-proxy/start :port 1234 :attach ${NREPL_PORT}
 
 server:
-	${GUILE} -L ./src -c \
+	${GUILE} -L ./src -L ./tests -c \
 	"((@ (nrepl server) run-nrepl-server) #:port ${NREPL_PORT})"
 
 ares-rs: server
