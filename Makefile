@@ -19,7 +19,10 @@ server:
 
 ares-rs: server
 
-check: check-evaluation check-bootstrap check-integration
+check:
+	${GUILE} -L ./src -L ./tests \
+	-c "((@ (ares srfi-64 test-runners) run-project-tests) \
+#:test-modules (@ (all-tests) all-test-modules))"
 
 check-test:
 	${GUILE} -L ./src -L ./tests \
