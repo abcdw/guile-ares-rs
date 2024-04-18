@@ -153,7 +153,8 @@
            (put-message
             command-channel
             `((action . evaluate)
-              (code . ,code)
+              (message . (("op" . "eval")
+                          ("code" . ,(format #f "~s" code))))
               (replies-channel . ,replies-channel)
               (evaluation-finished . ,finished-condition))))
 
