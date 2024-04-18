@@ -5,8 +5,7 @@ HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
 NREPL_PORT=7889
 
-repl:
-	${GUILE} -L ./src -L ./tests --listen
+repl: server
 
 nrepl-proxy:
 	guix shell openjdk clojure-tools -- \
