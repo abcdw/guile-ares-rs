@@ -19,14 +19,20 @@
     (test-group "strings"
       (test-equal "\"spam\"" "4:spam" (scm->bencode-string "spam"))
       (test-equal "\"naïve\"" "6:naïve" (scm->bencode-string "naïve"))
-      (test-equal "empty string" "0:" (scm->bencode-string "")))
+      (test-equal "empty string" "0:" (scm->bencode-string ""))
+      (test-equal "\"keyword\"" "7:keyword" (scm->bencode-string #:keyword))
+      (test-equal "\"symbol\"" "6:symbol" (scm->bencode-string 'symbol)))
 
     (test-group "lists"
       (test-equal "empty list" "le" (scm->bencode-string #()))
       (test-equal "list with number and string"
         "l4:spami-42ee" (scm->bencode-string #("spam" -42)))
       (test-equal "list with nested list, number and string"
-        "ll4:spamelei-42ee" (scm->bencode-string #(#("spam") #() -42))))
+        "ll4:spamelei-42ee" (scm->bencode-string #(#("spam") #() -42)))
+      (test-equal "list with keywords"
+        "l1:a1:be" (scm->bencode-string #(#:a #:b)))
+      (test-equal "list with symbols"
+        "l1:a1:be" (scm->bencode-string #(a b))))
 
     (test-group "dictionaries"
       (test-equal "empty dict" "de" (scm->bencode-string '()))
@@ -43,7 +49,11 @@
        #t (scm->bencode-string '(("spam") ())))
       (test-error
        "malformed dict with number"
-       #t (scm->bencode-string '(("spam") -42))))))
+       #t (scm->bencode-string '(("spam") -42)))
+      (test-equal "dict with keyword keys"
+        "d1:ai1ee" (scm->bencode-string '((#:a . 1))))
+      (test-equal "dict with symbol keys"
+        "d1:ai1ee" (scm->bencode-string '((a . 1)))))))
 
 (define-test decode
   (test-group "decode"

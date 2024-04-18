@@ -35,10 +35,19 @@
   (write-u8-integer int port)
   (write-u8-char #\e port))
 
+(define (string-like? scm)
+  (or (string? scm)
+      (keyword? scm)
+      (symbol? scm)))
+
 (define (write-bencode-string str port)
-  (when (not (string? str))
+  (when (not (string-like? str))
     (bencode-exception port))
-  (let* ((utf8-str (string->utf8 str))
+  (let* ((str (cond
+               ((keyword? str) (symbol->string (keyword->symbol str)))
+               ((symbol? str) (symbol->string str))
+               (else str)))
+         (utf8-str (string->utf8 str))
          (utf8-str-len (bytevector-length utf8-str)))
     (write-u8-integer utf8-str-len port)
     (write-u8-char #\: port)
@@ -64,7 +73,7 @@
   (cond
    ((integer? scm)
     (write-bencode-integer scm port))
-   ((string? scm)
+   ((string-like? scm)
     (write-bencode-string scm port))
    ((vector? scm)
     (write-bencode-list scm port))
