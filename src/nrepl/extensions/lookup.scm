@@ -44,7 +44,7 @@
                      (canonicalize-path _)))
          ("line" . ,(source:line-for-user src))
          ("column" . ,(source:column src))
-         ("module" . ,(object->string (module-name module)))
+         ("ns" . ,(object->string (module-name module)))
          ("arglists" . ,arglists)
          ("docstring" . ,docstring))))
    #f
