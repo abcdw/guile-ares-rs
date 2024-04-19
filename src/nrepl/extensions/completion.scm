@@ -25,20 +25,29 @@
   #:use-module (srfi srfi-197)
   #:export (completion-extension))
 
-(define (simple-completions prefix module)
+(define* (simple-completions prefix module #:optional options)
   (define (get-candidates)
-    (apropos-fold
-     (lambda (module name var acc)
-       (let ((cand `(("candidate" . ,(symbol->string name))
-                     ("type" . ,(cond
-                                 ((macro? var) "macro")
-                                 ((procedure? var) "function")
-                                 (else "var")))
-                     ("ns" . ,(object->string (module-name module))))))
-         (cons cand acc)))
-     '()
-     (string-append "^" (regexp-quote prefix))
-     (apropos-fold-accessible module)))
+    (let ((extra-meta
+           (or (and=> (assoc-ref options "extra-metadata") vector->list)
+               '())))
+      (apropos-fold
+       (lambda (module name var acc)
+         (let ((cand
+                (chain-when
+                 `(("candidate" . ,(symbol->string name))
+                   ("type" . ,(cond
+                               ((macro? var) "macro")
+                               ((procedure? var) "function")
+                               (else "var")))
+                   ("ns" . ,(object->string (module-name module))))
+                 ((member "arglists" extra-meta)
+                  (acons "arglists" (get-arglists var) _))
+                 ((member "docs" extra-meta)
+                  (acons "docs" (get-docstring var) _)))))
+           (cons cand acc)))
+       '()
+       (string-append "^" (regexp-quote prefix))
+       (apropos-fold-accessible module))))
 
   (define (candidate<? a b)
     (string<? (assoc-ref a "candidate")
@@ -56,7 +65,8 @@
          (module (or (string->resolved-module (assoc-ref message "ns"))
                      (current-module)))
          (prefix (or (assoc-ref message "prefix") ""))
-         (completions (simple-completions prefix module)))
+         (options (assoc-ref message "options"))
+         (completions (simple-completions prefix module options)))
     (reply `(("completions" . ,completions)
              ("status" . #("done"))))))
 
