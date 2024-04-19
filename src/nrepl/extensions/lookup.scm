@@ -37,7 +37,7 @@
      (let ((src (or (get-source var)
                     (and=> module module-location)))
            (docstring (get-docstring var))
-           (arglists (and=> (get-arglists var) list->vector)))
+           (arglists (get-arglists var)))
        `(("file" . ,(chain
                      (source:file src)
                      (%search-load-path _)

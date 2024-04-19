@@ -31,6 +31,8 @@
 (define (pattern->argument-alist pattern)
   (let lp ((pattern pattern)
            (required '()))
+    ;; TODO: [Nikita Domnitskii, 2024-04-17] Support some other patterns
+    ;; e.g. `(pat ...)'
     (match pattern
       (()
        `((required . ,(reverse required))
@@ -48,56 +50,51 @@
        (lp rest (cons sym required)))
       (_ #f))))
 
-(define (stringify-arglist arglist)
-  (define (stringify-arg arg)
-    (match arg
-      ((? symbol? arg) (symbol->string arg))
-      (((? keyword? arg) . _) (symbol->string (keyword->symbol arg)))))
+(define (arguments-alist->arglist alist)
+  (define not-null? (compose not null?))
 
-  (map (match-lambda
-         ((k . v)
-          (cons (symbol->string k)
-                (cond
-                 ((list? v) (list->vector (map stringify-arg v)))
-                 ((symbol? v) (symbol->string v))
-                 ((boolean? v) (if v "true" #()))
-                 (else v)))))
-       arglist))
+  (let* ((required (assoc-ref alist 'required))
+         (optional (assoc-ref alist 'optional))
+         (keyword (assoc-ref alist 'keyword))
+         (keyword (and keyword (map car keyword)))
+         (allow-other-keys? (assoc-ref alist 'allow-other-keys))
+         (rest (assoc-ref alist 'rest)))
+    (chain-when
+     '()
+     ((not-null? required) (append _ required))
+     ((not-null? optional) (append _ (cons "#:optional" optional)))
+     ((not-null? keyword) (append _ (cons "#:key" keyword)))
+     (allow-other-keys? (append _ (list "#:allow-other-keys")))
+     (rest (append _ (list '. rest))))))
 
 (define (get-arglists var)
   "Return list of all arities for VAR."
-  ;; NOTE: [Nikita Domnitskii, 2024-04-05] would be used for syntax-case
-  ;; macros (anything else?)
-  (define fallback-macro-signatures
-    '(((required ...)
-       (optional)
-       (keyword)
-       (allow-other-keys? . #f)
-       (rest . #f))))
-
   (define (get-arglists* var)
     (cond
      ((macro? var)
-      (or (chain-and
-           var
-           (macro-transformer _)
-           (procedure-property _ 'patterns)
-           (filter-map pattern->argument-alist _))
-          fallback-macro-signatures))
+      (chain-and
+       var
+       (macro-transformer _)
+       (procedure-property _ 'patterns)
+       (filter-map pattern->argument-alist _)))
      ((program? var)
       (program-arguments-alists var))
      (else #f)))
 
-  (chain-and
-   (get-arglists* var)
-   (map stringify-arglist _)))
+  (or (chain-and
+       var
+       (get-arglists* _)
+       (map arguments-alist->arglist _)
+       (map list->vector _)
+       (list->vector _))
+      #()))
 
 ;; TODO: [Nikita Domnitskii, 2024-04-05] reimplement object-documentation
 ;; and split docstrings and description from documentation files to
 ;; separate functions
 (define (get-docstring var)
   "Return docstring for VAR."
-  (object-documentation var))
+  (or (object-documentation var) ""))
 
 ;; TODO: [Nikita Domnitskii, 2024-04-05] should be get-sources probably
 (define (get-source var)
