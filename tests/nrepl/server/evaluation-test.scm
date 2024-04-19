@@ -149,14 +149,37 @@
 
          (define* (run-eval code
                             #:optional
-                            (finished-condition (make-condition)))
+                            (finished-condition (make-condition))
+                            #:key (ns #f))
            (put-message
             command-channel
             `((action . evaluate)
-              (message . (("op" . "eval")
+              (message . (,@(if ns `(("ns" . ,(object->string ns))) '())
+                          ("op" . "eval")
                           ("code" . ,(format #f "~s" code))))
               (replies-channel . ,replies-channel)
               (evaluation-finished . ,finished-condition))))
+
+         (let ((finished (make-condition))
+               (module '(nrepl server evaluation-test))
+               (test-name "Check current-module is set according to ns"))
+           (test-begin test-name)
+           (run-eval
+            `(module-name (current-module))
+            finished
+            #:ns module)
+
+           (test-equal "Received message hi-out"
+             `(("value" . ,(object->string module))
+               ("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (test-assert "Finished condition signalled"
+             (quickly (wrap-operation
+                       (wait-operation finished)
+                       (const #t))))
+
+           (test-end test-name))
 
          (let ((finished (make-condition)))
            (test-begin "Simple Evaluation with output streams capture")

@@ -38,7 +38,6 @@
   #:use-module (srfi srfi-9)
   #:use-module ((system base compile) #:select (read-and-compile))
   #:use-module ((system repl debug) #:prefix repl-debug:)
-  #:use-module ((system vm loader) #:select (load-thunk-from-memory))
   #:export (output-stream-manager-thunk
             reusable-thread-thread
             evaluation-manager-thunk
@@ -279,8 +278,7 @@ exceptions."
                     (set-port-line! port line))
                   (and-let* ((column (assoc-ref nrepl-message "column")))
                     (set-port-column! port column))
-                  ((load-thunk-from-memory
-                    (read-and-compile port #:env module)))))))))
+                  (read-and-compile port #:to 'value #:env module)))))))
       #:unwind? #t)))
 
 (define (setup-redirects-for-ports-thunk output-pipes
