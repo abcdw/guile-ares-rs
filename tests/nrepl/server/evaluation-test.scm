@@ -161,7 +161,7 @@
               (evaluation-finished . ,finished-condition))))
 
          (let ((finished (make-condition))
-               (module '(nrepl server evaluation-test))
+               (module '(srfi srfi-1))
                (test-name "Check current-module is set according to ns"))
            (test-begin test-name)
            (run-eval
