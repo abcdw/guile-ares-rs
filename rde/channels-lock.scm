@@ -1,11 +1,9 @@
-(use-modules (guix channels))
-
 (list (channel
         (name 'rde)
         (url "https://git.sr.ht/~abcdw/rde")
         (branch "master")
         (commit
-          "51de833b9e9d2cbce82a08e0070d8e288675373c")
+          "fbcd18a60219694dbd87f2e445baffef89341aa2")
         (introduction
           (make-channel-introduction
             "257cebd587b66e4d865b3537a9a88cccd7107c95"
@@ -16,7 +14,7 @@
         (url "https://git.savannah.gnu.org/git/guix.git")
         (branch "master")
         (commit
-          "5f86eebd240958001ab4f178005f355d24d9b7f1")
+          "02df0a8a7d4712398d90f8635d4004e76bbc9f51")
         (introduction
           (make-channel-introduction
             "9edb3f66fd807b096b48283debdcddccfea34bad"
