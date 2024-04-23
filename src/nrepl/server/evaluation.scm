@@ -18,6 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl server evaluation)
+  #:use-module (ares reflection modules)
   #:use-module (fibers)
   #:use-module (fibers channels)
   #:use-module (fibers conditions)
@@ -265,7 +266,7 @@ exceptions."
                 ;; can be even more confusing than fallback to
                 ;; current-module.
                 (or
-                 (if ns (resolve-module (read-from-string ns) #:ensure #f) #f)
+                 (string->resolved-module ns)
                  (current-module))))
           `((result-type . value)
             (eval-value
