@@ -29,6 +29,7 @@
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 exceptions)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 pretty-print)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 threads)
   #:use-module (nrepl alist)
@@ -345,22 +346,22 @@ Stream managers waits until THUNK-FINISHED is signalled."
           ;; usually provides enough information to understand the
           ;; problem.
           (call-with-output-string
-            (lambda (port)
-              ;; TODO: [Andrew Tropin, 2023-12-17] Cat out a meaninful
-              ;; stack part in evaluation thread.
+           (lambda (port)
+             ;; TODO: [Andrew Tropin, 2023-12-17] Cat out a meaninful
+             ;; stack part in evaluation thread.
 
-              ;; (false-if-exception
-              ;;  (begin
-              ;;    (repl-debug:print-frames
-              ;;     (repl-debug:stack->vector (assoc-ref result 'stack))
-              ;;     port)
-              ;;    (newline port)))
-              (or
-               (false-if-exception
-                (apply format port
-                       (string-append (exception-message exception) "\n")
-                       (or (exception-irritants exception) '())))
-               (format port "~y\n" exception))))))
+             ;; (false-if-exception
+             ;;  (begin
+             ;;    (repl-debug:print-frames
+             ;;     (repl-debug:stack->vector (assoc-ref result 'stack))
+             ;;     port)
+             ;;    (newline port)))
+             (or
+              (false-if-exception
+               (apply format port
+                      (string-append (exception-message exception) "\n")
+                      (or (exception-irritants exception) '())))
+              (pretty-print exception #:port port))))))
     ;; In the future this function can provide more information in a
     ;; more structured way to be processed by respective IDEs/clients.
     `((("err" . ,error))
