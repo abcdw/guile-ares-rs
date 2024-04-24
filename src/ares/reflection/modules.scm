@@ -71,4 +71,10 @@ it."
   "Tries to resolve STR to a module object."
   (and-let* ((module-name (with-input-from-string str read))
              (_ (pair? module-name)))
+    ;; If module-name is present try to find a respective module,
+    ;; but don't create it if it doesn't exists yet.
+    ;; #:ensure #t creates a module with empty
+    ;; environment, so nothing will be available, which
+    ;; can be even more confusing than fallback to
+    ;; current-module.
     (resolve-module module-name #:ensure #f)))

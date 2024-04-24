@@ -36,6 +36,7 @@
   #:use-module (nrepl atomic)
   #:use-module (nrepl ports)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-197)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-9)
   #:use-module ((system base compile) #:select (read-and-compile))
@@ -250,45 +251,47 @@ computations."
   "Return a thunk, which evaluate code in appropriate module and handle
 exceptions."
   (define out (current-output-port))
+
+  (define (eval-code)
+    (let* ((code (assoc-ref nrepl-message "code"))
+           (ns (assoc-ref nrepl-message "ns"))
+           (module
+            (or
+             (string->resolved-module ns)
+             (current-module))))
+      (save-module-excursion
+       (lambda ()
+         (set-current-module module)
+         (call-with-input-string
+          code
+          (lambda (port)
+            (and-let* ((file (assoc-ref nrepl-message "file")))
+              (set-port-filename! port file))
+            (and-let* ((line (assoc-ref nrepl-message "line")))
+              (set-port-line! port line))
+            (and-let* ((column (assoc-ref nrepl-message "column")))
+              (set-port-column! port column))
+            ((load-thunk-from-memory
+              (read-and-compile port #:env module)))))))))
+
   (lambda ()
-    (define (read-from-string str) (with-input-from-string str read))
     ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
     (with-exception-handler
-        (lambda (exception)
-          `((result-type . exception)
-            (exception-value . ,exception)
-            (stack . ,(make-stack #t))))
-      (lambda ()
-        (let* ((code (assoc-ref nrepl-message "code"))
-               (ns (assoc-ref nrepl-message "ns"))
-               (module
-                ;; If ns is present try to find a respective module,
-                ;; but don't create it if it doesn't exists yet.
-                ;; #:ensure #t creates a module with empty
-                ;; environment, so nothing will be available, which
-                ;; can be even more confusing than fallback to
-                ;; current-module.
-                (or
-                 (string->resolved-module ns)
-                 (current-module))))
-          `((result-type . value)
-            (eval-value
-             .
-             ,(save-module-excursion
-               (lambda ()
-                 (set-current-module module)
-                 (call-with-input-string
-                  code
-                  (lambda (port)
-                    (and-let* ((file (assoc-ref nrepl-message "file")))
-                      (set-port-filename! port file))
-                    (and-let* ((line (assoc-ref nrepl-message "line")))
-                      (set-port-line! port line))
-                    (and-let* ((column (assoc-ref nrepl-message "column")))
-                      (set-port-column! port column))
-                    ((load-thunk-from-memory
-                      (read-and-compile port #:env module)))))))))))
-      #:unwind? #t)))
+     (lambda (exception)
+       `((result-type . exception)
+         (exception-value . ,exception)
+         (stack . ,(make-stack #t))))
+     (lambda ()
+       (call-with-values eval-code
+         (lambda vals
+           (match vals
+             ((val)
+              `((result-type . value)
+                (eval-value . ,val)))
+             (vals
+              `((result-type . multiple-values)
+                (eval-value . ,vals)))))))
+     #:unwind? #t)))
 
 (define (setup-redirects-for-ports-thunk output-pipes
                                          input-port
@@ -384,6 +387,12 @@ Stream managers waits until THUNK-FINISHED is signalled."
     (case result-type
       ((value)
        `((("value" . ,(pretty-print (assoc-ref result 'eval-value)))
+          ("status" . #("done")))))
+      ((multiple-values)
+       `((("value" . ,(chain
+                       (assoc-ref result 'eval-value)
+                       (map pretty-print _)
+                       (string-join _ "\n")))
           ("status" . #("done")))))
       ((exception)
        (exception->nrepl-messages result))
