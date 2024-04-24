@@ -21,8 +21,7 @@ ares-rs: server
 
 check:
 	${GUILE} -L ./src -L ./tests \
-	-c "((@ (ares srfi-64 test-runners) run-project-tests) \
-#:test-modules (@ (all-tests) all-test-modules))"
+	-c "((@ (ares srfi-64 test-runners) run-project-tests))"
 
 check-test:
 	${GUILE} -L ./src -L ./tests \

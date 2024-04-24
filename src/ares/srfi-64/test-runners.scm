@@ -21,10 +21,13 @@
   #:use-module (srfi srfi-64)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 ftw)
+  #:use-module (ice-9 regex)
 
   #:export (%previous-runner
             get-test-module
             get-module-tests
+            load-project-tests-thunk
+            all-test-modules
 
             rerun-tests
             run-test
@@ -83,7 +86,6 @@
                 (test-runner-xfail-count runner)
                 (test-runner-fail-count runner))))
     runner))
-
 
 
 ;;; Run project tests
@@ -159,11 +161,42 @@
         (map (lambda (t) (run-test t #:runner runner)) module-tests))))
   runner)
 
-;; (test-runner-current #f)
+(define* (load-project-tests-thunk
+          #:key
+          (test-file-pattern ".*-test(\\.scm|\\.ss)")
+          (load-file (lambda (p rp)
+                       (format #t "loading test module: ~a\n" p)
+                       (primitive-load-path rp))))
+  "Return a thunk, which loads all the modules matching TEST-FILE-PATTERN
+using LOAD-FILE procedure, which accepts path and relative to %load-path path."
+  (lambda ()
+    (for-each
+     (lambda (path)
+       (nftw
+        path
+        (lambda (file-path _ flags _1 _2)
+          (when (eq? flags 'regular)
+            (define relative-path
+              (string-drop file-path (1+ (string-length path))))
+            (when (string-match test-file-pattern file-path)
+              (load-file file-path relative-path)))
+          #t)))
+     %load-path)))
+
+(define* (all-test-modules
+          #:key
+          (load-project-test-modules? #f)
+          (load-project-tests (load-project-tests-thunk)))
+  (when load-project-test-modules?
+    (load-project-tests))
+  (filter (lambda (m)
+            (string-suffix? "-test" (symbol->string (last (module-name m)))))
+          ((@ (ares reflection modules) all-modules))))
+
 (define* (run-project-tests
           #:key
           (runner (test-runner-create))
-          (test-modules '()))
+          (test-modules (all-test-modules #:load-project-test-modules? #t)))
   (test-with-runner runner
     (test-group "PROJECT TEST"
       (map (lambda (m)
