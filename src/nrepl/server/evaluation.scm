@@ -382,7 +382,7 @@ Stream managers waits until THUNK-FINISHED is signalled."
 (define* (evaluation-result->nrepl-messages
           result
           #:key
-          (pretty-print (lambda (x) (format #f "~s" x))))
+          (pretty-print object->string))
   (let ((result-type (assoc-ref result 'result-type)))
     (case result-type
       ((value)
