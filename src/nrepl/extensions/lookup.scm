@@ -32,6 +32,11 @@
   (define (module-location module)
     `(0 ,(module-filename module) 0 . 0))
 
+  (define (absolute-path path)
+    (if (absolute-file-name? path)
+        path
+        (string-append (getcwd) "/" path)))
+
   (apropos-fold
    (lambda (module name var init)
      (let ((src (or (get-source var)
@@ -41,7 +46,7 @@
        `(("file" . ,(chain
                      (source:file src)
                      (%search-load-path _)
-                     (canonicalize-path _)))
+                     (absolute-path _)))
          ("line" . ,(source:line-for-user src))
          ("column" . ,(source:column src))
          ("ns" . ,(object->string (module-name module)))
