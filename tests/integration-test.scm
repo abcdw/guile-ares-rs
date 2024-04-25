@@ -59,6 +59,19 @@
            "6"
            (assoc-ref (pk (receive-message)) "value"))))
 
+     (send-message
+      `(("code" . "((@ (nonblocking-socket) create-socket))")
+        ("session" . ,session-id)
+        ("op" . "eval")))
+
+     (test-group "nonblocking socket"
+       ;; https://todo.sr.ht/~abcdw/tickets/7
+       ;; Should work the same as `make fine-socket`
+       (test-expect-fail 1)
+       (test-equal "create socket"
+         "#t"
+         (assoc-ref (receive-message) "value")))
+
      ;; (test-group "read error"
      ;;   (test-group "arithmetics"
      ;;     (test-equal "code for evaluation: (+ 1 2 3"
