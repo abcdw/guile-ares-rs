@@ -2,6 +2,7 @@
   #:use-module (nrepl server)
   #:use-module (nrepl client)
   #:use-module (bencode)
+  #:use-module (fibers)
   #:use-module (ice-9 threads)
   #:use-module (fibers conditions)
   #:use-module (srfi srfi-64)
@@ -31,6 +32,28 @@
     client)
   (assoc-ref (bencode->scm client) "value"))
 
+(define-public (create-socket-in-thread-in-fiber)
+  (run-fibers
+   (lambda ()
+     (define th
+       (call-with-new-thread
+        (lambda ()
+          (with-exception-handler
+              (lambda (e) e)
+            (@ (nonblocking-socket) create-socket)
+            #:unwind? #t))))
+     ;; (sleep 0)
+     (join-thread th))))
+
+(define-test nonblocking-socket-exception
+  ;; https://todo.sr.ht/~abcdw/tickets/7
+  ;; Should work the same as `make fine-socket`
+  (test-expect-fail 1)
+  (test-equal "nonblocking-socket created, but connection refused"
+    'system-error
+    (exception-kind
+     (create-socket-in-thread-in-fiber))))
+
 ;; This is a draft/stub for future implementation of integration tests
 (define-test simple-eval
   (call-with-nrepl-setup
@@ -58,19 +81,6 @@
          (test-equal "code for evaluation: (+ 1 2 3)"
            "6"
            (assoc-ref (pk (receive-message)) "value"))))
-
-     (send-message
-      `(("code" . "((@ (nonblocking-socket) create-socket))")
-        ("session" . ,session-id)
-        ("op" . "eval")))
-
-     (test-group "nonblocking socket"
-       ;; https://todo.sr.ht/~abcdw/tickets/7
-       ;; Should work the same as `make fine-socket`
-       (test-expect-fail 1)
-       (test-equal "create socket"
-         "#t"
-         (assoc-ref (receive-message) "value")))
 
      ;; (test-group "read error"
      ;;   (test-group "arithmetics"

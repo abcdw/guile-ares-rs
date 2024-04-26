@@ -2,7 +2,7 @@
   #:export (create-socket))
 
 (define* (create-socket
-          #:key (port 1134))
+          #:key (port 1136))
   (define (make-default-socket family addr port)
     (let ((sock (socket PF_INET SOCK_STREAM 0)))
       ;; (fcntl sock F_SETFD FD_CLOEXEC)
