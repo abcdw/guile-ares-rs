@@ -40,13 +40,7 @@ are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76
 [[https://man.sr.ht/lists.sr.ht/etiquette.md][Send]] feedback to [[https://lists.sr.ht/~abcdw/rde-discuss][rde-discuss]].
 
 ** First Release Roadmap
-- [X] Implement eval on top of reusable threads.
-- [X] Implement read interception for current-input-port.
-- [X] Implement completion.
-- [ ] Multiple value support.
-- [X] Lookup operations.
-- [ ] Implement extension extension (swap-extension, add-extension).
-- [X] Change Scheme to Sleek in project description.
+Arei and Ares 1.0 [[https://todo.sr.ht/~abcdw/tickets?search=status%3Aopen%20label%3A%22milestone-arei-1.0%22][milestone]].
 
 ** Open Questions
 - How to work with fibers in nrepl?  Maybe C-2 C-c C-e to entered to
