@@ -21,7 +21,7 @@
   #:use-module (fibers conditions)
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)
-  #:use-module (nrepl alist)
+  #:use-module (ares alist)
   #:use-module (uuid)
   #:use-module (srfi srfi-197)
   #:export (session-extension

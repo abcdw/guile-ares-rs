@@ -18,6 +18,8 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl server evaluation)
+  #:use-module (ares alist)
+  #:use-module (ares ports)
   #:use-module (ares reflection modules)
   #:use-module (ares reusable-thread)
   #:use-module (fibers)
@@ -31,8 +33,6 @@
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
   #:use-module (ice-9 textual-ports)
-  #:use-module (nrepl alist)
-  #:use-module (nrepl ports)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:use-module (srfi srfi-2)

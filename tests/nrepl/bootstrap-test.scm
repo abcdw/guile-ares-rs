@@ -18,6 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl bootstrap-test)
+  #:use-module (ares ports)
   #:use-module (nrepl bootstrap)
   #:use-module (bencode)
   #:use-module (srfi srfi-1)
@@ -27,7 +28,6 @@
   #:use-module (fibers operations)
   #:use-module (fibers io-wakeup)
   #:use-module (ice-9 match)
-  #:use-module (nrepl ports)
   #:use-module (nrepl extensions state)
   #:use-module (nrepl extensions bencode)
   #:use-module (nrepl extensions session)

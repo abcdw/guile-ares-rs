@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl alist)
+(define-module (ares alist)
   #:use-module (srfi srfi-1)
   #:export (alist-get-in)
   #:re-export (alist-cons

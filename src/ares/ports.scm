@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl ports)
+(define-module (ares ports)
   #:export (read-all-chars-as-string
             make-pipes
             unbuffer-pipes!
