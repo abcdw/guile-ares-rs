@@ -190,7 +190,7 @@ already locked and works without suspending the whole thread."
            ((shutdown) 'finished)
            (else (loop #f))))))))
 
-(define* (make-reusable-thread result-channel)
+(define* (make-reusable-thread #:optional (result-channel (make-channel)))
   "Starts a thread and makes sure it entered restart prompt."
   (let* ((nutex (make-nutex))
          (thread
