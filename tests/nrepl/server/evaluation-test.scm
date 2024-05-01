@@ -24,7 +24,6 @@
   #:use-module (fibers operations)
   #:use-module (fibers timers)
   #:use-module (fibers conditions)
-  #:use-module (ice-9 threads)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-64)
   #:use-module (test-utils))
@@ -91,52 +90,6 @@
              (wait-operation finished-condition)
              (const #t)))))))
     #:drain? #t))
-
-(define-test test-reusable-threads
-  (define make-reusable-thread
-    (@@ (nrepl server evaluation) make-reusable-thread))
-  (define reusable-thread-discard-and-run
-    (@@ (nrepl server evaluation) reusable-thread-discard-and-run))
-  (define reusable-thread-interrupt
-    (@@ (nrepl server evaluation) reusable-thread-interrupt))
-  (define reusable-thread-get-value
-    (@@ (nrepl server evaluation) reusable-thread-get-value))
-
-  (test-group "Testing reusable thread"
-    (test-group "Basic use case: start, reuse, get channel value, shutdown"
-      (run-fibers
-       (lambda ()
-         (let* ((result-channel (make-channel))
-                (rth (make-reusable-thread result-channel))
-                (th (reusable-thread-thread rth)))
-           ;; With this sleep condition based shutdown was failing on
-           ;; (signal-condition! shutdown)
-           ;; (sleep 1)
-
-           (reusable-thread-discard-and-run rth (lambda () 'hello))
-           (test-equal "Obtain value from thread"
-             `((action . return-value) (value . hello))
-             (reusable-thread-get-value rth))
-
-           (test-equal "Interrupt idle process"
-             '(((action . interrupt) (status . idle)))
-             (reusable-thread-interrupt rth))
-
-           (reusable-thread-discard-and-run rth (lambda () 'hello2 (sleep 10)))
-           ;; Trying to interrupt finished execution.
-           (test-equal "Discard current execution and reuse thread"
-             '()
-             (reusable-thread-discard-and-run
-              rth (lambda () 'hello3 (sleep 10))))
-
-           (test-equal "Interrupt long-running process"
-             '(((action . interrupt) (status . done)))
-             (reusable-thread-interrupt rth))
-
-           ((@@ (nrepl server evaluation) reusable-thread-shutdown) rth)
-           ;; after join-thread thread-exited? still returns #f
-           (usleep 1)
-           (test-assert "Thread exited" (thread-exited? th))))))))
 
 (define-test test-evaluation-thread-manager
   (test-group "Testing Evaluation Thread Manager"
