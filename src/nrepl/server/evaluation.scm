@@ -31,7 +31,6 @@
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
   #:use-module (ice-9 textual-ports)
-  #:use-module (ice-9 threads)
   #:use-module (nrepl alist)
   #:use-module (nrepl ports)
   #:use-module (srfi srfi-1)
