@@ -24,7 +24,7 @@
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 match)
   #:use-module (ice-9 threads)
-  #:use-module (nrepl atomic)
+  #:use-module (ares atomic)
   #:use-module (srfi srfi-9)
   #:export (reusable-thread
             reusable-thread-thread

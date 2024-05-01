@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl atomic)
+(define-module (ares atomic)
   #:use-module (ice-9 atomic)
   #:export (atomic-box-update!))
 

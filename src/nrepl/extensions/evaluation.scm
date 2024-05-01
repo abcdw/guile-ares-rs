@@ -20,7 +20,7 @@
 (define-module (nrepl extensions evaluation)
   #:use-module (nrepl extensions session)
   #:use-module (ice-9 atomic)
-  #:use-module (nrepl atomic)
+  #:use-module (ares atomic)
   #:use-module (fibers)
   #:use-module (fibers channels)
   #:use-module (nrepl server evaluation)
