@@ -43,8 +43,6 @@
   #:use-module ((system repl debug) #:prefix repl-debug:)
   #:use-module ((system vm loader) #:select (load-thunk-from-memory))
   #:export (output-stream-manager-thunk
-            reusable-thread-thread
-            evaluation-manager-thunk
             evaluation-thread-manager-thunk
             evaluation-supervisor-thunk
             evaluation-supervisor-shutdown
