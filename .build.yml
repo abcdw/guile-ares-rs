@@ -1,0 +1,13 @@
+image: guix
+packages:
+  - make
+sources:
+  - https://git.sr.ht/~abcdw/guile-ares-rs
+tasks:
+  - check: |
+      cd guile-ares-rs
+      make check
+triggers:
+  - action: email
+    condition: failure
+    to: ~abcdw/rde-devel@lists.sr.ht
