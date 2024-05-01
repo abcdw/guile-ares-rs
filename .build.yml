@@ -10,7 +10,7 @@ tasks:
   - readme: |
       cd guile-ares-rs
       make deploy-README.html
-oauth: git.sr.ht/REPOSITORIES:RW
+oauth: git.sr.ht/REPOSITORIES:RW git.sr.ht/PROFILE:RO
 triggers:
   - action: email
     condition: failure
