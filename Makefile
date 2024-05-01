@@ -19,10 +19,6 @@ server:
 
 ares-rs: server
 
-fine-socket:
-	${GUILE} -L ./src -L ./tests -c \
-	"(pk ((@ (nonblocking-socket) create-socket)))"
-
 check:
 	${GUILE} -L ./src -L ./tests \
 	-c "((@ (ares srfi-64 test-runners) run-project-tests))"

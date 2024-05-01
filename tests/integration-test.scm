@@ -74,6 +74,19 @@
            "6"
            (assoc-ref (receive-message) "value"))))
 
+     (send-message
+      `(("code" . "((@ (nonblocking-socket) create-socket-exception))")
+        ("session" . ,session-id)
+        ("op" . "eval")))
+
+     (test-group "nonblocking socket"
+       ;; https://todo.sr.ht/~abcdw/tickets/7
+       ;; Should return connection refused (system-error)
+       (test-expect-fail 1)
+       (test-equal "create socket"
+         "system-error"
+         (assoc-ref (receive-message) "value")))
+
      ;; (test-group "read error"
      ;;   (test-group "arithmetics"
      ;;     (test-equal "code for evaluation: (+ 1 2 3"
