@@ -3,7 +3,7 @@ GUILE=$(GUIXTM) -- shell guile-next guile-fibers -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
-NREPL_PORT=7889
+NREPL_PORT=7888
 
 repl: server
 
