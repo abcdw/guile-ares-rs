@@ -80,10 +80,12 @@
           (else #t))))
     (test-runner-on-final! runner
       (lambda (runner)
-        (format #t "Source: ~a\nAsserts: pass = ~a, xfail = ~a, fail = ~a\n\n"
+        (format #t "Source: ~a\nAsserts: pass = ~a, xfail = ~a,\
+ xpass = ~a, fail = ~a\n\n"
                 (test-result-ref runner 'source-file)
                 (test-runner-pass-count runner)
                 (test-runner-xfail-count runner)
+                (test-runner-xpass-count runner)
                 (test-runner-fail-count runner))))
     runner))
 
