@@ -265,6 +265,7 @@ Stream managers waits until THUNK-FINISHED is signalled."
 (define* (evaluation-thread-manager-thunk
           command-channel
           #:key
+          (spawn-reusable-thread make-reusable-thread)
           ;; TODO: [Andrew Tropin, 2023-10-16] Implement shutdown
           (shutdown-condition (make-condition))
           (terminate-condition (make-condition)))
@@ -302,7 +303,7 @@ COMMAND-CHANNEL."
               (input-port (open-channel-input-port
                            input-request-channel
                            stdin-channel))
-              (evaluation-rethread (make-reusable-thread result-channel)))
+              (evaluation-rethread (spawn-reusable-thread result-channel)))
          (let loop ((reply-channel #f)
                     (evaluation-finished #f)
                     (output-finished-condition #f))
@@ -399,6 +400,7 @@ COMMAND-CHANNEL."
 (define* (evaluation-supervisor-thunk
           control-channel
           #:key
+          (spawn-reusable-thread make-reusable-thread)
           ;; shutdown is graceful operation
           (shutdown-condition (make-condition))
           (finished-condition (make-condition)))
@@ -480,6 +482,7 @@ arrival or when evaluation is finished, #t and rest of the queue."
   (lambda ()
     (spawn-fiber (evaluation-thread-manager-thunk
                   evaluation-thread-command-channel
+                  #:spawn-reusable-thread spawn-reusable-thread
                   #:shutdown-condition evaluation-thread-shutdown-condition))
     (let loop ((get-next-command-operation receive-command-operation)
                (evaluation-id #f)

@@ -18,6 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl bootstrap)
+  #:use-module (ares reusable-thread)
   #:use-module (fibers io-wakeup)
   #:use-module (fibers operations)
   #:use-module (ice-9 atomic)
@@ -53,7 +54,21 @@
 (define (initial-context initial-extensions)
   (let ((state (make-atomic-box '()))
         (handler (make-atomic-box (make-handler initial-extensions))))
-    `((nrepl/state . ,state)
+    ;; Threads Manager thread is created outside of fibers, so all the
+    ;; threads created using threads-manager are not affected by
+    ;; https://github.com/wingo/fibers/issues/105
+    (define threads-manager (make-reusable-thread))
+    (define (spawn-reusable-thread ch)
+      (reusable-thread-discard-and-run
+       threads-manager
+       (lambda ()
+         (make-reusable-thread ch)))
+      (assoc-ref
+       (reusable-thread-get-value threads-manager)
+       'value))
+
+    `((ares/spawn-reusable-thread . ,spawn-reusable-thread)
+      (nrepl/state . ,state)
       (nrepl/handler . ,handler))))
 
 (define (make-initial-context)

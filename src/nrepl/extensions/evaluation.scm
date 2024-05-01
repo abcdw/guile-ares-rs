@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -28,16 +28,18 @@
   #:use-module (srfi srfi-197)
   #:export (evaluation-extension))
 
-(define (make-evaluation-supervisor session)
+(define (make-evaluation-supervisor session spawn-reusable-thread)
   (let ((control-channel (make-channel)))
     (spawn-fiber (evaluation-supervisor-thunk
                   control-channel
+                  #:spawn-reusable-thread spawn-reusable-thread
                   #:shutdown-condition (assoc-ref session 'shutdown-condition)))
     control-channel))
 
-(define (create-evaluation-supervisor! session-atom)
+(define (create-evaluation-supervisor! session-atom spawn-reusable-thread)
   (let* ((tmp-evaluation-supervisor
-          (make-evaluation-supervisor (atomic-box-ref session-atom)))
+          (make-evaluation-supervisor (atomic-box-ref session-atom)
+                                      spawn-reusable-thread))
          (add-evaluation-supervisor
           (lambda (session)
             (let ((evaluation-supervisor
@@ -54,22 +56,25 @@
       (evaluation-supervisor-shutdown tmp-evaluation-supervisor))
     new-evaluation-supervisor))
 
-(define (get-or-create-evaluation-supervisor! session-atom)
+(define (get-or-create-evaluation-supervisor!
+         session-atom spawn-reusable-thread)
   (let ((evaluation-supervisor (assoc-ref (atomic-box-ref session-atom)
                                           'evaluation-supervisor)))
     (if evaluation-supervisor
         evaluation-supervisor
-        (create-evaluation-supervisor! session-atom))))
+        (create-evaluation-supervisor! session-atom spawn-reusable-thread))))
 
 (define (process-message context)
   (let* ((state (assoc-ref context 'nrepl/state))
          (message (assoc-ref context 'nrepl/message))
+         (spawn-reusable-thread (assoc-ref context 'ares/spawn-reusable-thread))
          (reply (assoc-ref context 'reply))
          (session-id (assoc-ref message "session"))
          (session-atom (get-session state session-id)))
     (if session-id
         (evaluation-supervisor-process-nrepl-message
-         (get-or-create-evaluation-supervisor! session-atom)
+         (get-or-create-evaluation-supervisor!
+          session-atom spawn-reusable-thread)
          message reply)
         (reply `(("status" . #("error" "no-session-id-provided" "done")))))))
 

@@ -82,7 +82,6 @@
      (test-group "nonblocking socket"
        ;; https://todo.sr.ht/~abcdw/tickets/7
        ;; Should return connection refused (system-error)
-       (test-expect-fail 1)
        (test-equal "create socket"
          "system-error"
          (assoc-ref (receive-message) "value")))
