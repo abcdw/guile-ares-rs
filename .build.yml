@@ -7,6 +7,10 @@ tasks:
   - check: |
       cd guile-ares-rs
       make check
+  - readme: |
+      cd guile-ares-rs
+      make deploy-README.html
+oauth: git.sr.ht/REPOSITORIES:RW
 triggers:
   - action: email
     condition: failure
