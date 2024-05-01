@@ -64,8 +64,6 @@
        (bencode->scm nrepl-client))
 
      (send-message `(("op" . "clone")))
-     ;; (pk "ok")
-     ;; (pk (receive-message))
      (define session-id (assoc-ref (receive-message) "new-session"))
      (test-group "session"
        (test-group "clone"
@@ -80,7 +78,7 @@
        (test-group "arithmetics"
          (test-equal "code for evaluation: (+ 1 2 3)"
            "6"
-           (assoc-ref (pk (receive-message)) "value"))))
+           (assoc-ref (receive-message) "value"))))
 
      ;; (test-group "read error"
      ;;   (test-group "arithmetics"
