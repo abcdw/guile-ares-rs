@@ -1,5 +1,6 @@
 (define-module (nonblocking-socket)
-  #:export (create-socket))
+  #:export (create-socket
+            create-socket-exception))
 
 (define* (create-socket
           #:key (port 1136))
@@ -12,3 +13,8 @@
     (make-default-socket AF_INET INADDR_LOOPBACK 1234))
   (connect tmp-socket (make-socket-address AF_INET INADDR_LOOPBACK port))
   (close-port tmp-socket))
+
+(define (create-socket-exception)
+  (with-exception-handler (lambda (e) (exception-kind e))
+    create-socket
+    #:unwind? #t))

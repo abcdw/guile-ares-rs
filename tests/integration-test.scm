@@ -37,22 +37,16 @@
    (lambda ()
      (define th
        (call-with-new-thread
-        (lambda ()
-          (with-exception-handler
-              (lambda (e) e)
-            (@ (nonblocking-socket) create-socket)
-            #:unwind? #t))))
-     ;; (sleep 0)
+        (@ (nonblocking-socket) create-socket-exception)))
      (join-thread th))))
 
 (define-test nonblocking-socket-exception
-  ;; https://todo.sr.ht/~abcdw/tickets/7
+  ;; https://github.com/wingo/fibers/issues/105
   ;; Should work the same as `make fine-socket`
   (test-expect-fail 1)
   (test-equal "nonblocking-socket created, but connection refused"
     'system-error
-    (exception-kind
-     (create-socket-in-thread-in-fiber))))
+    (create-socket-in-thread-in-fiber)))
 
 ;; This is a draft/stub for future implementation of integration tests
 (define-test simple-eval
