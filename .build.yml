@@ -9,7 +9,7 @@ tasks:
       make check
   - readme: |
       cd guile-ares-rs
-      if [[ "$BUILD_SUBMITTER" == "git.sr.ht" ]] then
+      if [[ "$BUILD_SUBMITTER" == "git.sr.ht" ]]; then
         make deploy-README.html
       fi
 oauth: git.sr.ht/REPOSITORIES:RW git.sr.ht/PROFILE:RO
