@@ -7,6 +7,15 @@ based on [[https://nrepl.org/nrepl/index.html][nREPL]] protocol and can be used 
 with a running guile processes, for implementing REPLs, IDEs, test
 runners or other tools.
 
+#+BEGIN_EXPORT html
+<p><a href="https://builds.sr.ht/~abcdw/guile-ares-rs?">
+<img src="https://builds.sr.ht/~abcdw/guile-ares-rs.svg" alt="builds.sr.ht status" />
+</a>
+<a href="https://www.gnu.org/software/guile/">
+<img src="https://luis-felipe.gitlab.io/media/badges/gnu-guile-made.svg" alt="" />
+</a></p>
+#+END_EXPORT
+
 *WARNING:* It's in early stage of development, the API is a subject to
 change.
 
