@@ -541,8 +541,11 @@ arrival or when evaluation is finished, #t and rest of the queue."
                    ;; TODO: [Andrew Tropin, 2023-09-26] Add
                    ;; interrupt-id-mismatch.
                    ;; https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/middleware/session.clj#L344
-                   (put-message evaluation-thread-command-channel
-                                `((action . interrupt)))
+                   (begin
+                     ((assoc-ref command 'reply)
+                      `(("status" . #("done"))))
+                     (put-message evaluation-thread-command-channel
+                                  `((action . interrupt))))
                    ((assoc-ref command 'reply)
                     `(("status" . #("session-idle" "done")))))
                (loop

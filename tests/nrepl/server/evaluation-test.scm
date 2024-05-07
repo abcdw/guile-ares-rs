@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -322,7 +322,7 @@
                (wait-operation finished-condition)
                (const #t))))))))
 
-    (test-group "Simple evaluation and idle interruption"
+    (test-group "Simple evaluation and interruption"
       (run-fibers
        (lambda ()
          (let* ((finished-condition (make-condition))
@@ -371,6 +371,25 @@
 
            (test-equal "Interrupt idle session"
              `(("status" . #("session-idle" "done")))
+             (quickly (get-operation replies-channel)))
+
+           (evaluation-supervisor-process-nrepl-message
+            command-channel
+            `(("code" . "(begin (sleep 10) 'after-sleep)")
+              ("op" . "eval"))
+            reply-function)
+
+           (evaluation-supervisor-process-nrepl-message
+            command-channel
+            `(("op" . "interrupt"))
+            reply-function)
+
+           (test-equal "Interruption op done"
+             `(("status" . #("done")))
+             (quickly (get-operation replies-channel)))
+
+           (test-equal "Evaluation interrupted"
+             `(("status" . #("done" "interrupted")))
              (quickly (get-operation replies-channel)))
 
            (evaluation-supervisor-process-nrepl-message
