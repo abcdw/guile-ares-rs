@@ -63,12 +63,16 @@
 (define (get-lookup-information context)
   (let* ((state (assoc-ref context 'nrepl/state))
          (message (assoc-ref context 'nrepl/message))
-         (reply (assoc-ref context 'reply))
-         (ns (or (string->resolved-module (assoc-ref message "ns"))
-                 (current-module)))
-         (sym (and=> (assoc-ref message "sym") string->symbol)))
-    (reply `(("status" . #("done"))
-             ("info" . ,(lookup-symbol ns sym))))))
+         (reply (assoc-ref context 'reply)))
+    (with-exception-handler
+     (lambda (ex)
+       (reply `(("status" . #("done" "lookup-error")))))
+     (lambda ()
+       (let ((ns (or (string->resolved-module (assoc-ref message "ns"))
+                     (current-module)))
+             (sym (and=> (assoc-ref message "sym") string->symbol)))
+         (reply `(("status" . #("done"))
+                  ("info" . ,(lookup-symbol ns sym)))))))))
 
 (define operations
   `(("lookup" . ,get-lookup-information)))
