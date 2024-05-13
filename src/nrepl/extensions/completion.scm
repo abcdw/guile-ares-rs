@@ -47,7 +47,10 @@
            (cons cand acc)))
        '()
        (string-append "^" (regexp-quote prefix))
-       (apropos-fold-accessible module))))
+       ((@@ (ice-9 session) make-fold-modules)
+        (lambda () (list module))
+	(compose reverse module-uses)
+	identity))))
 
   (define (candidate<? a b)
     (string<? (assoc-ref a "candidate")
