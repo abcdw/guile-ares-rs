@@ -58,7 +58,10 @@
    ;; implementation it would be necessary to rewrite module traverse
    ;; in apropos-fold and use early return in it.
    (string-append "^" (regexp-quote (symbol->string sym)) "$")
-   (apropos-fold-accessible ns)))
+   ((@@ (ice-9 session) make-fold-modules)
+    (lambda () (list ns))
+    (compose reverse module-uses)
+    identity)))
 
 (define (get-lookup-information context)
   (let* ((state (assoc-ref context 'nrepl/state))
