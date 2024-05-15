@@ -58,6 +58,9 @@
    ;; implementation it would be necessary to rewrite module traverse
    ;; in apropos-fold and use early return in it.
    (string-append "^" (regexp-quote (symbol->string sym)) "$")
+   ;; apropos-fold-accessible leads to inconsistencies between lookup
+   ;; and symbol resolution. That's why we need reverse here to prevent
+   ;; incorrect symbol shadowing
    ((@@ (ice-9 session) make-fold-modules)
     (lambda () (list ns))
     (compose reverse module-uses)
