@@ -40,18 +40,16 @@
   (apropos-fold
    (lambda (module name var init)
      (let ((src (or (get-source var)
-                    (and=> module module-location)))
-           (docstring (get-docstring var))
-           (arglists (get-arglists var)))
-       `(("file" . ,(chain
-                     (source:file src)
-                     (%search-load-path _)
-                     (absolute-path _)))
-         ("line" . ,(source:line-for-user src))
-         ("column" . ,(source:column src))
-         ("ns" . ,(object->string (module-name module)))
-         ("arglists" . ,arglists)
-         ("docstring" . ,docstring))))
+                    (and=> module module-location))))
+       `(("file"      . ,(chain-and
+                          (source:file src)
+                          (%search-load-path _)
+                          (absolute-path _)))
+         ("line"      . ,(and=> src source:line-for-user))
+         ("column"    . ,(and=> src source:column))
+         ("ns"        . ,(object->string (module-name module)))
+         ("arglists"  . ,(get-arglists var))
+         ("docstring" . ,(get-docstring var)))))
    #f
    ;; Instead of early return we just wrap regexp in ^$ to exactly
    ;; match the symbol we are interested in, to further speed up the
