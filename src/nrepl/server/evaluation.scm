@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -228,24 +228,24 @@ Stream managers waits until THUNK-FINISHED is signalled."
 (define* (evaluation-result->nrepl-messages
           result
           #:key
-          (pretty-print object->string))
+          (format-value object->string))
   (let ((result-type (assoc-ref result 'result-type)))
     (case result-type
       ((value)
-       `((("value" . ,(pretty-print (assoc-ref result 'eval-value)))
+       `((("value" . ,(format-value (assoc-ref result 'eval-value)))
           ("status" . #("done")))))
       ((multiple-values)
-       (multiple-values->nrepl-messages result pretty-print))
+       (multiple-values->nrepl-messages result format-value))
       ((exception)
        (exception->nrepl-messages result))
       ((interrupted)
        `((("status" . #("done" "interrupted")))))
       (else (error (format #f "unknown result-type: ~a\n" result-type))))))
 
-(define (multiple-values->nrepl-messages result pretty-print)
+(define (multiple-values->nrepl-messages result format-value)
   (match-let lp ((`(,val . ,rest) (assoc-ref result 'eval-value))
                  (msgs '()))
-    (let ((msg `(("value" . ,(pretty-print val)))))
+    (let ((msg `(("value" . ,(format-value val)))))
       (if (null? rest)
           (let ((msg (acons "status" #("done" "multiple-values") msg)))
             (reverse (cons msg msgs)))
