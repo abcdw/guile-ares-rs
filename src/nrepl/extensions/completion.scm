@@ -75,7 +75,8 @@
               (options (assoc-ref message "options"))
               (completions (simple-completions prefix module options)))
          (reply `(("completions" . ,completions)
-                  ("status" . #("done")))))))))
+                  ("status" . #("done"))))))
+     #:unwind? #t)))
 
 (define operations
   `(("completions" . ,get-completions)))

@@ -82,7 +82,8 @@
                      (current-module)))
              (sym (and=> (assoc-ref message "sym") string->symbol)))
          (reply `(("status" . #("done"))
-                  ("info" . ,(lookup-symbol ns sym)))))))))
+                  ("info" . ,(lookup-symbol ns sym))))))
+     #:unwind? #t)))
 
 (define operations
   `(("lookup" . ,get-lookup-information)))
