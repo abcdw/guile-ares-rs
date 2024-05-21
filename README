@@ -2,10 +2,14 @@
 #+OPTIONS: toc:nil
 
 * Introduction
-Asynchronous Reliable Extensible Sleek RPC Server for Guile.  It's
-based on [[https://nrepl.org/nrepl/index.html][nREPL]] protocol and can be used for programmable interactions
-with a running guile processes, for implementing REPLs, IDEs, test
-runners or other tools.
+Asynchronous Reliable Extensible Sleek RPC Server for Guile.  First of
+all it's a library providing a lot of tools for evaluating and
+exploring the code, from simple reflection API to interruptible
+asyncronous evaluation.  In addition to that it provides a async RPC
+server implementation based on [[https://nrepl.org/nrepl/index.html][nREPL]] protocol and can be used for
+programmable interactions with a running guile processes, for
+implementing REPLs, IDEs, test runners or other tools. It also can be
+potentially used as a backend or library for LSP server.
 
 #+BEGIN_EXPORT html
 <p><a href="https://builds.sr.ht/~abcdw/guile-ares-rs?">
