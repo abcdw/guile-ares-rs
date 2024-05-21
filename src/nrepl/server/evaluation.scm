@@ -225,10 +225,19 @@ Stream managers waits until THUNK-FINISHED is signalled."
        ("status" . #("eval-error")))
       (("status" . #("done"))))))
 
+(define (object->pretty-string x)
+  "Same as @code{object->string}, but with @var{printer} set to
+@code{pretty-print}.  Last newline produced by @code{pretty-print} is
+dropped."
+  (string-drop-right
+   (object->string x pretty-print)
+   ;; pretty-print adds a newline, so we remove it
+   1))
+
 (define* (evaluation-result->nrepl-messages
           result
           #:key
-          (format-value object->string))
+          (format-value object->pretty-string))
   (let ((result-type (assoc-ref result 'result-type)))
     (case result-type
       ((value)
