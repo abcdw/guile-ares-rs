@@ -26,7 +26,7 @@ check:
 check-test:
 	${GUILE} -L ./src -L ./tests \
 	-c "((@ (ares srfi-64 test-runners) run-test) \
-	(@@ (nrepl server evaluation-test) test-evaluation-thread-manager))"
+	(@@ (ares evaluation-test) test-evaluation-thread-manager))"
 
 check-module:
 	${GUILE} -L ./src -L ./tests \
@@ -34,7 +34,7 @@ check-module:
 	(resolve-module '${TEST_MODULE}))"
 
 check-evaluation:
-	make check-module TEST_MODULE="(nrepl server evaluation-test)"
+	make check-module TEST_MODULE="(ares evaluation-test)"
 
 check-bootstrap:
 	make check-module TEST_MODULE="(nrepl bootstrap-test)"

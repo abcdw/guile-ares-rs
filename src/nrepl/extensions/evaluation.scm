@@ -23,7 +23,7 @@
   #:use-module (ares atomic)
   #:use-module (fibers)
   #:use-module (fibers channels)
-  #:use-module (nrepl server evaluation)
+  #:use-module (ares evaluation)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:export (evaluation-extension))
