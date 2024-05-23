@@ -1,23 +1,28 @@
-(define-module (ares drafts)
+(define-module (drafts)
   #:use-module (bencode)
   #:use-module (fibers)
-  #:use-module (nrepl client))
+  #:use-module (nrepl client)
+
+  #:use-module (guix import utils)
+  #:use-module (guix download))
 
 ;; ;;;
 ;; ;;; Module containing experimental code not intended for public use
 ;; ;;;
 
-(scm->bencode-string `(("op" . "ls-sessions")))
-(begin
-  (use-modules (bencode) (nrepl client))
-  (define nrepl-client (make-nrepl-client-socket #:port 44589))
-  (bencode->scm nrepl-client))
+(display "hi")
+;; (scm->bencode-string `(("op" . "ls-sessions")))
+;; (begin
+;;   (use-modules (bencode) (nrepl client))
+;;   (define nrepl-client (make-nrepl-client-socket #:port 44589))
+;;   (bencode->scm nrepl-client))
 
-(scm->bencode
- `(("op" . "lookup")
-   ("sym" . "println")
-   ("ns" . "user"))
- nrepl-client)
+;; (scm->bencode
+;;  `(("op" . "lookup")
+;;    ("sym" . "println")
+;;    ("ns" . "user"))
+;;  nrepl-client)
+
 ;; (scm->bencode
 ;;  `(("op" . "clone"))
 ;;  nrepl-client)
@@ -32,9 +37,10 @@
 ;;  `(("op" . "hello")
 ;;    ("code" . "hello"))
 ;;  nrepl-client)
-(when (char-ready? nrepl-client)
-  (format #t "~y"
-          (bencode->scm nrepl-client)))
+
+;; (when (char-ready? nrepl-client)
+;;   (format #t "~y"
+;;           (bencode->scm nrepl-client)))
 
 ;; (define session-id "0309fd7a-f92e-4209-99fa-befc7fc55ce5")
 ;; (define session
