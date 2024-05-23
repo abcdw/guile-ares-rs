@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -99,9 +99,9 @@
 (define (wrap-session handler)
   (define (add-session-reply-function context)
     (let* ((message (assoc-ref context 'nrepl/message))
-           (transport-reply (assoc-ref context 'transport/reply))
+           (original-reply (assoc-ref context 'reply))
            (session-reply (lambda (reply)
-                            (transport-reply (response-for message reply)))))
+                            (original-reply (response-for message reply)))))
       (chain context
              (acons 'session/reply session-reply _)
              (acons 'reply session-reply _))))
