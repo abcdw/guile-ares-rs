@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl extensions)
+(define-module (ares extensions)
   #:use-module (ice-9 atomic)
   #:use-module (srfi srfi-1)
   #:export (make-handler))
