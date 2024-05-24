@@ -1,5 +1,5 @@
 (define-module (integration-test)
-  #:use-module (nrepl server)
+  #:use-module (ares server)
   #:use-module (nrepl client)
   #:use-module (bencode)
   #:use-module (fibers)

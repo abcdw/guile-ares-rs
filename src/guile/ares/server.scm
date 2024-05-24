@@ -1,4 +1,4 @@
-(define-module (nrepl server)
+(define-module (ares server)
   #:use-module ((nrepl bootstrap) #:prefix bootstrap:)
   #:use-module (fibers)
   #:use-module (fibers conditions)

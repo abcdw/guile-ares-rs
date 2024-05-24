@@ -16,7 +16,7 @@ nrepl-proxy:
 
 server:
 	${GUILE_DEV} -c \
-	"((@ (nrepl server) run-nrepl-server) #:port ${NREPL_PORT})"
+	"((@ (ares server) run-nrepl-server) #:port ${NREPL_PORT})"
 
 ares-rs: server
 
