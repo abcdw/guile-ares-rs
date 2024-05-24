@@ -4,6 +4,7 @@ EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
 NREPL_PORT=7888
+GUILE_DEV=${GUILE} -L ./src/guile -L ./tests/guile -L ./dev/guile
 
 repl: server
 
@@ -14,22 +15,22 @@ nrepl-proxy:
 	-X lambdaisland.nrepl-proxy/start :port 1234 :attach ${NREPL_PORT}
 
 server:
-	${GUILE} -L ./src -L ./tests -c \
+	${GUILE_DEV} -c \
 	"((@ (nrepl server) run-nrepl-server) #:port ${NREPL_PORT})"
 
 ares-rs: server
 
 check:
-	${GUILE} -L ./src -L ./tests \
+	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-project-tests))"
 
 check-test:
-	${GUILE} -L ./src -L ./tests \
+	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-test) \
 	(@@ (ares evaluation-test) test-evaluation-thread-manager))"
 
 check-module:
-	${GUILE} -L ./src -L ./tests \
+	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-module-tests) \
 	(resolve-module '${TEST_MODULE}))"
 

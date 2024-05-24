@@ -78,3 +78,6 @@ it."
     ;; can be even more confusing than fallback to
     ;; current-module.
     (resolve-module module-name #:ensure #f)))
+
+;; https://git.sr.ht/~whereiseveryone/toys/tree/master/item/toys/discovery.scm
+;; (scheme-modules)

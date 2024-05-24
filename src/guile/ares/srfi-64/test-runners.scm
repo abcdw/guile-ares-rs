@@ -208,6 +208,7 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
            test-modules)))
   runner)
 
+;; (test-runner-summary (run-project-tests))
 (define (run-project-tests-cli)
   (let* ((summary (test-runner-summary (run-project-tests)))
          (fail-count (assoc-ref summary 'fail)))
@@ -226,6 +227,11 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
         (test-group "RERUN TESTS"
           (map (lambda (t) (run-test t #:runner runner)) filtered-tests)))))
   runner)
+
+
+;; (format #t "~y" (all-test-modules))
+
+;; (load-project-tests)
 
 ;; (set! %previous-runner (run-project-tests))
 ;; (rerun-tests %previous-runner
@@ -268,18 +274,10 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
 ;; https://github.com/tali713/mit-scheme/blob/master/tests/unit-testing.scm
 ;; https://code.call-cc.org/svn/chicken-eggs/release/5/test/trunk/test.scm
 
-;; (define-test our-super-test-suite
-;;   (test-group "Something"
-;;     (few asserts)))
-
-;; (run-tests
-;;  test-runner
-;;  ;; (select-all-loaded-tests)
-;;  (select-only-every-second-loaded-test))
-
 ;; TODO:
 ;; - Make test-assert to show line, where it fails.
 ;; - Implement test-match, which uses ice-9 match like patterns and provides
 ;;   meaningful report.
 
-;; - Write ADR for serializers or/and implement template/interface for serializers.
+
+;; https://docs.racket-lang.org/rackunit/api.html
