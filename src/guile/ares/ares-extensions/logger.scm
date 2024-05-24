@@ -41,6 +41,8 @@
       (ppk "=> " message)
       (handler (acons 'reply wrapped-reply context)))))
 
+;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
+;; logging: enable/disable, supress some operations or fields in messages.
 (define logger-extension
   `((name . "logger")
     (provides . (ares/logger))
