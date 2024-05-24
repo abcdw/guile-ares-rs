@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl ares-extensions extension)
+(define-module (ares ares-extensions extension)
   #:use-module (srfi srfi-197)
   #:export (extension-extension))
 

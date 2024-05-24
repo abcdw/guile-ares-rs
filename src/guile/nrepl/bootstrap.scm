@@ -23,13 +23,13 @@
   #:use-module (fibers operations)
   #:use-module (ice-9 atomic)
   #:use-module (ares extensions)
+  #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions load-path)
-  #:use-module (nrepl ares-extensions bencode)
+  #:use-module (ares ares-extensions state)
   #:use-module (nrepl ares-extensions completion)
   #:use-module (nrepl ares-extensions evaluation)
   #:use-module (nrepl ares-extensions lookup)
   #:use-module (nrepl ares-extensions session)
-  #:use-module (nrepl ares-extensions state)
   #:export (bootstrap-nrepl
             make-initial-context
             add-ports

@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl ares-extensions bencode)
+(define-module (ares ares-extensions bencode)
   #:use-module (bencode)
   #:use-module (srfi srfi-197)
   #:export (bencode-extension))
