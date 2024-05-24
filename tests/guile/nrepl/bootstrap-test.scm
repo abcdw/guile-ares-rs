@@ -28,10 +28,10 @@
   #:use-module (fibers operations)
   #:use-module (fibers io-wakeup)
   #:use-module (ice-9 match)
-  #:use-module (nrepl extensions state)
-  #:use-module (nrepl extensions bencode)
-  #:use-module (nrepl extensions session)
-  #:use-module (nrepl extensions evaluation))
+  #:use-module (nrepl ares-extensions state)
+  #:use-module (nrepl ares-extensions bencode)
+  #:use-module (nrepl ares-extensions session)
+  #:use-module (nrepl ares-extensions evaluation))
 
 (define (repl-with-io-port start-repl function)
   (call-with-pipes

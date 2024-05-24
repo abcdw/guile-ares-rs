@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl extensions session)
+(define-module (nrepl ares-extensions session)
   #:use-module (fibers conditions)
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)

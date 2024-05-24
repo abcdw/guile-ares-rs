@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl extensions completion)
+(define-module (nrepl ares-extensions completion)
   #:use-module (ares reflection metadata)
   #:use-module (ares reflection modules)
   #:use-module (ice-9 regex)

@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares extensions logger)
+(define-module (ares ares-extensions logger)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 format)

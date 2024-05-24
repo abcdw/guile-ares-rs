@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares extensions load-path)
+(define-module (ares ares-extensions load-path)
   #:export (load-path-extension))
 
 (define (get-load-path context)
