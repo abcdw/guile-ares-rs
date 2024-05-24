@@ -22,6 +22,10 @@
   #:use-module (srfi srfi-1)
   #:export (make-handler))
 
+;;;
+;;; Ares Extension Mechanism for runtime modification of event loop.
+;;;
+
 (define (unknown-op context)
   (let ((reply
          (or
@@ -34,6 +38,8 @@
   ;; TODO: [Andrew Tropin, 2023-09-20] Implement dependency resolution
   (reverse extentions))
 
+;; TODO: [Andrew Tropin, 2024-05-24] Potentially can add
+;; extension-extension automatically
 (define (make-handler extensions)
   (cons
    (fold (lambda (extension handler)
