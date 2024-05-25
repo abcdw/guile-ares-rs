@@ -1,0 +1,15 @@
+# -*- mode: org -*-
+
+Notes on test-related subsystem for future design and implementation
+of the functionality.
+
+High-level thought and nice things to have:
+
+Test type (tag): integration, slow, fast, something else? :: will make
+it easy to add filtering/select capabilities to test runners.
+
+Backlinks from tests to functions to build a list of tests for the
+current function.
+
+
+https://practical.li/clojure/testing/unit-testing
