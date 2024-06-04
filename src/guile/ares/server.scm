@@ -1,6 +1,6 @@
 (define-module (ares server)
-  #:use-module ((ares loop) #:prefix loop:)
-  #:use-module ((nrepl bootstrap) #:prefix bootstrap:)
+  #:use-module ((ares loop) #:prefix ares.loop:)
+  #:use-module ((nrepl bootstrap) #:prefix nrepl.bootstrap:)
   #:use-module (fibers)
   #:use-module (fibers conditions)
   #:use-module (ice-9 match)
@@ -20,8 +20,8 @@
           (setvbuf client 'block 1024)
           ;; Disable Nagle's algorithm.  We buffer ourselves.
           (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
-          (loop:loop
-           (loop:add-ports initial-context client client))))
+          (ares.loop:loop
+           (ares.loop:add-ports initial-context client client))))
        (loop)))))
 
 (define (make-default-socket family addr port)
@@ -53,7 +53,7 @@
   (signal-condition! started?)
 
   (define initial-context
-    (loop:make-initial-context bootstrap:bootstrap-extensions))
+    (ares.loop:make-initial-context nrepl.bootstrap:bootstrap-extensions))
 
   (dynamic-wind
     (lambda () 'hi)
