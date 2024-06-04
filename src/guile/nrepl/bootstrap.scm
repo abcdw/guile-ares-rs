@@ -18,11 +18,11 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl bootstrap)
-  #:use-module (ares reusable-thread)
   #:use-module (fibers io-wakeup)
   #:use-module (fibers operations)
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 exceptions)
+  #:use-module ((ares loop) :prefix loop:)
   #:use-module (ares extensions)
   #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions load-path)
@@ -31,10 +31,7 @@
   #:use-module (nrepl ares-extensions evaluation)
   #:use-module (nrepl ares-extensions lookup)
   #:use-module (nrepl ares-extensions session)
-  #:export (bootstrap-nrepl
-            make-initial-context
-            add-ports
-            loop))
+  #:export (bootstrap-nrepl bootstrap-extensions))
 
 ;;;
 ;;; Entry point for nrepl, setup basic state and fundamental extensions
@@ -51,74 +48,15 @@
    lookup-extension
    load-path-extension))
 
-;; Move to extension state?
-(define (initial-context initial-extensions)
-  (let ((state (make-atomic-box '()))
-        (handler (make-atomic-box (make-handler initial-extensions))))
-    ;; Threads Manager thread is created outside of fibers, so all the
-    ;; threads created using threads-manager are not affected by
-    ;; https://github.com/wingo/fibers/issues/105
-    (define threads-manager (make-reusable-thread))
-    (define (spawn-reusable-thread ch)
-      (reusable-thread-discard-and-run
-       threads-manager
-       (lambda ()
-         (make-reusable-thread ch)))
-      (assoc-ref
-       (reusable-thread-get-value threads-manager)
-       'value))
-
-    `((ares/spawn-reusable-thread . ,spawn-reusable-thread)
-      (ares/state . ,state)
-      (ares/handler . ,handler))))
-
-(define (make-initial-context)
-  (initial-context bootstrap-extensions))
-
-(define (add-ports context input-port output-port)
-  (append
-   `((ares/input-port . ,input-port)
-     (ares/output-port . ,output-port))
-   context))
-
-;; TODO: [Andrew Tropin, 2024-06-04] Rename all keys to ares/
-(define (loop context)
-  "This loop will be executed in fibers environment,
-@code{ares/input-port}, @code{ares/output-port}, and
-@code{ares/handler}, @code{ares/state} must be provided in the
-@code{context}."
-  (for-each
-   (lambda (key)
-     (unless (assoc key context)
-       (raise-exception
-        (make-exception
-         (make-assertion-failure)
-         (make-exception-with-message
-          (format #f "\
-Ares loop requires @code{~s} to be present in the @code{context}"
-                  key))))))
-   '(ares/input-port ares/output-port ares/handler ares/state))
-
-  (let ((handler (car (atomic-box-ref (assoc-ref context 'ares/handler))))
-        (input-port (assoc-ref context 'ares/input-port)))
-    ;; Throws an error, when port get closed
-    (false-if-exception
-     (perform-operation (wait-until-port-readable-operation input-port)))
-
-    (when (and
-           (not (port-closed? input-port))
-           (not (eof-object? (peek-char input-port))))
-      (handler context)
-      (loop context))))
-
 (define* (bootstrap-nrepl
           input-port output-port
           #:key
           (initial-extensions bootstrap-extensions))
 
-  (let ((context (add-ports (initial-context initial-extensions)
-                            input-port output-port)))
-    (loop context)))
+  (let ((context (loop:add-ports
+                  (loop:make-initial-context initial-extensions)
+                  input-port output-port)))
+    (loop:loop context)))
 
 ;; TODO: [Andrew Tropin, 2023-09-21] Initialize random number generator for
 ;; uuid
