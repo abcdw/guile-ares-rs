@@ -33,10 +33,10 @@
           (assoc-ref context 'transport/reply))))
     (reply `(("status" . #("error" "unknown-op" "done"))))))
 
-(define (sort-extensions extentions)
+(define (sort-extensions extensions)
   ;; TODO: [Andrew Tropin, 2023-09-20] Ensure transport is present
   ;; TODO: [Andrew Tropin, 2023-09-20] Implement dependency resolution
-  (reverse extentions))
+  (reverse extensions))
 
 ;; TODO: [Andrew Tropin, 2024-05-24] Potentially can add
 ;; extension-extension automatically
