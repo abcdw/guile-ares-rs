@@ -8,10 +8,12 @@
 
 
 ;;;
-;;; loop
+;;; Socket fiber-based server
 ;;;
 
 (define (socket-loop socket addr initial-context)
+  "Adds input and output ports to @code{initial-context} and starts Ares
+loop inside a separate fiber."
   (let loop ()
     (match (accept socket SOCK_NONBLOCK)
       ((client . addr)
@@ -25,6 +27,7 @@
        (loop)))))
 
 (define (make-default-socket family addr port)
+  "Creates a non-blocking server socket."
   (let ((sock (socket PF_INET SOCK_STREAM 0)))
     (setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
     (fcntl sock F_SETFD FD_CLOEXEC)
@@ -32,8 +35,13 @@
     (bind sock family addr port)
     sock))
 
-(define* (listen-socket socket addr)
+(define (listen-socket! socket)
+  "Make socket listening for incomming connections.  Simply a wrapper for
+low-level functions."
+  ;; Start accepting connections on socket and set a connection
+  ;; backlog size to 1024
   (listen socket 1024)
+  ;; Set handler for situations, when client interrupted connection
   (sigaction SIGPIPE SIG_IGN))
 
 (define* (run-nrepl-server
@@ -43,11 +51,17 @@
           (addr (if host (inet-pton family host) INADDR_LOOPBACK))
           (port 7888)
           (started? (make-condition)))
+  "Runs nREPL server to listen on @code{host}:@code{port}, prints a
+greeting and signals @code{started?}, when socket it starts to listen
+the socket.
+
+It creates a fibers environment and handles all incoming connection
+on separate fibers."
 
   (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
   (define hostname (hostent:name host))
-  (listen-socket socket addr)
+  (listen-socket! socket)
   (format #t "nREPL server started on port ~a on host ~a - nrepl://~a:~a\n"
           port hostname hostname port)
   (signal-condition! started?)
