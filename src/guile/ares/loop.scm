@@ -36,18 +36,14 @@ generating an initial context and starting the loop itself.")
 @code{ares/handler}."
   (let ((state (make-atomic-box '()))
         (handler (make-atomic-box (make-handler initial-extensions))))
-    ;; Threads Manager thread is created outside of fibers, so all the
-    ;; threads created using threads-manager are not affected by
+    ;; Pure Dynamic State is captured outside of fibers, so all the
+    ;; threads created using spawn-reusable-thread are not affected by
     ;; https://github.com/wingo/fibers/issues/105
-    (define threads-manager (make-reusable-thread))
+    (define pure-dynamic-state (current-dynamic-state))
     (define (spawn-reusable-thread ch)
-      (reusable-thread-discard-and-run
-       threads-manager
-       (lambda ()
-         (make-reusable-thread ch)))
-      (assoc-ref
-       (reusable-thread-get-value threads-manager)
-       'value))
+      (with-dynamic-state pure-dynamic-state
+        (lambda ()
+          (make-reusable-thread ch))))
 
     `((ares/spawn-reusable-thread . ,spawn-reusable-thread)
       (ares/state . ,state)
