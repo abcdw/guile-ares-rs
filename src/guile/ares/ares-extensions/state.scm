@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -21,8 +21,8 @@
   #:export (state-extension))
 
 (define state-extension
-  `((name . "nrepl/state")
-    (provides . (nrepl/state))
+  `((name . "ares/state")
+    (provides . (ares/state))
     (description . "Signals that the state is provided, it's auxiliary
  extension, just to make other extension sure that state is available.")
     (wrap . ,identity)))

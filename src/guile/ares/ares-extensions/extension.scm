@@ -32,7 +32,7 @@
 (define wrap-extension
   (lambda (handler)
     (lambda (context)
-      (let ((state (assoc-ref context 'nrepl/state))
+      (let ((state (assoc-ref context 'ares/state))
             (reply-channel (assoc-ref context 'nrepl/reply-function))
             (message (assoc-ref context 'nrepl/message)))
         'hi
@@ -45,7 +45,7 @@
 (define extension-extension
   `((name . "nrepl/extension")
     (provides . (nrepl/extension))
-    (requires . (nrepl/transport nrepl/state))
+    (requires . (nrepl/transport ares/state))
     (description . "Handles extension related operations like extension-add and
  extensions-list.")
     (handles . (("extension-add" . add-extension)

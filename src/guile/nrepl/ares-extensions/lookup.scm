@@ -71,7 +71,7 @@
     identity)))
 
 (define (get-lookup-information context)
-  (let* ((state (assoc-ref context 'nrepl/state))
+  (let* ((state (assoc-ref context 'ares/state))
          (message (assoc-ref context 'nrepl/message))
          (reply (assoc-ref context 'reply)))
     (with-exception-handler

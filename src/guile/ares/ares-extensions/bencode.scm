@@ -24,8 +24,8 @@
 
 (define (wrap-bencode handler)
   (lambda (context)
-    (let* ((input-port (assoc-ref context 'nrepl/input-port))
-           (output-port (assoc-ref context 'nrepl/output-port))
+    (let* ((input-port (assoc-ref context 'ares/input-port))
+           (output-port (assoc-ref context 'ares/output-port))
            (message (bencode->scm input-port))
            (transport-reply (lambda (reply)
                               (scm->bencode reply output-port)

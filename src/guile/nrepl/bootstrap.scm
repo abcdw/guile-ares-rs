@@ -69,16 +69,16 @@
        'value))
 
     `((ares/spawn-reusable-thread . ,spawn-reusable-thread)
-      (nrepl/state . ,state)
-      (nrepl/handler . ,handler))))
+      (ares/state . ,state)
+      (ares/handler . ,handler))))
 
 (define (make-initial-context)
   (initial-context bootstrap-extensions))
 
 (define (add-ports context input-port output-port)
   (append
-   `((nrepl/input-port . ,input-port)
-     (nrepl/output-port . ,output-port))
+   `((ares/input-port . ,input-port)
+     (ares/output-port . ,output-port))
    context))
 
 ;; TODO: [Andrew Tropin, 2024-06-04] Rename all keys to ares/
@@ -97,10 +97,10 @@
           (format #f "\
 Ares loop requires @code{~s} to be present in the @code{context}"
                   key))))))
-   '(nrepl/input-port nrepl/output-port nrepl/handler nrepl/state))
+   '(ares/input-port ares/output-port ares/handler ares/state))
 
-  (let ((handler (car (atomic-box-ref (assoc-ref context 'nrepl/handler))))
-        (input-port (assoc-ref context 'nrepl/input-port)))
+  (let ((handler (car (atomic-box-ref (assoc-ref context 'ares/handler))))
+        (input-port (assoc-ref context 'ares/input-port)))
     ;; Throws an error, when port get closed
     (false-if-exception
      (perform-operation (wait-until-port-readable-operation input-port)))

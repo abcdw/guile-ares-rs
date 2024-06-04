@@ -62,7 +62,7 @@
    (list->vector _)))
 
 (define (get-completions context)
-  (let* ((state (assoc-ref context 'nrepl/state))
+  (let* ((state (assoc-ref context 'ares/state))
          (reply (assoc-ref context 'reply))
          (message (assoc-ref context 'nrepl/message)))
     (with-exception-handler

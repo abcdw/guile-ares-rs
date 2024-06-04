@@ -70,7 +70,7 @@
 (define (clone-session context)
   (let ((new-session-id (uuid))
         (new-session (make-new-session))
-        (state (assoc-ref context 'nrepl/state))
+        (state (assoc-ref context 'ares/state))
         (reply (assoc-ref context 'reply)))
     (register-session! state new-session-id new-session)
     (reply
@@ -78,7 +78,7 @@
        ("new-session" . ,new-session-id)))))
 
 (define (close-session context)
-  (let* ((state (assoc-ref context 'nrepl/state))
+  (let* ((state (assoc-ref context 'ares/state))
          (message (assoc-ref context 'nrepl/message))
          (session-id (assoc-ref message "session"))
          (session (and=> (get-session state session-id) atomic-box-ref))
@@ -107,7 +107,7 @@
              (acons 'reply session-reply _))))
 
   (lambda (context)
-    (let* ((state (assoc-ref context 'nrepl/state))
+    (let* ((state (assoc-ref context 'ares/state))
            (message (assoc-ref context 'nrepl/message))
            (new-context (add-session-reply-function context))
            (session-id (assoc-ref message "session"))

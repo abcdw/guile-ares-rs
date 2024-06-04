@@ -65,7 +65,7 @@
         (create-evaluation-supervisor! session-atom spawn-reusable-thread))))
 
 (define (process-message context)
-  (let* ((state (assoc-ref context 'nrepl/state))
+  (let* ((state (assoc-ref context 'ares/state))
          (message (assoc-ref context 'nrepl/message))
          (spawn-reusable-thread (assoc-ref context 'ares/spawn-reusable-thread))
          (reply (assoc-ref context 'reply))
