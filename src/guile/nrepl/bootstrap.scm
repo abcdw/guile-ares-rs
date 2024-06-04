@@ -22,6 +22,7 @@
   #:use-module (fibers io-wakeup)
   #:use-module (fibers operations)
   #:use-module (ice-9 atomic)
+  #:use-module (ice-9 exceptions)
   #:use-module (ares extensions)
   #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions load-path)
@@ -33,7 +34,7 @@
   #:export (bootstrap-nrepl
             make-initial-context
             add-ports
-            nrepl-loop))
+            loop))
 
 ;;;
 ;;; Entry point for nrepl, setup basic state and fundamental extensions
@@ -80,7 +81,24 @@
      (nrepl/output-port . ,output-port))
    context))
 
-(define (nrepl-loop context)
+;; TODO: [Andrew Tropin, 2024-06-04] Rename all keys to ares/
+(define (loop context)
+  "This loop will be executed in fibers environment,
+@code{ares/input-port}, @code{ares/output-port}, and
+@code{ares/handler}, @code{ares/state} must be provided in the
+@code{context}."
+  (for-each
+   (lambda (key)
+     (unless (assoc key context)
+       (raise-exception
+        (make-exception
+         (make-assertion-failure)
+         (make-exception-with-message
+          (format #f "\
+Ares loop requires @code{~s} to be present in the @code{context}"
+                  key))))))
+   '(nrepl/input-port nrepl/output-port nrepl/handler nrepl/state))
+
   (let ((handler (car (atomic-box-ref (assoc-ref context 'nrepl/handler))))
         (input-port (assoc-ref context 'nrepl/input-port)))
     ;; Throws an error, when port get closed
@@ -91,7 +109,7 @@
            (not (port-closed? input-port))
            (not (eof-object? (peek-char input-port))))
       (handler context)
-      (nrepl-loop context))))
+      (loop context))))
 
 (define* (bootstrap-nrepl
           input-port output-port
@@ -100,7 +118,7 @@
 
   (let ((context (add-ports (initial-context initial-extensions)
                             input-port output-port)))
-    (nrepl-loop context)))
+    (loop context)))
 
 ;; TODO: [Andrew Tropin, 2023-09-21] Initialize random number generator for
 ;; uuid

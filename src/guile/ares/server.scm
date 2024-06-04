@@ -19,7 +19,7 @@
           (setvbuf client 'block 1024)
           ;; Disable Nagle's algorithm.  We buffer ourselves.
           (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
-          (bootstrap:nrepl-loop
+          (bootstrap:loop
            (bootstrap:add-ports initial-context client client))))
        (loop)))))
 
