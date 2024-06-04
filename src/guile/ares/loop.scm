@@ -26,7 +26,14 @@
   #:use-module (ice-9 exceptions)
   #:export (make-initial-context add-ports loop))
 
+(define module-documentation
+  "\
+This module contains utilities related to ares loop bootstrap: for
+generating an initial context and starting the loop itself.")
+
 (define (make-initial-context initial-extensions)
+  "Generates and initial context, which contains @code{ares/state} and
+@code{ares/handler}."
   (let ((state (make-atomic-box '()))
         (handler (make-atomic-box (make-handler initial-extensions))))
     ;; Threads Manager thread is created outside of fibers, so all the
@@ -45,16 +52,21 @@
     `((ares/spawn-reusable-thread . ,spawn-reusable-thread)
       (ares/state . ,state)
       (ares/handler . ,handler))))
-;; Move to extension state?
 
 (define (add-ports context input-port output-port)
+  "Return new context with @code{ares/input-port} and
+@code{ares/output-port} added to the @code{context}."
   (append
    `((ares/input-port . ,input-port)
      (ares/output-port . ,output-port))
    context))
 
 (define (loop context)
-  "This loop will be executed in fibers environment,
+  "The loop waits for a @code{ares/input-port} to become available for
+read and executes @code{ares/handler} on it.
+
+The loop must be executed in fibers environment.
+
 @code{ares/input-port}, @code{ares/output-port}, and
 @code{ares/handler}, @code{ares/state} must be provided in the
 @code{context}."
