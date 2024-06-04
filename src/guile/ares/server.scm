@@ -55,15 +55,10 @@
   (define initial-context
     (ares.loop:make-initial-context nrepl.bootstrap:bootstrap-extensions))
 
-  (dynamic-wind
-    (lambda () 'hi)
-    (lambda ()
-      (run-fibers
-       (lambda ()
-         (socket-loop socket addr initial-context))
-       #:drain? #t))
-    (lambda ()
-      (false-if-exception (close-port socket)))))
+  (run-fibers
+   (lambda () (socket-loop socket addr initial-context))
+   #:drain? #t)
+  (false-if-exception (close-port socket)))
 
 
 ;; dynamic-wind solution for closing socket
