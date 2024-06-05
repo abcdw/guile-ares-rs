@@ -79,15 +79,24 @@ The actual value of the context is: @code{~s}"
                   key context))))))
    '(ares/input-port ares/output-port ares/handler ares/state))
 
-  (let loop ((context context))
-      (let ((handler (car (atomic-box-ref (assoc-ref context 'ares/handler))))
-            (input-port (assoc-ref context 'ares/input-port)))
-        ;; Throws an error, when port get closed
-        (false-if-exception
-         (perform-operation (wait-until-port-readable-operation input-port)))
+  ;; To avoid unecessary additional checks of context keys, we run
+  ;; internal-loop instead of recursive call to loop itself.
+  (let internal-loop ()
+    (let ((handle! (car (atomic-box-ref (assoc-ref context 'ares/handler))))
+          (input-port (assoc-ref context 'ares/input-port)))
+      ;; Throws an error, when port get closed
+      (false-if-exception
+       ;; It get unlocked when port is readable or closed.
+       (perform-operation (wait-until-port-readable-operation input-port)))
 
-        (when (and
-               (not (port-closed? input-port))
-               (not (eof-object? (peek-char input-port))))
-          (handler context)
-          (loop context)))))
+      (when (and
+             (not (port-closed? input-port))
+             (not (eof-object? (peek-char input-port))))
+        (handle! context)
+        ;; There is no point in receiving the return value of handle!
+        ;; There can be multiple loops running in parallel, so the
+        ;; context (state, handler) is only changed with atomic
+        ;; operations. Communication with a client is done through
+        ;; side-effectful operations to input/output ports inside
+        ;; handle.
+        (internal-loop)))))
