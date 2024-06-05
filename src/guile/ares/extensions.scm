@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -27,11 +27,12 @@
 ;;;
 
 (define (unknown-op context)
-  (let ((reply
+  (let ((reply!
          (or
-          (assoc-ref context 'reply)
-          (assoc-ref context 'transport/reply))))
-    (reply `(("status" . #("error" "unknown-op" "done"))))))
+          (assoc-ref context 'reply!)
+          (assoc-ref context 'transport/reply!))))
+    (reply! `(("status" . #("error" "unknown-op" "done"))))
+    context))
 
 (define (sort-extensions extensions)
   ;; TODO: [Andrew Tropin, 2023-09-20] Ensure transport is present

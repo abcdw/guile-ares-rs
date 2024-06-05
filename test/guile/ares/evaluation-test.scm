@@ -329,8 +329,8 @@
                 (shutdown-condition (make-condition))
                 (command-channel (make-channel))
                 (replies-channel (make-channel))
-                (reply-function (lambda (reply)
-                                  (put-message replies-channel reply))))
+                (reply! (lambda (reply)
+                          (put-message replies-channel reply))))
 
            (spawn-fiber
             (evaluation-supervisor-thunk
@@ -342,7 +342,7 @@
             command-channel
             `(("code" . "#f")
               ("op" . "eval"))
-            reply-function)
+            reply!)
 
            (test-equal "Returned #f evaluation value"
              `(("value" . "#f")
@@ -353,7 +353,7 @@
             command-channel
             `(("code" . "(])")
               ("op" . "eval"))
-            reply-function)
+            reply!)
 
            (quickly (get-operation replies-channel))
            (test-equal "Returned read-error exception"
@@ -367,7 +367,7 @@
            (evaluation-supervisor-process-nrepl-message
             command-channel
             `(("op" . "interrupt"))
-            reply-function)
+            reply!)
 
            (test-equal "Interrupt idle session"
              `(("status" . #("session-idle" "done")))
@@ -377,12 +377,12 @@
             command-channel
             `(("code" . "(begin (sleep 10) 'after-sleep)")
               ("op" . "eval"))
-            reply-function)
+            reply!)
 
            (evaluation-supervisor-process-nrepl-message
             command-channel
             `(("op" . "interrupt"))
-            reply-function)
+            reply!)
 
            (test-equal "Interruption op done"
              `(("status" . #("done")))
@@ -396,7 +396,7 @@
             command-channel
             `(("code" . "(+ 1 2)")
               ("op" . "eval"))
-            reply-function)
+            reply!)
 
            (evaluation-supervisor-shutdown command-channel)
 
@@ -418,8 +418,8 @@
                 (shutdown-condition (make-condition))
                 (command-channel (make-channel))
                 (replies-channel (make-channel))
-                (reply-function (lambda (reply)
-                                  (put-message replies-channel reply))))
+                (reply! (lambda (reply)
+                          (put-message replies-channel reply))))
 
            (spawn-fiber
             (evaluation-supervisor-thunk
@@ -431,13 +431,13 @@
             command-channel
             `(("code" . "(begin (display 'hi) (+ 1))")
               ("op" . "eval"))
-            reply-function)
+            reply!)
 
            (evaluation-supervisor-process-nrepl-message
             command-channel
             `(("code" . "(begin (display 'hi2) (+ 2))")
               ("op" . "eval"))
-            reply-function)
+            reply!)
 
            (evaluation-supervisor-shutdown command-channel)
 

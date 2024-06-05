@@ -68,15 +68,15 @@
   (let* ((state (assoc-ref context 'ares/state))
          (message (assoc-ref context 'nrepl/message))
          (spawn-reusable-thread (assoc-ref context 'ares/spawn-reusable-thread))
-         (reply (assoc-ref context 'reply))
+         (reply! (assoc-ref context 'reply!))
          (session-id (assoc-ref message "session"))
          (session-atom (get-session state session-id)))
     (if session-id
         (evaluation-supervisor-process-nrepl-message
          (get-or-create-evaluation-supervisor!
           session-atom spawn-reusable-thread)
-         message reply)
-        (reply `(("status" . #("error" "no-session-id-provided" "done")))))))
+         message reply!)
+        (reply! `(("status" . #("error" "no-session-id-provided" "done")))))))
 
 (define operations
   `(("eval" . ,process-message)

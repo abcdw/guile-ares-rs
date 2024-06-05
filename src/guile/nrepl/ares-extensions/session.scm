@@ -47,10 +47,10 @@
          (alist-delete 'sessions _)
          (alist-cons 'sessions new-sessions _))))))
 
-(define (response-for message reply)
+(define (response-for message reply!)
   (let ((id (assoc-ref message "id"))
         (session (assoc-ref message "session")))
-    (chain reply
+    (chain reply!
            (acons "id" (or id "unknown") _)
            (acons "session" (or session "none") _))))
 
@@ -71,9 +71,9 @@
   (let ((new-session-id (uuid))
         (new-session (make-new-session))
         (state (assoc-ref context 'ares/state))
-        (reply (assoc-ref context 'reply)))
+        (reply! (assoc-ref context 'reply!)))
     (register-session! state new-session-id new-session)
-    (reply
+    (reply!
      `(("status" . #("done"))
        ("new-session" . ,new-session-id)))))
 
@@ -82,14 +82,14 @@
          (message (assoc-ref context 'nrepl/message))
          (session-id (assoc-ref message "session"))
          (session (and=> (get-session state session-id) atomic-box-ref))
-         (reply (assoc-ref context 'reply)))
+         (reply! (assoc-ref context 'reply!)))
     (if session
         (begin
          ((assoc-ref session 'shutdown))
          (unregister-session! state session-id)
-         (reply
+         (reply!
           `(("status" . #("done" "session-closed")))))
-        (reply
+        (reply!
          `(("status" . #("error" "no-such-session")))))))
 
 (define session-operations
@@ -99,12 +99,12 @@
 (define (wrap-session handler)
   (define (add-session-reply-function context)
     (let* ((message (assoc-ref context 'nrepl/message))
-           (original-reply (assoc-ref context 'reply))
-           (session-reply (lambda (reply)
-                            (original-reply (response-for message reply)))))
+           (original-reply! (assoc-ref context 'reply!))
+           (session-reply! (lambda (reply)
+                            (original-reply! (response-for message reply)))))
       (chain context
-             (acons 'session/reply session-reply _)
-             (acons 'reply session-reply _))))
+             (acons 'session/reply! session-reply! _)
+             (acons 'reply! session-reply! _))))
 
   (lambda (context)
     (let* ((state (assoc-ref context 'ares/state))
@@ -117,7 +117,7 @@
           (operation-function new-context)
           ;; Short-circuit if there is no such session
           (if (and session-id (not (get-session state session-id)))
-              ((assoc-ref new-context 'reply)
+              ((assoc-ref new-context 'reply!)
                `(("status" . #("error" "unknown-session" "done"))))
               (handler new-context))))))
 
@@ -129,6 +129,6 @@
  ls-sessions.")
     (handles . (("clone")
                 ("session-clone")))
-    (implements . ((session/reply)))
-    (upgrades . ((reply)))
+    (implements . ((session/reply!)))
+    (upgrades . ((reply!)))
     (wrap . ,wrap-session)))

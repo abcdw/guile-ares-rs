@@ -401,12 +401,12 @@ COMMAND-CHANNEL."
              (else
               (error "it sholud not get here")))))))))
 
-(define (replies-manager-thunk replies-channel reply)
+(define (replies-manager-thunk replies-channel reply!)
   (lambda ()
     (let loop ()
       ;; TODO: [Andrew Tropin, 2023-09-22] buffer those messages in
       ;; case reply blocks?
-      (reply (get-message replies-channel))
+      (reply! (get-message replies-channel))
       (loop))))
 
 (define* (evaluation-supervisor-thunk
@@ -472,9 +472,9 @@ arrival or when evaluation is finished, #t and rest of the queue."
     (let* ((finished-condition (make-condition))
            (replies-channel (make-channel))
            (command (front evaluation-queue))
-           (reply (assoc-ref command 'reply)))
+           (reply! (assoc-ref command 'reply!)))
       (spawn-fiber
-       (replies-manager-thunk replies-channel reply))
+       (replies-manager-thunk replies-channel reply!))
       (put-message evaluation-thread-command-channel
                    `((action . evaluate)
                      (message . ,nrepl-message)
@@ -531,7 +531,7 @@ arrival or when evaluation is finished, #t and rest of the queue."
            ;; We can't be here if queue is empty
            (let* ((command (front evaluation-queue))
                   (nrepl-message (assoc-ref command 'message))
-                  (reply (assoc-ref command 'reply)))
+                  (reply! (assoc-ref command 'reply!)))
              (apply loop (run-evaluation
                           nrepl-message
                           receive-command-operation
@@ -557,11 +557,11 @@ arrival or when evaluation is finished, #t and rest of the queue."
                    ;; interrupt-id-mismatch.
                    ;; https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/middleware/session.clj#L344
                    (begin
-                     ((assoc-ref command 'reply)
+                     ((assoc-ref command 'reply!)
                       `(("status" . #("done"))))
                      (put-message evaluation-thread-command-channel
                                   `((action . interrupt))))
-                   ((assoc-ref command 'reply)
+                   ((assoc-ref command 'reply!)
                     `(("status" . #("session-idle" "done")))))
                (loop
                 get-next-command-operation
@@ -572,7 +572,7 @@ arrival or when evaluation is finished, #t and rest of the queue."
                (put-message evaluation-thread-command-channel
                             `((action . provide-input)
                               (stdin . ,(assoc-ref message "stdin"))))
-               ((assoc-ref command 'reply)
+               ((assoc-ref command 'reply!)
                 `(("status" . #("done"))))
                (repeat-loop))
 
@@ -587,10 +587,10 @@ arrival or when evaluation is finished, #t and rest of the queue."
 
 (define (evaluation-supervisor-process-nrepl-message control-channel
                                                      message
-                                                     reply)
+                                                     reply!)
   (put-message control-channel `((action . process-nrepl-message)
                                  (message . ,message)
-                                 (reply . ,reply))))
+                                 (reply! . ,reply!))))
 
 ;; (let ((x 34))
 ;;   (interrupt)) -> new nrepl session #2

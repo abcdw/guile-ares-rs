@@ -21,13 +21,13 @@
   #:export (load-path-extension))
 
 (define (get-load-path context)
-  (let ((reply (assoc-ref context 'reply))
+  (let ((reply! (assoc-ref context 'reply!))
         (load-path (map (lambda (path)
                           (or (false-if-exception
                                (canonicalize-path path))
                               path))
                         %load-path)))
-    (reply
+    (reply!
      `(("status" . #("done"))
        ("load-path" . ,(list->vector load-path))))))
 

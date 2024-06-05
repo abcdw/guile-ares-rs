@@ -27,7 +27,7 @@
     (let* ((input-port (assoc-ref context 'ares/input-port))
            (output-port (assoc-ref context 'ares/output-port))
            (message (bencode->scm input-port))
-           (transport-reply (lambda (reply)
+           (transport-reply! (lambda (reply)
                               (scm->bencode reply output-port)
                               ;; Otherwise bencode message won't be
                               ;; flashed to the socket
@@ -38,11 +38,11 @@
          ;; message produced by transport underlying extension don't
          ;; care how it was added, it's already in scm.
          (acons 'nrepl/message message _)
-         (acons 'transport/reply transport-reply _)
-         (acons 'reply transport-reply _))))))
+         (acons 'transport/reply! transport-reply! _)
+         (acons 'reply! transport-reply! _))))))
 
 (define bencode-extension
   `((name . "nrepl/extension")
     (provides . (nrepl/transport nrepl/bencode))
-    (description . "Add transport/reply and reply functions to context.")
+    (description . "Add transport/reply! and reply! functions to context.")
     (wrap . ,wrap-bencode)))

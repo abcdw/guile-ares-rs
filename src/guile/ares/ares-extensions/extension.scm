@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -33,7 +33,7 @@
   (lambda (handler)
     (lambda (context)
       (let ((state (assoc-ref context 'ares/state))
-            (reply-channel (assoc-ref context 'nrepl/reply-function))
+            (reply! (assoc-ref context 'reply!))
             (message (assoc-ref context 'nrepl/message)))
         'hi
         ;; (case (assoc-ref message "op")

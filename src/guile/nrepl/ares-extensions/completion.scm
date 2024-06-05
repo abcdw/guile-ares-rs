@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -63,20 +63,20 @@
 
 (define (get-completions context)
   (let* ((state (assoc-ref context 'ares/state))
-         (reply (assoc-ref context 'reply))
+         (reply! (assoc-ref context 'reply!))
          (message (assoc-ref context 'nrepl/message)))
     (with-exception-handler
-     (lambda (ex)
-       (reply `(("status" . #("done" "completion-error")))))
-     (lambda ()
-       (let* ((module (or (string->resolved-module (assoc-ref message "ns"))
-                          (current-module)))
-              (prefix (or (assoc-ref message "prefix") ""))
-              (options (assoc-ref message "options"))
-              (completions (simple-completions prefix module options)))
-         (reply `(("completions" . ,completions)
-                  ("status" . #("done"))))))
-     #:unwind? #t)))
+        (lambda (ex)
+          (reply! `(("status" . #("done" "completion-error")))))
+      (lambda ()
+        (let* ((module (or (string->resolved-module (assoc-ref message "ns"))
+                           (current-module)))
+               (prefix (or (assoc-ref message "prefix") ""))
+               (options (assoc-ref message "options"))
+               (completions (simple-completions prefix module options)))
+          (reply! `(("completions" . ,completions)
+                    ("status" . #("done"))))))
+      #:unwind? #t)))
 
 (define operations
   `(("completions" . ,get-completions)))
