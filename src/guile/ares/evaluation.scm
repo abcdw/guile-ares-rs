@@ -412,7 +412,7 @@ COMMAND-CHANNEL."
 (define* (evaluation-supervisor-thunk
           control-channel
           #:key
-          (spawn-reusable-thread make-reusable-thread)
+          (pure-dynamic-state (current-dynamic-state))
           ;; shutdown is graceful operation
           (shutdown-condition (make-condition))
           (finished-condition (make-condition)))
@@ -490,6 +490,11 @@ arrival or when evaluation is finished, #t and rest of the queue."
         get-next-command-operation)
        (or (alist-get-in '(message "id") command) "0")
        (dequeue evaluation-queue))))
+
+  (define (spawn-reusable-thread ch)
+    (with-dynamic-state pure-dynamic-state
+      (lambda ()
+        (make-reusable-thread ch))))
 
   (lambda ()
     (spawn-fiber (evaluation-thread-manager-thunk

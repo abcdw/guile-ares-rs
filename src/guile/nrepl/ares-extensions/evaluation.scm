@@ -28,18 +28,18 @@
   #:use-module (srfi srfi-197)
   #:export (evaluation-extension))
 
-(define (make-evaluation-supervisor session spawn-reusable-thread)
+(define (make-evaluation-supervisor session pure-dynamic-state)
   (let ((control-channel (make-channel)))
     (spawn-fiber (evaluation-supervisor-thunk
                   control-channel
-                  #:spawn-reusable-thread spawn-reusable-thread
+                  #:pure-dynamic-state pure-dynamic-state
                   #:shutdown-condition (assoc-ref session 'shutdown-condition)))
     control-channel))
 
-(define (create-evaluation-supervisor! session-atom spawn-reusable-thread)
+(define (create-evaluation-supervisor! session-atom pure-dynamic-state)
   (let* ((tmp-evaluation-supervisor
           (make-evaluation-supervisor (atomic-box-ref session-atom)
-                                      spawn-reusable-thread))
+                                      pure-dynamic-state))
          (add-evaluation-supervisor
           (lambda (session)
             (let ((evaluation-supervisor
@@ -57,24 +57,24 @@
     new-evaluation-supervisor))
 
 (define (get-or-create-evaluation-supervisor!
-         session-atom spawn-reusable-thread)
+         session-atom pure-dynamic-state)
   (let ((evaluation-supervisor (assoc-ref (atomic-box-ref session-atom)
                                           'evaluation-supervisor)))
     (if evaluation-supervisor
         evaluation-supervisor
-        (create-evaluation-supervisor! session-atom spawn-reusable-thread))))
+        (create-evaluation-supervisor! session-atom pure-dynamic-state))))
 
 (define (process-message context)
   (let* ((state (assoc-ref context 'ares/state))
          (message (assoc-ref context 'nrepl/message))
-         (spawn-reusable-thread (assoc-ref context 'ares/spawn-reusable-thread))
+         (pure-dynamic-state (assoc-ref context 'ares/pure-dynamic-state))
          (reply! (assoc-ref context 'reply!))
          (session-id (assoc-ref message "session"))
          (session-atom (get-session state session-id)))
     (if session-id
         (evaluation-supervisor-process-nrepl-message
          (get-or-create-evaluation-supervisor!
-          session-atom spawn-reusable-thread)
+          session-atom pure-dynamic-state)
          message reply!)
         (reply! `(("status" . #("error" "no-session-id-provided" "done")))))))
 

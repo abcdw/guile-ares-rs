@@ -21,7 +21,6 @@
   #:use-module (fibers io-wakeup)
   #:use-module (fibers operations)
   #:use-module (ares extensions)
-  #:use-module (ares reusable-thread)
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 exceptions)
   #:export (make-initial-context add-ports loop))
@@ -33,19 +32,17 @@ generating an initial context and starting the loop itself.")
 
 (define (make-initial-context initial-extensions)
   "Generates and initial context, which contains @code{ares/state} and
-@code{ares/handler}."
+@code{ares/handler}.  It should be executed outside of fibers, so it
+captures a pure dynamic-state. For more information visit:
+@url{https://github.com/wingo/fibers/issues/105}."
   (let ((state (make-atomic-box '()))
         (handler (make-atomic-box (make-handler initial-extensions))))
     ;; Pure Dynamic State is captured outside of fibers, so all the
     ;; threads created using spawn-reusable-thread are not affected by
     ;; https://github.com/wingo/fibers/issues/105
     (define pure-dynamic-state (current-dynamic-state))
-    (define (spawn-reusable-thread ch)
-      (with-dynamic-state pure-dynamic-state
-        (lambda ()
-          (make-reusable-thread ch))))
 
-    `((ares/spawn-reusable-thread . ,spawn-reusable-thread)
+    `((ares/pure-dynamic-state . ,pure-dynamic-state)
       (ares/state . ,state)
       (ares/handler . ,handler))))
 
