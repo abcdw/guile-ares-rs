@@ -20,9 +20,9 @@
 (define-module (ares loop)
   #:use-module (fibers io-wakeup)
   #:use-module (fibers operations)
+  #:use-module (ares exceptions)
   #:use-module (ares extensions)
   #:use-module (ice-9 atomic)
-  #:use-module (ice-9 exceptions)
   #:export (make-initial-context add-ports loop))
 
 (define module-documentation
@@ -66,14 +66,11 @@ The loop must be executed in fibers environment.
   (for-each
    (lambda (key)
      (unless (assoc key context)
-       (raise-exception
-        (make-exception
-         (make-assertion-failure)
-         (make-exception-with-message
-          (format #f "\
+       (raise-assert
+        (format #f "\
 Ares loop requires @code{~s} to be present in the @code{context}.
 The actual value of the context is: @code{~s}"
-                  key context))))))
+                key context))))
    '(ares/input-port ares/output-port ares/handler ares/state))
 
   ;; To avoid unecessary additional checks of context keys, we run
