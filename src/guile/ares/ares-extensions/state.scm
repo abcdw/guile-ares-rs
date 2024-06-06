@@ -18,11 +18,40 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares ares-extensions state)
+  #:use-module (fibers scheduler)
+  #:use-module (ice-9 atomic)
+  #:use-module (ares exceptions)
   #:export (state-extension))
+
+;; State must be provided outside of extensions to be shared between
+;; all loops.
+
+(define (ensure-external-dependencies-provided handler)
+  (define checked? #f)
+  (define (perform-context-check context)
+    (unless (atomic-box? (assoc-ref context 'ares/state))
+      (raise-assert "\
+Context must contain @code{ares/state} key with atomic-box inside."))
+
+    (unless (and (assoc-ref context 'ares/input-port)
+                 (assoc-ref context 'ares/output-port))
+      (raise-assert "\
+Context must contain @code{ares/input-port} and @code{ares/output-port} keys."))
+
+    (unless (current-scheduler)
+      (raise-assert "Ares loop must be executed in fibers context")))
+
+  (lambda (context)
+    (unless checked?
+      (perform-context-check context)
+      (set! checked? #t))
+    (handler context)))
 
 (define state-extension
   `((name . "ares/state")
-    (provides . (ares/state))
+    (provides . (ares/root ares/state fibers))
+    (requires) ; the root extension has no requirements
     (description . "Signals that the state is provided, it's auxiliary
- extension, just to make other extension sure that state is available.")
-    (wrap . ,identity)))
+ extension, just to make other extension sure that state and fibers
+ are available.")
+    (wrap . ,ensure-external-dependencies-provided)))
