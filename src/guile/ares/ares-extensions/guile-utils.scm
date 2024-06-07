@@ -17,8 +17,8 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares ares-extensions load-path)
-  #:export (load-path-extension))
+(define-module (ares ares-extensions guile-utils)
+  #:export (guile-utils-extension))
 
 (define (get-load-path context)
   (let ((reply! (assoc-ref context 'reply!))
@@ -32,7 +32,7 @@
        ("load-path" . ,(list->vector load-path))))))
 
 (define operations
-  `(("ares/load-path" . ,get-load-path)))
+  `(("ares.guile/load-path" . ,get-load-path)))
 
 (define (wrap-load-path handler)
   (lambda (context)
@@ -43,9 +43,11 @@
           (operation-function context)
           (handler context)))))
 
-(define load-path-extension
-  `((name . "ares/load-path")
-    (provides . (ares/load-path))
+;; It should be clear that it provides utilities related to guile, not
+;; hoot and all operations are prefixed with ares.guile/
+(define guile-utils-extension
+  `((name . "ares/guile-utils")
+    (provides . (ares.guile/utils))
     (requires . (nrepl/session))
     (description . "Handles load-path related functionality.")
     (wrap . ,wrap-load-path)))
