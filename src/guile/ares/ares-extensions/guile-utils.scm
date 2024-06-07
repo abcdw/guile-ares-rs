@@ -32,7 +32,8 @@
        ("load-path" . ,(list->vector load-path))))))
 
 (define operations
-  `(("ares.guile/load-path" . ,get-load-path)))
+  `(("ares.guile/load-path" . ,get-load-path)
+    ("ares/load-path" . ,get-load-path)))
 
 (define (wrap-load-path handler)
   (lambda (context)
