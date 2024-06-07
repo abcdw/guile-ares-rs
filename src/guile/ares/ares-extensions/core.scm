@@ -17,14 +17,15 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares ares-extensions state)
+(define-module (ares ares-extensions core)
   #:use-module (fibers scheduler)
   #:use-module (ice-9 atomic)
   #:use-module (ares exceptions)
-  #:export (state-extension))
+  #:export (core-extension))
 
-;; State must be provided outside of extensions to be shared between
-;; all loops.
+;; State, i/o ports and fibers must be provided outside of extensions.
+;; State must be shared between all loops.  i/o ports are unique for
+;; each loop/client.
 
 (define (ensure-external-dependencies-provided handler)
   (define checked? #f)
@@ -47,11 +48,11 @@ Context must contain @code{ares/input-port} and @code{ares/output-port} keys."))
       (set! checked? #t))
     (handler context)))
 
-(define state-extension
-  `((name . "ares/state")
-    (provides . (ares/root ares/state fibers))
+(define core-extension
+  `((name . "ares/core")
+    (provides . (ares/core ares/state ares/io fibers))
     (requires) ; the root extension has no requirements
-    (description . "Signals that the state is provided, it's auxiliary
- extension, just to make other extension sure that state and fibers
- are available.")
+    (description . "Checks that the state, i/o ports and fibers are
+ provided, it's auxiliary extension, just to make other extension sure
+ that all base components are available.")
     (wrap . ,ensure-external-dependencies-provided)))

@@ -46,7 +46,7 @@
 (define logger-extension
   `((name . "ares/logger")
     (provides . (ares/logger))
-    (requires . (ares/root ares/transport))
+    (requires . (ares/core ares/transport))
     (description . "Prints @code{nrepl/message} and wraps @code{reply!}
  function to log outgoing nREPL messages.")
     (wrap . ,wrap-logger)))

@@ -45,7 +45,7 @@
 (define extension-extension
   `((name . "ares/extension")
     (provides . (ares/extension))
-    (requires . (ares/transport ares/state ares/root))
+    (requires . (ares/transport ares/state ares/core))
     (description . "Handles extension related operations like extension-add and
  extensions-list.")
     (handles . (("extension/add" . add-extension)

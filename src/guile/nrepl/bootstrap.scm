@@ -26,7 +26,7 @@
   #:use-module (ares extensions)
   #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions load-path)
-  #:use-module (ares ares-extensions state)
+  #:use-module (ares ares-extensions core)
   #:use-module (nrepl ares-extensions completion)
   #:use-module (nrepl ares-extensions evaluation)
   #:use-module (nrepl ares-extensions lookup)
@@ -40,7 +40,7 @@
 (define bootstrap-extensions
   (list
    ;; TODO: [Andrew Tropin, 2023-09-25] Add extension extension
-   state-extension
+   core-extension
    bencode-extension
    session-extension
    completion-extension

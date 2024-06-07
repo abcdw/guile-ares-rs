@@ -43,7 +43,7 @@
 
 (define bencode-extension
   `((name . "ares/bencode")
-    (requires . (ares/root))
+    (requires . (ares/core ares/io))
     (provides . (ares/transport ares/bencode))
     (description . "Add transport/reply! and reply! functions to context.")
     (wrap . ,wrap-bencode)))

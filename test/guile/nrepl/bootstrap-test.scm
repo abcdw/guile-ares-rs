@@ -28,7 +28,7 @@
   #:use-module (fibers operations)
   #:use-module (fibers io-wakeup)
   #:use-module (ice-9 match)
-  #:use-module (ares ares-extensions state)
+  #:use-module (ares ares-extensions core)
   #:use-module (ares ares-extensions bencode)
   #:use-module (nrepl ares-extensions session)
   #:use-module (nrepl ares-extensions evaluation))
@@ -54,7 +54,7 @@
   (bootstrap-nrepl input-port output-port
                    #:initial-extensions
                    (list
-                    state-extension
+                    core-extension
                     bencode-extension
                     session-extension)))
 
