@@ -43,12 +43,13 @@
         ))))
 
 (define extension-extension
-  `((name . "nrepl/extension")
-    (provides . (nrepl/extension))
-    (requires . (nrepl/transport ares/state))
+  `((name . "ares/extension")
+    (provides . (ares/extension))
+    (requires . (ares/transport ares/state ares/root))
     (description . "Handles extension related operations like extension-add and
  extensions-list.")
-    (handles . (("extension-add" . add-extension)
-                ("extension-swap" . identity)
-                ("extension-list" . identity)))
+    (handles . (("extension/add" . add-extension)
+                ("extension/swap" . identity)
+                ("extension/remove" . identity)
+                ("extension/list" . identity)))
     (wrap . ,wrap-extension)))

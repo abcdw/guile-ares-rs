@@ -44,9 +44,9 @@
 ;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
 ;; logging: enable/disable, supress some operations or fields in messages.
 (define logger-extension
-  `((name . "logger")
+  `((name . "ares/logger")
     (provides . (ares/logger))
-    (requires . (nrepl/transport))
+    (requires . (ares/root ares/transport))
     (description . "Prints @code{nrepl/message} and wraps @code{reply!}
  function to log outgoing nREPL messages.")
     (wrap . ,wrap-logger)))

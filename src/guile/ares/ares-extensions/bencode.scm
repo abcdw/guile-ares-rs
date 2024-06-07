@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -42,7 +42,8 @@
          (acons 'reply! transport-reply! _))))))
 
 (define bencode-extension
-  `((name . "nrepl/extension")
-    (provides . (nrepl/transport nrepl/bencode))
+  `((name . "ares/bencode")
+    (requires . (ares/root))
+    (provides . (ares/transport ares/bencode))
     (description . "Add transport/reply! and reply! functions to context.")
     (wrap . ,wrap-bencode)))

@@ -124,6 +124,7 @@
 
 (define session-extension
   `((name . "nrepl/session")
+    (requires . (ares/state ares/transport))
     (provides . (nrepl/session))
     (description . "Handles session related operations like clone and
  ls-sessions.")
