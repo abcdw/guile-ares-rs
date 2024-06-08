@@ -66,11 +66,15 @@ on separate fibers."
           port hostname hostname port)
   (signal-condition! started?)
 
+  ;; We initialize context before run-fibers to capture clean current
+  ;; dynamic state, also we share ares/state part of the context for
+  ;; all clients, but input/output ports are unique for each one.
   (define initial-context
     (ares.loop:make-initial-context nrepl.bootstrap:bootstrap-extensions))
 
   (run-fibers
-   (lambda () (socket-loop socket addr initial-context))
+   (lambda ()
+     (socket-loop socket addr initial-context))
    #:drain? #t)
   (false-if-exception (close-port socket)))
 
