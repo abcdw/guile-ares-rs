@@ -25,7 +25,7 @@
   #:use-module ((ares loop) :prefix loop:)
   #:use-module (ares extensions)
   #:use-module (ares ares-extensions bencode)
-  #:use-module (ares ares-extensions load-path)
+  #:use-module (ares ares-extensions guile-utils)
   #:use-module (ares ares-extensions core)
   #:use-module (nrepl ares-extensions completion)
   #:use-module (nrepl ares-extensions evaluation)
@@ -46,7 +46,7 @@
    completion-extension
    evaluation-extension
    lookup-extension
-   load-path-extension))
+   guile-utils-extension))
 
 (define* (bootstrap-nrepl
           input-port output-port
