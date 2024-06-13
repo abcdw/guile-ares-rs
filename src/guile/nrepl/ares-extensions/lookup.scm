@@ -18,6 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl ares-extensions lookup)
+  #:use-module (ares file)
   #:use-module (ares reflection metadata)
   #:use-module (ares reflection modules)
   #:use-module ((ice-9 regex) #:select (regexp-quote))
@@ -32,19 +33,13 @@
   (define (module-location module)
     `(0 ,(module-filename module) 0 . 0))
 
-  (define (absolute-path path)
-    (if (absolute-file-name? path)
-        path
-        (string-append (getcwd) "/" path)))
-
   (apropos-fold
    (lambda (module name var init)
      (let* ((src (or (get-source var)
                      (and=> module module-location)))
             (file (chain-and
                    (source:file src)
-                   (%search-load-path _)
-                   (absolute-path _)))
+                   (search-in-load-path _)))
             (line (and=> src source:line-for-user))
             (column (and=> src source:column))
             (arglists (get-arglists var))

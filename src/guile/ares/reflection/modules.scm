@@ -18,6 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares reflection modules)
+  #:use-module (ares file)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:export (all-modules
@@ -63,9 +64,7 @@ it."
          (cond ((equal? '(boot-9) (module-name mod)) '("ice-9" "boot-9"))
                ((equal? '(guile) (module-name mod)) '("ice-9" "boot-9"))
                (else (map symbol->string (module-name mod))))))
-    (and=>
-     (%search-load-path (string-join name-parts "/"))
-     canonicalize-path)))
+    (search-in-load-path (string-join name-parts "/"))))
 
 (define (string->resolved-module str)
   "Tries to resolve STR to a module object."
