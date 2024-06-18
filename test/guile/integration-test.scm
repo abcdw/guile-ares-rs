@@ -14,6 +14,7 @@
                         (lambda ()
                           (run-nrepl-server
                            #:port port
+                           #:nrepl-port-file? #f
                            #:started? server-started?))))
          (_ (wait server-started?))
          (client-socket (make-nrepl-client-socket #:port port)))

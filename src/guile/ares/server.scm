@@ -44,16 +44,26 @@ low-level functions."
   ;; Set handler for situations, when client interrupted connection
   (sigaction SIGPIPE SIG_IGN))
 
+(define (generate-random-port)
+  "Generates random ephemeral port number.  Ports above 49151 are not
+registered for any specific applications"
+  (+ 49152 (random 16384 (random-state-from-platform))))
+
 (define* (run-nrepl-server
           #:key
           (host #f)
           (family AF_INET)
           (addr (if host (inet-pton family host) INADDR_LOOPBACK))
-          (port 7888)
-          (started? (make-condition)))
+          (port (generate-random-port))
+          (started? (make-condition))
+          (nrepl-port-file? #t)
+          (nrepl-port-path ".nrepl-port"))
   "Runs nREPL server to listen on @code{host}:@code{port}, prints a
 greeting and signals @code{started?}, when socket it starts to listen
 the socket.
+
+Creates @code{nrepl-port-path} with port number if
+@code{nrepl-port-file?} is @code{#t}.
 
 It creates a fibers environment and handles all incoming connection
 on separate fibers."
