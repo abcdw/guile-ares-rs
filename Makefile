@@ -3,14 +3,13 @@ GUILE=$(GUIXTM) -- shell guile-next guile-fibers -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
-NREPL_PORT=7888
 GUILE_DEV=${GUILE} -L ./src/guile -L ./test/guile -L ./dev/guile
 
 repl: server
 
 server:
 	${GUILE_DEV} -c \
-	"((@ (ares server) run-nrepl-server) #:port ${NREPL_PORT})"
+	"((@ (nrepl server) run-nrepl-server))"
 
 ares-rs: server
 
@@ -36,9 +35,6 @@ check-bootstrap:
 
 check-integration:
 	make check-module TEST_MODULE="(integration-test)"
-
-dumb-client:
-	./tests/dumb-client.sh ${NREPL_PORT}
 
 README.html: README
 	${EMACS} -Q --batch -l docs/html-export-config.el README \

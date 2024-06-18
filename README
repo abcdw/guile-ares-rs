@@ -38,7 +38,7 @@ The are multiple ways to utilize Ares RS, but most straightforward is to spawn a
 
 #+begin_src sh
 guix shell guile-next guile-ares-rs -- \
-guile -c '((@ (ares server) run-nrepl-server) #:port 7888)'
+guile -c '((@ (ares server) run-nrepl-server))'
 #+end_src
 
 Don't forget to add your project source code and other dependencies to [[https://www.gnu.org/software/guile/manual/html_node/Load-Paths.html][load path]].
