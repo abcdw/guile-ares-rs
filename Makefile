@@ -8,12 +8,6 @@ GUILE_DEV=${GUILE} -L ./src/guile -L ./test/guile -L ./dev/guile
 
 repl: server
 
-nrepl-proxy:
-	guix shell openjdk clojure-tools -- \
-	clj -Sdeps \
-	'{:deps {com.lambdaisland/nrepl-proxy {:mvn/version "0.2.8-alpha"}}}' \
-	-X lambdaisland.nrepl-proxy/start :port 1234 :attach ${NREPL_PORT}
-
 server:
 	${GUILE_DEV} -c \
 	"((@ (ares server) run-nrepl-server) #:port ${NREPL_PORT})"
