@@ -74,6 +74,12 @@ on separate fibers."
   (listen-socket! socket)
   (format #t "nREPL server started on port ~a on host ~a - nrepl://~a:~a\n"
           port hostname hostname port)
+
+  (when nrepl-port-file?
+    (call-with-output-file nrepl-port-path
+      (lambda (p)
+        (format p "~a\n" port))))
+
   (signal-condition! started?)
 
   ;; We initialize context before run-fibers to capture clean current
