@@ -23,10 +23,10 @@
   #:use-module (ares ares-extensions extension)
   #:use-module (ares ares-extensions logger)
   #:use-module (ares ares-extensions core)
+  #:use-module (ice-9 exceptions)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-64)
   #:use-module (test-utils))
-
 
 (define base-extensions
   (list
@@ -51,6 +51,27 @@
     (test-equal "Base extensions stack"
       '("ares/core" "ares/bencode" "ares/logger" "ares/extension")
       (extension-names sorted-extensions))))
+
+(define (get-exception-message thunk)
+    (catch
+     #t
+     thunk
+     (lambda (key . args) (exception-message (car args)))))
+
+(define-test exception-on-missing-dependency-test
+  (define incomplete-stack
+    (list
+     ;; core-extension
+     bencode-extension
+     logger-extension
+     extension-extension))
+
+  (test-group "Incomplete extensions stack"
+    (test-equal "Core extension missing"
+      "There are no nodes providing @code{ares/core}, but \
+@code{\"ares/bencode\"} requires it"
+      (get-exception-message
+       (lambda () (make-handler incomplete-stack))))))
 
 ;; (use-modules ((nrepl bootstrap) #:prefix nrepl.bootstrap:))
 ;; (extension-names (sort-extensions nrepl.bootstrap:bootstrap-extensions))
