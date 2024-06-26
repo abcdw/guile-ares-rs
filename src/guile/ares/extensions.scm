@@ -66,7 +66,7 @@ Key @code{~s} provided more than once, by both @code{~s} and @code{~s}."
   (define (raise-nobody-provides x for)
     (raise-assert
      (format #f "\
-There are no node providing @code{~s}, but @code{~s} requires it" x for)))
+There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
 
   (define provides (make-hash-table)) ; what | who
 
