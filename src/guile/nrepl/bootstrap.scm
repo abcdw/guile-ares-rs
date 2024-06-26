@@ -27,6 +27,7 @@
   #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions guile-utils)
   #:use-module (ares ares-extensions core)
+  #:use-module (ares ares-extensions extension)
   #:use-module (nrepl ares-extensions completion)
   #:use-module (nrepl ares-extensions evaluation)
   #:use-module (nrepl ares-extensions lookup)
@@ -42,6 +43,7 @@
    ;; TODO: [Andrew Tropin, 2023-09-25] Add extension extension
    core-extension
    bencode-extension
+   extension-extension
    session-extension
    completion-extension
    evaluation-extension
