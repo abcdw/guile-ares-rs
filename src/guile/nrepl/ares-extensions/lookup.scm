@@ -71,7 +71,7 @@
          (reply! (assoc-ref context 'reply!)))
     (with-exception-handler
         (lambda (ex)
-          (reply! `(("status" . #("done" "lookup-error")))))
+          (reply! `(("status" . #("error" "lookup-error" "done")))))
       (lambda ()
         (let ((ns (or (string->resolved-module (assoc-ref message "ns"))
                       (current-module)))

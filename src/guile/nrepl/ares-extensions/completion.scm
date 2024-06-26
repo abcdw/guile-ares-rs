@@ -67,7 +67,7 @@
          (message (assoc-ref context 'nrepl/message)))
     (with-exception-handler
         (lambda (ex)
-          (reply! `(("status" . #("done" "completion-error")))))
+          (reply! `(("status" . #("error" "completion-error" "done")))))
       (lambda ()
         (let* ((module (or (string->resolved-module (assoc-ref message "ns"))
                            (current-module)))

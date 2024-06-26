@@ -90,7 +90,7 @@
          (reply!
           `(("status" . #("done" "session-closed")))))
         (reply!
-         `(("status" . #("error" "no-such-session")))))))
+         `(("status" . #("error" "no-such-session" "done")))))))
 
 (define session-operations
   `(("clone" . ,clone-session)

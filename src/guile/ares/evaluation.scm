@@ -222,7 +222,7 @@ Stream managers waits until THUNK-FINISHED is signalled."
     ;; more structured way to be processed by respective IDEs/clients.
     `((("err" . ,error))
       (("ex" . ,(symbol->string (exception-kind exception)))
-       ("status" . #("eval-error")))
+       ("status" . #("error" "eval-error" "done")))
       (("status" . #("done"))))))
 
 (define (object->pretty-string x)
