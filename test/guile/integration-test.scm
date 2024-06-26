@@ -41,7 +41,7 @@
         (@ (nonblocking-socket) create-socket-exception)))
      (join-thread th))))
 
-(define-test nonblocking-socket-exception
+(define-test nonblocking-socket-exception-test
   ;; https://github.com/wingo/fibers/issues/105
   (test-expect-fail 1)
   (test-equal "nonblocking-socket created, but connection refused"
