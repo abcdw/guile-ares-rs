@@ -35,7 +35,9 @@ generating an initial context and starting the loop itself.")
 @code{ares/handler}.  It should be executed outside of fibers, so it
 captures a pure dynamic-state. For more information visit:
 @url{https://github.com/wingo/fibers/issues/105}."
-  (let ((state (make-atomic-box '()))
+  (let ((state (make-atomic-box `((extensions
+                                   .
+                                   ,(make-atomic-box initial-extensions)))))
         (handler (make-atomic-box (make-handler initial-extensions))))
     ;; Pure Dynamic State is captured outside of fibers, so all the
     ;; threads created using spawn-reusable-thread are not affected by
