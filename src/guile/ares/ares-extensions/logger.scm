@@ -18,10 +18,11 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares ares-extensions logger)
+  #:use-module (ares guile)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 format)
-  #:export (logger-extension))
+  #:export (ares/logger))
 
 (define (ppk prefix x)
   (format #t "~a~y\n" prefix
@@ -30,7 +31,14 @@
                  (alist-delete "info" _)))
   x)
 
-(define (wrap-logger handler)
+;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
+;; logging: enable/disable, supress some operations or fields in messages.
+(define-with-meta (ares/logger handler)
+  "Prints @code{nrepl/message} and wraps @code{reply!} function to log
+ outgoing nREPL messages."
+  `((provides . (ares/logger))
+    (requires . (ares/core ares/transport)))
+
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (original-reply! (assoc-ref context 'reply!))
@@ -40,13 +48,3 @@
                             (original-reply! reply-message))))
       (ppk "=> " message)
       (handler (acons 'reply! wrapped-reply! context)))))
-
-;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
-;; logging: enable/disable, supress some operations or fields in messages.
-(define logger-extension
-  `((name . "ares/logger")
-    (provides . (ares/logger))
-    (requires . (ares/core ares/transport))
-    (description . "Prints @code{nrepl/message} and wraps @code{reply!}
- function to log outgoing nREPL messages.")
-    (wrap . ,wrap-logger)))

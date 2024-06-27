@@ -21,7 +21,8 @@
   #:use-module (fibers scheduler)
   #:use-module (ice-9 atomic)
   #:use-module (ares exceptions)
-  #:export (core-extension))
+  #:use-module (ares guile)
+  #:export (ares/core))
 
 ;; State, i/o ports and fibers must be provided outside of extensions.
 ;; State must be shared between all loops.  i/o ports are unique for
@@ -48,11 +49,10 @@ Context must contain @code{ares/input-port} and @code{ares/output-port} keys."))
       (set! checked? #t))
     (handler context)))
 
-(define core-extension
-  `((name . "ares/core")
-    (provides . (ares/core ares/state ares/io fibers))
-    (requires) ; the root extension has no requirements
-    (description . "Checks that the state, i/o ports and fibers are
+(define-with-meta (ares/core handler)
+  "Checks that the state, i/o ports and fibers are
  provided, it's auxiliary extension, just to make other extension sure
- that all base components are available.")
-    (wrap . ,ensure-external-dependencies-provided)))
+ that all base components are available."
+  `((requires) ; the root extension has no requirements
+    (provides . (ares/core ares/state ares/io fibers)))
+  (ensure-external-dependencies-provided handler))

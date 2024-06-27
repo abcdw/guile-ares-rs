@@ -18,16 +18,23 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares ares-extensions extension)
+  #:use-module (ares guile)
   #:use-module (ares extensions)
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 match)
   #:use-module (ice-9 eval-string)
+  #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
-  #:export (extension-extension))
+  #:export (ares/extension))
 
 (define add-extension
-  (lambda (handler state message reply!)
-    (let* ((extensions-atom (assoc-ref (atomic-box-ref state) 'extensions))
+  (lambda (context)
+    (let* ((message (assoc-ref context 'nrepl/message))
+           (handler (assoc-ref context 'ares/handler))
+           (state (atomic-box-ref (assoc-ref context 'ares/state)))
+           (extensions (atomic-box-ref (assoc-ref state 'extensions)))
+           (reply! (assoc-ref context 'reply!))
+           (extensions-atom (assoc-ref (atomic-box-ref state) 'extensions))
            (old-extensions (atomic-box-ref extensions-atom))
            (new-extension (eval-string (assoc-ref message "extension")))
            (new-extensions (cons new-extension old-extensions))
@@ -49,29 +56,31 @@
   (lambda (state message reply-function)
     'hi))
 
-(define (wrap-extension handler)
-  (lambda (context)
-    (let ((handler-atom (assoc-ref context 'ares/handler))
-          (state (assoc-ref context 'ares/state))
-          (reply! (assoc-ref context 'reply!))
-          (message (assoc-ref context 'nrepl/message)))
-      (match (assoc-ref message "op")
-        ("ares/add-extension"
-         (add-extension handler-atom state message reply!))
-        (_ (handler context))))))
+(define (describe context)
+  "Provides a machine- and human-readable directory and documentation for
+the operations supported by an nREPL endpoint."
+  (let* ((state (atomic-box-ref (assoc-ref context 'ares/state)))
+         (extensions (atomic-box-ref (assoc-ref state 'extensions)))
+         (reply! (assoc-ref context 'reply!)))
+    (reply! `(("ops" . ,(get-operations-directory extensions))
+              ("status" . #("done"))))))
 
 (define operations
-  '(("ares/add-extension" . add-extension)
-    ;; ("extension/swap" . identity)
-    ;; ("extension/remove" . identity)
-    ;; ("extension/list" . identity)
-    ))
+  `(("ares/add-extension" . ,add-extension)
+    ("ares/describe" . ,describe)
+    ("describe" . ,describe)))
 
-(define extension-extension
-  `((name . "ares/extension")
-    (provides . (ares/extension))
+(define-with-meta (ares/extension handler)
+  "Handles extension related operations like extension-add and
+ extensions-list."
+  `((provides . (ares/extension))
     (requires . (ares/transport ares/state ares/core))
-    (description . "Handles extension related operations like extension-add and
- extensions-list.")
-    (handles . ,operations)
-    (wrap . ,wrap-extension)))
+    (handles . ,operations))
+
+  (lambda (context)
+    (let* ((message (assoc-ref context 'nrepl/message))
+           (operation (assoc-ref message "op"))
+           (operation-function (assoc-ref operations 'operation)))
+      (if operation-function
+          (operation-function context)
+          (handler context)))))

@@ -30,13 +30,13 @@
 
 (define base-extensions
   (list
-   core-extension
-   bencode-extension
-   logger-extension
-   extension-extension))
+   ares/core
+   ares/bencode
+   ares/logger
+   ares/extension))
 
 (define (extension-name ext)
-  (assoc-ref ext 'name))
+  (procedure-property ext 'name))
 
 (define (extension-names extensions)
   (map extension-name extensions))
@@ -49,7 +49,7 @@
   (test-group "Extensions sorted according to dependency definitions"
     (define sorted-extensions (sort-extensions base-extensions))
     (test-equal "Base extensions stack"
-      '("ares/core" "ares/bencode" "ares/logger" "ares/extension")
+      '(ares/core ares/bencode ares/logger ares/extension)
       (extension-names sorted-extensions))))
 
 (define (get-exception-message thunk)
@@ -61,17 +61,34 @@
 (define-test exception-on-missing-dependency-test
   (define incomplete-stack
     (list
-     ;; core-extension
-     bencode-extension
-     logger-extension
-     extension-extension))
+     ;; ares/core
+     ares/bencode
+     ares/logger
+     ares/extension))
 
   (test-group "Incomplete extensions stack"
     (test-equal "Core extension missing"
       "There are no nodes providing @code{ares/core}, but \
-@code{\"ares/bencode\"} requires it"
+@code{ares/bencode} requires it"
       (get-exception-message
        (lambda () (make-handler incomplete-stack))))))
+
+(define-test get-operations-directory-test
+  (test-equal "Operations information for base extensions is provided."
+    '(("ares/add-extension" . #f)
+      ("ares/describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint.")
+      ("describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint."))
+    (get-operations-directory base-extensions)))
+
+(define-test extension?-test
+  (define test-extension
+    (lambda (handler)
+      "documentation"
+      #((name . ares/test-extension)
+        (requires . ())
+        (provides . (ares/hues)))
+      'hey))
+  (extension? test-extension))
 
 ;; (use-modules ((nrepl bootstrap) #:prefix nrepl.bootstrap:))
 ;; (extension-names (sort-extensions nrepl.bootstrap:bootstrap-extensions))

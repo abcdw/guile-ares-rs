@@ -18,12 +18,13 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl ares-extensions completion)
+  #:use-module (ares guile)
   #:use-module (ares reflection metadata)
   #:use-module (ares reflection modules)
   #:use-module (ice-9 regex)
   #:use-module (ice-9 session)
   #:use-module (srfi srfi-197)
-  #:export (completion-extension))
+  #:export (nrepl/completion))
 
 (define* (simple-completions prefix module #:optional options)
   (define (get-candidates)
@@ -81,17 +82,15 @@
 (define operations
   `(("completions" . ,get-completions)))
 
-(define (wrap-completion handler)
+(define-with-meta (nrepl/completion handler)
+  "Handles completion related functionality."
+  `((provides . (nrepl/completion))
+    (requires . (nrepl/session))
+    (handles . ,operations))
+
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (operation-function (assoc-ref operations (assoc-ref message "op"))))
       (if operation-function
           (operation-function context)
           (handler context)))))
-
-(define completion-extension
-  `((name . "nrepl/completion")
-    (provides . (nrepl/completion))
-    (requires . (nrepl/session))
-    (description . "Handles completion related functionality.")
-    (wrap . ,wrap-completion)))

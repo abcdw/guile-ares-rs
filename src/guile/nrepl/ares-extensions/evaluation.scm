@@ -21,12 +21,13 @@
   #:use-module (nrepl ares-extensions session)
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)
+  #:use-module (ares guile)
+  #:use-module (ares evaluation)
   #:use-module (fibers)
   #:use-module (fibers channels)
-  #:use-module (ares evaluation)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
-  #:export (evaluation-extension))
+  #:export (nrepl/evaluation))
 
 (define (make-evaluation-supervisor session pure-dynamic-state)
   (let ((control-channel (make-channel)))
@@ -83,22 +84,16 @@
     ("stdin" . ,process-message)
     ("interrupt" . ,process-message)))
 
-(define (wrap-evaluation handler)
+(define-with-meta (nrepl/evaluation handler)
+  "Handles evaluation related functionality."
+  `((provides . (nrepl/evaluation))
+    (requires . (nrepl/session fibers))
+    (handles . ,operations))
+
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (operation-function
             (assoc-ref operations (assoc-ref message "op"))))
       (if operation-function
-          (begin
-            (operation-function context)
-            ;; (display "===============\n")
-            ;; ((@ (ice-9 pretty-print) pretty-print) context)
-            )
+          (operation-function context)
           (handler context)))))
-
-(define evaluation-extension
-  `((name . "nrepl/evaluation")
-    (provides . (nrepl/evaluation))
-    (requires . (nrepl/session fibers))
-    (description . "Handles evaluation related functionality.")
-    (wrap . ,wrap-evaluation)))

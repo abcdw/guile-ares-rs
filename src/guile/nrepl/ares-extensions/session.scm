@@ -22,9 +22,10 @@
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)
   #:use-module (ares alist)
+  #:use-module (ares guile)
   #:use-module (uuid)
   #:use-module (srfi srfi-197)
-  #:export (session-extension
+  #:export (nrepl/session
             get-session))
 
 (define (register-session! state-atom session-id new-session)
@@ -92,16 +93,24 @@
         (reply!
          `(("status" . #("error" "no-such-session" "done")))))))
 
-(define session-operations
+(define operations
   `(("clone" . ,clone-session)
     ("close" . ,close-session)))
 
-(define (wrap-session handler)
+(define-with-meta (nrepl/session handler)
+  "Handles session related operations like clone and
+ ls-sessions."
+  `((requires . (ares/state ares/transport))
+    (provides . (nrepl/session))
+    (handles . ,operations)
+    (implements . ((session/reply!)))
+    (upgrades . ((reply!))))
+
   (define (add-session-reply-function context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (original-reply! (assoc-ref context 'reply!))
            (session-reply! (lambda (reply)
-                            (original-reply! (response-for message reply)))))
+                             (original-reply! (response-for message reply)))))
       (chain context
              (acons 'session/reply! session-reply! _)
              (acons 'reply! session-reply! _))))
@@ -112,7 +121,7 @@
            (new-context (add-session-reply-function context))
            (session-id (assoc-ref message "session"))
            (operation-function
-            (assoc-ref session-operations (assoc-ref message "op"))))
+            (assoc-ref operations (assoc-ref message "op"))))
       (if operation-function
           (operation-function new-context)
           ;; Short-circuit if there is no such session
@@ -120,16 +129,3 @@
               ((assoc-ref new-context 'reply!)
                `(("status" . #("error" "unknown-session" "done"))))
               (handler new-context))))))
-
-
-(define session-extension
-  `((name . "nrepl/session")
-    (requires . (ares/state ares/transport))
-    (provides . (nrepl/session))
-    (description . "Handles session related operations like clone and
- ls-sessions.")
-    (handles . (("clone")
-                ("session-clone")))
-    (implements . ((session/reply!)))
-    (upgrades . ((reply!)))
-    (wrap . ,wrap-session)))

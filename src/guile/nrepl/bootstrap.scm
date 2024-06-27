@@ -41,14 +41,14 @@
 (define bootstrap-extensions
   (list
    ;; TODO: [Andrew Tropin, 2023-09-25] Add extension extension
-   core-extension
-   bencode-extension
-   extension-extension
-   session-extension
-   completion-extension
-   evaluation-extension
-   lookup-extension
-   guile-utils-extension))
+   ares/core
+   ares/bencode
+   ares/extension
+   nrepl/session
+   nrepl/completion
+   nrepl/evaluation
+   nrepl/lookup
+   ares/guile-utils))
 
 (define* (bootstrap-nrepl
           input-port output-port

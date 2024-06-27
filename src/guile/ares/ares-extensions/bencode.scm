@@ -18,11 +18,15 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares ares-extensions bencode)
+  #:use-module (ares guile)
   #:use-module (bencode)
   #:use-module (srfi srfi-197)
-  #:export (bencode-extension))
+  #:export (ares/bencode))
 
-(define (wrap-bencode handler)
+(define-with-meta (ares/bencode handler)
+  "Add @code{transport/reply!} and @code{reply!} functions to context."
+  `((requires . (ares/core ares/io))
+    (provides . (ares/transport ares/bencode)))
   (lambda (context)
     (let* ((input-port (assoc-ref context 'ares/input-port))
            (output-port (assoc-ref context 'ares/output-port))
@@ -40,10 +44,3 @@
          (acons 'nrepl/message message _)
          (acons 'transport/reply! transport-reply! _)
          (acons 'reply! transport-reply! _))))))
-
-(define bencode-extension
-  `((name . "ares/bencode")
-    (requires . (ares/core ares/io))
-    (provides . (ares/transport ares/bencode))
-    (description . "Add transport/reply! and reply! functions to context.")
-    (wrap . ,wrap-bencode)))

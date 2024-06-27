@@ -54,9 +54,9 @@
   (bootstrap-nrepl input-port output-port
                    #:initial-extensions
                    (list
-                    core-extension
-                    bencode-extension
-                    session-extension)))
+                    ares/core
+                    ares/bencode
+                    nrepl/session)))
 
 (define (compare-messages list1 list2)
  (lset= equal? list1 list2))

@@ -19,6 +19,7 @@
 
 (define-module (nrepl ares-extensions lookup)
   #:use-module (ares file)
+  #:use-module (ares guile)
   #:use-module (ares reflection metadata)
   #:use-module (ares reflection modules)
   #:use-module ((ice-9 regex) #:select (regexp-quote))
@@ -27,7 +28,7 @@
   #:use-module (srfi srfi-197)
   #:use-module (srfi srfi-2)
   #:use-module (system vm program)
-  #:export (lookup-extension))
+  #:export (nrepl/lookup))
 
 (define (lookup-symbol ns sym)
   (define (module-location module)
@@ -83,7 +84,12 @@
 (define operations
   `(("lookup" . ,get-lookup-information)))
 
-(define (wrap-lookup handler)
+(define-with-meta (nrepl/lookup handler)
+  "Handles lookup related functionality."
+  `((provides . (nrepl/lookup))
+    (requires . (nrepl/session))
+    (handles . ,operations))
+
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (op (assoc-ref message "op"))
@@ -91,10 +97,3 @@
       (if operation-function
           (operation-function context)
           (handler context)))))
-
-(define lookup-extension
-  `((name . "nrepl/lookup")
-    (provides . (nrepl/lookup))
-    (requires . (nrepl/session))
-    (description . "Handles lookup related functionality.")
-    (wrap . ,wrap-lookup)))

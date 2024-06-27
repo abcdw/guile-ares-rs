@@ -18,7 +18,8 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares ares-extensions guile-utils)
-  #:export (guile-utils-extension))
+  #:use-module (ares guile)
+  #:export (ares/guile-utils))
 
 (define (get-load-path context)
   (let ((reply! (assoc-ref context 'reply!))
@@ -35,7 +36,13 @@
   `(("ares.guile/load-path" . ,get-load-path)
     ("ares/load-path" . ,get-load-path)))
 
-(define (wrap-load-path handler)
+;; It should be clear that it provides utilities related to guile, not
+;; hoot and all operations are prefixed with ares.guile/
+(define-with-meta (ares/guile-utils handler)
+  "Handles load-path related functionality."
+  `((provides . (ares.guile/utils))
+    (requires . (nrepl/session))
+    (handles . ,operations))
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (op (assoc-ref message "op"))
@@ -43,12 +50,3 @@
       (if operation-function
           (operation-function context)
           (handler context)))))
-
-;; It should be clear that it provides utilities related to guile, not
-;; hoot and all operations are prefixed with ares.guile/
-(define guile-utils-extension
-  `((name . "ares/guile-utils")
-    (provides . (ares.guile/utils))
-    (requires . (nrepl/session))
-    (description . "Handles load-path related functionality.")
-    (wrap . ,wrap-load-path)))
