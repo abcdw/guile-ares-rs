@@ -29,6 +29,7 @@
 ;;;
 
 (define (unknown-op context)
+  "Always returns unknown-op error."
   (let ((reply!
          (or
           (assoc-ref context 'reply!)
@@ -37,6 +38,8 @@
     context))
 
 (define (extension? ext)
+  "Checks that all necessary metainformation is provided and have a
+correct type."
   (define (raise-type-error ext key type)
     (raise-assert (format #f "\
 In extensions ~s, key @code{~s} must be of type @code{~s}."
@@ -50,11 +53,13 @@ In extensions ~s, key @code{~s} must be of type @code{~s}."
     (raise-assert (format #f "Extension ~s must be an alist." ext)))
 
   (unless (assoc 'name ext)
-    (raise-assert (format #f "Extensions ~s must have a name." ext)))
+    (raise-assert (format #f "Extension ~s must have a name." ext)))
   (check-type 'name string?)
   (check-type 'requires list?))
 
 (define (sort-extensions extensions)
+  "Sorts extensions in topological order based on requires and provides
+values."
   (for-each extension? extensions)
 
   (define (raise-provided-more-than-once key v1 v2)
@@ -120,6 +125,8 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
   (stable-sort extensions less))
 
 (define (make-handler extensions)
+  "Sorts the extensions using @code{sort-extensions}.  Wraps @code{unknown-op}
+ into all the extensions in the reverse order."
   (cons
    (fold (lambda (extension handler)
            ((assoc-ref extension 'wrap) handler))
