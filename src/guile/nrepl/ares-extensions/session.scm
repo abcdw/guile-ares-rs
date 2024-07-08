@@ -100,7 +100,7 @@
 (define-with-meta (nrepl/session handler)
   "Handles session related operations like clone and
  ls-sessions."
-  `((requires . (ares.state ares/transport))
+  `((requires . (ares.state ares.transport))
     (provides . (nrepl/session))
     (handles . ,operations)
     (implements . ((session/reply!)))

@@ -24,7 +24,6 @@
   #:use-module (ice-9 exceptions)
   #:use-module ((ares loop) :prefix loop:)
   #:use-module (ares extensions)
-  #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions guile-utils)
   #:use-module (ares ares-extensions extension)
   #:use-module (nrepl ares-extensions completion)
@@ -32,6 +31,7 @@
   #:use-module (nrepl ares-extensions lookup)
   #:use-module (nrepl ares-extensions session)
   #:use-module (ares-extension ares core)
+  #:use-module (ares-extension ares bencode)
   #:export (bootstrap-nrepl bootstrap-extensions))
 
 ;;;
@@ -42,7 +42,7 @@
   (list
    ;; TODO: [Andrew Tropin, 2023-09-25] Add extension extension
    ares.core
-   ares/bencode
+   ares.bencode
    ares/extension
    nrepl/session
    nrepl/completion

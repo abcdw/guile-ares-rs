@@ -61,7 +61,7 @@
 (define-with-meta (ares.guile.macroexpansion handler)
   "Allows to perform different macro expansions."
   `((provides . (ares.guile.macroexpansion))
-    (requires . (ares.core ares/transport nrepl/session))
+    (requires . (ares.core ares.transport nrepl/session))
     (handles . ,operations))
 
   (lambda (context)

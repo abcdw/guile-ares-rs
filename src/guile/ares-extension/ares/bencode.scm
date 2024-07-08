@@ -17,16 +17,16 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares ares-extensions bencode)
+(define-module (ares-extension ares bencode)
   #:use-module (ares guile)
   #:use-module (bencode)
   #:use-module (srfi srfi-197)
-  #:export (ares/bencode))
+  #:export (ares.bencode))
 
-(define-with-meta (ares/bencode handler)
+(define-with-meta (ares.bencode handler)
   "Add @code{transport/reply!} and @code{reply!} functions to context."
   `((requires . (ares.core ares.io))
-    (provides . (ares/transport ares/bencode)))
+    (provides . (ares.transport ares.bencode)))
   (lambda (context)
     (let* ((input-port (assoc-ref context 'ares/input-port))
            (output-port (assoc-ref context 'ares/output-port))

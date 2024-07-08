@@ -29,7 +29,7 @@
   #:use-module (fibers io-wakeup)
   #:use-module (ice-9 match)
   #:use-module (ares-extension ares core)
-  #:use-module (ares ares-extensions bencode)
+  #:use-module (ares-extension ares bencode)
   #:use-module (nrepl ares-extensions session)
   #:use-module (nrepl ares-extensions evaluation))
 
@@ -55,7 +55,7 @@
                    #:initial-extensions
                    (list
                     ares.core
-                    ares/bencode
+                    ares.bencode
                     nrepl/session)))
 
 (define (compare-messages list1 list2)

@@ -19,8 +19,8 @@
 
 (define-module (ares extensions-test)
   #:use-module (ares extensions)
-  #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions extension)
+  #:use-module (ares-extension ares bencode)
   #:use-module (ares-extension ares core)
   #:use-module (ares-extension ares logger)
   #:use-module (ice-9 exceptions)
@@ -31,7 +31,7 @@
 (define base-extensions
   (list
    ares.core
-   ares/bencode
+   ares.bencode
    ares.logger
    ares/extension))
 
@@ -49,7 +49,7 @@
   (test-group "Extensions sorted according to dependency definitions"
     (define sorted-extensions (sort-extensions base-extensions))
     (test-equal "Base extensions stack"
-      '(ares.core ares/bencode ares.logger ares/extension)
+      '(ares.core ares.bencode ares.logger ares/extension)
       (extension-names sorted-extensions))))
 
 (define (get-exception-message thunk)
@@ -62,14 +62,14 @@
   (define incomplete-stack
     (list
      ;; ares.core
-     ares/bencode
+     ares.bencode
      ares.logger
      ares/extension))
 
   (test-group "Incomplete extensions stack"
     (test-equal "Core extension missing"
       "There are no nodes providing @code{ares.core}, but \
-@code{ares/bencode} requires it"
+@code{ares.bencode} requires it"
       (get-exception-message
        (lambda () (make-handler incomplete-stack))))))
 
