@@ -17,14 +17,14 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl ares-extensions completion)
+(define-module (ares-extension nrepl completion)
   #:use-module (ares guile)
   #:use-module (ares reflection metadata)
   #:use-module (ares reflection modules)
   #:use-module (ice-9 regex)
   #:use-module (ice-9 session)
   #:use-module (srfi srfi-197)
-  #:export (nrepl/completion))
+  #:export (nrepl.completion))
 
 (define* (simple-completions prefix module #:optional options)
   (define (get-candidates)
@@ -63,6 +63,7 @@
    (list->vector _)))
 
 (define (get-completions context)
+  "Handles completion operation."
   (let* ((state (assoc-ref context 'ares/state))
          (reply! (assoc-ref context 'reply!))
          (message (assoc-ref context 'nrepl/message)))
@@ -82,9 +83,9 @@
 (define operations
   `(("completions" . ,get-completions)))
 
-(define-with-meta (nrepl/completion handler)
+(define-with-meta (nrepl.completion handler)
   "Handles completion related functionality."
-  `((provides . (nrepl/completion))
+  `((provides . (nrepl.completion))
     (requires . (nrepl.session))
     (handles . ,operations))
 
