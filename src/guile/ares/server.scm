@@ -1,6 +1,6 @@
 (define-module (ares server)
   #:use-module ((ares loop) #:prefix ares.loop:)
-  #:use-module ((nrepl bootstrap) #:prefix nrepl.bootstrap:)
+  #:use-module ((ares nrepl bootstrap) #:prefix nrepl.bootstrap:)
   #:use-module (fibers)
   #:use-module (fibers conditions)
   #:use-module (ice-9 match)

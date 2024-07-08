@@ -31,7 +31,7 @@ check-evaluation:
 	make check-module TEST_MODULE="(ares evaluation-test)"
 
 check-bootstrap:
-	make check-module TEST_MODULE="(nrepl bootstrap-test)"
+	make check-module TEST_MODULE="(ares nrepl bootstrap-test)"
 
 check-integration:
 	make check-module TEST_MODULE="(integration-test)"

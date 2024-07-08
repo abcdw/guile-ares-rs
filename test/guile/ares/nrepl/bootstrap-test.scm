@@ -17,9 +17,9 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl bootstrap-test)
+(define-module (ares nrepl bootstrap-test)
   #:use-module (ares ports)
-  #:use-module (nrepl bootstrap)
+  #:use-module (ares nrepl bootstrap)
   #:use-module (bencode)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-64)
