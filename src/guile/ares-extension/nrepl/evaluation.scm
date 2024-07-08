@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl ares-extensions evaluation)
+(define-module (ares-extension nrepl evaluation)
   #:use-module (ares-extension nrepl session)
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)
@@ -27,7 +27,7 @@
   #:use-module (fibers channels)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
-  #:export (nrepl/evaluation))
+  #:export (nrepl.evaluation))
 
 (define (make-evaluation-supervisor session pure-dynamic-state)
   (let ((control-channel (make-channel)))
@@ -66,6 +66,7 @@
         (create-evaluation-supervisor! session-atom pure-dynamic-state))))
 
 (define (process-message context)
+  "Process eval related operation."
   (let* ((state (assoc-ref context 'ares/state))
          (message (assoc-ref context 'nrepl/message))
          (pure-dynamic-state (assoc-ref context 'ares/pure-dynamic-state))
@@ -84,9 +85,9 @@
     ("stdin" . ,process-message)
     ("interrupt" . ,process-message)))
 
-(define-with-meta (nrepl/evaluation handler)
+(define-with-meta (nrepl.evaluation handler)
   "Handles evaluation related functionality."
-  `((provides . (nrepl/evaluation))
+  `((provides . (nrepl.evaluation))
     (requires . (nrepl.session fibers))
     (handles . ,operations))
 

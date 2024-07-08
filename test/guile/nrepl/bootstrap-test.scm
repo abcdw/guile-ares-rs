@@ -30,8 +30,8 @@
   #:use-module (ice-9 match)
   #:use-module (ares-extension ares core)
   #:use-module (ares-extension ares bencode)
-  #:use-module (ares-extension nrepl session)
-  #:use-module (nrepl ares-extensions evaluation))
+  #:use-module (ares-extension nrepl evaluation)
+  #:use-module (ares-extension nrepl session))
 
 (define (repl-with-io-port start-repl function)
   (call-with-pipes
