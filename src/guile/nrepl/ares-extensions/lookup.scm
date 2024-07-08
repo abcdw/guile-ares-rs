@@ -87,7 +87,7 @@
 (define-with-meta (nrepl/lookup handler)
   "Handles lookup related functionality."
   `((provides . (nrepl/lookup))
-    (requires . (nrepl/session))
+    (requires . (nrepl.session))
     (handles . ,operations))
 
   (lambda (context)

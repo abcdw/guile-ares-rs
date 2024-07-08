@@ -28,10 +28,10 @@
   #:use-module (nrepl ares-extensions completion)
   #:use-module (nrepl ares-extensions evaluation)
   #:use-module (nrepl ares-extensions lookup)
-  #:use-module (nrepl ares-extensions session)
   #:use-module (ares-extension ares bencode)
   #:use-module (ares-extension ares core)
   #:use-module (ares-extension ares extension)
+  #:use-module (ares-extension nrepl session)
 
   #:export (bootstrap-nrepl bootstrap-extensions))
 
@@ -45,7 +45,7 @@
    ares.core
    ares.bencode
    ares.extension
-   nrepl/session
+   nrepl.session
    nrepl/completion
    nrepl/evaluation
    nrepl/lookup

@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl ares-extensions session)
+(define-module (ares-extension nrepl session)
   #:use-module (fibers conditions)
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)
@@ -25,7 +25,7 @@
   #:use-module (ares guile)
   #:use-module (uuid)
   #:use-module (srfi srfi-197)
-  #:export (nrepl/session
+  #:export (nrepl.session
             get-session))
 
 (define (register-session! state-atom session-id new-session)
@@ -97,11 +97,10 @@
   `(("clone" . ,clone-session)
     ("close" . ,close-session)))
 
-(define-with-meta (nrepl/session handler)
-  "Handles session related operations like clone and
- ls-sessions."
+(define-with-meta (nrepl.session handler)
+  "Handles session related operations like clone."
   `((requires . (ares.state ares.transport))
-    (provides . (nrepl/session))
+    (provides . (nrepl.session))
     (handles . ,operations)
     (implements . ((session/reply!)))
     (upgrades . ((reply!))))

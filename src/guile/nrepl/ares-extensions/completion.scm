@@ -85,7 +85,7 @@
 (define-with-meta (nrepl/completion handler)
   "Handles completion related functionality."
   `((provides . (nrepl/completion))
-    (requires . (nrepl/session))
+    (requires . (nrepl.session))
     (handles . ,operations))
 
   (lambda (context)

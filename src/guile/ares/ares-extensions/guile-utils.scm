@@ -41,7 +41,7 @@
 (define-with-meta (ares/guile-utils handler)
   "Handles load-path related functionality."
   `((provides . (ares.guile/utils))
-    (requires . (nrepl/session))
+    (requires . (ares.transport nrepl.session))
     (handles . ,operations))
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))

@@ -18,7 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (nrepl ares-extensions evaluation)
-  #:use-module (nrepl ares-extensions session)
+  #:use-module (ares-extension nrepl session)
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)
   #:use-module (ares guile)
@@ -87,7 +87,7 @@
 (define-with-meta (nrepl/evaluation handler)
   "Handles evaluation related functionality."
   `((provides . (nrepl/evaluation))
-    (requires . (nrepl/session fibers))
+    (requires . (nrepl.session fibers))
     (handles . ,operations))
 
   (lambda (context)

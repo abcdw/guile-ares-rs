@@ -30,7 +30,7 @@
   #:use-module (ice-9 match)
   #:use-module (ares-extension ares core)
   #:use-module (ares-extension ares bencode)
-  #:use-module (nrepl ares-extensions session)
+  #:use-module (ares-extension nrepl session)
   #:use-module (nrepl ares-extensions evaluation))
 
 (define (repl-with-io-port start-repl function)
@@ -56,7 +56,7 @@
                    (list
                     ares.core
                     ares.bencode
-                    nrepl/session)))
+                    nrepl.session)))
 
 (define (compare-messages list1 list2)
  (lset= equal? list1 list2))
