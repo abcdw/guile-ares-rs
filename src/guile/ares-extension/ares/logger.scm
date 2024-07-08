@@ -17,12 +17,12 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares ares-extensions logger)
+(define-module (ares-extension ares logger)
   #:use-module (ares guile)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 format)
-  #:export (ares/logger))
+  #:export (ares.logger))
 
 (define (ppk prefix x)
   (format #t "~a~y\n" prefix
@@ -33,10 +33,10 @@
 
 ;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
 ;; logging: enable/disable, supress some operations or fields in messages.
-(define-with-meta (ares/logger handler)
+(define-with-meta (ares.logger handler)
   "Prints @code{nrepl/message} and wraps @code{reply!} function to log
  outgoing nREPL messages."
-  `((provides . (ares/logger))
+  `((provides . (ares.logger))
     (requires . (ares/core ares/transport)))
 
   (lambda (context)
