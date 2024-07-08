@@ -1,6 +1,6 @@
 (define-module (integration-test)
   #:use-module (ares server)
-  #:use-module (nrepl client)
+  #:use-module (ares nrepl client)
   #:use-module (bencode)
   #:use-module (fibers)
   #:use-module (ice-9 threads)

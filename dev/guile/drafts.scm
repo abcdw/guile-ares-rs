@@ -1,7 +1,7 @@
 (define-module (drafts)
   #:use-module (bencode)
   #:use-module (fibers)
-  #:use-module (nrepl client)
+  #:use-module (ares nrepl client)
 
   #:use-module (guix import utils)
   #:use-module (guix download))

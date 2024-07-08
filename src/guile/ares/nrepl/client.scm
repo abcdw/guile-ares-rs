@@ -1,4 +1,4 @@
-(define-module (nrepl client)
+(define-module (ares nrepl client)
   #:use-module (bencode)
   #:use-module (fibers)
   #:export (make-nrepl-client-socket))
