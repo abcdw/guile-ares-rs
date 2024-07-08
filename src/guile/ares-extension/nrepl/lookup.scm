@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (nrepl ares-extensions lookup)
+(define-module (ares-extension nrepl lookup)
   #:use-module (ares file)
   #:use-module (ares guile)
   #:use-module (ares reflection metadata)
@@ -28,7 +28,7 @@
   #:use-module (srfi srfi-197)
   #:use-module (srfi srfi-2)
   #:use-module (system vm program)
-  #:export (nrepl/lookup))
+  #:export (nrepl.lookup))
 
 (define (lookup-symbol ns sym)
   (define (module-location module)
@@ -67,6 +67,8 @@
     identity)))
 
 (define (get-lookup-information context)
+  "Handle lookup operation, provide information necessary for go to
+definition, documentation and other purposes."
   (let* ((state (assoc-ref context 'ares/state))
          (message (assoc-ref context 'nrepl/message))
          (reply! (assoc-ref context 'reply!)))
@@ -84,9 +86,9 @@
 (define operations
   `(("lookup" . ,get-lookup-information)))
 
-(define-with-meta (nrepl/lookup handler)
+(define-with-meta (nrepl.lookup handler)
   "Handles lookup related functionality."
-  `((provides . (nrepl/lookup))
+  `((provides . (nrepl.lookup))
     (requires . (nrepl.session))
     (handles . ,operations))
 

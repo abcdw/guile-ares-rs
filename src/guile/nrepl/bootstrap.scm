@@ -24,13 +24,13 @@
   #:use-module (ice-9 exceptions)
   #:use-module ((ares loop) :prefix loop:)
   #:use-module (ares extensions)
-  #:use-module (nrepl ares-extensions lookup)
   #:use-module (ares-extension ares bencode)
   #:use-module (ares-extension ares core)
   #:use-module (ares-extension ares extension)
   #:use-module (ares-extension ares guile utils)
   #:use-module (ares-extension nrepl completion)
   #:use-module (ares-extension nrepl evaluation)
+  #:use-module (ares-extension nrepl lookup)
   #:use-module (ares-extension nrepl session)
 
   #:export (bootstrap-nrepl bootstrap-extensions))
@@ -48,8 +48,8 @@
    ares.guile.utils
    nrepl.completion
    nrepl.evaluation
-   nrepl.session
-   nrepl/lookup))
+   nrepl.lookup
+   nrepl.session))
 
 (define* (bootstrap-nrepl
           input-port output-port
