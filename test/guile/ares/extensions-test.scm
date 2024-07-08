@@ -19,9 +19,9 @@
 
 (define-module (ares extensions-test)
   #:use-module (ares extensions)
-  #:use-module (ares ares-extensions extension)
   #:use-module (ares-extension ares bencode)
   #:use-module (ares-extension ares core)
+  #:use-module (ares-extension ares extension)
   #:use-module (ares-extension ares logger)
   #:use-module (ice-9 exceptions)
   #:use-module (srfi srfi-1)
@@ -33,7 +33,7 @@
    ares.core
    ares.bencode
    ares.logger
-   ares/extension))
+   ares.extension))
 
 (define (extension-name ext)
   (procedure-property ext 'name))
@@ -49,7 +49,7 @@
   (test-group "Extensions sorted according to dependency definitions"
     (define sorted-extensions (sort-extensions base-extensions))
     (test-equal "Base extensions stack"
-      '(ares.core ares.bencode ares.logger ares/extension)
+      '(ares.core ares.bencode ares.logger ares.extension)
       (extension-names sorted-extensions))))
 
 (define (get-exception-message thunk)
@@ -64,7 +64,7 @@
      ;; ares.core
      ares.bencode
      ares.logger
-     ares/extension))
+     ares.extension))
 
   (test-group "Incomplete extensions stack"
     (test-equal "Core extension missing"
@@ -75,8 +75,8 @@
 
 (define-test get-operations-directory-test
   (test-equal "Operations information for base extensions is provided."
-    '(("ares/add-extension" . #f)
-      ("ares/describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint.")
+    '(("ares.extension/add-extension" . "Tries to add an extension to the list of extensions and rebuild\n@code{ares/handler}, if succeed the next and following iterations of\nthe loop will be using new handler.")
+      ("ares.extension/describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint.")
       ("describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint."))
     (get-operations-directory base-extensions)))
 

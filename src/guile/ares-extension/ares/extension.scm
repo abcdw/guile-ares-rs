@@ -17,7 +17,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares ares-extensions extension)
+(define-module (ares-extension ares extension)
   #:use-module (ares guile)
   #:use-module (ares extensions)
   #:use-module (ice-9 atomic)
@@ -25,32 +25,34 @@
   #:use-module (ice-9 eval-string)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
-  #:export (ares/extension))
+  #:export (ares.extension))
 
-(define add-extension
-  (lambda (context)
-    (let* ((message (assoc-ref context 'nrepl/message))
-           (handler (assoc-ref context 'ares/handler))
-           (state (atomic-box-ref (assoc-ref context 'ares/state)))
-           (extensions (atomic-box-ref (assoc-ref state 'extensions)))
-           (reply! (assoc-ref context 'reply!))
-           (extensions-atom (assoc-ref (atomic-box-ref state) 'extensions))
-           (old-extensions (atomic-box-ref extensions-atom))
-           (new-extension (eval-string (assoc-ref message "extension")))
-           (new-extensions (cons new-extension old-extensions))
-           (new-handler (false-if-exception (make-handler new-extensions))))
-      ;; (format #t "~y" new-extensions)
-      (if new-handler
-          (begin
-            ;; TODO: [Andrew Tropin, 2024-06-26] Add check that
-            ;; extension already exists in the list
-            (atomic-box-set! handler new-handler)
-            (atomic-box-set! extensions-atom new-extensions)
-            (reply!
-             `(("status" . #("done")))))
+(define (add-extension context)
+  "Tries to add an extension to the list of extensions and rebuild
+@code{ares/handler}, if succeed the next and following iterations of
+the loop will be using new handler."
+  (let* ((message (assoc-ref context 'nrepl/message))
+         (handler (assoc-ref context 'ares/handler))
+         (state (atomic-box-ref (assoc-ref context 'ares/state)))
+         (extensions (atomic-box-ref (assoc-ref state 'extensions)))
+         (reply! (assoc-ref context 'reply!))
+         (extensions-atom (assoc-ref (atomic-box-ref state) 'extensions))
+         (old-extensions (atomic-box-ref extensions-atom))
+         (new-extension (eval-string (assoc-ref message "extension")))
+         (new-extensions (cons new-extension old-extensions))
+         (new-handler (false-if-exception (make-handler new-extensions))))
+    ;; (format #t "~y" new-extensions)
+    (if new-handler
+        (begin
+          ;; TODO: [Andrew Tropin, 2024-06-26] Add check that
+          ;; extension already exists in the list
+          (atomic-box-set! handler new-handler)
+          (atomic-box-set! extensions-atom new-extensions)
           (reply!
-           ;; TODO: [Andrew Tropin, 2024-06-26] Send exception/problem back
-           `(("status" . #("error" "cant-build-handler" "done"))))))))
+           `(("status" . #("done")))))
+        (reply!
+         ;; TODO: [Andrew Tropin, 2024-06-26] Send exception/problem back
+         `(("status" . #("error" "cant-build-handler" "done")))))))
 
 (define swap-extension
   (lambda (state message reply-function)
@@ -66,14 +68,14 @@ the operations supported by an nREPL endpoint."
               ("status" . #("done"))))))
 
 (define operations
-  `(("ares/add-extension" . ,add-extension)
-    ("ares/describe" . ,describe)
+  `(("ares.extension/add-extension" . ,add-extension)
+    ("ares.extension/describe" . ,describe)
     ("describe" . ,describe)))
 
-(define-with-meta (ares/extension handler)
+(define-with-meta (ares.extension handler)
   "Handles extension related operations like extension-add and
  extensions-list."
-  `((provides . (ares/extension))
+  `((provides . (ares.extension))
     (requires . (ares.transport ares.state ares.core))
     (handles . ,operations))
 
