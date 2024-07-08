@@ -74,7 +74,7 @@ the operations supported by an nREPL endpoint."
   "Handles extension related operations like extension-add and
  extensions-list."
   `((provides . (ares/extension))
-    (requires . (ares/transport ares/state ares/core))
+    (requires . (ares/transport ares.state ares.core))
     (handles . ,operations))
 
   (lambda (context)

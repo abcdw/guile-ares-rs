@@ -25,7 +25,7 @@
 
 (define-with-meta (ares/bencode handler)
   "Add @code{transport/reply!} and @code{reply!} functions to context."
-  `((requires . (ares/core ares/io))
+  `((requires . (ares.core ares.io))
     (provides . (ares/transport ares/bencode)))
   (lambda (context)
     (let* ((input-port (assoc-ref context 'ares/input-port))

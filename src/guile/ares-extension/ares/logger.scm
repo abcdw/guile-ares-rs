@@ -37,7 +37,7 @@
   "Prints @code{nrepl/message} and wraps @code{reply!} function to log
  outgoing nREPL messages."
   `((provides . (ares.logger))
-    (requires . (ares/core ares/transport)))
+    (requires . (ares.core ares/transport)))
 
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))

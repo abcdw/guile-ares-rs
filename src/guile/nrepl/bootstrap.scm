@@ -26,12 +26,12 @@
   #:use-module (ares extensions)
   #:use-module (ares ares-extensions bencode)
   #:use-module (ares ares-extensions guile-utils)
-  #:use-module (ares ares-extensions core)
   #:use-module (ares ares-extensions extension)
   #:use-module (nrepl ares-extensions completion)
   #:use-module (nrepl ares-extensions evaluation)
   #:use-module (nrepl ares-extensions lookup)
   #:use-module (nrepl ares-extensions session)
+  #:use-module (ares-extension ares core)
   #:export (bootstrap-nrepl bootstrap-extensions))
 
 ;;;
@@ -41,7 +41,7 @@
 (define bootstrap-extensions
   (list
    ;; TODO: [Andrew Tropin, 2023-09-25] Add extension extension
-   ares/core
+   ares.core
    ares/bencode
    ares/extension
    nrepl/session
