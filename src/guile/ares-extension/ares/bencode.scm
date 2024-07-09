@@ -27,15 +27,23 @@
   "Add @code{transport/reply!} and @code{reply!} functions to context."
   `((requires . (ares.core ares.io))
     (provides . (ares.transport ares.bencode)))
+
+  (define (add-reply-id message reply)
+    (let ((id (assoc-ref message "id")))
+      (if (assoc "id" reply)
+          reply
+          (acons "id" (or id "unknown") reply))))
+
   (lambda (context)
     (let* ((input-port (assoc-ref context 'ares/input-port))
            (output-port (assoc-ref context 'ares/output-port))
            (message (bencode->scm input-port))
-           (transport-reply! (lambda (reply)
-                              (scm->bencode reply output-port)
-                              ;; Otherwise bencode message won't be
-                              ;; flashed to the socket
-                              (force-output output-port))))
+           (transport-reply!
+            (lambda (reply)
+              (scm->bencode (add-reply-id message reply) output-port)
+              ;; Otherwise bencode message won't be
+              ;; flashed to the socket
+              (force-output output-port))))
       (handler
        (chain context
          ;; Why nrepl/message and not transport/message?  While the
