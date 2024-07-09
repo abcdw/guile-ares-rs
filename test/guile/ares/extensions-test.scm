@@ -22,7 +22,7 @@
   #:use-module (ares-extension ares bencode)
   #:use-module (ares-extension ares core)
   #:use-module (ares-extension ares extension)
-  #:use-module (ares-extension ares logger)
+  #:use-module (ares-extension ares logging)
   #:use-module (ice-9 exceptions)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-64)
@@ -32,7 +32,7 @@
   (list
    ares.core
    ares.bencode
-   ares.logger
+   ares.logging
    ares.extension))
 
 (define (extension-name ext)
@@ -49,7 +49,7 @@
   (test-group "Extensions sorted according to dependency definitions"
     (define sorted-extensions (sort-extensions base-extensions))
     (test-equal "Base extensions stack"
-      '(ares.core ares.bencode ares.logger ares.extension)
+      '(ares.core ares.bencode ares.logging ares.extension)
       (extension-names sorted-extensions))))
 
 (define (get-exception-message thunk)
@@ -63,7 +63,7 @@
     (list
      ;; ares.core
      ares.bencode
-     ares.logger
+     ares.logging
      ares.extension))
 
   (test-group "Incomplete extensions stack"
