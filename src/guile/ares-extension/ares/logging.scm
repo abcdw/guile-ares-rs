@@ -25,11 +25,22 @@
   #:export (ares.logging))
 
 (define (ppk prefix x)
-  (format #t "~a~y\n" prefix
-          (chain x
-                 (alist-delete "out" _)
-                 (alist-delete "info" _)))
+  (format #t "~a~y\n" prefix x)
   x)
+
+(define (shrink-value val)
+  (let ((str (if (string? val) val (object->string val)))
+        (width 60))
+    (if (> (string-length str) width)
+        (chain str (string-take _ width) (string-append _ "..."))
+        val)))
+
+(define (shrink-alist lst)
+  (fold
+   (lambda (kv res)
+     (acons (car kv) (shrink-value (cdr kv)) res))
+   '()
+   lst))
 
 ;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
 ;; logging: enable/disable, supress some operations or fields in messages.
@@ -44,7 +55,7 @@
            (original-reply! (assoc-ref context 'reply!))
            (wrapped-reply! (lambda (reply-message)
                              "Reply! wrapper from @code{ares.logging}."
-                            (ppk "<= " reply-message)
-                            (original-reply! reply-message))))
-      (ppk "=> " message)
+                             (ppk "<= " (shrink-alist reply-message))
+                             (original-reply! reply-message))))
+      (ppk "=> " (shrink-alist message))
       (handler (acons 'reply! wrapped-reply! context)))))
