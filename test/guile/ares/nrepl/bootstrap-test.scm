@@ -78,8 +78,8 @@
                        ("code" . "(+ 1 2)"))
                      input)
        (test-equal "Received unknow-op"
-         `(("session" . "none")
-           ("id" . "2")
+         `(("id" . "2")
+           ("session" . "none")
            ("status" . #("error" "unknown-op" "done")))
          (read-when-ready output))
 
@@ -88,8 +88,8 @@
                        ("session" . ,session-id))
                      input)
        (test-equal "Received session-closed"
-         `(("session" . ,session-id)
-           ("id" . "3")
+         `(("id" . "3")
+           ("session" . ,session-id)
            ("status" . #("done" "session-closed")))
          (read-when-ready output))))))
 
@@ -113,8 +113,8 @@
                        ("code" . "(+ 1 2)"))
                      input)
        (test-equal "Received error"
-         `(("session" . "none")
-           ("id" . "2")
+         `(("id" . "2")
+           ("session" . "none")
            ("status" . #("error" "no-session-id-provided" "done")))
          (read-when-ready output))
 
@@ -124,8 +124,8 @@
                        ("session" . ,session-id))
                      input)
        (test-equal "Received evaluation value"
-         `(("session" . ,session-id)
-           ("id" . "3")
+         `(("id" . "3")
+           ("session" . ,session-id)
            ("value" . "6")
            ("status" . #("done")))
          (read-when-ready output))))))

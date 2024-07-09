@@ -48,12 +48,12 @@
          (alist-delete 'sessions _)
          (alist-cons 'sessions new-sessions _))))))
 
-(define (response-for message reply!)
+(define (response-for message reply)
   (let ((id (assoc-ref message "id"))
         (session (assoc-ref message "session")))
-    (chain reply!
-           (acons "id" (or id "unknown") _)
-           (acons "session" (or session "none") _))))
+    (chain reply
+           (acons "session" (or session "none") _)
+           (acons "id" (or id "unknown") _))))
 
 (define (make-new-session)
   ;; Downstream extensions can rely on this condition to know, when
