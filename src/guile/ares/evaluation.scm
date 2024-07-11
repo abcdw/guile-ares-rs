@@ -252,14 +252,17 @@ dropped."
       (else (error (format #f "unknown result-type: ~a\n" result-type))))))
 
 (define (multiple-values->nrepl-messages result format-value)
-  (match-let lp ((`(,val . ,rest) (assoc-ref result 'eval-value))
-                 (msgs '()))
-    (let ((msg `(("value" . ,(format-value val)))))
-      (if (null? rest)
-          (let ((msg (acons "status" #("done" "multiple-values") msg)))
-            (reverse (cons msg msgs)))
-          (let ((msg (acons "status" #("multiple-values") msg)))
-            (lp rest (cons msg msgs)))))))
+  "Returns a few nrepl messages with additional status multiple-values,
+the last message doesn't contain the value, it contains only
+@code{((\"status\" . (\"done\", \"multiple-values\")))}."
+  (let lp ((vals (assoc-ref result 'eval-value))
+           (msgs '()))
+    (if (null? vals)
+        (reverse (cons `(("status" . #("done" "multiple-values"))) msgs))
+        (lp (cdr vals)
+            (cons `(("value" . ,(format-value (car vals)))
+                    ("status" . #("multiple-values")))
+                  msgs)))))
 
 (define (interrupt-result->nrepl-messages result)
   (define status (assoc-ref result 'status))
