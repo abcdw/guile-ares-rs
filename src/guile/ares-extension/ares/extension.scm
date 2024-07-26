@@ -65,7 +65,8 @@ the operations supported by an nREPL endpoint."
          (reply! (assoc-ref context 'reply!)))
     (define (get-extensions-directory extensions)
       (list->vector (map (lambda (e) (procedure-name e)) extensions)))
-    (reply! `(("ops" . ,(list->vector (get-operations-directory extensions)))
+    (reply! `(("ops" . ,(list->vector
+                         (map car (get-operations-directory extensions))))
               ("extensions" . ,(get-extensions-directory extensions))
               ("status" . #("done"))))))
 
