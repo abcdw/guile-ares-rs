@@ -32,14 +32,13 @@
 @code{ares/handler}, if succeed the next and following iterations of
 the loop will be using new handler."
   (let* ((message (assoc-ref context 'nrepl/message))
+         (reply! (assoc-ref context 'reply!))
          (handler (assoc-ref context 'ares/handler))
          (state (atomic-box-ref (assoc-ref context 'ares/state)))
-         (extensions (atomic-box-ref (assoc-ref state 'extensions)))
-         (reply! (assoc-ref context 'reply!))
-         (extensions-atom (assoc-ref (atomic-box-ref state) 'extensions))
-         (old-extensions (atomic-box-ref extensions-atom))
+         (extensions-atom (assoc-ref state 'extensions))
+         (extensions (atomic-box-ref extensions-atom))
          (new-extension (eval-string (assoc-ref message "extension")))
-         (new-extensions (cons new-extension old-extensions))
+         (new-extensions (cons new-extension extensions))
          (new-handler (false-if-exception (make-handler new-extensions))))
     ;; (format #t "~y" new-extensions)
     (if new-handler
@@ -64,7 +63,10 @@ the operations supported by an nREPL endpoint."
   (let* ((state (atomic-box-ref (assoc-ref context 'ares/state)))
          (extensions (atomic-box-ref (assoc-ref state 'extensions)))
          (reply! (assoc-ref context 'reply!)))
-    (reply! `(("ops" . ,(get-operations-directory extensions))
+    (define (get-extensions-directory extensions)
+      (list->vector (map (lambda (e) (procedure-name e)) extensions)))
+    (reply! `(("ops" . ,(list->vector (get-operations-directory extensions)))
+              ("extensions" . ,(get-extensions-directory extensions))
               ("status" . #("done"))))))
 
 (define operations
@@ -82,7 +84,7 @@ the operations supported by an nREPL endpoint."
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (operation (assoc-ref message "op"))
-           (operation-function (assoc-ref operations 'operation)))
+           (operation-function (assoc-ref operations operation)))
       (if operation-function
           (operation-function context)
           (handler context)))))

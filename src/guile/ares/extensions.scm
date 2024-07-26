@@ -167,6 +167,6 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
       (map get-operation-description handles)))
   (fold
    (lambda (x acc)
-     `(,@(get-extension-operations x) . ,acc))
+     (append (get-extension-operations x) acc))
    '()
    (sort-extensions extensions)))
