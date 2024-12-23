@@ -63,7 +63,7 @@ to the function?
                  (actual . ,result)))
        result))))
 
-(is (lset= = '(1 2 2 3) '(2 3 4 5)))
+;; (is (lset= = '(1 2 2 3) '(2 3 4 5)))
 
 ;; (is (format #t "hello\n"))
 (define-test addition
@@ -74,11 +74,16 @@ to the function?
   (is (= 2 (- 4 3)))
   (is (= 3 (- 7 4))))
 
-(define-test arithmetic
-  (addition)
-  (subtraction))
+(define-test exception
+  (is (= 3 (throw 'hi))))
 
-;; (arithmetic)
+(define-test all-tests
+  (addition)
+  (subtraction)
+  (exception))
+
+;; (all-tests)
+;; TODO: [Andrew Tropin, 2024-12-23] Throw an exception
 
 (define (assert-expression form message)
   'hey)
