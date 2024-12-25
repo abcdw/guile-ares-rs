@@ -43,8 +43,13 @@ to the function?
 (define (default-report type params)
   "Default report implementation"
   (case type
-    ((pass) (format (current-test-port) "passed: ~a\n" params))
-    ((fail) (format (current-test-port) "failed: ~a\n" params))
+    ((pass) (format (current-test-port) "✓ ~a\n"
+                    (assoc-ref params 'expected)))
+    ((fail) (format (current-test-port) "✗~%  Expected: ~a~%  ~a: ~a\n"
+                    (assoc-ref params 'expected)
+                    (if (assoc-ref params 'error) "Error" "Actual")
+                    (or (assoc-ref params 'error)
+                        (assoc-ref params 'actual))))
     (else (throw 'no-such-handler))))
 
 (define report (make-parameter default-report))
