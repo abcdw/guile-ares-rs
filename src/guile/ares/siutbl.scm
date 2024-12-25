@@ -2,14 +2,11 @@
 ;; Copyright © 2024 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares siutbl)
-  ;; Maybe call it define-suite?
   #:export (define-test is))
 
 #|
 
-Funny name for the library:
-
-SIUTBL Scheme Interactive Unit Testing Base Library
+SIUTBL is Scheme Interactive Unit Testing Base Library
 
 Test cases can be combined by another define-test:
 (define-test addition
@@ -24,8 +21,20 @@ Test cases can be combined by another define-test:
   (addition)
   (subtraction))
 
+
+1.
 How to backlink test to function, so you can see all the tests related
 to the function?
+
+
+Test runners:
+module-patterns to filter modules containing tests.
+
+2.
+Test suites: unit, integration, acceptance, backend, frontend
+
+3.
+Watch? for changed tests/implementations?
 
 |#
 
