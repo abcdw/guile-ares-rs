@@ -43,6 +43,21 @@ guile -c '((@ (ares server) run-nrepl-server))'
 
 Don't forget to add your project source code and other dependencies to [[https://www.gnu.org/software/guile/manual/html_node/Load-Paths.html][load path]].
 
+To be able to use G-expression special syntax ~#~~, ~#$~ and ~#$@~ or when
+using Arei with Guix or other project, which have [[https://www.gnu.org/software/guile/manual/html_node/Reader-Extensions.html][reader extensions]],
+load reader extension before starting the nrepl server. You can find
+the explanation [[https://todo.sr.ht/~abcdw/tickets/15][here]].
+
+#+begin_src sh
+guile -c \
+"(begin (use-modules (guix gexp)) #;(load gexp reader extension globally) \
+((@ (ares server) run-nrepl-server)))"
+#+end_src
+
+To learn more on how to setup a proper environment with exact version
+of Guix and channels available in the load path, take a look at
+[[https://git.sr.ht/~abcdw/sample-guile-project/tree/master/item/Makefile][sample-guile-project]].
+
 * Development
 It depends, on [[https://github.com/wingo/fibers][fibers]], and on guile-next (custom textual ports), tests
 are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
