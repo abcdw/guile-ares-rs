@@ -70,7 +70,7 @@
      "Unparsable code"
      `(("op" . "ares.guile.macroexpansion/macroexpand")
        ("code" . "]()"))
-     `(("error" . "#<&compound-exception components: (#<&lexical> #<&origin origin: #f> #<&message message: \"#<unknown port>:1:56: unexpected \\\"]\\\"\"> #<&irritants irritants: ()> #<&exception-with-kind-and-args kind: read-error args: (#f \"#<unknown port>:1:56: unexpected \\\"]\\\"\" () #f)>)>\n")
+     `(("error" . "#<&compound-exception components: (#<&lexical> #<&origin origin: #f> #<&message message: \"#<unknown port>:1:2: unexpected \\\"]\\\"\"> #<&irritants irritants: ()> #<&exception-with-kind-and-args kind: read-error args: (#f \"#<unknown port>:1:2: unexpected \\\"]\\\"\" () #f)>)>\n")
        ("status" . #("error" "macroexpand-error" "done"))))
 
     (check-response

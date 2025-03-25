@@ -20,20 +20,18 @@
 (define-module (ares-extension ares guile macroexpansion)
   #:use-module (ares guile)
   #:use-module (ares reflection modules)
-  #:use-module ((system base compile) #:select (read-and-compile))
+  #:use-module ((system base compile) #:select (read-and-compile decompile))
   #:export (ares.guile.macroexpansion))
 
 (define (expand-macro module code)
   "Returns a pretty-printed representation of macro expansion."
   ((@@ (ares evaluation) object->pretty-string)
-   (call-with-input-string
-    (string-append "((@ (language tree-il) tree-il->scheme) (macroexpand '"
-                   code
-                   "))")
+   (call-with-input-string code
     (lambda (port)
-      (read-and-compile port
-                        #:to 'value
-                        #:env module)))))
+      (decompile
+       (read-and-compile port
+                         #:to 'tree-il
+                         #:env module))))))
 
 (define (sync-macroexpand-op context)
   "Syncronously expand provided macro."
