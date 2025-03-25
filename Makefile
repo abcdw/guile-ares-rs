@@ -11,7 +11,7 @@ server:
 	${GUILE_DEV} -c \
 	"((@ (ares server) run-nrepl-server))"
 
-ares-rs: server
+ares: server
 
 check:
 	${GUILE_DEV} \
