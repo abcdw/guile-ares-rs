@@ -1,12 +1,20 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares siutbl)
   #:export (define-test is))
 
+;; TODO: [Andrew Tropin, 2025-02-19] Look at
+
+;; https://gerbil.scheme.org/reference/dev/test.html
+;; https://srfi.schemers.org/srfi-78/srfi-78.html
+
+
+
+
 #|
 
-SIUTBL is Scheme Interactive Unit Testing Base Library
+SIUTBL is Scheme Interactive Universal Testing Base Library
 
 Test cases can be combined by another define-test:
 (define-test addition
@@ -85,6 +93,8 @@ Watch? for changed tests/implementations?
             result))
       #:unwind? #t))))
 
+;; TODO: [Andrew Tropin, 2024-12-25] Make try-expression customizable,
+;; so we can add functionality like profiling later.
 (define-syntax is
   (syntax-rules ()
     ((_ form)
@@ -114,3 +124,6 @@ Watch? for changed tests/implementations?
 
 (define (assert-expression form message)
   'hey)
+
+;; Idea:
+;; Is as a syntax parameter
