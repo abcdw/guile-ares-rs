@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -43,12 +43,22 @@
               (scm->bencode (add-reply-id message reply) output-port)
               ;; Otherwise bencode message won't be
               ;; flashed to the socket
-              (force-output output-port))))
-      (handler
-       (chain context
-         ;; Why nrepl/message and not transport/message?  While the
-         ;; message produced by transport underlying extension don't
-         ;; care how it was added, it's already in scm.
-         (acons 'nrepl/message message _)
-         (acons 'transport/reply! transport-reply! _)
-         (acons 'reply! transport-reply! _))))))
+              (force-output output-port)))
+           (new-context
+            (chain context
+                   ;; Why nrepl/message and not transport/message?  While the
+                   ;; message produced by transport underlying extension don't
+                   ;; care how it was added, it's already in scm.
+                   (acons 'nrepl/message message _)
+                   (acons 'transport/reply! transport-reply! _)
+                   (acons 'reply! transport-reply! _))))
+
+      (with-exception-handler
+       (lambda (ex)
+         (transport-reply!
+          `(("error" . ,((@@ (ares evaluation) object->pretty-string) ex))
+            ("status" . #("error" "something-broken-after-ares-bencode"
+                          "done")))))
+       (lambda ()
+         (handler new-context))
+       #:unwind? #t))))
