@@ -71,7 +71,7 @@ Watch? for changed tests/implementations?
 ;; (lset-difference = '(1 2) '(2 3))
 ;; (report 'pass '((message . hi)))
 
-(define-syntax try-expression
+(define-syntax-parameter try-expression
   (syntax-rules ()
     ((_ form)
      (with-exception-handler
@@ -91,8 +91,27 @@ Watch? for changed tests/implementations?
             result))
       #:unwind? #t))))
 
-;; TODO: [Andrew Tropin, 2024-12-25] Make try-expression customizable,
-;; so we can add functionality like profiling later.
+(define custom-try-expression
+  (syntax-rules ()
+    ((_ form)
+     (with-exception-handler
+      (lambda (ex)
+        ((report) 'fail
+         `((expected . ,'form)
+           (error . ,ex))))
+      (lambda ()
+        (display "this one is custom try-expression\n")
+        ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+        ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+        (let* ((args (map primitive-eval 'form))
+               (result (apply (car args) (cdr args))))
+            ;; (pk args)
+            ((report) (if result 'pass 'fail)
+                     `((expected . ,'form)
+                       (actual . ,result)))
+            result))
+      #:unwind? #t))))
+
 (define-syntax is
   (syntax-rules ()
     ((_ form)
@@ -101,6 +120,12 @@ Watch? for changed tests/implementations?
 ;; (is (lset= = '(1 2 2 3) '(2 3 4 5)))
 
 ;; (is (format #t "hello\n"))
+
+(define-test checking-custom-try-expression
+  (syntax-parameterize ((try-expression custom-try-expression))
+   (is (= 4 (+ 2 2))))
+  (is (= 7 (+ 3 4))))
+
 (define-test addition
   (is (= 4 (+ 2 2)))
   (is (= 7 (+ 3 4))))
