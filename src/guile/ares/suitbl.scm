@@ -1,7 +1,7 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
 
-(define-module (ares siutbl)
+(define-module (ares suitbl)
   #:export (define-test is))
 
 ;; TODO: [Andrew Tropin, 2025-02-19] Look at
@@ -10,11 +10,9 @@
 ;; https://srfi.schemers.org/srfi-78/srfi-78.html
 
 
-
-
 #|
 
-SIUTBL is Scheme Interactive Universal Testing Base Library
+SUITBL is Scheme Universal Interactive Testing Base Library
 
 Test cases can be combined by another define-test:
 (define-test addition
