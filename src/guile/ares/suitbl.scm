@@ -28,6 +28,7 @@ Test cases can be combined by another define-test:
   (subtraction))
 
 
+Questions:
 1.
 How to backlink test to function, so you can see all the tests related
 to the function?
@@ -41,6 +42,10 @@ Test suites: unit, integration, acceptance, backend, frontend
 
 3.
 Watch? for changed tests/implementations?
+
+4.
+Arguments pre-evaluations, do we really need it?
+Maybe it's ok to do post-fail re-evaluation?
 
 |#
 
