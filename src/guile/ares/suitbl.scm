@@ -49,12 +49,14 @@ Maybe it's ok to do post-fail re-evaluation?
 
 |#
 
+
+
 (define-syntax define-test
   (syntax-rules ()
     ((_ test-name e ...)
      (begin
        (define-public (test-name) e ...)
-       (set-procedure-property! test-name 'srfi-64-test? #t)))))
+       (set-procedure-property! test-name 'srfi-264-test? #t)))))
 
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
 
