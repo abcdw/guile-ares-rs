@@ -96,60 +96,66 @@ Maybe it's ok to do post-fail re-evaluation?
 ;; (lset-difference = '(1 2) '(2 3))
 ;; (report 'pass '((message . hi)))
 
-(define-syntax-parameter try-expression
-  (syntax-rules ()
-    ((_ form)
-     (with-exception-handler
-      (lambda (ex)
-        ((report) 'fail
-         `((expected . ,'form)
-           (error . ,ex))))
-      (lambda ()
-        ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-        ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-        (let* ((args (map primitive-eval 'form))
-               (result (apply (car args) (cdr args))))
-            ;; (pk args)
-            ((report) (if result 'pass 'fail)
-                     `((expected . ,'form)
-                       (actual . ,result)))
-            result))
-      #:unwind? #t))))
+
 
-(define custom-try-expression
-  (syntax-rules ()
-    ((_ form)
-     (with-exception-handler
-      (lambda (ex)
-        ((report) 'fail
-         `((expected . ,'form)
-           (error . ,ex))))
-      (lambda ()
-        (display "this one is custom try-expression\n")
-        ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-        ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-        (let* ((args (map primitive-eval 'form))
-               (result (apply (car args) (cdr args))))
-            ;; (pk args)
-            ((report) (if result 'pass 'fail)
-                     `((expected . ,'form)
-                       (actual . ,result)))
-            result))
-      #:unwind? #t))))
+#|
+
+Why we pre-evaluate arguments is because we want to produce
+meaningful error messages.
+
+Imagine situation:
+(let ((a "he")
+      (b "hoho"))
+  (is (string=? (string-append a "he") b)))
+
+Saying that in expression (string=? (string-append a "he") b)
+"hehe" is not string=? to "hoho" is useful, but saying
+that (not (string=? (string-append a "he") b)) is not so.
+
+|#
+
+(define-syntax try-expression
+  (lambda (x)
+    (syntax-case x ()
+      ;; TODO: [Andrew Tropin, 2025-04-08] Doesn't work for macros
+      ;; TODO: [Andrew Tropin, 2025-04-08] Argument pre-evaluation can
+      ;; throw an error
+      ((_ (pred args ...))
+       #'(let* ((evaluated-args (list args ...))
+                (form `(pred args ...))
+                (result-thunk (lambda () (apply pred evaluated-args))))
+           ((run-assert) result-thunk form)))
+      ((_ form)
+       #'(let ((result-thunk (lambda () form)))
+           ((run-assert) result-thunk 'form))))))
+
+;; (apply begin (list 'hi 'ho))
 
 (define-syntax is
   (syntax-rules ()
     ((_ form)
      (try-expression form))))
 
-;; (is (lset= = '(1 2 2 3) '(2 3 4 5)))
+(define-test different-is-usages
+  (is #t)
+  (define a 123)
+  (is a)
+  (is #f)
+  (is (lset= = '(1 2 2 3) '(2 3 4 5)))
+  ;; (is (begin 'value1 'value2))
+  ;; (is (= (throw 'hi) 7))
 
-;; (is (format #t "hello\n"))
+  (is (= 4 7))
+  (is (= 4 (+ 2 2))))
+
+;; (different-is-usages)
 
 (define-test checking-custom-try-expression
-  (syntax-parameterize ((try-expression custom-try-expression))
-   (is (= 4 (+ 2 2))))
+  (is (= 4 (+ 2 2)))
   (is (= 7 (+ 3 4))))
+
+;; (syntax-parameterize ((try-expression custom-try-expression))
+;;                      (checking-custom-try-expression))
 
 (define-test addition
   (is (= 4 (+ 2 2)))
