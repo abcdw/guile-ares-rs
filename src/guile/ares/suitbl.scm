@@ -47,6 +47,19 @@ Watch? for changed tests/implementations?
 Arguments pre-evaluations, do we really need it?
 Maybe it's ok to do post-fail re-evaluation?
 
+Why we pre-evaluate arguments is because we want to produce
+meaningful error messages.
+
+Imagine situation:
+(let ((a "he")
+      (b "hoho"))
+  (is (string=? (string-append a "he") b)))
+
+Saying that in expression (string=? (string-append a "he") b)
+"hehe" is not string=? to "hoho" is useful, but saying
+that (not (string=? (string-append a "he") b)) is not so.
+
+
 |#
 
 
@@ -98,22 +111,6 @@ Maybe it's ok to do post-fail re-evaluation?
 
 
 
-#|
-
-Why we pre-evaluate arguments is because we want to produce
-meaningful error messages.
-
-Imagine situation:
-(let ((a "he")
-      (b "hoho"))
-  (is (string=? (string-append a "he") b)))
-
-Saying that in expression (string=? (string-append a "he") b)
-"hehe" is not string=? to "hoho" is useful, but saying
-that (not (string=? (string-append a "he") b)) is not so.
-
-|#
-
 (define-syntax try-expression
   (lambda (x)
     (syntax-case x ()
@@ -131,6 +128,9 @@ that (not (string=? (string-append a "he") b)) is not so.
   (is #t)
   (define a 123)
   (is a)
+
+  ;; TODO: [Andrew Tropin, 2025-04-08] Produce more sane error message
+  ;; for cases with atomic or identifier expressions.
   (is #f)
   (is (lset= = '(1 2 2 3) '(2 3 4 5)))
   ;; (is (begin 'value1 'value2))
@@ -165,10 +165,3 @@ that (not (string=? (string-append a "he") b)) is not so.
   (exception))
 
 ;; (all-tests)
-;; TODO: [Andrew Tropin, 2024-12-23] Throw an exception
-
-(define (assert-expression form message)
-  'hey)
-
-;; Idea:
-;; Is as a syntax parameter
