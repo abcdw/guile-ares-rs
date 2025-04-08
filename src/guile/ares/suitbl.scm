@@ -117,17 +117,8 @@ that (not (string=? (string-append a "he") b)) is not so.
 (define-syntax try-expression
   (lambda (x)
     (syntax-case x ()
-      ;; TODO: [Andrew Tropin, 2025-04-08] Doesn't work for macros
-      ;; TODO: [Andrew Tropin, 2025-04-08] Argument pre-evaluation can
-      ;; throw an error
-      ((_ (pred args ...))
-       #'(let* ((evaluated-args (list args ...))
-                (form `(pred args ...))
-                (result-thunk (lambda () (apply pred evaluated-args))))
-           ((run-assert) result-thunk form)))
       ((_ form)
-       #'(let ((result-thunk (lambda () form)))
-           ((run-assert) result-thunk 'form))))))
+       #'((run-assert) (lambda () form) 'form)))))
 
 ;; (apply begin (list 'hi 'ho))
 
