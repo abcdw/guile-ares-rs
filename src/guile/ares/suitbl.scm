@@ -74,7 +74,25 @@ Maybe it's ok to do post-fail re-evaluation?
                         (assoc-ref params 'actual))))
     (else (throw 'no-such-handler))))
 
+(define (default-run-assert thunk form)
+  (with-exception-handler
+   (lambda (ex)
+     ((report) 'fail
+      `((expected . ,'form)
+        (error . ,ex))))
+   (lambda ()
+     ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+     ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+     (let* ((result (thunk)))
+       ((report) (if result 'pass 'fail)
+        `((expected . ,form)
+          (actual . (not ,form))))
+       result))
+   #:unwind? #t))
+
 (define report (make-parameter default-report))
+(define run-assert (make-parameter default-run-assert))
+
 ;; (lset-difference = '(1 2) '(2 3))
 ;; (report 'pass '((message . hi)))
 
