@@ -111,18 +111,11 @@ that (not (string=? (string-append a "he") b)) is not so.
 
 
 
-(define-syntax try-expression
+(define-syntax is
   (lambda (x)
     (syntax-case x ()
       ((_ form)
        #'((run-assert) (lambda () form) 'form)))))
-
-;; (apply begin (list 'hi 'ho))
-
-(define-syntax is
-  (syntax-rules ()
-    ((_ form)
-     (try-expression form))))
 
 (define-test different-is-usages
   (is #t)
