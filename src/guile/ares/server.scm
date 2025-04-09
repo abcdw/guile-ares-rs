@@ -11,20 +11,24 @@
 ;;; Socket fiber-based server
 ;;;
 
-(define (socket-loop socket addr initial-context)
+(define (make-client client id thunk)
+  (spawn-fiber thunk))
+
+(define (socket-loop socket addr initial-context on-connection)
   "Adds input and output ports to @code{initial-context} and starts Ares
 loop inside a separate fiber."
-  (let loop ()
+  (let loop ((id 1))
     (match (accept socket SOCK_NONBLOCK)
       ((client . addr)
-       (spawn-fiber
-        (lambda ()
-          (setvbuf client 'block 1024)
-          ;; Disable Nagle's algorithm.  We buffer ourselves.
-          (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
-          (ares.loop:loop
-           (ares.loop:add-ports initial-context client client))))
-       (loop)))))
+       (on-connection
+	client id
+	(lambda ()
+	  (setvbuf client 'block 1024)
+	  ;; Disable Nagle's algorithm.  We buffer ourselves.
+	  (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
+	  (ares.loop:loop
+	   (ares.loop:add-ports initial-context client client))))
+       (loop (1+ id))))))
 
 (define (make-default-socket family addr port)
   "Creates a non-blocking server socket."
@@ -57,7 +61,9 @@ registered for any specific applications"
           (port (generate-random-port))
           (started? (make-condition))
           (nrepl-port-file? #t)
-          (nrepl-port-path ".nrepl-port"))
+          (nrepl-port-path ".nrepl-port")
+	  (standalone? #t)
+	  (on-connection make-client))
   "Runs nREPL server to listen on @code{host}:@code{port}, prints a
 greeting and signals @code{started?}, when socket it starts to listen
 the socket.
@@ -65,8 +71,14 @@ the socket.
 Creates @code{nrepl-port-path} with port number if
 @code{nrepl-port-file?} is @code{#t}.
 
-It creates a fibers environment and handles all incoming connection
-on separate fibers."
+If @code{standalone?} is @code{#t}, it creates a fibers environment
+and runs until the server is closed. Otherwise, it will run in the
+current fibers scheduler and returns a procedure that can be called to
+stop the server.
+
+For every connection, @var{on-connection} is called with a socket,
+client id and a thunk that should be called to start the nREPL
+connection.  By default it runs thunk inside a new fiber."
 
   (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
@@ -88,11 +100,22 @@ on separate fibers."
   (define initial-context
     (ares.loop:make-initial-context nrepl.bootstrap:bootstrap-extensions))
 
-  (run-fibers
-   (lambda ()
-     (socket-loop socket addr initial-context))
-   #:drain? #t)
-  (false-if-exception (close-port socket)))
+  (if standalone?
+      (begin
+	;; TODO: It would be nice if this also returned a lambda to
+	;; close the server. Shutdown behaviour would be customized by
+	;; arguments to the lambda.
+        (run-fibers
+	 (lambda ()
+	   (socket-loop socket addr initial-context on-connection))
+	 #:drain? #t)
+	(false-if-exception (close-port socket)))
+      (begin
+	(spawn-fiber
+	 (lambda ()
+	   (socket-loop socket addr initial-context on-connection)))
+	(lambda ()
+	  (close-port socket)))))
 
 
 ;; dynamic-wind solution for closing socket
