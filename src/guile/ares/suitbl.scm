@@ -38,7 +38,9 @@ Test runners:
 module-patterns to filter modules containing tests.
 
 2.
-Test suites: unit, integration, acceptance, backend, frontend
+Test tags, which can be used to produce test suits (subset of tests):
+unit, integration, acceptance, backend, frontend
+https://github.com/testmoapp/junitxml
 
 3.
 Watch? for changed tests/implementations?
@@ -152,3 +154,9 @@ that (not (string=? (string-append a "he") b)) is not so.
   (exception))
 
 ;; (all-tests)
+
+;; TODO: [Andrew Tropin, 2025-04-11] Specify test timeouts to 10 by
+;; default, so the test evaluation never hangs.
+
+;; TODO: [Andrew Tropin, 2025-04-11] Make it easy to add tags/metainfo
+;; to tests to be able to run/skip them flexibly
