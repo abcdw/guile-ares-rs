@@ -89,7 +89,7 @@ that (not (string=? (string-append a "he") b)) is not so.
                         (assoc-ref params 'actual))))
     (else (throw 'no-such-handler))))
 
-(define (default-run-assert thunk form)
+(define (default-run-assert form-thunk args-thunk quoted-form)
   (with-exception-handler
    (lambda (ex)
      ((report) 'fail
@@ -98,10 +98,10 @@ that (not (string=? (string-append a "he") b)) is not so.
    (lambda ()
      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-     (let* ((result (thunk)))
+     (let* ((result (form-thunk)))
        ((report) (if result 'pass 'fail)
-        `((expected . ,form)
-          (actual . (not ,form))))
+        `((expected . ,quoted-form)
+          (actual . (not ,quoted-form))))
        result))
    #:unwind? #t))
 
@@ -116,8 +116,14 @@ that (not (string=? (string-append a "he") b)) is not so.
 (define-syntax is
   (lambda (x)
     (syntax-case x ()
+      ((_ (pred args ...))
+       (with-syntax ((form #'(pred args ...)))
+         #'((run-assert)
+            (lambda () form)
+            (lambda () (list args ...))
+            'form)))
       ((_ form)
-       #'((run-assert) (lambda () form) 'form)))))
+       #'((run-assert) (lambda () form) #f 'form)))))
 
 (define-test different-is-usages
   (is #t)
