@@ -65,16 +65,31 @@ that (not (string=? (string-append a "he") b)) is not so.
 |#
 
 
-(define test-path (make-parameter '()))
+(define current-test-path (make-parameter '()))
+(define current-test-case (make-parameter "unnamed"))
+
+(define-syntax test-case
+  (lambda (x)
+    "Test case represent a logical unit of testing, can include zero or
+more asserts."
+    (syntax-case x ()
+      ((test-case description expression ...)
+       #'(parameterize ((current-test-case description))
+           ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
+           ;; started (for cases with zero asserts)
+           expression ...)))))
 
 
 (define-syntax test-suite
   (lambda (x)
+    "Test suite is simple unit of testing, it can be executed in parallel,
+allows to group test cases, can include other test suits."
     (syntax-case x ()
       ((_ description expression ...)
        #'(let ((test-suite-lambda
                 (lambda ()
-                  (parameterize ((test-path (cons description (test-path))))
+                  (parameterize ((current-test-path
+                                  (cons description (current-test-path))))
                     expression ...))))
            (set-procedure-properties!
             test-suite-lambda
