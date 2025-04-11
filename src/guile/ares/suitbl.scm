@@ -134,12 +134,6 @@ that (not (string=? (string-append a "he") b)) is not so.
 
 ;; (different-is-usages)
 
-(define-test checking-custom-try-expression
-  (is (= 4 (+ 2 2)))
-  (is (= 7 (+ 3 4))))
-
-;; (syntax-parameterize ((try-expression custom-try-expression))
-;;                      (checking-custom-try-expression))
 
 (define-test addition
   (is (= 4 (+ 2 2)))
