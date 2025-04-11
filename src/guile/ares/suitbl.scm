@@ -65,12 +65,17 @@ that (not (string=? (string-append a "he") b)) is not so.
 |#
 
 
+(define test-path (make-parameter '()))
+
 
 (define-syntax test-suite
   (lambda (x)
     (syntax-case x ()
-      ((_ description e ...)
-       #'(let ((test-suite-lambda (lambda () e ...)))
+      ((_ description expression ...)
+       #'(let ((test-suite-lambda
+                (lambda ()
+                  (parameterize ((test-path (cons description (test-path))))
+                    expression ...))))
            (set-procedure-properties!
             test-suite-lambda
             `((name . test-suite)
@@ -80,9 +85,9 @@ that (not (string=? (string-append a "he") b)) is not so.
 
 (define-syntax define-test-suite
   (syntax-rules ()
-    ((_ test-suite-name e ...)
+    ((_ test-suite-name expression ...)
      (define test-suite-name
-       (test-suite (symbol->string 'test-suite-name) e ...)))))
+       (test-suite (symbol->string 'test-suite-name) expression ...)))))
 
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
 
