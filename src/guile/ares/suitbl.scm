@@ -132,7 +132,6 @@ that (not (string=? (string-append a "he") b)) is not so.
   (is (= 4 7))
   (is (= 4 (+ 2 2))))
 
-;; (different-is-usages)
 
 
 (define-test addition
@@ -147,6 +146,7 @@ that (not (string=? (string-append a "he") b)) is not so.
   (is (= 3 (throw 'hi))))
 
 (define-test all-tests
+  (different-is-usages)
   (addition)
   (subtraction)
   (exception))
