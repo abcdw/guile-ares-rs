@@ -66,12 +66,23 @@ that (not (string=? (string-append a "he") b)) is not so.
 
 
 
-(define-syntax define-test
+(define-syntax test-suite
+  (lambda (x)
+    (syntax-case x ()
+      ((_ description e ...)
+       #'(let ((test-suite-lambda (lambda () e ...)))
+           (set-procedure-properties!
+            test-suite-lambda
+            `((name . test-suite)
+              (documentation . ,description)
+              (srfi-264-test-suite? . #t)))
+           test-suite-lambda)))))
+
+(define-syntax define-test-suite
   (syntax-rules ()
-    ((_ test-name e ...)
-     (begin
-       (define-public (test-name) e ...)
-       (set-procedure-property! test-name 'srfi-264-test? #t)))))
+    ((_ test-suite-name e ...)
+     (define test-suite-name
+       (test-suite (symbol->string 'test-suite-name) e ...)))))
 
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
 
@@ -125,7 +136,7 @@ that (not (string=? (string-append a "he") b)) is not so.
       ((_ form)
        #'((run-assert) (lambda () form) #f 'form)))))
 
-(define-test different-is-usages
+(define-test-suite different-is-usages
   (is #t)
   (define a 123)
   (is a)
@@ -142,18 +153,18 @@ that (not (string=? (string-append a "he") b)) is not so.
 
 
 
-(define-test addition
+(define-test-suite addition
   (is (= 4 (+ 2 2)))
   (is (= 7 (+ 3 4))))
 
-(define-test subtraction
+(define-test-suite subtraction
   (is (= 2 (- 4 3)))
   (is (= 3 (- 7 4))))
 
-(define-test exception
+(define-test-suite exception
   (is (= 3 (throw 'hi))))
 
-(define-test all-tests
+(define-test-suite all-tests
   (different-is-usages)
   (addition)
   (subtraction)
