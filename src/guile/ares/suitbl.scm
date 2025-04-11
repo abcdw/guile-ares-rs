@@ -65,8 +65,8 @@ that (not (string=? (string-append a "he") b)) is not so.
 |#
 
 
-(define current-test-path (make-parameter '()))
-(define current-test-case (make-parameter "unnamed"))
+(define test-path* (make-parameter '()))
+(define test-case* (make-parameter "unnamed"))
 
 (define-syntax test-case
   (lambda (x)
@@ -74,7 +74,7 @@ that (not (string=? (string-append a "he") b)) is not so.
 more asserts."
     (syntax-case x ()
       ((test-case description expression ...)
-       #'(parameterize ((current-test-case description))
+       #'(parameterize ((test-case* description))
            ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
            ;; started (for cases with zero asserts)
            expression ...)))))
@@ -88,8 +88,7 @@ allows to group test cases, can include other test suits."
       ((_ description expression ...)
        #'(let ((test-suite-lambda
                 (lambda ()
-                  (parameterize ((current-test-path
-                                  (cons description (current-test-path))))
+                  (parameterize ((test-path* (cons description (test-path*))))
                     expression ...))))
            (set-procedure-properties!
             test-suite-lambda
@@ -106,14 +105,16 @@ allows to group test cases, can include other test suits."
 
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
 
-(define current-test-port (make-parameter (current-output-port)))
+(define test-output-port* (make-parameter (current-output-port)))
+(define test-do-report* (make-parameter default-report))
+(define test-run-assert* (make-parameter default-run-assert))
 
 (define (default-report type params)
   "Default report implementation"
   (case type
-    ((pass) (format (current-test-port) "✓ ~a\n"
+    ((pass) (format (test-output-port*) "✓ ~a\n"
                     (assoc-ref params 'expected)))
-    ((fail) (format (current-test-port) "✗~%  Expected: ~a~%  ~a: ~a\n"
+    ((fail) (format (test-output-port*) "✗~%  Expected: ~a~%  ~a: ~a\n"
                     (assoc-ref params 'expected)
                     (if (assoc-ref params 'error) "Error" "Actual")
                     (or (assoc-ref params 'error)
@@ -123,21 +124,18 @@ allows to group test cases, can include other test suits."
 (define (default-run-assert form-thunk args-thunk quoted-form)
   (with-exception-handler
    (lambda (ex)
-     ((report) 'fail
+     ((test-do-report*) 'fail
       `((expected . ,'form)
         (error . ,ex))))
    (lambda ()
      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
      (let* ((result (form-thunk)))
-       ((report) (if result 'pass 'fail)
+       ((test-do-report*) (if result 'pass 'fail)
         `((expected . ,quoted-form)
           (actual . (not ,quoted-form))))
        result))
    #:unwind? #t))
-
-(define report (make-parameter default-report))
-(define run-assert (make-parameter default-run-assert))
 
 ;; (lset-difference = '(1 2) '(2 3))
 ;; (report 'pass '((message . hi)))
@@ -149,12 +147,12 @@ allows to group test cases, can include other test suits."
     (syntax-case x ()
       ((_ (pred args ...))
        (with-syntax ((form #'(pred args ...)))
-         #'((run-assert)
+         #'((test-run-assert*)
             (lambda () form)
             (lambda () (list args ...))
             'form)))
       ((_ form)
-       #'((run-assert) (lambda () form) #f 'form)))))
+       #'((test-run-assert*) (lambda () form) #f 'form)))))
 
 (define-test-suite different-is-usages
   (is #t)
