@@ -194,7 +194,9 @@ runner and ask it to execute itself?
 (define %current-test-runner* (make-parameter #f))
 
 (define (get-current-test-runner)
-  (%current-test-runner*))
+  (or
+   (%current-test-runner*)
+   ((get-test-runner*))))
 
 (define tr ((get-test-runner*)))
 
@@ -262,12 +264,16 @@ allows to group test cases, can include other test suits."
     (syntax-case x ()
       ((_ (pred args ...))
        (with-syntax ((form #'(pred args ...)))
-         #'((test-run-assert*)
-            (lambda () form)
-            (lambda () (list args ...))
-            'form)))
+         #'((get-current-test-runner)
+            `((type . run-assert)
+              (assert-thunk . ,(lambda () form))
+              (assert-args-thunk . ,(lambda () (list args ...)))
+              (assert-quoted-form .  form)))))
       ((_ form)
-       #'((test-run-assert*) (lambda () form) #f 'form)))))
+       #'((get-current-test-runner)
+          `((type . run-assert)
+            (assert-thunk . ,(lambda () form))
+            (assert-quoted-form . form)))))))
 
 (define-syntax throws-exception?
   (lambda (x)
