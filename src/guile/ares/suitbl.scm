@@ -154,6 +154,22 @@ allows to group test cases, can include other test suits."
       ((_ form)
        #'((test-run-assert*) (lambda () form) #f 'form)))))
 
+(define-syntax throws-exception?
+  (lambda (x)
+    (syntax-case x ()
+      ((throws-exception? expression)
+       #'(throws-exception? expression exception?))
+      ((throws-exception? expression predicate)
+       #'(with-exception-handler
+          (lambda (ex) (predicate ex))
+          (lambda ()
+            expression
+            #f)
+          #:unwind? #t)))))
+
+
+
+
 (define-test-suite different-is-usages
   (is #t)
   (define a 123)
@@ -169,6 +185,8 @@ allows to group test cases, can include other test suits."
   (is (= 4 7))
   (is (= 4 (+ 2 2))))
 
+
+(use-modules (ice-9 exceptions))
 
 
 (define-test-suite addition
