@@ -65,6 +65,118 @@ that (not (string=? (string-append a "he") b)) is not so.
 |#
 
 
+
+(define get-test-runner (make-parameter default-get-test-runner))
+(define %current-test-runner* (make-parameter #f))
+
+(define (get-current-test-runner)
+  (%current-test-runner*))
+
+;;; Test runner
+
+#|
+
+Contains information:
+- The capture of stdout/stderr.
+
+- the structure suite1.suite2.suite3.case1.assert1
+
+- for every assert it will contain the result and time start/end
+
+- for every case it will contain the summary on the number of asserts,
+number of fails and successes, total time spent.
+
+- similiar for test suite.
+
+
+Life cycle:
+
+We can either create a test runner and pass it a list of tests to
+execute or asserts, test-cases and test-suites can instantiate some
+default test-runner.
+
+
+Operations on test runner:
+begin-suite (time)
+begin-case (time)
+
+begin-assert (time)
+end-assert (time, pass or fail)
+
+end-case (time)
+end-suite (time)
+
+(message-test-runner
+ (get-current-test-runner)
+ `((type . run-test-suites)
+   (test-suites . ,(get-list-of-test))))
+
+(message-test-runner
+ (get-current-test-runner)
+ `((type . test-suite-begin)
+   (path . (list "suite 1" "suite 2"))
+   (time . ,(current-time))))
+
+(message-test-runner
+ (get-current-test-runner)
+ `((type . get-run-result)))
+
+What `is` does, when it executed on its own? Does it create a test
+runner and ask it to execute itself?
+
+|#
+
+(define (default-get-test-runner)
+  (define state (make-atomic-box '()))
+  (define (update-atomic-alist-value! alist-atom key f)
+    (atomic-box-update!
+     alist-atom
+     (lambda (alist)
+       (let* ((value (or (assoc-ref alist key) #f))
+              (new-value (f value)))
+         (chain alist
+                (alist-delete key _)
+                (alist-cons key new-value _))))))
+
+  (define (test-runner x)
+    "Default test runner"
+    (unless (member (assoc-ref x 'type) '(get-state get-log))
+      (update-atomic-alist-value!
+       state 'events
+       (lambda (l)
+         (cons x (or l '())))))
+
+    (let ((msg-type (assoc-ref x 'type)))
+      (case msg-type
+        ((get-state)
+         state)
+        ((get-log)
+         (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
+        ((run-assert)
+         ((assoc-ref x 'assert-thunk)))
+
+        (else
+         (raise-exception
+          (make-exception-with-message
+           (format #f "no handler for message type ~a" msg-type)))))))
+  test-runner)
+
+(define get-test-runner* (make-parameter default-get-test-runner))
+(define %current-test-runner* (make-parameter #f))
+
+(define (get-current-test-runner)
+  (%current-test-runner*))
+
+(define tr ((get-test-runner*)))
+
+(tr `((type . run-assert)
+      (assert-thunk . ,(lambda () (format #t "I'm dummy assert\n")))))
+(tr '((type . get-log)))
+
+;; (tr '((type . add-event)
+;;       (event . "something happened again")))
+
+
 (define test-path* (make-parameter '()))
 (define test-case* (make-parameter "unnamed"))
 
