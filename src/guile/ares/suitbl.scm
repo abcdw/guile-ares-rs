@@ -66,11 +66,6 @@ that (not (string=? (string-append a "he") b)) is not so.
 
 
 
-(define get-test-runner (make-parameter default-get-test-runner))
-(define %current-test-runner* (make-parameter #f))
-
-(define (get-current-test-runner)
-  (%current-test-runner*))
 
 ;;; Test runner
 
@@ -126,6 +121,38 @@ runner and ask it to execute itself?
 
 |#
 
+
+;; TODO: [Andrew Tropin, 2025-04-15] Make it private
+(define test-output-port* (make-parameter (current-output-port)))
+
+(define (default-report type params)
+  "Default report implementation"
+  (case type
+    ((pass) (format (test-output-port*) "✓ ~s\n"
+                    (assoc-ref params 'expected)))
+    ((fail) (format (test-output-port*) "✗~%  Expected: ~s~%  ~a: ~s\n"
+                    (assoc-ref params 'expected)
+                    (if (assoc-ref params 'error) "Error" "Actual")
+                    (or (assoc-ref params 'error)
+                        (assoc-ref params 'actual))))
+    (else (throw 'no-such-handler))))
+
+(define (default-run-assert form-thunk args-thunk quoted-form)
+  (with-exception-handler
+   (lambda (ex)
+     (default-report 'fail
+      `((expected . ,quoted-form)
+        (error . ,ex))))
+   (lambda ()
+     ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+     ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+     (let* ((result (form-thunk)))
+       (default-report (if result 'pass 'fail)
+        `((expected . ,quoted-form)
+          (actual . (not ,quoted-form))))
+       result))
+   #:unwind? #t))
+
 (define (default-get-test-runner)
   (define state (make-atomic-box '()))
   (define (update-atomic-alist-value! alist-atom key f)
@@ -153,7 +180,9 @@ runner and ask it to execute itself?
         ((get-log)
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
         ((run-assert)
-         ((assoc-ref x 'assert-thunk)))
+         (let ((assert-thunk (assoc-ref x 'assert-thunk))
+               (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
+           (default-run-assert assert-thunk #f assert-quoted-form)))
 
         (else
          (raise-exception
@@ -170,7 +199,8 @@ runner and ask it to execute itself?
 (define tr ((get-test-runner*)))
 
 (tr `((type . run-assert)
-      (assert-thunk . ,(lambda () (format #t "I'm dummy assert\n")))))
+      (assert-thunk . ,(lambda () (format #t "I'm dummy assert\n")))
+      (assert-quoted-form . (format #t "I'm dummy assert\n"))))
 (tr '((type . get-log)))
 
 ;; (tr '((type . add-event)
@@ -215,39 +245,12 @@ allows to group test cases, can include other test suits."
      (define test-suite-name
        (test-suite (symbol->string 'test-suite-name) expression ...)))))
 
+
+
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
 
-(define test-output-port* (make-parameter (current-output-port)))
 (define test-do-report* (make-parameter default-report))
 (define test-run-assert* (make-parameter default-run-assert))
-
-(define (default-report type params)
-  "Default report implementation"
-  (case type
-    ((pass) (format (test-output-port*) "✓ ~a\n"
-                    (assoc-ref params 'expected)))
-    ((fail) (format (test-output-port*) "✗~%  Expected: ~a~%  ~a: ~a\n"
-                    (assoc-ref params 'expected)
-                    (if (assoc-ref params 'error) "Error" "Actual")
-                    (or (assoc-ref params 'error)
-                        (assoc-ref params 'actual))))
-    (else (throw 'no-such-handler))))
-
-(define (default-run-assert form-thunk args-thunk quoted-form)
-  (with-exception-handler
-   (lambda (ex)
-     ((test-do-report*) 'fail
-      `((expected . ,'form)
-        (error . ,ex))))
-   (lambda ()
-     ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-     ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-     (let* ((result (form-thunk)))
-       ((test-do-report*) (if result 'pass 'fail)
-        `((expected . ,quoted-form)
-          (actual . (not ,quoted-form))))
-       result))
-   #:unwind? #t))
 
 ;; (lset-difference = '(1 2) '(2 3))
 ;; (report 'pass '((message . hi)))
