@@ -2,6 +2,10 @@
 ;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl)
+  #:use-module (ice-9 atomic)
+  #:use-module (ares atomic)
+  #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-197)
   #:export (define-test is))
 
 ;; TODO: [Andrew Tropin, 2025-02-19] Look at
