@@ -292,6 +292,10 @@ allows to group test cases, can include other test suits."
       ((_ suite-description expression ...)
        #'(let ((test-suite-lambda
                 (lambda ()
+                  (when (%test-case*)
+                    (raise-exception
+                     (make-exception-with-message
+                      "Test Suite can't be nested into Test Case")))
                   (parameterize ((%test-path*
                                   (cons suite-description (%test-path*))))
                     ((get-current-test-runner)
@@ -388,12 +392,22 @@ allows to group test cases, can include other test suits."
       get-silent-test-runner
       (test-case
        "case1"
-       (test-case
-        "nested case"
-
-        (is #t))))
+       (test-case "nested case" (is #t))))
      (lambda (ex)
-       (string=? "Test Cases can't be nested" (exception-message ex))))))
+       (string=? "Test Cases can't be nested"
+                 (exception-message ex))))))
+
+  (test-case "test suite nested in test case is forbidden"
+   (is
+    (throws-exception?
+     (reset-test-environment
+      get-silent-test-runner
+      (test-case
+       "case1"
+       ((test-suite "nested suite" (is #t)))))
+     (lambda (ex)
+       (string=? "Test Suite can't be nested into Test Case"
+                 (exception-message ex))))))
 
   ((test-suite
     "hey hey there"
