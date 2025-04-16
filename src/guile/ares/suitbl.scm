@@ -169,6 +169,14 @@ runner and ask it to execute itself?
                 (alist-delete key _)
                 (alist-cons key new-value _))))))
 
+  (define (string-repeat s n)
+    "Returns string S repeated N times."
+    (fold
+     (lambda (_ str)
+       (string-append str s))
+     ""
+     (iota n)))
+
   (define (test-runner x)
     "Default test runner"
     (unless (member (assoc-ref x 'type) '(get-state get-log))
@@ -185,14 +193,17 @@ runner and ask it to execute itself?
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
         ((test-suite-start)
-         (format #t "Test suite started: ~a\n" (assoc-ref x 'description)))
+         (newline)
+         (format #t (string-repeat "-" (length (%test-path*))))
+         (format #t "> suite started: ~a\n" (assoc-ref x 'description)))
         ((test-suite-end)
-         (format #t "Test suite ended: ~a\n" (assoc-ref x 'description)))
+         (format #t (string-repeat "-" (length (%test-path*))))
+         (format #t "> suite ended: ~a\n" (assoc-ref x 'description)))
 
         ((test-case-start)
-         (format #t "Test case started: ~a\n" (assoc-ref x 'description)))
+         (format #t "\n┌Test case started: ~a\n" (assoc-ref x 'description)))
         ((test-case-end)
-         (format #t "Test case ended: ~a\n" (assoc-ref x 'description)))
+         (format #t "└Test case ended: ~a\n" (assoc-ref x 'description)))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
