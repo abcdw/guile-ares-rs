@@ -8,7 +8,7 @@
 
 ;; https://gerbil.scheme.org/reference/dev/test.html
 ;; https://srfi.schemers.org/srfi-78/srfi-78.html
-
+;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
 
 #|
 
@@ -303,16 +303,6 @@ allows to group test cases, can include other test suits."
                         (%test-path* '())
                         (%test-case* #f))
            expression ...)))))
-
-
-
-;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
-
-(define test-do-report* (make-parameter default-report))
-(define test-run-assert* (make-parameter default-run-assert))
-
-;; (lset-difference = '(1 2) '(2 3))
-;; (report 'pass '((message . hi)))
 
 
 
