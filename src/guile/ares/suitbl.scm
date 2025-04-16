@@ -253,17 +253,21 @@ runner and ask it to execute itself?
 more asserts."
     (syntax-case x ()
       ((test-case case-description expression ...)
-       #'(parameterize ((%test-case* case-description))
-           ((get-current-test-runner)
-            `((type . test-case-start)
-              (description . ,case-description)))
+       #'(begin
+           (when (%test-case*)
+             (raise-exception
+              (make-exception-with-message "Test Cases can't be nested")))
+           (parameterize ((%test-case* case-description))
+             ((get-current-test-runner)
+              `((type . test-case-start)
+                (description . ,case-description)))
 
-           ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
-           ;; started (for cases with zero asserts)
-           expression ...
-           ((get-current-test-runner)
-            `((type . test-case-end)
-              (description . ,case-description))))))))
+             ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
+             ;; started (for cases with zero asserts)
+             expression ...
+             ((get-current-test-runner)
+              `((type . test-case-end)
+                (description . ,case-description)))))))))
 
 (define-syntax test-suite
   (lambda (x)
@@ -360,6 +364,21 @@ allows to group test cases, can include other test suits."
   ;; Nested testsuits requires double parentesis to be immediately
   ;; called on evaluation
   (is (throws-exception? (+ b 1 2) programming-error?))
+
+  (test-case
+   "nested test cases are forbidden"
+   (is
+    (throws-exception?
+     (reset-test-environment
+      get-silent-test-runner
+      (test-case
+       "case1"
+       (test-case
+        "nested case"
+
+        (is #t))))
+     (lambda (ex)
+       (string=? "Test Cases can't be nested" (exception-message ex))))))
 
   ((test-suite
     "hey hey there"
