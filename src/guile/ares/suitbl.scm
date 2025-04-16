@@ -193,7 +193,11 @@ runner and ask it to execute itself?
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
-           (default-run-assert assert-thunk #f assert-quoted-form)))
+           (if (%test-case*)
+               (default-run-assert assert-thunk #f assert-quoted-form)
+               (test-case
+                "anonymous"
+                (default-run-assert assert-thunk #f assert-quoted-form)))))
 
         (else
          (raise-exception
