@@ -295,6 +295,15 @@ allows to group test cases, can include other test suits."
      (define test-suite-name
        (test-suite (symbol->string 'test-suite-name) expression ...)))))
 
+(define-syntax reset-test-environment
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ get-test-runner expression ...)
+       #'(parameterize ((%current-test-runner* (get-test-runner))
+                        (%test-path* '())
+                        (%test-case* #f))
+           expression ...)))))
+
 
 
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
