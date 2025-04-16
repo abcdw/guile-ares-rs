@@ -108,7 +108,7 @@ end-suite (time)
 
 (message-test-runner
  (get-current-test-runner)
- `((type . test-suite-begin)
+ `((type . test-suite-start)
    (path . (list "suite 1" "suite 2"))
    (time . ,(current-time))))
 
@@ -179,6 +179,17 @@ runner and ask it to execute itself?
          state)
         ((get-log)
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
+
+        ((test-suite-start)
+         (format #t "Test suite started: ~a\n" (assoc-ref x 'description)))
+        ((test-suite-end)
+         (format #t "Test suite ended: ~a\n" (assoc-ref x 'description)))
+
+        ((test-case-start)
+         (format #t "Test case started: ~a\n" (assoc-ref x 'description)))
+        ((test-case-end)
+         (format #t "Test case ended: ~a\n" (assoc-ref x 'description)))
+
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
@@ -217,27 +228,40 @@ runner and ask it to execute itself?
     "Test case represent a logical unit of testing, can include zero or
 more asserts."
     (syntax-case x ()
-      ((test-case description expression ...)
-       #'(parameterize ((%test-case* description))
+      ((test-case case-description expression ...)
+       #'(parameterize ((%test-case* case-description))
+           ((get-current-test-runner)
+            `((type . test-case-start)
+              (description . ,case-description)))
+
            ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
            ;; started (for cases with zero asserts)
-           expression ...)))))
-
+           expression ...
+           ((get-current-test-runner)
+            `((type . test-case-end)
+              (description . ,case-description))))))))
 
 (define-syntax test-suite
   (lambda (x)
     "Test suite is simple unit of testing, it can be executed in parallel,
 allows to group test cases, can include other test suits."
     (syntax-case x ()
-      ((_ description expression ...)
+      ((_ suite-description expression ...)
        #'(let ((test-suite-lambda
                 (lambda ()
-                  (parameterize ((%test-path* (cons description (%test-path*))))
-                    expression ...))))
+                  (parameterize ((%test-path*
+                                  (cons suite-description (%test-path*))))
+                    ((get-current-test-runner)
+                     `((type . test-suite-start)
+                       (description . ,suite-description)))
+                    expression ...
+                    ((get-current-test-runner)
+                     `((type . test-suite-end)
+                       (description . ,suite-description)))))))
            (set-procedure-properties!
             test-suite-lambda
             `((name . test-suite)
-              (documentation . ,description)
+              (documentation . ,suite-description)
               (srfi-264-test-suite? . #t)))
            test-suite-lambda)))))
 
