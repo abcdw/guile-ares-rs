@@ -209,8 +209,8 @@ runner and ask it to execute itself?
 ;;       (event . "something happened again")))
 
 
-(define test-path* (make-parameter '()))
-(define test-case* (make-parameter "unnamed"))
+(define %test-path* (make-parameter '()))
+(define %test-case* (make-parameter #f))
 
 (define-syntax test-case
   (lambda (x)
@@ -218,7 +218,7 @@ runner and ask it to execute itself?
 more asserts."
     (syntax-case x ()
       ((test-case description expression ...)
-       #'(parameterize ((test-case* description))
+       #'(parameterize ((%test-case* description))
            ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
            ;; started (for cases with zero asserts)
            expression ...)))))
@@ -232,7 +232,7 @@ allows to group test cases, can include other test suits."
       ((_ description expression ...)
        #'(let ((test-suite-lambda
                 (lambda ()
-                  (parameterize ((test-path* (cons description (test-path*))))
+                  (parameterize ((%test-path* (cons description (%test-path*))))
                     expression ...))))
            (set-procedure-properties!
             test-suite-lambda
