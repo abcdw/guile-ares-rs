@@ -211,10 +211,13 @@ runner and ask it to execute itself?
 
 (define tr ((get-test-runner*)))
 
-(tr `((type . run-assert)
-      (assert-thunk . ,(lambda () (format #t "I'm dummy assert\n")))
-      (assert-quoted-form . (format #t "I'm dummy assert\n"))))
-(tr '((type . get-log)))
+;; (tr `((type . run-assert)
+;;       (assert-thunk . ,(lambda () (format #t "I'm dummy assert\n")))
+;;       (assert-quoted-form . (format #t "I'm dummy assert\n"))))
+;; (tr '((type . get-log)))
+
+;; (parameterize ((%current-test-runner* tr))
+;;   (is #t))
 
 ;; (tr '((type . add-event)
 ;;       (event . "something happened again")))
