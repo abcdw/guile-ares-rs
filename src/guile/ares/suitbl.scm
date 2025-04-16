@@ -333,10 +333,35 @@ allows to group test cases, can include other test suits."
 
 (use-modules (ice-9 exceptions))
 
+(define-test-suite nested-test-suites-and-test-cases
+  ;; Nested testsuits requires double parentesis to be immediately
+  ;; called on evaluation
+  (is (throws-exception? (+ b 1 2) programming-error?))
+
+  ((test-suite
+    "hey hey there"
+    (test-case
+     "very true test case"
+     (is #t)
+     (is "very true"))
+    ((test-suite
+      "Hello there"
+      (is (= 4 (+ 2 2)))))))
+
+  (is (= 7 (+ 3 4))))
+
 
 (define-test-suite addition
-  (is (= 4 (+ 2 2)))
-  (is (= 7 (+ 3 4))))
+  (test-case
+   "simple addition of small numbers"
+   (is (= 4 (+ 2 2)))
+   (is (= 7 (+ 3 4))))
+
+  (test-case
+   "addition of big numbers"
+   (is (= 40000000000000000000000000
+          (+ 20000000000000000000000000
+             20000000000000000000000000)))))
 
 (define-test-suite subtraction
   (is (= 2 (- 4 3)))
