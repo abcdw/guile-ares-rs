@@ -201,6 +201,23 @@ runner and ask it to execute itself?
            (format #f "no handler for message type ~a" msg-type)))))))
   test-runner)
 
+(define (get-silent-test-runner)
+  (define (test-runner x)
+    "Default test runner"
+    (let ((msg-type (assoc-ref x 'type)))
+      (case msg-type
+        ((run-assert)
+         (let ((assert-thunk (assoc-ref x 'assert-thunk))
+               (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
+           (if (%test-case*)
+               (default-run-assert assert-thunk #f assert-quoted-form)
+               (test-case
+                "anonymous"
+                (default-run-assert assert-thunk #f assert-quoted-form)))))
+
+        (else #t))))
+  test-runner)
+
 (define get-test-runner* (make-parameter default-get-test-runner))
 (define %current-test-runner* (make-parameter #f))
 
