@@ -37,10 +37,6 @@ Questions:
 How to backlink test to function, so you can see all the tests related
 to the function?
 
-
-Test runners:
-module-patterns to filter modules containing tests.
-
 2.
 Test tags, which can be used to produce test suits (subset of tests):
 unit, integration, acceptance, backend, frontend
@@ -65,6 +61,9 @@ Saying that in expression (string=? (string-append a "he") b)
 "hehe" is not string=? to "hoho" is useful, but saying
 that (not (string=? (string-append a "he") b)) is not so.
 
+5.
+load-tests* variable, which controls macro expansion logic, setting it
+to #f will make all test defining functions to produce empty results.
 
 |#
 
@@ -444,6 +443,13 @@ allows to group test cases, can include other test suits."
 
   (is (= 7 (+ 3 4))))
 
+;; TODO: [Andrew Tropin, 2025-04-17] Make conditional expansion of is
+;; and test-case, if they expanded+evaluated on their own they
+;; immediately executed, however if they expanded inside context of
+;; other macro (test-suite, define), they return a thunk.  It can be
+;; useful to make test-case excutable in place, however still work
+;; with define.  Sounds hacky and very implicit, so it's just an idea
+;; to think about, not the call to action.
 
 (define-test-suite addition
   (test-case
