@@ -140,29 +140,34 @@ runner and ask it to execute itself?
                         (assoc-ref params 'actual))))
     (else (throw 'no-such-handler))))
 
-(define (default-run-assert form-thunk args-thunk quoted-form)
-  (let ((start-time (get-internal-real-time))
-        (return-value
-         (with-exception-handler
-          (lambda (ex)
-            (default-report 'fail
-              `((expected . ,quoted-form)
-                (error . ,ex))))
-          (lambda ()
-            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-            ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-            (let* ((result (form-thunk)))
-              (default-report (if result 'pass 'fail)
-                `((expected . ,quoted-form)
-                  (actual . (not ,quoted-form))))
-              result))
-          #:unwind? #t)))
+(define-syntax simple-profile
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ expressions ...)
+       #'(let ((start-time (get-internal-real-time))
+               (return-value expressions ...))
+           (format #t "run time: ~f\n"
+                   (exact->inexact
+                    (/ (- (get-internal-real-time) start-time)
+                       internal-time-units-per-second)))
+           return-value)))))
 
-    (format #t "run time: ~f\n"
-            (exact->inexact
-             (/ (- (get-internal-real-time) start-time)
-                internal-time-units-per-second)))
-    return-value))
+(define (default-run-assert form-thunk args-thunk quoted-form)
+  (simple-profile
+   (with-exception-handler
+    (lambda (ex)
+      (default-report 'fail
+        `((expected . ,quoted-form)
+          (error . ,ex))))
+    (lambda ()
+      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+      (let* ((result (form-thunk)))
+        (default-report (if result 'pass 'fail)
+          `((expected . ,quoted-form)
+            (actual . (not ,quoted-form))))
+        result))
+    #:unwind? #t)))
 
 (define (default-get-test-runner)
   (define state (make-atomic-box '()))
