@@ -142,20 +142,28 @@ runner and ask it to execute itself?
     (else (throw 'no-such-handler))))
 
 (define (default-run-assert form-thunk args-thunk quoted-form)
-  (with-exception-handler
-   (lambda (ex)
-     (default-report 'fail
-      `((expected . ,quoted-form)
-        (error . ,ex))))
-   (lambda ()
-     ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-     ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-     (let* ((result (form-thunk)))
-       (default-report (if result 'pass 'fail)
-        `((expected . ,quoted-form)
-          (actual . (not ,quoted-form))))
-       result))
-   #:unwind? #t))
+  (let ((start-time (get-internal-real-time))
+        (return-value
+         (with-exception-handler
+          (lambda (ex)
+            (default-report 'fail
+              `((expected . ,quoted-form)
+                (error . ,ex))))
+          (lambda ()
+            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+            ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+            (let* ((result (form-thunk)))
+              (default-report (if result 'pass 'fail)
+                `((expected . ,quoted-form)
+                  (actual . (not ,quoted-form))))
+              result))
+          #:unwind? #t)))
+
+    (format #t "run time: ~f\n"
+            (exact->inexact
+             (/ (- (get-internal-real-time) start-time)
+                internal-time-units-per-second)))
+    return-value))
 
 (define (default-get-test-runner)
   (define state (make-atomic-box '()))
@@ -456,11 +464,16 @@ allows to group test cases, can include other test suits."
 (define-test-suite exception
   (is (= 3 (throw 'hi))))
 
+(define-test-suite long-running-asserts
+  (is (sleep 1)))
+
 (define-test-suite all-tests
   (different-is-usages)
   (addition)
   (subtraction)
-  (exception))
+  ;; (exception)
+  (nested-test-suites-and-test-cases)
+  (long-running-asserts))
 
 ;; (all-tests)
 
