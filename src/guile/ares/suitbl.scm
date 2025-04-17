@@ -219,7 +219,8 @@ runner and ask it to execute itself?
 
         ((run-test-case)
          (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
-           (test-case-thunk)))
+           (simple-profile
+            (test-case-thunk))))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
