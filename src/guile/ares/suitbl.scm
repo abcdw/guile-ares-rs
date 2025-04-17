@@ -205,6 +205,10 @@ runner and ask it to execute itself?
         ((test-case-end)
          (format #t "└Test case ended: ~a\n" (assoc-ref x 'description)))
 
+        ((run-test-case)
+         (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
+           (test-case-thunk)))
+
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
@@ -225,6 +229,9 @@ runner and ask it to execute itself?
     "Default test runner"
     (let ((msg-type (assoc-ref x 'type)))
       (case msg-type
+        ((run-test-case)
+         (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
+           (test-case-thunk)))
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
@@ -267,22 +274,30 @@ runner and ask it to execute itself?
     "Test case represent a logical unit of testing, can include zero or
 more asserts."
     (syntax-case x ()
-      ((test-case case-description expression ...)
-       #'(begin
-           (when (%test-case*)
-             (raise-exception
-              (make-exception-with-message "Test Cases can't be nested")))
-           (parameterize ((%test-case* case-description))
-             ((get-current-test-runner)
-              `((type . test-case-start)
-                (description . ,case-description)))
-
-             ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
-             ;; started (for cases with zero asserts)
-             expression ...
-             ((get-current-test-runner)
-              `((type . test-case-end)
-                (description . ,case-description)))))))))
+      ((test-case case-description expression expressions ...)
+       #'(let ((test-case-thunk
+                (lambda ()
+                  ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
+                  ;; started (for cases with zero asserts)
+                  (when (%test-case*)
+                    (raise-exception
+                     (make-exception-with-message "Test Cases can't be nested")))
+                  (parameterize ((%test-case* case-description))
+                    (let ((test-runner (get-current-test-runner)))
+                      (test-runner
+                       `((type . test-case-start)
+                         (description . ,case-description)))
+                      expression
+                      expressions ...
+                      (test-runner
+                       `((type . test-case-end)
+                         (description . ,case-description))))))))
+           ((get-current-test-runner)
+            `((type . run-test-case)
+              (test-case-thunk . ,test-case-thunk)
+              (test-case-body . (expression expressions ...))))))
+      ((_ rest ...)
+       #'(syntax-error "Wrong usage of test-case")))))
 
 (define-syntax test-suite
   (lambda (x)
@@ -290,7 +305,7 @@ more asserts."
 allows to group test cases, can include other test suits."
     (syntax-case x ()
       ((_ suite-description expression ...)
-       #'(let ((test-suite-lambda
+       #'(let ((test-suite-thunk
                 (lambda ()
                   (when (%test-case*)
                     (raise-exception
@@ -306,11 +321,11 @@ allows to group test cases, can include other test suits."
                      `((type . test-suite-end)
                        (description . ,suite-description)))))))
            (set-procedure-properties!
-            test-suite-lambda
+            test-suite-thunk
             `((name . test-suite)
               (documentation . ,suite-description)
               (srfi-264-test-suite? . #t)))
-           test-suite-lambda)))))
+           test-suite-thunk)))))
 
 (define-syntax define-test-suite
   (syntax-rules ()
