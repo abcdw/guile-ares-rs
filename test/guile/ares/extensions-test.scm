@@ -18,6 +18,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares extensions-test)
+  #:use-module (ares guile)
   #:use-module (ares extensions)
   #:use-module (ares-extension ares bencode)
   #:use-module (ares-extension ares core)
@@ -28,12 +29,19 @@
   #:use-module (srfi srfi-64)
   #:use-module (test-utils))
 
+(define-with-meta (ares.test handler)
+  "Test extension that does nothing."
+  `((provides . (ares.test))
+    (requires . (ares.logging)))
+  #nil)
+
 (define base-extensions
   (list
    ares.core
    ares.bencode
    ares.logging
-   ares.extension))
+   ares.extension
+   ares.test))
 
 (define (extension-name ext)
   (procedure-property ext 'name))
@@ -49,8 +57,13 @@
   (test-group "Extensions sorted according to dependency definitions"
     (define sorted-extensions (sort-extensions base-extensions))
     (test-equal "Base extensions stack"
-      '(ares.core ares.bencode ares.logging ares.extension)
-      (extension-names sorted-extensions))))
+      '(ares.core ares.bencode ares.logging ares.extension ares.test)
+      (extension-names sorted-extensions))
+
+    (define sorted-reverse-extensions (sort-extensions (reverse base-extensions)))
+    (test-equal "Reversed base extensions stack"
+      '(ares.core ares.bencode ares.logging ares.extension ares.test)
+      (extension-names sorted-reverse-extensions))))
 
 (define (get-exception-message thunk)
     (catch
