@@ -335,15 +335,16 @@ allows to group test cases, can include other test suits."
                     (raise-exception
                      (make-exception-with-message
                       "Test Suite can't be nested into Test Case")))
-                  (parameterize ((%test-path*
-                                  (cons suite-description (%test-path*))))
-                    ((get-current-test-runner)
-                     `((type . test-suite-start)
-                       (description . ,suite-description)))
-                    expression ...
-                    ((get-current-test-runner)
-                     `((type . test-suite-end)
-                       (description . ,suite-description)))))))
+                  (let ((tr (get-current-test-runner)))
+                    (parameterize ((%test-path*
+                                    (cons suite-description (%test-path*))))
+                      (tr
+                       `((type . test-suite-start)
+                         (description . ,suite-description)))
+                      expression ...
+                      (tr
+                       `((type . test-suite-end)
+                         (description . ,suite-description))))))))
            (set-procedure-properties!
             test-suite-thunk
             `((name . test-suite)
