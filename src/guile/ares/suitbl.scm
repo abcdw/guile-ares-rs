@@ -226,20 +226,37 @@ runner and ask it to execute itself?
         ((test-case-end)
          (format #t "└Test case ended: ~a\n" (assoc-ref x 'description)))
 
-        ((run-test-case)
-         (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
-           (simple-profile
-            (test-case-thunk))))
+        ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-case-run
+        ((schedule-test-case)
+         (let* ((test-case-thunk
+                 (lambda ()
+                   (simple-profile
+                    ((assoc-ref x 'test-case-thunk)))))
+                (description (assoc-ref x 'description))
+                (test-case-item
+                 (cons test-case-thunk
+                       `((description . ,description)
+                         (test-path . ,(%test-path*))))))
+           (update-atomic-alist-value!
+            state 'test-cases
+            (lambda (l)
+              (cons test-case-item (or l '()))))
+           'test-case-scheduled))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
-
            (if (%test-case*)
                (default-run-assert assert-thunk #f assert-quoted-form)
                (test-case
                 "anonymous"
                 (default-run-assert assert-thunk #f assert-quoted-form)))))
+
+        ((run-scheduled-test-cases)
+         (chain
+          (atomic-box-ref state)
+          (assoc-ref _ 'test-cases)
+          (for-each (lambda (t) ((car t))) _)))
 
         (else
          (raise-exception
@@ -247,12 +264,14 @@ runner and ask it to execute itself?
            (format #f "no handler for message type ~a" msg-type)))))))
   test-runner)
 
+;; TODO: [Andrew Tropin, 2025-04-22] Check if we need to implement
+;; scheduling of test-cases or running them immediately is ok
 (define (get-silent-test-runner)
   (define (test-runner x)
     "Default test runner"
     (let ((msg-type (assoc-ref x 'type)))
       (case msg-type
-        ((run-test-case)
+        ((schedule-test-case)
          (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
            (test-case-thunk)))
         ((run-assert)
@@ -305,8 +324,9 @@ more asserts."
                   (when (%test-case*)
                     (raise-exception
                      (make-exception-with-message "Test Cases can't be nested")))
-                  (parameterize ((%test-case* case-description))
-                    (let ((test-runner (get-current-test-runner)))
+                  (let ((test-runner (get-current-test-runner)))
+                    (parameterize ((%current-test-runner* test-runner)
+                                   (%test-case* case-description))
                       (test-runner
                        `((type . test-case-start)
                          (description . ,case-description)))
@@ -315,10 +335,14 @@ more asserts."
                       (test-runner
                        `((type . test-case-end)
                          (description . ,case-description))))))))
-           ((get-current-test-runner)
-            `((type . run-test-case)
-              (test-case-thunk . ,test-case-thunk)
-              (test-case-body . (expression expressions ...))))))
+           (let ((test-runner (get-current-test-runner)))
+             (test-runner
+              `((type . schedule-test-case)
+                (test-case-thunk . ,test-case-thunk)
+                (description . ,case-description)
+                (test-case-body . (expression expressions ...))))
+             (when (null? (%test-path*))
+               (test-runner `((type . run-scheduled-test-cases)))))))
       ((_ rest ...)
        #'(syntax-error "Wrong usage of test-case")))))
 
@@ -334,16 +358,19 @@ allows to group test cases, can include other test suits."
                     (raise-exception
                      (make-exception-with-message
                       "Test Suite can't be nested into Test Case")))
-                  (let ((tr (get-current-test-runner)))
-                    (parameterize ((%test-path*
+                  (let ((test-runner (get-current-test-runner)))
+                    (parameterize ((%current-test-runner* test-runner)
+                                   (%test-path*
                                     (cons suite-description (%test-path*))))
-                      (tr
+                      (test-runner
                        `((type . test-suite-enter)
                          (description . ,suite-description)))
                       expression ...
-                      (tr
+                      (test-runner
                        `((type . test-suite-leave)
-                         (description . ,suite-description))))))))
+                         (description . ,suite-description))))
+                    (when (null? (%test-path*))
+                      (test-runner `((type . run-scheduled-test-cases))))))))
            (set-procedure-properties!
             test-suite-thunk
             `((name . test-suite)
