@@ -299,7 +299,9 @@ runner and ask it to execute itself?
 (define get-test-runner* (make-parameter default-get-test-runner))
 (define %current-test-runner* (make-parameter #f))
 
-(define (get-current-test-runner)
+(define (get-current-or-create-test-runner)
+  "Tries to obtain current test runner and if there is no such present
+creates one."
   (or
    (%current-test-runner*)
    ((get-test-runner*))))
@@ -334,7 +336,7 @@ more asserts."
                   (when (%test-case*)
                     (raise-exception
                      (make-exception-with-message "Test Cases can't be nested")))
-                  (let ((test-runner (get-current-test-runner)))
+                  (let ((test-runner (get-current-or-create-test-runner)))
                     (parameterize ((%current-test-runner* test-runner)
                                    (%test-case* case-description))
                       (test-runner
@@ -345,7 +347,7 @@ more asserts."
                       (test-runner
                        `((type . test-case-end)
                          (description . ,case-description))))))))
-           (let ((test-runner (get-current-test-runner)))
+           (let ((test-runner (get-current-or-create-test-runner)))
              (test-runner
               `((type . schedule-test-case)
                 (test-case-thunk . ,test-case-thunk)
@@ -368,7 +370,7 @@ allows to group test cases, can include other test suits."
                     (raise-exception
                      (make-exception-with-message
                       "Test Suite can't be nested into Test Case")))
-                  (let ((test-runner (get-current-test-runner)))
+                  (let ((test-runner (get-current-or-create-test-runner)))
                     (parameterize ((%current-test-runner* test-runner)
                                    (%test-path*
                                     (cons suite-description (%test-path*))))
@@ -410,13 +412,13 @@ allows to group test cases, can include other test suits."
     (syntax-case x ()
       ((_ (pred args ...))
        (with-syntax ((form #'(pred args ...)))
-         #'((get-current-test-runner)
+         #'((get-current-or-create-test-runner)
             `((type . run-assert)
               (assert-thunk . ,(lambda () form))
               (assert-args-thunk . ,(lambda () (list args ...)))
               (assert-quoted-form .  form)))))
       ((_ form)
-       #'((get-current-test-runner)
+       #'((get-current-or-create-test-runner)
           `((type . run-assert)
             (assert-thunk . ,(lambda () form))
             (assert-quoted-form . form)))))))
