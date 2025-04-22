@@ -15,7 +15,10 @@
 ;; check macro and various convinience wrappers
 
 ;; https://srfi.schemers.org/srfi-78/srfi-78.html
+
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
+;; https://github.com/weavejester/eftest
+;; Nice clojure test runners
 
 ;; http://testanything.org/tap-version-14-specification.html
 ;; test output specification
