@@ -214,13 +214,12 @@ runner and ask it to execute itself?
         ((get-log)
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-        ((test-suite-start)
-         (newline)
+        ((test-suite-enter)
          (format #t (string-repeat "-" (length (%test-path*))))
-         (format #t "> suite started: ~a\n" (assoc-ref x 'description)))
-        ((test-suite-end)
+         (format #t "> suite entered: ~a\n" (assoc-ref x 'description)))
+        ((test-suite-leave)
          (format #t (string-repeat "-" (length (%test-path*))))
-         (format #t "> suite ended: ~a\n" (assoc-ref x 'description)))
+         (format #t "> suite left: ~a\n" (assoc-ref x 'description)))
 
         ((test-case-start)
          (format #t "\n┌Test case started: ~a\n" (assoc-ref x 'description)))
@@ -339,11 +338,11 @@ allows to group test cases, can include other test suits."
                     (parameterize ((%test-path*
                                     (cons suite-description (%test-path*))))
                       (tr
-                       `((type . test-suite-start)
+                       `((type . test-suite-enter)
                          (description . ,suite-description)))
                       expression ...
                       (tr
-                       `((type . test-suite-end)
+                       `((type . test-suite-leave)
                          (description . ,suite-description))))))))
            (set-procedure-properties!
             test-suite-thunk
