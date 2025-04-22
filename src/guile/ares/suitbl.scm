@@ -11,8 +11,14 @@
 ;; TODO: [Andrew Tropin, 2025-02-19] Look at
 
 ;; https://gerbil.scheme.org/reference/dev/test.html
+;; https://gerbil.scheme.org/reference/std/test.html#test-suite
+;; check macro and various convinience wrappers
+
 ;; https://srfi.schemers.org/srfi-78/srfi-78.html
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
+
+;; http://testanything.org/tap-version-14-specification.html
+;; test output specification
 
 #|
 
@@ -169,6 +175,10 @@ runner and ask it to execute itself?
         result))
     #:unwind? #t)))
 
+
+;; TODO: [Andrew Tropin, 2025-04-22] Collect all test cases in a list
+;; and add info about test-path and possible other things (like fixtures?)
+
 (define (default-get-test-runner)
   (define state (make-atomic-box '()))
   (define (update-atomic-alist-value! alist-atom key f)
@@ -225,6 +235,7 @@ runner and ask it to execute itself?
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
+
            (if (%test-case*)
                (default-run-assert assert-thunk #f assert-quoted-form)
                (test-case
@@ -494,3 +505,6 @@ allows to group test cases, can include other test suits."
 
 ;; TODO: [Andrew Tropin, 2025-04-11] Make it easy to add tags/metainfo
 ;; to tests to be able to run/skip them flexibly
+
+;; TODO: [Andrew Tropin, 2025-04-22] Add enable-re-run-failed-tests-on-eval,
+;; which will re-run last failed tests on each eval
