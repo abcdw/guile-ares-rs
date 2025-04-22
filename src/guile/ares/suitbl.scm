@@ -20,6 +20,10 @@
 ;; http://testanything.org/tap-version-14-specification.html
 ;; test output specification
 
+;; https://github.com/nubank/matcher-combinators
+;; A list of helper function, which allows for flexible matching of
+;; highly nested data structures
+
 #|
 
 SUITBL is Scheme Universal Interactive Testing Base Library
@@ -49,7 +53,8 @@ unit, integration, acceptance, backend, frontend
 https://github.com/testmoapp/junitxml
 
 3.
-Watch? for changed tests/implementations?
+Watch? for changed tests/implementations? Re-run [failed] tests on
+every eval?
 
 4.
 Arguments pre-evaluations, do we really need it?
@@ -68,8 +73,13 @@ Saying that in expression (string=? (string-append a "he") b)
 that (not (string=? (string-append a "he") b)) is not so.
 
 5.
+
 load-tests* variable, which controls macro expansion logic, setting it
 to #f will make all test defining functions to produce empty results.
+Probably we don't need it, because all test-cases are deffered.  The
+only possible use case is stripping out tests from production code,
+when the tests are in the same module with the subject under the test.
+
 
 |#
 
