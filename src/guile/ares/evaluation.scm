@@ -117,8 +117,9 @@ exceptions."
               (set-port-line! port line))
             (and-let* ((column (assoc-ref nrepl-message "column")))
               (set-port-column! port column))
-            ((load-thunk-from-memory
-              (read-and-compile port #:env module)))))))))
+            (let ((thunk (load-thunk-from-memory
+                          (read-and-compile port #:env module))))
+              (start-stack "ares-evaluation" (thunk)))))))))
 
   (lambda ()
     ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
