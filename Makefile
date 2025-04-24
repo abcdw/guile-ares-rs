@@ -40,6 +40,9 @@ check-bootstrap:
 check-integration:
 	make check-module TEST_MODULE="(integration-test)"
 
+check-topological-sort:
+	make check-module TEST_MODULE="(ares topological-sort-test)"
+
 README.html: README
 	${EMACS} -Q --batch -l docs/html-export-config.el README \
 	--funcall org-html-export-to-html

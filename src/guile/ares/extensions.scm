@@ -21,6 +21,7 @@
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 match)
   #:use-module (ares exceptions)
+  #:use-module (ares topological-sort)
   #:use-module (srfi srfi-1)
   #:export (make-handler
             extension?
@@ -104,14 +105,14 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
           (when (hash-get-handle provides r)
             (raise-provided-more-than-once
              r (hash-ref provides r) ext-name))
-          (hash-create-handle! provides r ext-name))
+          (hash-create-handle! provides r x))
         (procedure-property x 'provides))))
    extensions)
 
   (define (who-provides x for)
     (unless (hash-get-handle provides x)
       (raise-nobody-provides x for))
-    (hash-ref provides x))
+    (procedure-property (hash-ref provides x) 'name))
 
   (define graph (make-hash-table))
 
@@ -135,15 +136,12 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
         (procedure-property x 'requires))))
    extensions)
 
-  (define (hash->list hash)
-    (hash-map->list cons hash))
-
-  (define (less ext1 ext2)
-    (member
-     (procedure-property ext1 'name)
-     (hash-ref graph (procedure-property ext2 'name))))
-
-  (stable-sort extensions less))
+  ;; Use fold instead of map to reverse the result.
+  (fold
+   (lambda (name result)
+     (cons (hash-ref provides name) result))
+   '()
+   (topological-sort (hash-map->list cons graph))))
 
 (define (make-handler extensions)
   "Sorts the extensions using @code{sort-extensions}.  Wraps @code{unknown-op}
