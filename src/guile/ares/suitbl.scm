@@ -147,6 +147,7 @@ runner and ask it to execute itself?
 
 |#
 
+(define %test-case-events* (make-parameter #f))
 
 ;; TODO: [Andrew Tropin, 2025-04-15] Make it private
 (define test-runner-output-port* (make-parameter (current-output-port)))
@@ -179,6 +180,10 @@ runner and ask it to execute itself?
   (simple-profile
    (with-exception-handler
     (lambda (ex)
+      (atomic-box-update!
+       (%test-case-events*)
+       (lambda (value)
+         (cons 'error value)))
       (default-report 'fail
         `((expected . ,quoted-form)
           (error . ,ex))))
@@ -186,11 +191,48 @@ runner and ask it to execute itself?
       ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
       ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
       (let* ((result (form-thunk)))
+        (atomic-box-update!
+         (%test-case-events*)
+         (lambda (value)
+           (cons (if result 'pass 'fail) value)))
         (default-report (if result 'pass 'fail)
           `((expected . ,quoted-form)
             (actual . (not ,quoted-form))))
         result))
     #:unwind? #t)))
+
+
+(define (run-test-case test-case-thunk)
+  (parameterize ((%test-case-events* (make-atomic-box '())))
+    ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
+    ;; happen inside test case, but outside of assert
+    (test-case-thunk)
+    (atomic-box-ref (%test-case-events*))))
+
+(define (run-scheduled-test-cases test-cases)
+  ;; pass, fail, skip(?), error
+  (let loop ((tests-passed 0)
+             (tests-failed 0)
+             ;; (tests-errored 0)
+             (tests-total 0)
+             (remaining-test-cases test-cases))
+    (if (null? remaining-test-cases)
+        `((passed . ,tests-passed)
+          (failed . ,tests-failed)
+          (total . ,tests-total))
+        (begin
+          (let* ((result (run-test-case (caar remaining-test-cases)))
+                 (failed? (any (lambda (x)
+                                 (member x '(fail error)))
+                               result))
+                 (inc-if (lambda (condition value)
+                           (if condition (1+ value) value))))
+            ;; (pk failed)
+            (loop
+             (inc-if (not failed?) tests-passed)
+             (inc-if failed? tests-failed)
+             (1+ tests-total)
+             (cdr remaining-test-cases)))))))
 
 (define (default-get-test-runner)
   (define state (make-atomic-box '()))
@@ -275,7 +317,9 @@ runner and ask it to execute itself?
          (chain
           (atomic-box-ref state)
           (assoc-ref _ 'test-cases)
-          (for-each (lambda (t) ((car t))) _)))
+          ;; (sort _ (lambda (x y) (rand-boolean)))
+          ;; (for-each (lambda (t) ((car t))) _)
+          (run-scheduled-test-cases _)))
 
         (else
          (raise-exception
