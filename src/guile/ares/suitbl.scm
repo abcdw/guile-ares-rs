@@ -189,10 +189,6 @@ runner and ask it to execute itself?
         result))
     #:unwind? #t)))
 
-
-;; TODO: [Andrew Tropin, 2025-04-22] Collect all test cases in a list
-;; and add info about test-path and possible other things (like fixtures?)
-
 (define (default-get-test-runner)
   (define state (make-atomic-box '()))
   (define (update-atomic-alist-value! alist-atom key f)
