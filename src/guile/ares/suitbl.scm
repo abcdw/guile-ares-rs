@@ -56,8 +56,9 @@ unit, integration, acceptance, backend, frontend
 https://github.com/testmoapp/junitxml
 
 3.
-Watch? for changed tests/implementations? Re-run [failed] tests on
-every eval?
+Continuous testing.
+- Watch for changed tests/implementations?
+- Re-run [failed] tests on every eval?
 
 4.
 Arguments pre-evaluations, do we really need it?
