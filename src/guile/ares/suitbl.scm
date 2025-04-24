@@ -146,14 +146,14 @@ runner and ask it to execute itself?
 
 
 ;; TODO: [Andrew Tropin, 2025-04-15] Make it private
-(define test-output-port* (make-parameter (current-output-port)))
+(define test-runner-output-port* (make-parameter (current-output-port)))
 
 (define (default-report type params)
   "Default report implementation"
   (case type
-    ((pass) (format (test-output-port*) "✓ ~s\n"
+    ((pass) (format (test-runner-output-port*) "✓ ~s\n"
                     (assoc-ref params 'expected)))
-    ((fail) (format (test-output-port*) "✗~%  Expected: ~s~%  ~a: ~s\n"
+    ((fail) (format (test-runner-output-port*) "✗~%  Expected: ~s~%  ~a: ~s\n"
                     (assoc-ref params 'expected)
                     (if (assoc-ref params 'error) "Error" "Actual")
                     (or (assoc-ref params 'error)
@@ -166,7 +166,7 @@ runner and ask it to execute itself?
       ((_ expressions ...)
        #'(let ((start-time (get-internal-real-time))
                (return-value expressions ...))
-           (format #t "run time: ~f\n"
+           (format (test-runner-output-port*) "run time: ~f\n"
                    (exact->inexact
                     (/ (- (get-internal-real-time) start-time)
                        internal-time-units-per-second)))
@@ -225,16 +225,22 @@ runner and ask it to execute itself?
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
         ((test-suite-enter)
-         (format #t (string-repeat "-" (length (%test-path*))))
-         (format #t "> suite entered: ~a\n" (assoc-ref x 'description)))
+         (format (test-runner-output-port*)
+                 (string-repeat "-" (length (%test-path*))))
+         (format (test-runner-output-port*)
+                 "> suite entered: ~a\n" (assoc-ref x 'description)))
         ((test-suite-leave)
-         (format #t (string-repeat "-" (length (%test-path*))))
-         (format #t "> suite left: ~a\n" (assoc-ref x 'description)))
+         (format (test-runner-output-port*)
+                 (string-repeat "-" (length (%test-path*))))
+         (format (test-runner-output-port*)
+                 "> suite left: ~a\n" (assoc-ref x 'description)))
 
         ((test-case-start)
-         (format #t "\n┌Test case started: ~a\n" (assoc-ref x 'description)))
+         (format (test-runner-output-port*)
+                 "\n┌Test case started: ~a\n" (assoc-ref x 'description)))
         ((test-case-end)
-         (format #t "└Test case ended: ~a\n" (assoc-ref x 'description)))
+         (format (test-runner-output-port*)
+                 "└Test case ended: ~a\n" (assoc-ref x 'description)))
 
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-case-run
         ((schedule-test-case)
