@@ -319,6 +319,7 @@ runner and ask it to execute itself?
           (assoc-ref _ 'test-cases)
           ;; (sort _ (lambda (x y) (rand-boolean)))
           ;; (for-each (lambda (t) ((car t))) _)
+          (reverse _)
           (run-scheduled-test-cases _)))
 
         (else
