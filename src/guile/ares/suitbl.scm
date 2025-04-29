@@ -6,7 +6,10 @@
   #:use-module (ares atomic)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
-  #:export (define-test-suite test-suite test-case is))
+  #:export (reset-test-environment
+            test-runner-output-port*
+            define-test-suite
+            test-suite test-case is))
 
 ;; TODO: [Andrew Tropin, 2025-02-19] Look at
 
@@ -91,9 +94,9 @@ test cases on test-runner/IDE side.
 |#
 
 
-
-
-;;; Test runner
+;;;
+;;; Test runners
+;;;
 
 #|
 
