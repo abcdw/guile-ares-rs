@@ -453,11 +453,11 @@ allows to group test cases, can include other test suits."
 (define-syntax reset-test-environment
   (lambda (stx)
     (syntax-case stx ()
-      ((_ get-test-runner expression ...)
+      ((_ get-test-runner body body* ...)
        #'(parameterize ((%current-test-runner* (get-test-runner))
                         (%test-path* '())
                         (%test-case* #f))
-           expression ...)))))
+           body body* ...)))))
 
 
 
