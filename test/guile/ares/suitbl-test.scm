@@ -1,6 +1,56 @@
 (define-module (ares suitbl-test)
   #:use-module (ares guile prelude)
-  #:use-module (ares suitbl))
+  #:use-module (ares suitbl)
+  #:use-module (ice-9 exceptions))
+
+
+
+(define (get-simple-test-runner)
+  (define (simple-test-runner message)
+    "Very simple test runner, just returns the result of @code{is} assert."
+    (define (simple-run-assert form-thunk args-thunk quoted-form)
+      (with-exception-handler
+       (lambda (ex)
+         'error)
+       (lambda ()
+         (let* ((result (form-thunk)))
+           (if result 'pass 'fail)))
+       #:unwind? #t))
+
+    (let ((msg-type (assoc-ref message 'type)))
+      (case msg-type
+        ((schedule-test-case)
+         (let ((test-case-thunk (assoc-ref message 'test-case-thunk)))
+
+           (test-case-thunk)))
+
+        ((run-assert)
+         (let ((assert-thunk (assoc-ref message 'assert-thunk))
+               (assert-quoted-form (assoc-ref message 'assert-quoted-form)))
+           (simple-run-assert assert-thunk #f assert-quoted-form)))
+
+        (else
+         (raise-exception
+          (make-exception-with-message
+           (format #f "~a handling is not implemented by simple test runner"
+                   (assoc-ref message 'type))))))))
+  simple-test-runner)
+
+(define-syntax ignore-current-output-port
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ body body* ...)
+       #'(parameterize ((test-runner-output-port* (open-output-string)))
+           body body* ...)))))
+
+(reset-test-environment
+ get-simple-test-runner
+ (is
+  (ignore-current-output-port
+   (reset-test-environment
+    (@@ (ares suitbl) default-get-test-runner)
+    (test-case "test"
+      (is 123))))))
 
 
 
