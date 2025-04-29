@@ -63,7 +63,7 @@
  (+ 1 2)
  'hi)
 
-(define-test-suite is-usage-test-suite
+(define-test-suite is-usage
   (test-case "basic atomic values"
     (is #t)
     (is 123)
@@ -78,26 +78,26 @@
     (is (even? 14)))
 
   (test-case "nested is and is return value"
-    (is (= 7 (is (+ 3 4)))))
+    (is (= 7 (is (+ 3 4))))))
 
-  ;; Do we need xfail/xpass?
-  ;; We can implement it also with test-case metadata and custom test runner
-  (test-case "expected to fail"
-    ;; Remove not, when it implemented correctly (starts to pass)
-    (is (not now-it-false-but-later-will-become-true))))
-
-(define-test-suite test-case-usage-test
-  (test-case "simple test case with meta"
+(define-test-suite test-case-usage
+  (test-case "simple test case with metadata"
     #:metadata `((expected-to-fail . #t))
-    (is #f)
-    (is #t)))
+    (is #f)))
 
-(define-test-suite test-runner-test-suite
-  (is-usage-test-suite))
+(define is-usage-2
+  (test-suite "is usage hoho"))
 
-(define-test-suite execution-timeout-test-suite
+(define-test-suite test-suite-usage
+  "description here?"
+  'hey)
+
+(define-test-suite base-test-runner
+  (is-usage))
+
+(define-test-suite execution-timeout
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf
   (is #f))
 
 (define (run-tests)
-  (test-runner-test-suite))
+  (base-test-runner))
