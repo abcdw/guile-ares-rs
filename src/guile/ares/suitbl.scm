@@ -253,16 +253,19 @@ runner and ask it to execute itself?
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
-           (if (%test-case*)
-               (default-run-assert assert-thunk #f assert-quoted-form)
-               (test-case
-                "anonymous"
-                (default-run-assert assert-thunk #f assert-quoted-form)))))
+           (when (and (not (null? (%test-path*)))
+                      (not (%test-case*)))
+             (chain
+              "Assert encountered inside test-suite, but outside of test-case"
+              (make-exception-with-message _)
+              (raise-exception _)))
+           (default-run-assert assert-thunk #f assert-quoted-form)))
 
         ((run-scheduled-test-cases)
          (chain
           (atomic-box-ref state)
           (assoc-ref _ 'test-cases)
+          (or _ '())
           ;; (sort _ (lambda (x y) (rand-boolean)))
           ;; (for-each (lambda (t) ((car t))) _)
           (reverse _)

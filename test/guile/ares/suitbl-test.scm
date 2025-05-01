@@ -141,11 +141,7 @@ test cases on test-runner/IDE side.
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
-           (if (%test-case*)
-               (default-run-assert assert-thunk #f assert-quoted-form)
-               (test-case
-                "anonymous"
-                (default-run-assert assert-thunk #f assert-quoted-form)))))
+           (assert-thunk)))
 
         (else #t))))
   test-runner)
@@ -208,15 +204,8 @@ test cases on test-runner/IDE side.
  (+ 1 2)
  'hi)
 
-(define-test-suite is-usage
-  (test-case "is outside of test-case"
-    (is
-     (throws-exception?
-      (reset-test-environment
-       get-silent-test-runner
-       (test-suite "sample test suite"
-         (is (= 7 (+ 3 4))))))))
 
+(define-test-suite is-usage
   (test-case "basic atomic values"
     (is #t)
     (is 123)
@@ -244,6 +233,23 @@ test cases on test-runner/IDE side.
     (is (= 40000000000000000000000000
            (+ 20000000000000000000000000
               20000000000000000000000000))))
+  (test-case "is outside of test-case"
+    (is
+     (throws-exception?
+      (reset-test-environment
+       create-suitbl-test-runner
+       ((test-suite "sample test suite"
+          (is (= 7 (+ 3 4))))))
+      (lambda (ex)
+        (string=?
+         "Assert encountered inside test-suite, but outside of test-case"
+         (exception-message ex))))))
+
+  (test-case "is on it's own in empty env"
+    (is (= 7
+           (reset-test-environment
+            create-suitbl-test-runner
+            (is 7)))))
 
   (test-case "nested is and is return value"
     (is (= 7 (is (+ 3 4))))))
@@ -319,11 +325,6 @@ test cases on test-runner/IDE side.
 
 ;; TODO: [Andrew Tropin, 2025-04-29] Add assertion count to test
 ;; summary
-
-;; TODO: [Andrew Tropin, 2025-04-29] Make assert work without
-;; test-case wrap, auto-wrap into test-case is explicit and can be
-;; confusing
-
 
 ;; TODO: [Andrew Tropin, 2025-04-29] Separate test runner from
 ;; reporter.  Reporter could be junit, tap, basic and it's basically
