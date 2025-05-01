@@ -99,10 +99,8 @@
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf
   (is #f))
 
-(define (run-tests)
+(define-public (run-tests)
   (base-test-runner))
-
-;; TODO: [Andrew Tropin, 2025-04-30] Add check-suitbl make target
 
 ;; TODO: [Andrew Tropin, 2025-04-30] Move tests to suitbl-test module
 
