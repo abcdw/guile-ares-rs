@@ -5,6 +5,30 @@
 
 
 
+
+
+;; TODO: [Andrew Tropin, 2025-04-22] Check if we need to implement
+;; scheduling of test-cases or running them immediately is ok
+(define (get-silent-test-runner)
+  (define (test-runner x)
+    "Default test runner"
+    (let ((msg-type (assoc-ref x 'type)))
+      (case msg-type
+        ((schedule-test-case)
+         (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
+           (test-case-thunk)))
+        ((run-assert)
+         (let ((assert-thunk (assoc-ref x 'assert-thunk))
+               (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
+           (if (%test-case*)
+               (default-run-assert assert-thunk #f assert-quoted-form)
+               (test-case
+                "anonymous"
+                (default-run-assert assert-thunk #f assert-quoted-form)))))
+
+        (else #t))))
+  test-runner)
+
 (define (get-simple-test-runner)
   (define (simple-test-runner message)
     "Very simple test runner, just returns the result of @code{is} assert."
@@ -64,6 +88,14 @@
  'hi)
 
 (define-test-suite is-usage
+  (test-case "is outside of test-case"
+    (is
+     (throws-exception?
+      (reset-test-environment
+       get-silent-test-runner
+       (test-suite "sample test suite"
+         (is (= 7 (+ 3 4))))))))
+
   (test-case "basic atomic values"
     (is #t)
     (is 123)
@@ -95,67 +127,60 @@
   (test-case "nested is and is return value"
     (is (= 7 (is (+ 3 4))))))
 
-(define-test-suite test-case-test
-  (test-case
-   "Zero asserts test case"
-   "Not yet implemented"))
+(define-test-suite test-case-usage
+  (test-case "simple test case with metadata"
+    #:metadata `((expected-to-fail . #t))
+    (is #f))
+
+  (test-case "Zero asserts test case"
+    "Not yet implemented"))
 
 (define-test-suite nested-test-suites-and-test-cases
   ;; Nested testsuits requires double parentesis to be immediately
   ;; called on evaluation
-  (is (throws-exception? (+ b 1 2) programming-error?))
+  (test-case "throws programming-error on unbound variable"
+    (is (throws-exception? (+ b 1 2) programming-error?)))
 
-  (test-case
-   "nested test cases are forbidden"
-   (is
-    (throws-exception?
-     (reset-test-environment
-      get-silent-test-runner
-      (test-case
-       "case1"
-       (test-case "nested case" (is #t))))
-     (lambda (ex)
-       (string=? "Test Cases can't be nested"
-                 (exception-message ex))))))
+  (test-case "nested test cases are forbidden"
+    (is
+     (throws-exception?
+      (reset-test-environment
+       get-silent-test-runner
+       (test-case
+           "case1"
+         (test-case "nested case" (is #t))))
+      (lambda (ex)
+        (string=? "Test Cases can't be nested"
+                  (exception-message ex))))))
 
   (test-case "test suite nested in test case is forbidden"
-   (is
-    (throws-exception?
-     (reset-test-environment
-      get-silent-test-runner
-      (test-case
-       "case1"
-       ((test-suite "nested suite" (is #t)))))
-     (lambda (ex)
-       (string=? "Test Suite can't be nested into Test Case"
-                 (exception-message ex))))))
+    (is
+     (throws-exception?
+      (reset-test-environment
+       get-silent-test-runner
+       (test-case
+           "case1"
+         ((test-suite "nested suite" (is #t)))))
+      (lambda (ex)
+        (string=? "Test Suite can't be nested into Test Case"
+                  (exception-message ex))))))
 
-  ((test-suite
-    "hey hey there"
-    (test-case
-     "very true test case"
-     (is #t)
-     (is "very true"))
-    ((test-suite
-      "Hello there"
-      (is (= 4 (+ 2 2)))))))
-
-  (is (= 7 (+ 3 4))))
-
-(define-test-suite test-case-usage
-  (test-case "simple test case with metadata"
-    #:metadata `((expected-to-fail . #t))
-    (is #f)))
-
-(define is-usage-2
-  (test-suite "is usage hoho"))
+  ((test-suite "test suite 1"
+     (test-case "test case 1#1"
+       (is #t)
+       (is "very true"))
+     ((test-suite "test suite 1.1"
+        (test-case "test case 1.1#1"
+          (is (= 4 (+ 2 2)))))))))
 
 (define-test-suite test-suite-usage
   "description here?"
-  'hey)
+  (nested-test-suites-and-test-cases))
 
 (define-test-suite base-test-runner
-  (is-usage))
+  (is-usage)
+  (test-case-usage)
+  (test-suite-usage))
 
 (define-test-suite execution-timeout
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf

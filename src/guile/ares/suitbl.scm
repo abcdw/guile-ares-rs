@@ -9,7 +9,8 @@
   #:export (reset-test-environment
             test-runner-output-port*
             define-test-suite
-            test-suite test-case is))
+            test-suite test-case is
+            throws-exception?))
 
 ;; TODO: [Andrew Tropin, 2025-02-19] Look at
 
