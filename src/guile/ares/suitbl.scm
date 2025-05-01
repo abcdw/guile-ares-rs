@@ -331,27 +331,7 @@ runner and ask it to execute itself?
            (format #f "no handler for message type ~a" msg-type)))))))
   test-runner)
 
-;; TODO: [Andrew Tropin, 2025-04-22] Check if we need to implement
-;; scheduling of test-cases or running them immediately is ok
-(define (get-silent-test-runner)
-  (define (test-runner x)
-    "Default test runner"
-    (let ((msg-type (assoc-ref x 'type)))
-      (case msg-type
-        ((schedule-test-case)
-         (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
-           (test-case-thunk)))
-        ((run-assert)
-         (let ((assert-thunk (assoc-ref x 'assert-thunk))
-               (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
-           (if (%test-case*)
-               (default-run-assert assert-thunk #f assert-quoted-form)
-               (test-case
-                "anonymous"
-                (default-run-assert assert-thunk #f assert-quoted-form)))))
 
-        (else #t))))
-  test-runner)
 
 (define get-test-runner* (make-parameter default-get-test-runner))
 (define %current-test-runner* (make-parameter #f))
@@ -496,111 +476,10 @@ allows to group test cases, can include other test suits."
 
 
 
-(define-test-suite different-is-usages
-  (is #t)
-  (define a 123)
-  (is a)
-
-  ;; TODO: [Andrew Tropin, 2025-04-08] Produce more sane error message
-  ;; for cases with atomic or identifier expressions.
-  (is #f)
-  (is (lset= = '(1 2 2 3) '(2 3 4 5)))
-  ;; (is (begin 'value1 'value2))
-  ;; (is (= (throw 'hi) 7))
-
-  (is (= 4 7))
-  (is (= 4 (+ 2 2))))
-
 
 (use-modules (ice-9 exceptions))
 
-(define-test-suite nested-test-suites-and-test-cases
-  ;; Nested testsuits requires double parentesis to be immediately
-  ;; called on evaluation
-  (is (throws-exception? (+ b 1 2) programming-error?))
-
-  (test-case
-   "nested test cases are forbidden"
-   (is
-    (throws-exception?
-     (reset-test-environment
-      get-silent-test-runner
-      (test-case
-       "case1"
-       (test-case "nested case" (is #t))))
-     (lambda (ex)
-       (string=? "Test Cases can't be nested"
-                 (exception-message ex))))))
-
-  (test-case "test suite nested in test case is forbidden"
-   (is
-    (throws-exception?
-     (reset-test-environment
-      get-silent-test-runner
-      (test-case
-       "case1"
-       ((test-suite "nested suite" (is #t)))))
-     (lambda (ex)
-       (string=? "Test Suite can't be nested into Test Case"
-                 (exception-message ex))))))
-
-  ((test-suite
-    "hey hey there"
-    (test-case
-     "very true test case"
-     (is #t)
-     (is "very true"))
-    ((test-suite
-      "Hello there"
-      (is (= 4 (+ 2 2)))))))
-
-  (is (= 7 (+ 3 4))))
-
-;; TODO: [Andrew Tropin, 2025-04-17] Make conditional expansion of is
-;; and test-case, if they expanded+evaluated on their own they
-;; immediately executed, however if they expanded inside context of
-;; other macro (test-suite, define), they return a thunk.  It can be
-;; useful to make test-case excutable in place, however still work
-;; with define.  Sounds hacky and very implicit, so it's just an idea
-;; to think about, not the call to action.
-
-(define-test-suite addition
-  (test-case
-   "simple addition of small numbers"
-   (is (= 4 (+ 2 2)))
-   (is (= 7 (+ 3 4))))
-
-  (test-case
-   "addition of big numbers"
-   (is (= 40000000000000000000000000
-          (+ 20000000000000000000000000
-             20000000000000000000000000)))))
-
-(define-test-suite subtraction
-  (is (= 2 (- 4 3)))
-  (is (= 3 (- 7 4))))
-
-(define-test-suite exception
-  (is (= 3 (throw 'hi))))
-
-(define-test-suite long-running-asserts
-  (is (sleep 1)))
-
-(define-test-suite all-tests
-  (different-is-usages)
-  (addition)
-  (subtraction)
-  ;; (exception)
-  (nested-test-suites-and-test-cases)
-  (long-running-asserts))
-
 ;; (all-tests)
 
-;; TODO: [Andrew Tropin, 2025-04-11] Specify test timeouts to 10 by
-;; default, so the test evaluation never hangs.
 
-;; TODO: [Andrew Tropin, 2025-04-11] Make it easy to add tags/metainfo
-;; to tests to be able to run/skip them flexibly
 
-;; TODO: [Andrew Tropin, 2025-04-22] Add enable-re-run-failed-tests-on-eval,
-;; which will re-run last failed tests on each eval
