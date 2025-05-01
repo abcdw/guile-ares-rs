@@ -5,6 +5,56 @@
 
 
 
+;;; Tests skipping
+;; Do we skip asserts or test cases? test cases, because they are a
+;; unit of execution/report/etc, not the assert
+
+;; skipping tests use cases: skip tests for particular platform, test
+;; stubs for friend, who will implement the functionality later.
+
+;; Syntax for skipping? can be a xtest-case, can be
+;; (skip-next-test-case), can be (test-case "description" 'skip-it (is #f))
+;; probably the last one
+
+;; We don't need to bake skipping syntax into test definition, because
+;; it bakes test-runner logic into test definitions.  Skipping tests
+;; should be done on test-runner side.  What we can add to tests is
+;; metainformation.
+
+
+;;; Expected to pass/fail AKA xpass xfail
+;; xpass and xfail is similiar to skipping tests, we can mark some
+;; test suites as expected to fail for now and skip them.  Not exactly
+;; as xpass/xfail, because we don't see the number of such tests in
+;; the result.
+
+;; Other option is to do `(is (not not-yet-trueish-value))' and write
+;; a comment that `not' should be removed, when test starts to pass.
+
+;; xfail can be a great way to report a bug and provide a reproducer
+;; at the same time
+
+;; this type of workflow can be implemented by extending test runner and
+;; adding meta information to test-case
+
+
+;;; Basic test-case run results
+;; test-case results: pass, fail, error, skip
+
+
+;;; Junit test run summary
+#|
+https://github.com/testmoapp/junitxml?tab=readme-ov-file#example
+name        Name of the entire test run
+tests       Total number of tests in this file
+failures    Total number of failed tests in this file
+errors      Total number of errored tests in this file
+skipped     Total number of skipped tests in this file
+assertions  Total number of assertions for all tests in this file
+time        Aggregated time of all tests in this file in seconds
+timestamp   Date and time of when the test run was executed (in ISO 8601 format)
+|#
+
 
 
 ;; TODO: [Andrew Tropin, 2025-04-22] Check if we need to implement
