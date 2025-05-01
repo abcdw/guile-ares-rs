@@ -58,6 +58,52 @@ time        Aggregated time of all tests in this file in seconds
 timestamp   Date and time of when the test run was executed (in ISO 8601 format)
 |#
 
+#|
+Questions:
+1.
+How to backlink test to function, so you can see all the tests related
+to the function?
+
+2.
+Test tags, which can be used to produce test suits (subset of tests):
+unit, integration, acceptance, backend, frontend
+https://github.com/testmoapp/junitxml
+
+3.
+Continuous testing.
+- Watch for changed tests/implementations?
+- Re-run [failed] tests on every eval?
+
+4.
+Arguments pre-evaluations, do we really need it?
+Maybe it's ok to do post-fail re-evaluation?
+
+Why we pre-evaluate arguments is because we want to produce
+meaningful error messages.
+
+Imagine situation:
+(let ((a "he")
+      (b "hoho"))
+  (is (string=? (string-append a "he") b)))
+
+Saying that in expression (string=? (string-append a "he") b)
+"hehe" is not string=? to "hoho" is useful, but saying
+that (not (string=? (string-append a "he") b)) is not so.
+
+5.
+load-tests* variable, which controls macro expansion logic, setting it
+to #f will make all test defining functions to produce empty results.
+Probably we don't need it, because all test-cases are deffered.  The
+only possible use case is stripping out tests from production code,
+when the tests are in the same module with the subject under the test.
+
+6.
+Skip test functionality.  Do we want a special test-case-skip
+statement or something similiar?  Probably no, because we can skip
+test cases on test-runner/IDE side.
+
+|#
+
 
 ;;;
 ;;; Reference materials
