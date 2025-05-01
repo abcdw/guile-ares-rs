@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl)
   #:use-module (ice-9 atomic)
+  #:use-module (ice-9 exceptions)
   #:use-module (ares atomic)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
@@ -410,14 +411,3 @@ allows to group test cases, can include other test suits."
             expression
             #f)
           #:unwind? #t)))))
-
-
-
-
-
-(use-modules (ice-9 exceptions))
-
-;; (all-tests)
-
-
-
