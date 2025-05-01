@@ -313,6 +313,26 @@ test cases on test-runner/IDE side.
   "description here?"
   (nested-test-suites-and-test-cases))
 
+(define-test-suite test-runner-operations
+  (test-case "\
+run summary is #f by default, but appears after test suite is executed"
+    (is (equal?
+         #f
+         (reset-test-environment
+          create-suitbl-test-runner
+          ((get-current-or-create-test-runner)
+           `((type . get-run-summary))))))
+
+    (is (not
+         (null?
+          (reset-test-environment
+           create-suitbl-test-runner
+           ((test-suite "suite1"
+              (test-case "case1"
+                (is #t))))
+           ((get-current-or-create-test-runner)
+            `((type . get-run-summary)))))))))
+
 (define-test-suite base-test-runner
   (is-usage)
   (test-case-usage)
@@ -323,14 +343,14 @@ test cases on test-runner/IDE side.
   (is #f))
 
 (define-public (run-tests)
-  (let ((run-summary
-         (schedule-and-run-test-suits
-          (create-suitbl-test-runner)
-          (list base-test-runner))))
-    (format #t "\n~a" run-summary)
+  (let* ((test-runner (create-suitbl-test-runner)))
+    (parameterize ((test-runner-output-port* (open-output-string)))
+      (schedule-and-run-test-suits
+       test-runner
+       (list base-test-runner)))
+    (format #t "\n~a" (test-runner `((type . get-run-summary))))
     0))
 
-;; TODO: [Andrew Tropin, 2025-04-30] Add get-run-summary message type
 
 ;; TODO: [Andrew Tropin, 2025-04-29] Add assertion count to test
 ;; summary

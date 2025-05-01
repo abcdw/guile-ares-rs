@@ -184,6 +184,8 @@ runner and ask it to execute itself?
 
 (define (create-suitbl-test-runner)
   (define state (make-atomic-box '()))
+  (define last-run-summary (make-atomic-box #f))
+
   (define (update-atomic-alist-value! alist-atom key f)
     (atomic-box-update!
      alist-atom
@@ -263,14 +265,20 @@ runner and ask it to execute itself?
            (default-run-assert assert-thunk #f assert-quoted-form)))
 
         ((run-scheduled-test-cases)
-         (chain
-          (atomic-box-ref state)
-          (assoc-ref _ 'test-cases)
-          (or _ '())
-          ;; (sort _ (lambda (x y) (rand-boolean)))
-          ;; (for-each (lambda (t) ((car t))) _)
-          (reverse _)
-          (run-scheduled-test-cases _)))
+         (atomic-box-set!
+          last-run-summary
+          (chain
+           (atomic-box-ref state)
+           (assoc-ref _ 'test-cases)
+           (or _ '())
+           ;; (sort _ (lambda (x y) (rand-boolean)))
+           ;; (for-each (lambda (t) ((car t))) _)
+           (reverse _)
+           (run-scheduled-test-cases _)))
+         (atomic-box-ref last-run-summary))
+
+        ((get-run-summary)
+         (atomic-box-ref last-run-summary))
 
         (else
          (raise-exception
