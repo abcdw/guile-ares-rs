@@ -308,14 +308,12 @@ test cases on test-runner/IDE side.
   (is #f))
 
 (define-public (run-tests)
-  (base-test-runner))
-
-;; TODO: [Andrew Tropin, 2025-04-29] Implement test runner message
-;; run-suite or run-suites, which executes test suite and returns
-;; execution summary
-;; TODO: [Andrew Tropin, 2025-04-30] Implement schedule-and-run-tests
-;; message type
-
+  (let ((run-summary
+         (schedule-and-run-test-suits
+          (create-suitbl-test-runner)
+          (list base-test-runner))))
+    (format #t "\n~a" run-summary)
+    0))
 
 ;; TODO: [Andrew Tropin, 2025-04-30] Add get-run-summary message type
 

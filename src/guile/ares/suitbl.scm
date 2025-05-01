@@ -7,7 +7,9 @@
   #:use-module (ares atomic)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
-  #:export (reset-test-environment
+  #:export (create-suitbl-test-runner
+            schedule-and-run-test-suits
+            reset-test-environment
             test-runner-output-port*
             define-test-suite
             test-suite test-case is
@@ -177,7 +179,7 @@ runner and ask it to execute itself?
              (1+ tests-total)
              (cdr remaining-test-cases)))))))
 
-(define (default-get-test-runner)
+(define (create-suitbl-test-runner)
   (define state (make-atomic-box '()))
   (define (update-atomic-alist-value! alist-atom key f)
     (atomic-box-update!
@@ -270,9 +272,17 @@ runner and ask it to execute itself?
            (format #f "no handler for message type ~a" msg-type)))))))
   test-runner)
 
+(define (schedule-and-run-test-suits test-runner test-suits)
+  (parameterize ((%current-test-runner* test-runner))
+    ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
+    (for-each (lambda (ts) (ts)) test-suits)
+    (test-runner
+     `((type . run-scheduled-test-cases)))
+    ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
+    ))
 
 
-(define get-test-runner* (make-parameter default-get-test-runner))
+(define get-test-runner* (make-parameter create-suitbl-test-runner))
 (define %current-test-runner* (make-parameter #f))
 
 (define (get-current-or-create-test-runner)
