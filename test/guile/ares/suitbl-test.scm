@@ -101,3 +101,34 @@
 
 (define (run-tests)
   (base-test-runner))
+
+;; TODO: [Andrew Tropin, 2025-04-30] Add check-suitbl make target
+
+;; TODO: [Andrew Tropin, 2025-04-30] Move tests to suitbl-test module
+
+;; TODO: [Andrew Tropin, 2025-04-29] Implement test runner message
+;; run-suite or run-suites, which executes test suite and returns
+;; execution summary
+;; TODO: [Andrew Tropin, 2025-04-30] Implement schedule-and-run-tests
+;; message type
+
+
+;; TODO: [Andrew Tropin, 2025-04-30] Add get-run-summary message type
+
+;; TODO: [Andrew Tropin, 2025-04-29] Add assertion count to test
+;; summary
+
+;; TODO: [Andrew Tropin, 2025-04-29] Make assert work without
+;; test-case wrap, auto-wrap into test-case is explicit and can be
+;; confusing
+
+
+;; TODO: [Andrew Tropin, 2025-04-29] Separate test runner from
+;; reporter.  Reporter could be junit, tap, basic and it's basically
+;; almost independent from how tests can be executed. So the test
+;; reporter can be specified for a particular test runner to use.
+
+;; TODO: [Andrew Tropin, 2025-04-30] Don't imply reporting, profiling
+;; and other logic on test-case macro side, do it inside test runner
+;; wrappers
+
