@@ -14,23 +14,6 @@
 
 ;; TODO: [Andrew Tropin, 2025-02-19] Look at
 
-;; https://gerbil.scheme.org/reference/dev/test.html
-;; https://gerbil.scheme.org/reference/std/test.html#test-suite
-;; check macro and various convinience wrappers
-
-;; https://srfi.schemers.org/srfi-78/srfi-78.html
-
-;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
-;; https://github.com/weavejester/eftest
-;; Nice clojure test runners
-
-;; http://testanything.org/tap-version-14-specification.html
-;; test output specification
-
-;; https://github.com/nubank/matcher-combinators
-;; A list of helper function, which allows for flexible matching of
-;; highly nested data structures
-
 #|
 
 SUITBL is Scheme Universal Interactive Testing Base Library

@@ -4,6 +4,9 @@
   #:use-module (ice-9 exceptions))
 
 
+;;;
+;;; Thoughts and Questions
+;;;
 
 ;;; Tests skipping
 ;; Do we skip asserts or test cases? test cases, because they are a
@@ -54,6 +57,28 @@ assertions  Total number of assertions for all tests in this file
 time        Aggregated time of all tests in this file in seconds
 timestamp   Date and time of when the test run was executed (in ISO 8601 format)
 |#
+
+
+;;;
+;;; Reference materials
+;;;
+
+;; https://gerbil.scheme.org/reference/dev/test.html
+;; https://gerbil.scheme.org/reference/std/test.html#test-suite
+;; check macro and various convinience wrappers
+
+;; https://srfi.schemers.org/srfi-78/srfi-78.html
+
+;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/5-running-kaocha-from-the-repl
+;; https://github.com/weavejester/eftest
+;; Nice clojure test runners
+
+;; http://testanything.org/tap-version-14-specification.html
+;; test output specification
+
+;; https://github.com/nubank/matcher-combinators
+;; A list of helper function, which allows for flexible matching of
+;; highly nested data structures
 
 
 
