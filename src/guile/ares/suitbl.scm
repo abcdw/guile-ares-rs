@@ -181,29 +181,28 @@ runner and ask it to execute itself?
            return-value)))))
 
 (define (default-run-assert form-thunk args-thunk quoted-form)
-  (simple-profile
-   (with-exception-handler
-    (lambda (ex)
-      (atomic-box-update!
-       (%test-case-events*)
-       (lambda (value)
-         (cons 'error value)))
-      (default-report 'fail
-        `((expected . ,quoted-form)
-          (error . ,ex))))
-    (lambda ()
-      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-      (let* ((result (form-thunk)))
-        (atomic-box-update!
-         (%test-case-events*)
-         (lambda (value)
-           (cons (if result 'pass 'fail) value)))
-        (default-report (if result 'pass 'fail)
-          `((expected . ,quoted-form)
-            (actual . (not ,quoted-form))))
-        result))
-    #:unwind? #t)))
+  (with-exception-handler
+   (lambda (ex)
+     (atomic-box-update!
+      (%test-case-events*)
+      (lambda (value)
+        (cons 'error value)))
+     (default-report 'fail
+       `((expected . ,quoted-form)
+         (error . ,ex))))
+   (lambda ()
+     ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+     ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+     (let* ((result (form-thunk)))
+       (atomic-box-update!
+        (%test-case-events*)
+        (lambda (value)
+          (cons (if result 'pass 'fail) value)))
+       (default-report (if result 'pass 'fail)
+         `((expected . ,quoted-form)
+           (actual . (not ,quoted-form))))
+       result))
+   #:unwind? #t))
 
 
 (define (run-test-case test-case-thunk)
@@ -295,8 +294,7 @@ runner and ask it to execute itself?
         ((schedule-test-case)
          (let* ((test-case-thunk
                  (lambda ()
-                   (simple-profile
-                    ((assoc-ref x 'test-case-thunk)))))
+                   ((assoc-ref x 'test-case-thunk))))
                 (description (assoc-ref x 'description))
                 (test-case-item
                  (cons test-case-thunk

@@ -274,3 +274,5 @@ timestamp   Date and time of when the test run was executed (in ISO 8601 format)
 ;; TODO: [Andrew Tropin, 2025-04-22] Add enable-re-run-failed-tests-on-eval,
 ;; which will re-run last failed tests on each eval
 
+;; TODO: [Andrew Tropin, 2025-05-01] Return back profiling to test-runner
+
