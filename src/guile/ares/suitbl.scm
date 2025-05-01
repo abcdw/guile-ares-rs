@@ -10,6 +10,7 @@
   #:export (create-suitbl-test-runner
             schedule-and-run-test-suits
             reset-test-environment
+            get-current-or-create-test-runner
             test-runner-output-port*
             define-test-suite
             test-suite test-case is
