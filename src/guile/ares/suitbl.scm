@@ -125,10 +125,11 @@ runner and ask it to execute itself?
 (define (default-run-assert form-thunk args-thunk quoted-form)
   (with-exception-handler
    (lambda (ex)
-     (atomic-box-update!
-      (%test-case-events*)
-      (lambda (value)
-        (cons 'error value)))
+     (when (%test-case*)
+       (atomic-box-update!
+        (%test-case-events*)
+        (lambda (value)
+          (cons 'error value))))
      (default-report 'fail
        `((expected . ,quoted-form)
          (error . ,ex))))
@@ -136,10 +137,11 @@ runner and ask it to execute itself?
      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
      (let* ((result (form-thunk)))
-       (atomic-box-update!
-        (%test-case-events*)
-        (lambda (value)
-          (cons (if result 'pass 'fail) value)))
+       (when (%test-case*)
+         (atomic-box-update!
+          (%test-case-events*)
+          (lambda (value)
+            (cons (if result 'pass 'fail) value))))
        (default-report (if result 'pass 'fail)
          `((expected . ,quoted-form)
            (actual . (not ,quoted-form))))
