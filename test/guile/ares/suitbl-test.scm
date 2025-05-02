@@ -379,9 +379,6 @@ run summary is #f by default, but appears after test suite is executed"
 
 ;; TODO: [Andrew Tropin, 2025-05-02] Rename test-case to just test
 
-;; TODO: [Andrew Tropin, 2025-04-29] Add assertion count to test
-;; summary
-
 ;; TODO: [Andrew Tropin, 2025-05-01] Decide on test suite suffix convention
 
 ;; TODO: [Andrew Tropin, 2025-05-01] Add variable

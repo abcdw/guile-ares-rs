@@ -161,12 +161,13 @@ runner and ask it to execute itself?
   ;; pass, fail, skip(?), error
   (let loop ((tests-passed 0)
              (tests-failed 0)
-             ;; (tests-errored 0)
+             (asserts 0)
              (tests-total 0)
              (remaining-test-cases test-cases))
     (if (null? remaining-test-cases)
         `((passed . ,tests-passed)
           (failed . ,tests-failed)
+          (asserts . ,asserts)
           (total . ,tests-total))
         (begin
           (let* ((result (run-test-case (caar remaining-test-cases)))
@@ -179,6 +180,7 @@ runner and ask it to execute itself?
             (loop
              (inc-if (not failed?) tests-passed)
              (inc-if failed? tests-failed)
+             (+ asserts (length result))
              (1+ tests-total)
              (cdr remaining-test-cases)))))))
 
