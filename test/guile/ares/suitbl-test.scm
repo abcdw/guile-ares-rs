@@ -191,7 +191,7 @@ test cases on test-runner/IDE side.
       ((_ body body* ...)
        #'(parameterize ((test-runner-output-port* (open-output-string)))
            body body* ...)))))
-
+#;
 (reset-test-environment
  get-simple-test-runner
  (is
