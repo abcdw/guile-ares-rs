@@ -306,19 +306,6 @@ creates one."
    (%current-test-runner*)
    ((get-test-runner*))))
 
-(define tr ((get-test-runner*)))
-
-;; (tr `((type . run-assert)
-;;       (assert-thunk . ,(lambda () (format #t "I'm dummy assert\n")))
-;;       (assert-quoted-form . (format #t "I'm dummy assert\n"))))
-;; (tr '((type . get-log)))
-
-;; (parameterize ((%current-test-runner* tr))
-;;   (is #t))
-
-;; (tr '((type . add-event)
-;;       (event . "something happened again")))
-
 
 (define %test-path* (make-parameter '()))
 (define %test-case* (make-parameter #f))
