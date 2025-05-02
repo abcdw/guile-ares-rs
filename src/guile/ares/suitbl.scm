@@ -171,7 +171,7 @@ runner and ask it to execute itself?
         (%test-case-events*)
         (lambda (value)
           (cons 'error value))))
-     (suitbl-base-reporter
+     ((test-reporter*)
       `((type . assert-error)
         (quoted-form . ,quoted-form)
         (error . ,ex))))
@@ -184,7 +184,7 @@ runner and ask it to execute itself?
           (%test-case-events*)
           (lambda (value)
             (cons (if result 'pass 'fail) value))))
-       (suitbl-base-reporter
+       ((test-reporter*)
         `((type . ,(if result 'assert-pass 'assert-fail))
           (result . ,result)
           (quoted-form . ,quoted-form)))
@@ -255,7 +255,7 @@ runner and ask it to execute itself?
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
         ((test-suite-enter test-suite-leave test-case-start test-case-end)
-         (suitbl-base-reporter x))
+         ((test-reporter*) x))
 
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-case-run
         ((schedule-test-case)
