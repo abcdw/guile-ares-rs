@@ -411,11 +411,6 @@ run summary is #f by default, but appears after test suite is executed"
 ;; to define test-cases for test runner and sometimes customize test
 ;; runner (for example make it more verbose for debugging purpose).
 
-;; TODO: [Andrew Tropin, 2025-04-29] Separate test runner from
-;; reporter.  Reporter could be junit, tap, basic and it's basically
-;; almost independent from how tests can be executed. So the test
-;; reporter can be specified for a particular test runner to use.
-
 ;; TODO: [Andrew Tropin, 2025-05-01] Implement dots reporter
 ;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/3-configuration#kaochareportdots
 

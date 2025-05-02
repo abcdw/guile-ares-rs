@@ -182,6 +182,43 @@ runner and ask it to execute itself?
              (1+ tests)
              (cdr remaining-test-cases)))))))
 
+(define (suitbl-base-reporter message)
+  (define (string-repeat s n)
+    "Returns string S repeated N times."
+    (fold
+     (lambda (_ str)
+       (string-append str s))
+     ""
+     (iota n)))
+
+  (define msg-type (assoc-ref message 'type))
+  (case msg-type
+    ((test-suite-enter)
+     (format (test-reporter-output-port*)
+             (string-repeat "-" (length (%test-path*))))
+     (format (test-reporter-output-port*)
+             "> suite entered: ~a\n" (assoc-ref message 'description)))
+    ((test-suite-leave)
+     (format (test-reporter-output-port*)
+             (string-repeat "-" (length (%test-path*))))
+     (format (test-reporter-output-port*)
+             "> suite left: ~a\n" (assoc-ref message 'description)))
+
+    ((test-case-start)
+     (format (test-reporter-output-port*)
+             "\n┌Test case started: ~a\n" (assoc-ref message 'description)))
+    ((test-case-end)
+     (format (test-reporter-output-port*)
+             "└Test case ended: ~a\n" (assoc-ref message 'description)))
+
+    ;; ((assert-result)
+    ;;  (apply default-report (alist-select-keys '() message)))
+
+    (else
+     (raise-exception
+      (make-exception-with-message
+       (format #f "no reporting implemented for message type ~a" msg-type))))))
+
 (define (create-suitbl-test-runner)
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
@@ -195,14 +232,6 @@ runner and ask it to execute itself?
          (chain alist
                 (alist-delete key _)
                 (alist-cons key new-value _))))))
-
-  (define (string-repeat s n)
-    "Returns string S repeated N times."
-    (fold
-     (lambda (_ str)
-       (string-append str s))
-     ""
-     (iota n)))
 
   (define (test-runner x)
     "Default test runner"
@@ -219,23 +248,8 @@ runner and ask it to execute itself?
         ((get-log)
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-        ((test-suite-enter)
-         (format (test-reporter-output-port*)
-                 (string-repeat "-" (length (%test-path*))))
-         (format (test-reporter-output-port*)
-                 "> suite entered: ~a\n" (assoc-ref x 'description)))
-        ((test-suite-leave)
-         (format (test-reporter-output-port*)
-                 (string-repeat "-" (length (%test-path*))))
-         (format (test-reporter-output-port*)
-                 "> suite left: ~a\n" (assoc-ref x 'description)))
-
-        ((test-case-start)
-         (format (test-reporter-output-port*)
-                 "\n┌Test case started: ~a\n" (assoc-ref x 'description)))
-        ((test-case-end)
-         (format (test-reporter-output-port*)
-                 "└Test case ended: ~a\n" (assoc-ref x 'description)))
+        ((test-suite-enter test-suite-leave test-case-start test-case-end)
+         (suitbl-base-reporter x))
 
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-case-run
         ((schedule-test-case)
