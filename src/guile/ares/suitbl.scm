@@ -7,14 +7,17 @@
   #:use-module (ares atomic)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
-  #:export (create-suitbl-test-runner
-            schedule-and-run-test-suits
-            reset-test-environment
-            get-current-or-create-test-runner
-            test-reporter-output-port*
+  #:export (test-reporter-output-port*
             test-reporter*
+
+            create-suitbl-test-runner
+            schedule-and-run-test-suits
+            get-current-or-create-test-runner
+
             define-test-suite
             test-suite test-case is
+
+            reset-test-environment
             throws-exception?))
 
 ;; TODO: [Andrew Tropin, 2025-02-19] Look at
