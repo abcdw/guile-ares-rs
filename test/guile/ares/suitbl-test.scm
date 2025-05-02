@@ -201,6 +201,29 @@ test cases on test-runner/IDE side.
     (test-case "test"
       (is 123))))))
 
+
+
+;; TODO: [Andrew Tropin, 2025-05-01] Make this macro provide useful
+;; information to test runner or reporter, so it's easy to understand
+;; what went wrong here.
+(define-syntax exception-message=?
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ message expression)
+       #'(throws-exception?
+          (begin
+            expression
+            (raise-exception
+             (make-exception-with-message
+              "expression didn't raise the exception")))
+          (lambda (ex)
+            (string=? message (exception-message ex))))))))
+
+(comment
+ (exception-message=?
+  "hello"
+  (raise-exception
+   (make-exception-with-message "hello"))))
 
 
 ;;;
@@ -232,15 +255,16 @@ test cases on test-runner/IDE side.
     (is (= 4 (+ 2 2))))
 
   ;; TODO: [Andrew Tropin, 2025-05-01] Move to reporter tests
-  ;; (test-case "error message is good"
-  ;;   ;; TODO: [Andrew Tropin, 2025-04-08] Produce more sane error message
-  ;;   ;; for cases with atomic or identifier expressions.
-  ;;   (is #f)
-  ;;   (is (= 4 7))
-  ;;   (is (lset= = '(1 2 2 3) '(2 3 4 5)))
-  ;;   (is (= 40000000000000000000000000
-  ;;          (+ 20000000000000000000000000
-  ;;             20000000000000000000000000))))
+  #;
+  (test-case "error message is good"
+    ;; TODO: [Andrew Tropin, 2025-04-08] Produce more sane error message
+    ;; for cases with atomic or identifier expressions.
+    (is #f)
+    (is (= 4 7))
+    (is (lset= = '(1 2 2 3) '(2 3 4 5)))
+    (is (= 40000000000000000000000000
+           (+ 20000000000000000000000000
+              20000000000000000000000000))))
 
   (test-case "is outside of test-case"
     (is
@@ -313,6 +337,8 @@ test cases on test-runner/IDE side.
   "description here?"
   (nested-test-suites-and-test-cases))
 
+
+
 (define-test-suite test-runner-operations
   (test-case "\
 run summary is #f by default, but appears after test suite is executed"
@@ -351,14 +377,27 @@ run summary is #f by default, but appears after test suite is executed"
     (format #t "\n~a" (test-runner `((type . get-run-summary))))
     0))
 
+;; TODO: [Andrew Tropin, 2025-05-02] Rename test-case to just test
 
 ;; TODO: [Andrew Tropin, 2025-04-29] Add assertion count to test
 ;; summary
+
+;; TODO: [Andrew Tropin, 2025-05-01] Decide on test suite suffix convention
+
+;; TODO: [Andrew Tropin, 2025-05-01] Add variable
+;; test-runner-under-test* and make-clean-test-runner-environment
+;; macro, which will reset the environment and use
+;; test-runner-under-test* as a test runner for it, to make it easier
+;; to define test-cases for test runner and sometimes customize test
+;; runner (for example make it more verbose for debugging purpose).
 
 ;; TODO: [Andrew Tropin, 2025-04-29] Separate test runner from
 ;; reporter.  Reporter could be junit, tap, basic and it's basically
 ;; almost independent from how tests can be executed. So the test
 ;; reporter can be specified for a particular test runner to use.
+
+;; TODO: [Andrew Tropin, 2025-05-01] Implement dots reporter
+;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/3-configuration#kaochareportdots
 
 ;; TODO: [Andrew Tropin, 2025-04-30] Don't imply reporting, profiling
 ;; and other logic on test-case macro side, do it inside test runner
