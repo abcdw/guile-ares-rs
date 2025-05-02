@@ -1,6 +1,7 @@
 (define-module (ares suitbl-test)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl)
+  #:use-module (ares alist)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 exceptions))
 
@@ -357,10 +358,32 @@ run summary is #f by default, but appears after test suite is executed"
               (test-case "case1"
                 (is #t))))
            ((get-current-or-create-test-runner)
-            `((type . get-run-summary)))))))))
+            `((type . get-run-summary)))))))
+
+    (define run-summary-with-failures-and-errors
+      (reset-test-environment
+       create-suitbl-test-runner
+       ((test-suite "suite"
+          (test-case "simple failure"
+            (is #f))
+          (test-case "simple error"
+            (is (throw 'hi)))
+          (test-case "error > failure"
+            (is #f)
+            (is (throw 'hi)))))
+       ((get-current-or-create-test-runner)
+        `((type . get-run-summary)))))
+
+    (is
+     (equal?
+      '((errors . 2) (failures . 1) (assertions . 4) (tests . 3))
+      (alist-select-keys
+       '(errors failures assertions tests)
+       run-summary-with-failures-and-errors)))))
 
 (define-test-suite base-test-runner
   (is-usage)
+  (test-runner-operations)
   (test-case-usage)
   (test-suite-usage))
 
