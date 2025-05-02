@@ -190,7 +190,7 @@ test cases on test-runner/IDE side.
   (lambda (stx)
     (syntax-case stx ()
       ((_ body body* ...)
-       #'(parameterize ((test-runner-output-port* (open-output-string)))
+       #'(parameterize ((test-reporter-output-port* (open-output-string)))
            body body* ...)))))
 #;
 (reset-test-environment
@@ -393,7 +393,7 @@ run summary is #f by default, but appears after test suite is executed"
 
 (define-public (run-tests)
   (let* ((test-runner (create-suitbl-test-runner)))
-    (parameterize ((test-runner-output-port* (open-output-string)))
+    (parameterize ((test-reporter-output-port* (open-output-string)))
       (schedule-and-run-test-suits
        test-runner
        (list base-test-runner)))

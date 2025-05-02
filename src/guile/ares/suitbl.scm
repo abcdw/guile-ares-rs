@@ -11,7 +11,7 @@
             schedule-and-run-test-suits
             reset-test-environment
             get-current-or-create-test-runner
-            test-runner-output-port*
+            test-reporter-output-port*
             define-test-suite
             test-suite test-case is
             throws-exception?))
@@ -96,15 +96,14 @@ runner and ask it to execute itself?
 
 (define %test-case-events* (make-parameter #f))
 
-;; TODO: [Andrew Tropin, 2025-04-15] Make it private
-(define test-runner-output-port* (make-parameter (current-output-port)))
+(define test-reporter-output-port* (make-parameter (current-output-port)))
 
 (define (default-report type params)
   "Default report implementation"
   (case type
-    ((pass) (format (test-runner-output-port*) "✓ ~s\n"
+    ((pass) (format (test-reporter-output-port*) "✓ ~s\n"
                     (assoc-ref params 'expected)))
-    ((fail) (format (test-runner-output-port*) "✗~%  Expected: ~s~%  ~a: ~s\n"
+    ((fail) (format (test-reporter-output-port*) "✗~%  Expected: ~s~%  ~a: ~s\n"
                     (assoc-ref params 'expected)
                     (if (assoc-ref params 'error) "Error" "Actual")
                     (or (assoc-ref params 'error)
@@ -117,7 +116,7 @@ runner and ask it to execute itself?
       ((_ expressions ...)
        #'(let ((start-time (get-internal-real-time))
                (return-value expressions ...))
-           (format (test-runner-output-port*) "run time: ~f\n"
+           (format (test-reporter-output-port*) "run time: ~f\n"
                    (exact->inexact
                     (/ (- (get-internal-real-time) start-time)
                        internal-time-units-per-second)))
@@ -221,21 +220,21 @@ runner and ask it to execute itself?
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
         ((test-suite-enter)
-         (format (test-runner-output-port*)
+         (format (test-reporter-output-port*)
                  (string-repeat "-" (length (%test-path*))))
-         (format (test-runner-output-port*)
+         (format (test-reporter-output-port*)
                  "> suite entered: ~a\n" (assoc-ref x 'description)))
         ((test-suite-leave)
-         (format (test-runner-output-port*)
+         (format (test-reporter-output-port*)
                  (string-repeat "-" (length (%test-path*))))
-         (format (test-runner-output-port*)
+         (format (test-reporter-output-port*)
                  "> suite left: ~a\n" (assoc-ref x 'description)))
 
         ((test-case-start)
-         (format (test-runner-output-port*)
+         (format (test-reporter-output-port*)
                  "\n┌Test case started: ~a\n" (assoc-ref x 'description)))
         ((test-case-end)
-         (format (test-runner-output-port*)
+         (format (test-reporter-output-port*)
                  "└Test case ended: ~a\n" (assoc-ref x 'description)))
 
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-case-run
