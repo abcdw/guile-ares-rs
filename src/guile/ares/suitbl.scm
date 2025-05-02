@@ -9,6 +9,8 @@
   #:use-module (srfi srfi-197)
   #:export (test-reporter-output-port*
             test-reporter*
+            test-reporter-silent
+            test-reporter-base
 
             create-suitbl-test-runner
             schedule-and-run-test-suits
@@ -48,7 +50,7 @@ Test cases can be combined by another define-test:
 
 (define test-reporter-output-port* (make-parameter (current-output-port)))
 
-(define (suitbl-base-reporter message)
+(define (test-reporter-base message)
   (define (string-repeat s n)
     "Returns string S repeated N times."
     (fold
@@ -94,6 +96,9 @@ Test cases can be combined by another define-test:
       (make-exception-with-message
        (format #f "no reporting implemented for message type ~a" msg-type))))))
 
+(define (test-reporter-silent message)
+  #f)
+
 (define-syntax simple-profile
   (lambda (stx)
     (syntax-case stx ()
@@ -106,7 +111,7 @@ Test cases can be combined by another define-test:
                        internal-time-units-per-second)))
            return-value)))))
 
-(define test-reporter* (make-parameter suitbl-base-reporter))
+(define test-reporter* (make-parameter test-reporter-base))
 
 
 ;;;
