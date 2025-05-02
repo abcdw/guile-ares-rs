@@ -12,6 +12,7 @@
             reset-test-environment
             get-current-or-create-test-runner
             test-reporter-output-port*
+            test-reporter*
             define-test-suite
             test-suite test-case is
             throws-exception?))
