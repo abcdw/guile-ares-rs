@@ -98,18 +98,6 @@ runner and ask it to execute itself?
 
 (define test-reporter-output-port* (make-parameter (current-output-port)))
 
-(define (default-report type params)
-  "Default report implementation"
-  (case type
-    ((pass) (format (test-reporter-output-port*) "✓ ~s\n"
-                    (assoc-ref params 'expected)))
-    ((fail) (format (test-reporter-output-port*) "✗~%  Expected: ~s~%  ~a: ~s\n"
-                    (assoc-ref params 'expected)
-                    (if (assoc-ref params 'error) "Error" "Actual")
-                    (or (assoc-ref params 'error)
-                        (assoc-ref params 'actual))))
-    (else (throw 'no-such-handler))))
-
 (define-syntax simple-profile
   (lambda (stx)
     (syntax-case stx ()
@@ -130,9 +118,10 @@ runner and ask it to execute itself?
         (%test-case-events*)
         (lambda (value)
           (cons 'error value))))
-     (default-report 'fail
-       `((expected . ,quoted-form)
-         (error . ,ex))))
+     (suitbl-base-reporter
+      `((type . assert-error)
+        (quoted-form . ,quoted-form)
+        (error . ,ex))))
    (lambda ()
      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
@@ -142,9 +131,10 @@ runner and ask it to execute itself?
           (%test-case-events*)
           (lambda (value)
             (cons (if result 'pass 'fail) value))))
-       (default-report (if result 'pass 'fail)
-         `((expected . ,quoted-form)
-           (actual . (not ,quoted-form))))
+       (suitbl-base-reporter
+        `((type . ,(if result 'assert-pass 'assert-fail))
+          (result . ,result)
+          (quoted-form . ,quoted-form)))
        result))
    #:unwind? #t))
 
@@ -211,8 +201,17 @@ runner and ask it to execute itself?
      (format (test-reporter-output-port*)
              "└Test case ended: ~a\n" (assoc-ref message 'description)))
 
-    ;; ((assert-result)
-    ;;  (apply default-report (alist-select-keys '() message)))
+    ((assert-pass)
+     (format (test-reporter-output-port*) "✓ ~s\n"
+             (assoc-ref message 'quoted-form)))
+
+    ((assert-fail)
+     (format (test-reporter-output-port*) "✗ Expected: ~s\n   Actual:   ~s\n"
+             (assoc-ref message 'quoted-form) (assoc-ref message 'result)))
+
+    ((assert-error)
+     (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
+             (assoc-ref message 'quoted-form) (assoc-ref message 'error)))
 
     (else
      (raise-exception
