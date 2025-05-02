@@ -39,6 +39,73 @@ Test cases can be combined by another define-test:
 
 
 ;;;
+;;; Reporters
+;;;
+
+(define test-reporter-output-port* (make-parameter (current-output-port)))
+
+(define (suitbl-base-reporter message)
+  (define (string-repeat s n)
+    "Returns string S repeated N times."
+    (fold
+     (lambda (_ str)
+       (string-append str s))
+     ""
+     (iota n)))
+
+  (define msg-type (assoc-ref message 'type))
+  (case msg-type
+    ((test-suite-enter)
+     (format (test-reporter-output-port*)
+             (string-repeat "-" (length (%test-path*))))
+     (format (test-reporter-output-port*)
+             "> suite entered: ~a\n" (assoc-ref message 'description)))
+    ((test-suite-leave)
+     (format (test-reporter-output-port*)
+             (string-repeat "-" (length (%test-path*))))
+     (format (test-reporter-output-port*)
+             "> suite left: ~a\n" (assoc-ref message 'description)))
+
+    ((test-case-start)
+     (format (test-reporter-output-port*)
+             "\n┌Test case started: ~a\n" (assoc-ref message 'description)))
+    ((test-case-end)
+     (format (test-reporter-output-port*)
+             "└Test case ended: ~a\n" (assoc-ref message 'description)))
+
+    ((assert-pass)
+     (format (test-reporter-output-port*) "✓ ~s\n"
+             (assoc-ref message 'quoted-form)))
+
+    ((assert-fail)
+     (format (test-reporter-output-port*) "✗ Expected: ~s\n   Actual:   ~s\n"
+             (assoc-ref message 'quoted-form) (assoc-ref message 'result)))
+
+    ((assert-error)
+     (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
+             (assoc-ref message 'quoted-form) (assoc-ref message 'error)))
+
+    (else
+     (raise-exception
+      (make-exception-with-message
+       (format #f "no reporting implemented for message type ~a" msg-type))))))
+
+(define-syntax simple-profile
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ expressions ...)
+       #'(let ((start-time (get-internal-real-time))
+               (return-value expressions ...))
+           (format (test-reporter-output-port*) "run time: ~f\n"
+                   (exact->inexact
+                    (/ (- (get-internal-real-time) start-time)
+                       internal-time-units-per-second)))
+           return-value)))))
+
+(define test-reporter* (make-parameter suitbl-base-reporter))
+
+
+;;;
 ;;; Test runners
 ;;;
 
@@ -95,20 +162,6 @@ runner and ask it to execute itself?
 |#
 
 (define %test-case-events* (make-parameter #f))
-
-(define test-reporter-output-port* (make-parameter (current-output-port)))
-
-(define-syntax simple-profile
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ expressions ...)
-       #'(let ((start-time (get-internal-real-time))
-               (return-value expressions ...))
-           (format (test-reporter-output-port*) "run time: ~f\n"
-                   (exact->inexact
-                    (/ (- (get-internal-real-time) start-time)
-                       internal-time-units-per-second)))
-           return-value)))))
 
 (define (default-run-assert form-thunk args-thunk quoted-form)
   (with-exception-handler
@@ -171,52 +224,6 @@ runner and ask it to execute itself?
              (+ assertions (length result))
              (1+ tests)
              (cdr remaining-test-cases)))))))
-
-(define (suitbl-base-reporter message)
-  (define (string-repeat s n)
-    "Returns string S repeated N times."
-    (fold
-     (lambda (_ str)
-       (string-append str s))
-     ""
-     (iota n)))
-
-  (define msg-type (assoc-ref message 'type))
-  (case msg-type
-    ((test-suite-enter)
-     (format (test-reporter-output-port*)
-             (string-repeat "-" (length (%test-path*))))
-     (format (test-reporter-output-port*)
-             "> suite entered: ~a\n" (assoc-ref message 'description)))
-    ((test-suite-leave)
-     (format (test-reporter-output-port*)
-             (string-repeat "-" (length (%test-path*))))
-     (format (test-reporter-output-port*)
-             "> suite left: ~a\n" (assoc-ref message 'description)))
-
-    ((test-case-start)
-     (format (test-reporter-output-port*)
-             "\n┌Test case started: ~a\n" (assoc-ref message 'description)))
-    ((test-case-end)
-     (format (test-reporter-output-port*)
-             "└Test case ended: ~a\n" (assoc-ref message 'description)))
-
-    ((assert-pass)
-     (format (test-reporter-output-port*) "✓ ~s\n"
-             (assoc-ref message 'quoted-form)))
-
-    ((assert-fail)
-     (format (test-reporter-output-port*) "✗ Expected: ~s\n   Actual:   ~s\n"
-             (assoc-ref message 'quoted-form) (assoc-ref message 'result)))
-
-    ((assert-error)
-     (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
-             (assoc-ref message 'quoted-form) (assoc-ref message 'error)))
-
-    (else
-     (raise-exception
-      (make-exception-with-message
-       (format #f "no reporting implemented for message type ~a" msg-type))))))
 
 (define (create-suitbl-test-runner)
   (define state (make-atomic-box '()))
