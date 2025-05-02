@@ -310,6 +310,22 @@ creates one."
 (define %test-path* (make-parameter '()))
 (define %test-case* (make-parameter #f))
 
+(define-syntax is
+  (lambda (x)
+    (syntax-case x ()
+      ((_ (pred args ...))
+       (with-syntax ((form #'(pred args ...)))
+         #'((get-current-or-create-test-runner)
+            `((type . run-assert)
+              (assert-thunk . ,(lambda () form))
+              (assert-args-thunk . ,(lambda () (list args ...)))
+              (assert-quoted-form .  form)))))
+      ((_ form)
+       #'((get-current-or-create-test-runner)
+          `((type . run-assert)
+            (assert-thunk . ,(lambda () form))
+            (assert-quoted-form . form)))))))
+
 (define-syntax test-case
   (lambda (x)
     "Test case represent a logical unit of testing, can include zero or
@@ -391,24 +407,6 @@ allows to group test cases, can include other test suits."
                         (%test-path* '())
                         (%test-case* #f))
            body body* ...)))))
-
-
-
-(define-syntax is
-  (lambda (x)
-    (syntax-case x ()
-      ((_ (pred args ...))
-       (with-syntax ((form #'(pred args ...)))
-         #'((get-current-or-create-test-runner)
-            `((type . run-assert)
-              (assert-thunk . ,(lambda () form))
-              (assert-args-thunk . ,(lambda () (list args ...)))
-              (assert-quoted-form .  form)))))
-      ((_ form)
-       #'((get-current-or-create-test-runner)
-          `((type . run-assert)
-            (assert-thunk . ,(lambda () form))
-            (assert-quoted-form . form)))))))
 
 (define-syntax throws-exception?
   (lambda (x)
