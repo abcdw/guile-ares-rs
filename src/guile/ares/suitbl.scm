@@ -254,9 +254,6 @@ runner and ask it to execute itself?
         ((get-log)
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-        ((test-suite-enter test-suite-leave test-case-start test-case-end)
-         ((test-reporter*) x))
-
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-case-run
         ((schedule-test-case)
          (let* ((test-case-thunk
@@ -359,15 +356,16 @@ more asserts."
                   (when (%test-case*)
                     (raise-exception
                      (make-exception-with-message "Test Cases can't be nested")))
-                  (let ((test-runner (get-current-or-create-test-runner)))
-                    (parameterize ((%current-test-runner* test-runner)
+                  (let ((test-reporter (test-reporter*)))
+                    (parameterize ((%current-test-runner*
+                                    (get-current-or-create-test-runner))
                                    (%test-case* case-description))
-                      (test-runner
+                      (test-reporter
                        `((type . test-case-start)
                          (description . ,case-description)))
                       expression
                       expressions ...
-                      (test-runner
+                      (test-reporter
                        `((type . test-case-end)
                          (description . ,case-description))))))))
            (let ((test-runner (get-current-or-create-test-runner)))
@@ -393,15 +391,16 @@ allows to group test cases, can include other test suits."
                     (raise-exception
                      (make-exception-with-message
                       "Test Suite can't be nested into Test Case")))
-                  (let ((test-runner (get-current-or-create-test-runner)))
+                  (let ((test-runner (get-current-or-create-test-runner))
+                        (test-reporter (test-reporter*)))
                     (parameterize ((%current-test-runner* test-runner)
                                    (%test-path*
                                     (cons suite-description (%test-path*))))
-                      (test-runner
+                      (test-reporter
                        `((type . test-suite-enter)
                          (description . ,suite-description)))
                       expression ...
-                      (test-runner
+                      (test-reporter
                        `((type . test-suite-leave)
                          (description . ,suite-description))))
                     (when (null? (%test-path*))
