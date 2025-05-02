@@ -411,9 +411,6 @@ run summary is #f by default, but appears after test suite is executed"
 ;; to define test-cases for test runner and sometimes customize test
 ;; runner (for example make it more verbose for debugging purpose).
 
-;; TODO: [Andrew Tropin, 2025-05-01] Implement dots reporter
-;; https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/3-configuration#kaochareportdots
-
 ;; TODO: [Andrew Tropin, 2025-04-30] Don't imply reporting, profiling
 ;; and other logic on test-case macro side, do it inside test runner
 ;; wrappers

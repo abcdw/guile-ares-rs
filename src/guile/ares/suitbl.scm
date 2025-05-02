@@ -11,6 +11,7 @@
             test-reporter*
             test-reporter-silent
             test-reporter-base
+            test-reporter-dots
 
             create-suitbl-test-runner
             schedule-and-run-test-suits
@@ -98,6 +99,31 @@ Test cases can be combined by another define-test:
 
 (define (test-reporter-silent message)
   #f)
+
+(define (test-reporter-dots message)
+  (define msg-type (assoc-ref message 'type))
+  (case msg-type
+    ((test-suite-enter)
+     (format (test-reporter-output-port*) "["))
+    ((test-suite-leave)
+     (format (test-reporter-output-port*) "]"))
+
+    ((test-case-start)
+     (format (test-reporter-output-port*) "("))
+    ((test-case-end)
+     (format (test-reporter-output-port*) ")"))
+
+    ((assert-pass)
+     (format (test-reporter-output-port*) "."))
+    ((assert-fail)
+     (format (test-reporter-output-port*) "F"))
+    ((assert-error)
+     (format (test-reporter-output-port*) "E"))
+
+    (else
+     (raise-exception
+      (make-exception-with-message
+       (format #f "no reporting implemented for message type ~a" msg-type))))))
 
 (define-syntax simple-profile
   (lambda (stx)
