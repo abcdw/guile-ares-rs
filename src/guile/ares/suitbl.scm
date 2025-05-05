@@ -18,7 +18,7 @@
             get-current-or-create-test-runner
 
             define-test-suite
-            test-suite test-case is
+            test-suite test is
 
             reset-test-environment
             throws-exception?))
@@ -73,10 +73,10 @@ Test cases can be combined by another define-test:
      (format (test-reporter-output-port*)
              "> suite left: ~a\n" (assoc-ref message 'description)))
 
-    ((test-case-start)
+    ((test-start)
      (format (test-reporter-output-port*)
              "\n┌Test case started: ~a\n" (assoc-ref message 'description)))
-    ((test-case-end)
+    ((test-end)
      (format (test-reporter-output-port*)
              "└Test case ended: ~a\n" (assoc-ref message 'description)))
 
@@ -108,9 +108,9 @@ Test cases can be combined by another define-test:
     ((test-suite-leave)
      (format (test-reporter-output-port*) "]"))
 
-    ((test-case-start)
+    ((test-start)
      (format (test-reporter-output-port*) "("))
-    ((test-case-end)
+    ((test-end)
      (format (test-reporter-output-port*) ")"))
 
     ((assert-pass)
@@ -162,7 +162,7 @@ number of fails and successes, total time spent.
 Life cycle:
 
 We can either create a test runner and pass it a list of tests to
-execute or asserts, test-cases and test-suites can instantiate some
+execute or asserts, tests and test-suites can instantiate some
 default test-runner.
 
 
@@ -196,14 +196,14 @@ runner and ask it to execute itself?
 
 |#
 
-(define %test-case-events* (make-parameter #f))
+(define %test-events* (make-parameter #f))
 
 (define (default-run-assert form-thunk args-thunk quoted-form)
   (with-exception-handler
    (lambda (ex)
-     (when (%test-case*)
+     (when (%test*)
        (atomic-box-update!
-        (%test-case-events*)
+        (%test-events*)
         (lambda (value)
           (cons 'error value))))
      ((test-reporter*)
@@ -214,9 +214,9 @@ runner and ask it to execute itself?
      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
      (let* ((result (form-thunk)))
-       (when (%test-case*)
+       (when (%test*)
          (atomic-box-update!
-          (%test-case-events*)
+          (%test-events*)
           (lambda (value)
             (cons (if result 'pass 'fail) value))))
        ((test-reporter*)
@@ -227,27 +227,27 @@ runner and ask it to execute itself?
    #:unwind? #t))
 
 
-(define (run-test-case test-case-thunk)
-  (parameterize ((%test-case-events* (make-atomic-box '())))
+(define (run-test test-thunk)
+  (parameterize ((%test-events* (make-atomic-box '())))
     ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
     ;; happen inside test case, but outside of assert
-    (test-case-thunk)
-    (atomic-box-ref (%test-case-events*))))
+    (test-thunk)
+    (atomic-box-ref (%test-events*))))
 
-(define (run-scheduled-test-cases test-cases)
+(define (run-scheduled-tests tests)
   ;; pass, fail, skip(?), error
   (let loop ((errors 0)
              (failures 0)
              (assertions 0)
              (tests 0)
-             (remaining-test-cases test-cases))
-    (if (null? remaining-test-cases)
+             (remaining-tests tests))
+    (if (null? remaining-tests)
         `((errors . ,errors)
           (failures . ,failures)
           (assertions . ,assertions)
           (tests . ,tests))
         (begin
-          (let* ((result (run-test-case (caar remaining-test-cases)))
+          (let* ((result (run-test (caar remaining-tests)))
                  (error? (any (lambda (x) (eq? x 'error)) result))
                  (fail? (any (lambda (x) (eq? x 'fail)) result))
                  (inc-if (lambda (condition value)
@@ -258,7 +258,7 @@ runner and ask it to execute itself?
              (inc-if (and fail? (not error?)) failures)
              (+ assertions (length result))
              (1+ tests)
-             (cdr remaining-test-cases)))))))
+             (cdr remaining-tests)))))))
 
 (define (create-suitbl-test-runner)
   (define state (make-atomic-box '()))
@@ -289,44 +289,44 @@ runner and ask it to execute itself?
         ((get-log)
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-        ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-case-run
-        ((schedule-test-case)
-         (let* ((test-case-thunk
+        ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-run
+        ((schedule-test)
+         (let* ((test-thunk
                  (lambda ()
-                   ((assoc-ref x 'test-case-thunk))))
+                   ((assoc-ref x 'test-thunk))))
                 (description (assoc-ref x 'description))
-                (test-case-item
-                 (cons test-case-thunk
+                (test-item
+                 (cons test-thunk
                        `((description . ,description)
                          (test-path . ,(%test-path*))))))
            (update-atomic-alist-value!
-            state 'test-cases
+            state 'tests
             (lambda (l)
-              (cons test-case-item (or l '()))))
-           'test-case-scheduled))
+              (cons test-item (or l '()))))
+           'test-scheduled))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
            (when (and (not (null? (%test-path*)))
-                      (not (%test-case*)))
+                      (not (%test*)))
              (chain
-              "Assert encountered inside test-suite, but outside of test-case"
+              "Assert encountered inside test-suite, but outside of test"
               (make-exception-with-message _)
               (raise-exception _)))
            (default-run-assert assert-thunk #f assert-quoted-form)))
 
-        ((run-scheduled-test-cases)
+        ((run-scheduled-tests)
          (atomic-box-set!
           last-run-summary
           (chain
            (atomic-box-ref state)
-           (assoc-ref _ 'test-cases)
+           (assoc-ref _ 'tests)
            (or _ '())
            ;; (sort _ (lambda (x y) (rand-boolean)))
            ;; (for-each (lambda (t) ((car t))) _)
            (reverse _)
-           (run-scheduled-test-cases _)))
+           (run-scheduled-tests _)))
          (atomic-box-ref last-run-summary))
 
         ((get-run-summary)
@@ -343,7 +343,7 @@ runner and ask it to execute itself?
     ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
     (for-each (lambda (ts) (ts)) test-suits)
     (test-runner
-     `((type . run-scheduled-test-cases)))
+     `((type . run-scheduled-tests)))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
     ))
 
@@ -360,7 +360,7 @@ creates one."
 
 
 (define %test-path* (make-parameter '()))
-(define %test-case* (make-parameter #f))
+(define %test* (make-parameter #f))
 
 (define-syntax is
   (lambda (x)
@@ -378,41 +378,41 @@ creates one."
             (assert-thunk . ,(lambda () form))
             (assert-quoted-form . form)))))))
 
-(define-syntax test-case
+(define-syntax test
   (lambda (x)
     "Test case represent a logical unit of testing, can include zero or
 more asserts."
     (syntax-case x ()
-      ((test-case case-description expression expressions ...)
-       #'(let ((test-case-thunk
+      ((test case-description expression expressions ...)
+       #'(let ((test-thunk
                 (lambda ()
                   ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
                   ;; started (for cases with zero asserts)
-                  (when (%test-case*)
+                  (when (%test*)
                     (raise-exception
                      (make-exception-with-message "Test Cases can't be nested")))
                   (let ((test-reporter (test-reporter*)))
                     (parameterize ((%current-test-runner*
                                     (get-current-or-create-test-runner))
-                                   (%test-case* case-description))
+                                   (%test* case-description))
                       (test-reporter
-                       `((type . test-case-start)
+                       `((type . test-start)
                          (description . ,case-description)))
                       expression
                       expressions ...
                       (test-reporter
-                       `((type . test-case-end)
+                       `((type . test-end)
                          (description . ,case-description))))))))
            (let ((test-runner (get-current-or-create-test-runner)))
              (test-runner
-              `((type . schedule-test-case)
-                (test-case-thunk . ,test-case-thunk)
+              `((type . schedule-test)
+                (test-thunk . ,test-thunk)
                 (description . ,case-description)
-                (test-case-body . (expression expressions ...))))
+                (test-body . (expression expressions ...))))
              (when (null? (%test-path*))
-               (test-runner `((type . run-scheduled-test-cases)))))))
+               (test-runner `((type . run-scheduled-tests)))))))
       ((_ rest ...)
-       #'(syntax-error "Wrong usage of test-case")))))
+       #'(syntax-error "Wrong usage of test")))))
 
 (define-syntax test-suite
   (lambda (x)
@@ -422,7 +422,7 @@ allows to group test cases, can include other test suits."
       ((_ suite-description expression ...)
        #'(let ((test-suite-thunk
                 (lambda ()
-                  (when (%test-case*)
+                  (when (%test*)
                     (raise-exception
                      (make-exception-with-message
                       "Test Suite can't be nested into Test Case")))
@@ -439,7 +439,7 @@ allows to group test cases, can include other test suits."
                        `((type . test-suite-leave)
                          (description . ,suite-description))))
                     (when (null? (%test-path*))
-                      (test-runner `((type . run-scheduled-test-cases))))))))
+                      (test-runner `((type . run-scheduled-tests))))))))
            (set-procedure-properties!
             test-suite-thunk
             `((name . test-suite)
@@ -459,7 +459,7 @@ allows to group test cases, can include other test suits."
       ((_ get-test-runner body body* ...)
        #'(parameterize ((%current-test-runner* (get-test-runner))
                         (%test-path* '())
-                        (%test-case* #f))
+                        (%test* #f))
            body body* ...)))))
 
 (define-syntax throws-exception?

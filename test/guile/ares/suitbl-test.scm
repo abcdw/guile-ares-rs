@@ -17,8 +17,8 @@
 ;; skipping tests use cases: skip tests for particular platform, test
 ;; stubs for friend, who will implement the functionality later.
 
-;; Syntax for skipping? can be a xtest-case, can be
-;; (skip-next-test-case), can be (test-case "description" 'skip-it (is #f))
+;; Syntax for skipping? can be a xtest, can be
+;; (skip-next-test), can be (test "description" 'skip-it (is #f))
 ;; probably the last one
 
 ;; We don't need to bake skipping syntax into test definition, because
@@ -40,11 +40,11 @@
 ;; at the same time
 
 ;; this type of workflow can be implemented by extending test runner and
-;; adding meta information to test-case
+;; adding meta information to test
 
 
-;;; Basic test-case run results
-;; test-case results: pass, fail, error, skip
+;;; Basic test run results
+;; test results: pass, fail, error, skip
 
 
 ;;; Junit test run summary
@@ -102,12 +102,12 @@ that (not (string=? (string-append a "he") b)) is not so.
 5.
 load-tests* variable, which controls macro expansion logic, setting it
 to #f will make all test defining functions to produce empty results.
-Probably we don't need it, because all test-cases are deffered.  The
+Probably we don't need it, because all tests are deffered.  The
 only possible use case is stripping out tests from production code,
 when the tests are in the same module with the subject under the test.
 
 6.
-Skip test functionality.  Do we want a special test-case-skip
+Skip test functionality.  Do we want a special test-skip
 statement or something similiar?  Probably no, because we can skip
 test cases on test-runner/IDE side.
 
@@ -138,15 +138,15 @@ test cases on test-runner/IDE side.
 
 
 ;; TODO: [Andrew Tropin, 2025-04-22] Check if we need to implement
-;; scheduling of test-cases or running them immediately is ok
+;; scheduling of tests or running them immediately is ok
 (define (get-silent-test-runner)
   (define (test-runner x)
     "Default test runner"
     (let ((msg-type (assoc-ref x 'type)))
       (case msg-type
-        ((schedule-test-case)
-         (let ((test-case-thunk (assoc-ref x 'test-case-thunk)))
-           (test-case-thunk)))
+        ((schedule-test)
+         (let ((test-thunk (assoc-ref x 'test-thunk)))
+           (test-thunk)))
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
@@ -169,10 +169,10 @@ test cases on test-runner/IDE side.
 
     (let ((msg-type (assoc-ref message 'type)))
       (case msg-type
-        ((schedule-test-case)
-         (let ((test-case-thunk (assoc-ref message 'test-case-thunk)))
+        ((schedule-test)
+         (let ((test-thunk (assoc-ref message 'test-thunk)))
 
-           (test-case-thunk)))
+           (test-thunk)))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref message 'assert-thunk))
@@ -199,7 +199,7 @@ test cases on test-runner/IDE side.
   (ignore-current-output-port
    (reset-test-environment
     (@@ (ares suitbl) default-get-test-runner)
-    (test-case "test"
+    (test "test"
       (is 123))))))
 
 
@@ -228,7 +228,7 @@ test cases on test-runner/IDE side.
 
 
 ;;;
-;;; Tests for is, test-case, test-suite that we can use to test test runners
+;;; Tests for is, test, test-suite that we can use to test test runners
 ;;;
 
 (comment
@@ -237,19 +237,19 @@ test cases on test-runner/IDE side.
  'hi)
 
 
-(define-test-suite is-usage
-  (test-case "basic atomic values"
+(define-test-suite is-usage-tests
+  (test "basic atomic values"
     (is #t)
     (is 123)
     (is 'some-symbol))
 
-  (test-case "an expression asserting atmoic value of the variable"
+  (test "an expression asserting atmoic value of the variable"
     (let ((a 123))
       (is a))
     (define b 'heyhey)
     (is b))
 
-  (test-case "predicates"
+  (test "predicates"
     (is (= 1 1))
     (is (even? 14))
     (is (lset= = '(1 2 2 3) '(1 2 2 3)))
@@ -257,7 +257,7 @@ test cases on test-runner/IDE side.
 
   ;; TODO: [Andrew Tropin, 2025-05-01] Move to reporter tests
   #;
-  (test-case "error message is good"
+  (test "error message is good"
     ;; TODO: [Andrew Tropin, 2025-04-08] Produce more sane error message
     ;; for cases with atomic or identifier expressions.
     (is #f)
@@ -267,7 +267,7 @@ test cases on test-runner/IDE side.
            (+ 20000000000000000000000000
               20000000000000000000000000))))
 
-  (test-case "is outside of test-case"
+  (test "is outside of test"
     (is
      (throws-exception?
       (reset-test-environment
@@ -276,50 +276,50 @@ test cases on test-runner/IDE side.
           (is (= 7 (+ 3 4))))))
       (lambda (ex)
         (string=?
-         "Assert encountered inside test-suite, but outside of test-case"
+         "Assert encountered inside test-suite, but outside of test"
          (exception-message ex))))))
 
-  (test-case "is on it's own in empty env"
+  (test "is on it's own in empty env"
     (is (= 7
            (reset-test-environment
             create-suitbl-test-runner
             (is 7)))))
 
-  (test-case "nested is and is return value"
+  (test "nested is and is return value"
     (is (= 7 (is (+ 3 4))))))
 
-(define-test-suite test-case-usage
-  ;; (test-case "simple test case with metadata"
+(define-test-suite test-macro-usage-tests
+  ;; (test "simple test case with metadata"
   ;;   #:metadata `((expected-to-fail . #t))
   ;;   (is #f))
 
-  (test-case "Zero asserts test case"
+  (test "Zero asserts test case"
     "Not yet implemented"))
 
-(define-test-suite nested-test-suites-and-test-cases
+(define-test-suite nested-test-suites-and-test-macros-tests
   ;; Nested testsuits requires double parentesis to be immediately
   ;; called on evaluation
-  (test-case "throws programming-error on unbound variable"
+  (test "throws programming-error on unbound variable"
     (is (throws-exception? (+ b 1 2) programming-error?)))
 
-  (test-case "nested test cases are forbidden"
+  (test "nested test cases are forbidden"
     (is
      (throws-exception?
       (reset-test-environment
        get-silent-test-runner
-       (test-case
+       (test
            "case1"
-         (test-case "nested case" (is #t))))
+         (test "nested case" (is #t))))
       (lambda (ex)
         (string=? "Test Cases can't be nested"
                   (exception-message ex))))))
 
-  (test-case "test suite nested in test case is forbidden"
+  (test "test suite nested in test case is forbidden"
     (is
      (throws-exception?
       (reset-test-environment
        get-silent-test-runner
-       (test-case
+       (test
            "case1"
          ((test-suite "nested suite" (is #t)))))
       (lambda (ex)
@@ -327,21 +327,21 @@ test cases on test-runner/IDE side.
                   (exception-message ex))))))
 
   ((test-suite "test suite 1"
-     (test-case "test case 1#1"
+     (test "test case 1#1"
        (is #t)
        (is "very true"))
      ((test-suite "test suite 1.1"
-        (test-case "test case 1.1#1"
+        (test "test case 1.1#1"
           (is (= 4 (+ 2 2)))))))))
 
-(define-test-suite test-suite-usage
+(define-test-suite test-suite-usage-tests
   "description here?"
-  (nested-test-suites-and-test-cases))
+  (nested-test-suites-and-test-macros-tests))
 
 
 
-(define-test-suite test-runner-operations
-  (test-case "\
+(define-test-suite test-runner-operations-tests
+  (test "\
 run summary is #f by default, but appears after test suite is executed"
     (is (equal?
          #f
@@ -355,7 +355,7 @@ run summary is #f by default, but appears after test suite is executed"
           (reset-test-environment
            create-suitbl-test-runner
            ((test-suite "suite1"
-              (test-case "case1"
+              (test "case1"
                 (is #t))))
            ((get-current-or-create-test-runner)
             `((type . get-run-summary)))))))
@@ -364,11 +364,11 @@ run summary is #f by default, but appears after test suite is executed"
       (reset-test-environment
        create-suitbl-test-runner
        ((test-suite "suite"
-          (test-case "simple failure"
+          (test "simple failure"
             (is #f))
-          (test-case "simple error"
+          (test "simple error"
             (is (throw 'hi)))
-          (test-case "error > failure"
+          (test "error > failure"
             (is #f)
             (is (throw 'hi)))))
        ((get-current-or-create-test-runner)
@@ -381,38 +381,34 @@ run summary is #f by default, but appears after test suite is executed"
        '(errors failures assertions tests)
        run-summary-with-failures-and-errors)))))
 
-(define-test-suite base-test-runner
-  (is-usage)
-  (test-runner-operations)
-  (test-case-usage)
-  (test-suite-usage))
+(define-test-suite base-test-runner-tests
+  (is-usage-tests)
+  (test-runner-operations-tests)
+  (test-macro-usage-tests)
+  (test-suite-usage-tests))
 
-(define-test-suite execution-timeout
+(define-test-suite execution-timeout-tests
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf
   (is #f))
 
 (define-public (run-tests)
   (let* ((test-runner (create-suitbl-test-runner)))
-    (parameterize ((test-reporter-output-port* (open-output-string)))
+    (parameterize ((test-reporter* test-reporter-dots))
       (schedule-and-run-test-suits
        test-runner
-       (list base-test-runner)))
+       (list base-test-runner-tests)))
     (format #t "\n~a" (test-runner `((type . get-run-summary))))
     0))
-
-;; TODO: [Andrew Tropin, 2025-05-02] Rename test-case to just test
-
-;; TODO: [Andrew Tropin, 2025-05-01] Decide on test suite suffix convention
 
 ;; TODO: [Andrew Tropin, 2025-05-01] Add variable
 ;; test-runner-under-test* and make-clean-test-runner-environment
 ;; macro, which will reset the environment and use
 ;; test-runner-under-test* as a test runner for it, to make it easier
-;; to define test-cases for test runner and sometimes customize test
+;; to define tests for test runner and sometimes customize test
 ;; runner (for example make it more verbose for debugging purpose).
 
 ;; TODO: [Andrew Tropin, 2025-04-30] Don't imply reporting, profiling
-;; and other logic on test-case macro side, do it inside test runner
+;; and other logic on test macro side, do it inside test runner
 ;; wrappers
 
 ;; TODO: [Andrew Tropin, 2025-04-11] Specify test timeouts to 10 by
