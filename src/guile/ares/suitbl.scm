@@ -311,6 +311,9 @@ runner and ask it to execute itself?
         ((get-log)
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
+        ((load-test-suite)
+         ((assoc-ref x 'load-test-suite-thunk)))
+
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-run
         ((schedule-test)
          (let* ((test-thunk
@@ -442,26 +445,31 @@ more asserts."
 allows to group test cases, can include other test suits."
     (syntax-case x ()
       ((_ suite-description expression ...)
-       #'(let ((test-suite-thunk
-                (lambda ()
-                  (when (%test*)
-                    (raise-exception
-                     (make-exception-with-message
-                      "Test Suite can't be nested into Test Case")))
-                  (let ((test-runner (get-current-or-create-test-runner))
-                        (test-reporter (test-reporter*)))
-                    (parameterize ((%current-test-runner* test-runner)
-                                   (%test-path*
-                                    (cons suite-description (%test-path*))))
-                      (test-reporter
-                       `((type . test-suite-enter)
-                         (description . ,suite-description)))
-                      expression ...
-                      (test-reporter
-                       `((type . test-suite-leave)
-                         (description . ,suite-description))))
-                    (when (null? (%test-path*))
-                      (test-runner `((type . run-scheduled-tests))))))))
+       #'(let* ((load-test-suite-thunk
+                 (lambda ()
+                   (when (%test*)
+                     (raise-exception
+                      (make-exception-with-message
+                       "Test Suite can't be nested into Test Case")))
+                   (let ((test-runner (get-current-or-create-test-runner))
+                         (test-reporter (test-reporter*)))
+                     (parameterize ((%current-test-runner* test-runner)
+                                    (%test-path*
+                                     (cons suite-description (%test-path*))))
+                       (test-reporter
+                        `((type . test-suite-enter)
+                          (description . ,suite-description)))
+                       expression ...
+                       (test-reporter
+                        `((type . test-suite-leave)
+                          (description . ,suite-description))))
+                     (when (null? (%test-path*))
+                       (test-runner `((type . run-scheduled-tests)))))))
+                (test-suite-thunk
+                 (lambda ()
+                   ((get-current-or-create-test-runner)
+                    `((type . load-test-suite)
+                      (load-test-suite-thunk . ,load-test-suite-thunk))))))
            (set-procedure-properties!
             test-suite-thunk
             `((name . test-suite)

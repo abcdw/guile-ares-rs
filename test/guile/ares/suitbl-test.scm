@@ -144,6 +144,9 @@ test cases on test-runner/IDE side.
     "Default test runner"
     (let ((msg-type (assoc-ref x 'type)))
       (case msg-type
+        ((load-test-suite)
+         ((assoc-ref x 'load-test-suite-thunk)))
+
         ((schedule-test)
          (let ((test-thunk (assoc-ref x 'test-thunk)))
            (test-thunk)))
