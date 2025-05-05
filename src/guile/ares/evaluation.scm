@@ -20,6 +20,7 @@
 (define-module (ares evaluation)
   #:use-module (ares alist)
   #:use-module (ares ports)
+  #:use-module (ares file)
   #:use-module (ares reflection modules)
   #:use-module (ares reusable-thread)
   #:use-module (fibers)
@@ -29,6 +30,7 @@
   #:use-module (fibers operations)
   #:use-module (fibers scheduler)
   #:use-module (fibers timers)
+  #:use-module (ice-9 control)
   #:use-module (ice-9 exceptions)
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
@@ -40,6 +42,8 @@
   #:use-module ((system base compile) #:select (read-and-compile))
   #:use-module ((system repl debug) #:prefix repl-debug:)
   #:use-module ((system vm loader) #:select (load-thunk-from-memory))
+  #:use-module (system vm frame)
+  #:use-module (system vm program)
   #:export (output-stream-manager-thunk
             evaluation-thread-manager-thunk
             evaluation-supervisor-thunk
@@ -123,22 +127,29 @@ exceptions."
 
   (lambda ()
     ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
-    (with-exception-handler
-     (lambda (exception)
-       `((result-type . exception)
-         (exception-value . ,exception)
-         (stack . ,(make-stack #t))))
-     (lambda ()
-       (call-with-values eval-code
-         (lambda vals
-           (match vals
-             ((val)
-              `((result-type . value)
-                (eval-value . ,val)))
-             (vals
-              `((result-type . multiple-values)
-                (eval-value . ,vals)))))))
-     #:unwind? #t)))
+    (let/ec return
+      (with-exception-handler
+       (lambda (exception)
+         (let ((stack
+                (make-stack
+                 #t
+                 ;; Cut three frames from the top of the stack:
+                 ;; make-stack, this one, and the throw handler.
+                 3)))
+           (return `((result-type . exception)
+                     (exception-value . ,exception)
+                     (stack . ,stack)))))
+       (lambda ()
+         (call-with-values eval-code
+           (lambda vals
+             (match vals
+               ((val)
+                `((result-type . value)
+                  (eval-value . ,val)))
+               (vals
+                `((result-type . multiple-values)
+                  (eval-value . ,vals)))))))
+       #:unwind? #f))))
 
 (define (setup-redirects-for-ports-thunk output-pipes
                                          input-port
@@ -218,10 +229,12 @@ Stream managers waits until THUNK-FINISHED is signalled."
                (apply format port
                       (string-append (exception-message exception) "\n")
                       (or (exception-irritants exception) '())))
-              (pretty-print exception #:port port))))))
+              (pretty-print exception #:port port)))))
+         (stack (assoc-ref result 'stack)))
     ;; In the future this function can provide more information in a
     ;; more structured way to be processed by respective IDEs/clients.
     `((("err" . ,error))
+      (("ares.evaluation/stack" . ,(stack->nrepl-value stack)))
       (("ex" . ,(symbol->string (exception-kind exception)))
        ("status" . #("error" "eval-error" "done")))
       (("status" . #("done"))))))
@@ -272,6 +285,39 @@ the last message doesn't contain the value, it contains only
      `((("status" . #("done" "interrupted")))))
     ((idle)
      `((("status" . #("done" "session-idle")))))))
+
+
+(define (frame->nrepl-value frame)
+  "Serializes FRAME into a value that can be sent in nREPL messages."
+  (let ((name (symbol->string (or (frame-procedure-name frame) '_)))
+        (arguments
+         (map (lambda (argument)
+                (format #f "~s" argument))
+              (frame-arguments frame)))
+        (environment
+         (map (lambda (binding)
+                (match-let (((name . value) binding))
+                  (cons name (format #f "~s" value))))
+              (frame-environment frame)))
+        (source (and-let* ((source (frame-source frame)))
+                  `((line . ,(source:line source))
+                    (column . ,(source:column source))
+                    (file . ,(or (search-in-load-path (source:file source))
+                                 (source:file source)))))))
+    `((procedure-name . ,name)
+      (arguments . ,(list->vector arguments))
+      (environment . ,(list->vector environment))
+      (source . ,source))))
+
+(define (stack->nrepl-value stack)
+  "Serializes STACK into a value that can be sent in nREPL messages."
+  (list->vector
+   (let loop ((frame (stack-ref stack 0))
+              (result '()))
+     (if frame
+         (loop (frame-previous frame)
+               (cons (frame->nrepl-value frame) result))
+         result))))
 
 
 ;;;

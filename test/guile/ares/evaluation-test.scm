@@ -37,6 +37,17 @@
           #:key (predicate equal?))
   (lset<= predicate `(,obj) list))
 
+(define (valid-stack? stack)
+  (if (null? stack)
+      #t
+      (and
+       (car stack)
+       (assq 'procedure-name (car stack))
+       (assq 'arguments (car stack))
+       (assq 'environment (car stack))
+       (assq 'source (car stack))
+       (valid-stack? (cdr stack)))))
+
 (define* (quickly operation
                   #:key
                   (timeout 1)
@@ -355,10 +366,17 @@
               ("op" . "eval"))
             reply!)
 
-           (quickly (get-operation replies-channel))
+           (pk (quickly (get-operation replies-channel)))
+
+           ;; We don’t look in more detail since the stack can change
+           ;; easily.
+           (let ((stack (car (quickly (get-operation replies-channel)))))
+             (test-equal "Returned stack" "ares.evaluation/stack" (car stack))
+             (test-assert "Returned valid stack" (valid-stack? (vector->list (cdr stack)))))
+
            (test-equal "Returned read-error exception"
              "read-error"
-             (assoc-ref (quickly (get-operation replies-channel)) "ex"))
+             (assoc-ref (pk (quickly (get-operation replies-channel))) "ex"))
 
            (test-equal "Returned evaluation value"
              `(("status" . #("done")))
