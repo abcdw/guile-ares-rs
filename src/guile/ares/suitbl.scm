@@ -312,14 +312,29 @@ runner and ask it to execute itself?
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
         ((load-test-suite)
-         ((assoc-ref x 'load-test-suite-thunk)))
+         (let ((description (assoc-ref x 'description))
+               (test-reporter (test-reporter*)))
+           (test-reporter
+            `((type . test-suite-enter)
+              (description . ,description)))
+           ((assoc-ref x 'load-test-suite-thunk))
+           (test-reporter
+            `((type . test-suite-leave)
+              (description . ,description)))))
 
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-run
         ((schedule-test)
-         (let* ((test-thunk
+         (let* ((description (assoc-ref x 'description))
+                (test-thunk
                  (lambda ()
-                   ((assoc-ref x 'test-thunk))))
-                (description (assoc-ref x 'description))
+                   (let ((test-reporter (test-reporter*)))
+                     (test-reporter
+                      `((type . test-start)
+                        (description . ,description)))
+                     ((assoc-ref x 'test-thunk))
+                     (test-reporter
+                      `((type . test-end)
+                        (description . ,description))))))
                 (test-item
                  (cons test-thunk
                        `((description . ,description)
@@ -416,18 +431,11 @@ more asserts."
                   (when (%test*)
                     (raise-exception
                      (make-exception-with-message "Test Cases can't be nested")))
-                  (let ((test-reporter (test-reporter*)))
-                    (parameterize ((%current-test-runner*
-                                    (get-current-or-create-test-runner))
-                                   (%test* case-description))
-                      (test-reporter
-                       `((type . test-start)
-                         (description . ,case-description)))
-                      expression
-                      expressions ...
-                      (test-reporter
-                       `((type . test-end)
-                         (description . ,case-description))))))))
+                  (parameterize ((%current-test-runner*
+                                  (get-current-or-create-test-runner))
+                                 (%test* case-description))
+                    expression
+                    expressions ...))))
            (let ((test-runner (get-current-or-create-test-runner)))
              (test-runner
               `((type . schedule-test)
@@ -451,25 +459,30 @@ allows to group test cases, can include other test suits."
                      (raise-exception
                       (make-exception-with-message
                        "Test Suite can't be nested into Test Case")))
-                   (let ((test-runner (get-current-or-create-test-runner))
-                         (test-reporter (test-reporter*)))
+
+                   ;; TODO: [Andrew Tropin, 2025-05-05] The test
+                   ;; runner definitely exists at this point of time,
+                   ;; because somebody already called load-test-suite
+                   ;; method of a test runner, and that's why we got
+                   ;; here.  Clean up this parameterization and think
+                   ;; who need to call run-scheduled-tests (probably
+                   ;; not this function).
+                   (let ((test-runner (get-current-or-create-test-runner)))
                      (parameterize ((%current-test-runner* test-runner)
                                     (%test-path*
                                      (cons suite-description (%test-path*))))
-                       (test-reporter
-                        `((type . test-suite-enter)
-                          (description . ,suite-description)))
-                       expression ...
-                       (test-reporter
-                        `((type . test-suite-leave)
-                          (description . ,suite-description))))
+                       expression ...)
+
+                     ;; TODO: [Andrew Tropin, 2025-05-05] Can be done
+                     ;; on a test runner side, right?
                      (when (null? (%test-path*))
                        (test-runner `((type . run-scheduled-tests)))))))
                 (test-suite-thunk
                  (lambda ()
                    ((get-current-or-create-test-runner)
                     `((type . load-test-suite)
-                      (load-test-suite-thunk . ,load-test-suite-thunk))))))
+                      (load-test-suite-thunk . ,load-test-suite-thunk)
+                      (description . ,suite-description))))))
            (set-procedure-properties!
             test-suite-thunk
             `((name . test-suite)

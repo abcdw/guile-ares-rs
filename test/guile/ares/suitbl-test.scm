@@ -410,9 +410,10 @@ run summary is #f by default, but appears after test suite is executed"
 ;; to define tests for test runner and sometimes customize test
 ;; runner (for example make it more verbose for debugging purpose).
 
-;; TODO: [Andrew Tropin, 2025-04-30] Don't imply reporting, profiling
-;; and other logic on test macro side, do it inside test runner
-;; wrappers
+;; TODO: [Andrew Tropin, 2025-05-05] Revisit test suite thunk logic,
+;; who setups the environment via parameterize, who run scheduled
+;; tests and do we schedule tests or build test hierarchy (naming
+;; kinda important for understanding here) ?
 
 ;; TODO: [Andrew Tropin, 2025-04-11] Specify test timeouts to 10 by
 ;; default, so the test evaluation never hangs.
