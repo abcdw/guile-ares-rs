@@ -23,24 +23,46 @@
             reset-test-environment
             throws-exception?))
 
-;; TODO: [Andrew Tropin, 2025-02-19] Look at
 
 #|
 
 SUITBL is Scheme Universal Interactive Testing Base Library
 
-Test cases can be combined by another define-test:
-(define-test addition
-  (is (= 4 (+ 2 2)))
-  (is (= 7 (+ 3 4))))
+The primary tool of the test library is assert macro @code{is}.  You
+can use it on it's own and evaluate it, test runner will take care of
+executing the body of assert and calling reporter to report result.
 
-(define-test subtraction
-  (is (= 1 (- 4 3)))
-  (is (= 3 (- 7 4))))
+Asserts can be grouped with test macro to make a simple unit of
+testing.  Test can also be evaluated on it's own, test runner knows
+what to do with it.
 
-(define-test arithmetic
-  (addition)
-  (subtraction))
+Tests can be grouped into test suites.  Test suits can be nested in
+each other.  It allows to combine related tests, build hierarchy,
+control the test execution logic, skipping, shuffling, whatever.
+
+Test suite is a function, it can be executed to load tests defined
+inside.  The name of such functions should contain -tests prefix, it's
+not a requirement, but a convention to make it easier for the
+developer to distinguish functions containing tests inside.
+
+(define-test-suite addition-tests
+  (test "small numbers addition"
+    (is (= 4 (+ 2 2)))
+    (is (= 7 (+ 3 4)))))
+
+(define-test subtraction-tests
+  (test "small numbers subtraction"
+    (is (= 1 (- 4 3)))
+    (is (= 3 (- 7 4)))))
+
+(define-test arithmetic-tests
+  (addition-tests)
+  (subtraction-tests))
+
+When you call a test suite, the test runner will build hierarchy of
+nested tests and test suits add it into test runner, later those
+loaded tests will be executed.  The order and concurrency of execution
+depends on the runner implementation.
 
 |#
 
