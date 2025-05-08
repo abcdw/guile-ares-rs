@@ -312,15 +312,28 @@ runner and ask it to execute itself?
          (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
         ((load-test-suite)
-         (let ((description (assoc-ref x 'description))
-               (test-reporter (test-reporter*)))
-           (test-reporter
-            `((type . test-suite-enter)
-              (description . ,description)))
-           ((assoc-ref x 'load-test-suite-thunk))
-           (test-reporter
-            `((type . test-suite-leave)
-              (description . ,description)))))
+         (let* ((description (assoc-ref x 'description))
+                (load-exception #f)
+                (test-reporter (test-reporter*))
+
+                (test-suite-enter! (lambda ()
+                                     (test-reporter
+                                      `((type . test-suite-enter)
+                                        (description . ,description)))))
+                (test-suite-leave! (lambda ()
+                                     (test-reporter
+                                      `((type . test-suite-leave)
+                                        (description . ,description))))))
+
+           (test-suite-enter!)
+           (with-exception-handler
+            (lambda (ex)
+              (set! load-exception ex))
+            (assoc-ref x 'load-test-suite-thunk)
+            #:unwind? #t)
+           (test-suite-leave!)
+           (when load-exception
+             (raise-exception load-exception))))
 
         ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-run
         ((schedule-test)
