@@ -480,22 +480,22 @@ allows to group test cases, can include other test suits."
                    ;; here.  Clean up this parameterization and think
                    ;; who need to call run-scheduled-tests (probably
                    ;; not this function).
+                   (parameterize ((%current-test-runner*
+                                   (get-current-or-create-test-runner))
+                                  (%test-path*
+                                   (cons suite-description (%test-path*))))
+                     expression ...)))
+                (test-suite-thunk
+                 (lambda ()
                    (let ((test-runner (get-current-or-create-test-runner)))
-                     (parameterize ((%current-test-runner* test-runner)
-                                    (%test-path*
-                                     (cons suite-description (%test-path*))))
-                       expression ...)
-
+                     (test-runner
+                      `((type . load-test-suite)
+                        (load-test-suite-thunk . ,load-test-suite-thunk)
+                        (description . ,suite-description)))
                      ;; TODO: [Andrew Tropin, 2025-05-05] Can be done
                      ;; on a test runner side, right?
                      (when (null? (%test-path*))
-                       (test-runner `((type . run-scheduled-tests)))))))
-                (test-suite-thunk
-                 (lambda ()
-                   ((get-current-or-create-test-runner)
-                    `((type . load-test-suite)
-                      (load-test-suite-thunk . ,load-test-suite-thunk)
-                      (description . ,suite-description))))))
+                       (test-runner `((type . run-scheduled-tests))))))))
            (set-procedure-properties!
             test-suite-thunk
             `((name . test-suite)
