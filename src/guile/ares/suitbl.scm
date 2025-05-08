@@ -95,6 +95,12 @@ depends on the runner implementation.
      (format (test-reporter-output-port*)
              "> suite left: ~a\n" (assoc-ref message 'description)))
 
+    ((test-scheduled)
+     (format (test-reporter-output-port*)
+             (string-repeat "|" (length (%test-path*))))
+     (format (test-reporter-output-port*)
+             " + test ~a\n" (assoc-ref message 'description)))
+
     ((test-start)
      (format (test-reporter-output-port*)
              "\n┌Test case started: ~a\n" (assoc-ref message 'description)))
@@ -141,6 +147,9 @@ depends on the runner implementation.
      (format (test-reporter-output-port*) "F"))
     ((assert-error)
      (format (test-reporter-output-port*) "E"))
+
+    ((test-scheduled)
+     (format (test-reporter-output-port*) "T"))
 
     (else
      (raise-exception
@@ -335,7 +344,6 @@ runner and ask it to execute itself?
            (when load-exception
              (raise-exception load-exception))))
 
-        ;; TODO: [Andrew Tropin, 2025-04-22] Rename it to schedule-test-run
         ((schedule-test)
          (let* ((description (assoc-ref x 'description))
                 (test-thunk
@@ -356,7 +364,9 @@ runner and ask it to execute itself?
             state 'tests
             (lambda (l)
               (cons test-item (or l '()))))
-           'test-scheduled))
+           ((test-reporter*)
+            `((type . test-scheduled)
+              (description . ,description)))))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
