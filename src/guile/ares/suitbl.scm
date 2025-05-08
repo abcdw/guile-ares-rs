@@ -326,7 +326,6 @@ runner and ask it to execute itself?
 
         ((load-test-suite)
          (let* ((description (assoc-ref x 'description))
-                (load-exception #f)
                 (test-reporter (test-reporter*))
 
                 (test-suite-enter! (lambda ()
@@ -336,18 +335,27 @@ runner and ask it to execute itself?
                 (test-suite-leave! (lambda ()
                                      (test-reporter
                                       `((type . test-suite-leave)
-                                        (description . ,description))))))
+                                        (description . ,description)))))
+                (try-load-suite
+                 (lambda ()
+                   (test-suite-enter!)
+                   (let ((result
+                          (with-exception-handler
+                           (lambda (ex)
+                             (cons 'exception ex))
+                           (lambda ()
+                             (cons
+                              'value
+                               ((assoc-ref x 'load-test-suite-thunk))))
+                           #:unwind? #t)))
+                     (test-suite-leave!)
+                     result))))
 
-           (test-suite-enter!)
-           (with-exception-handler
-            (lambda (ex)
-              (set! load-exception ex))
-            (assoc-ref x 'load-test-suite-thunk)
-            #:unwind? #t)
-           (test-suite-leave!)
-           (when load-exception
-             (raise-exception load-exception))))
-
+           (match (try-load-suite)
+             (('exception . ex)
+              (raise-exception ex))
+             (('value . val)
+              val))))
         ((schedule-test)
          (let* ((description (assoc-ref x 'description))
                 (test-thunk
