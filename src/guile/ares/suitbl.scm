@@ -86,14 +86,18 @@ depends on the runner implementation.
   (case msg-type
     ((test-suite-enter)
      (format (test-reporter-output-port*)
-             (string-repeat "-" (length (%test-path*))))
+             (string-append
+              (string-repeat "|" (length (%test-path*)))
+              "┌"))
      (format (test-reporter-output-port*)
-             "> suite entered: ~a\n" (assoc-ref message 'description)))
+             "> ~a\n" (assoc-ref message 'description)))
     ((test-suite-leave)
      (format (test-reporter-output-port*)
-             (string-repeat "-" (length (%test-path*))))
+             (string-append
+              (string-repeat "|" (length (%test-path*)))
+              "└"))
      (format (test-reporter-output-port*)
-             "> suite left: ~a\n" (assoc-ref message 'description)))
+             "> ~a\n" (assoc-ref message 'description)))
 
     ((test-scheduled)
      (format (test-reporter-output-port*)
@@ -103,10 +107,10 @@ depends on the runner implementation.
 
     ((test-start)
      (format (test-reporter-output-port*)
-             "\n┌Test case started: ~a\n" (assoc-ref message 'description)))
+             "\n┌Test ~a\n" (assoc-ref message 'description)))
     ((test-end)
      (format (test-reporter-output-port*)
-             "└Test case ended: ~a\n" (assoc-ref message 'description)))
+             "└Test ~a\n" (assoc-ref message 'description)))
 
     ((assert-pass)
      (format (test-reporter-output-port*) "✓ ~s\n"
