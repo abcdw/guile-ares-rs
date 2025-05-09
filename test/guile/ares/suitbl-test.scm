@@ -229,6 +229,15 @@ test cases on test-runner/IDE side.
   (raise-exception
    (make-exception-with-message "hello"))))
 
+(define-syntax with-silent-test-environment
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ body body* ...)
+       #'(reset-test-environment
+          create-suitbl-test-runner
+          (parameterize ((test-reporter* test-reporter-silent))
+            body body* ...))))))
+
 
 ;;;
 ;;; Tests for is, test, test-suite that we can use to test test runners
@@ -273,8 +282,7 @@ test cases on test-runner/IDE side.
   (test "is outside of test"
     (is
      (throws-exception?
-      (reset-test-environment
-       create-suitbl-test-runner
+      (with-silent-test-environment
        ((test-suite "sample test suite"
           (is (= 7 (+ 3 4))))))
       (lambda (ex)
@@ -284,8 +292,7 @@ test cases on test-runner/IDE side.
 
   (test "is on it's own in empty env"
     (is (= 7
-           (reset-test-environment
-            create-suitbl-test-runner
+           (with-silent-test-environment
             (is 7)))))
 
   (test "nested is and is return value"
@@ -308,8 +315,7 @@ test cases on test-runner/IDE side.
   (test "nested test cases are forbidden"
     (is
      (throws-exception?
-      (reset-test-environment
-       get-silent-test-runner
+      (with-silent-test-environment
        (test
            "case1"
          (test "nested case" (is #t))))
@@ -320,8 +326,7 @@ test cases on test-runner/IDE side.
   (test "test suite nested in test case is forbidden"
     (is
      (throws-exception?
-      (reset-test-environment
-       get-silent-test-runner
+      (with-silent-test-environment
        (test
            "case1"
          ((test-suite "nested suite" (is #t)))))
@@ -348,15 +353,13 @@ test cases on test-runner/IDE side.
 run summary is #f by default, but appears after test suite is executed"
     (is (equal?
          #f
-         (reset-test-environment
-          create-suitbl-test-runner
+         (with-silent-test-environment
           ((get-current-or-create-test-runner)
            `((type . get-run-summary))))))
 
     (is (not
          (null?
-          (reset-test-environment
-           create-suitbl-test-runner
+          (with-silent-test-environment
            ((test-suite "suite1"
               (test "case1"
                 (is #t))))
@@ -364,8 +367,7 @@ run summary is #f by default, but appears after test suite is executed"
             `((type . get-run-summary)))))))
 
     (define run-summary-with-failures-and-errors
-      (reset-test-environment
-       create-suitbl-test-runner
+      (with-silent-test-environment
        ((test-suite "suite"
           (test "simple failure"
             (is #f))
