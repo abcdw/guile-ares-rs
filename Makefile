@@ -13,7 +13,7 @@ server:
 
 ares: server
 
-check:
+check: check-suitbl
 	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-project-tests))"
 
