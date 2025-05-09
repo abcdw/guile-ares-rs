@@ -424,9 +424,12 @@ runner and ask it to execute itself?
 (define (schedule-and-run-test-suites test-runner test-suites)
   (parameterize ((%current-test-runner* test-runner))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
-    (test-runner
-     `((type . run-scheduled-tests)))
     (for-each (lambda (ts) (ts)) test-suites)
+    ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
+    ;; suites, only schedule them
+
+    ;; (test-runner
+    ;;  `((type . run-scheduled-tests)))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
     ))
 
