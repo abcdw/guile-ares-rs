@@ -62,7 +62,7 @@ timestamp   Date and time of when the test run was executed (in ISO 8601 format)
 |#
 
 
-;;; Naming test suits
+;;; Naming test suites
 ;; Test suit should contain suffix, which will distinguish it from
 ;; subject under test.  Even if we export module as sut:, the prefix
 ;; will make it clearer that it's a test suite, not the function of
@@ -75,7 +75,7 @@ How to backlink test to function, so you can see all the tests related
 to the function?
 
 2.
-Test tags, which can be used to produce test suits (subset of tests):
+Test tags, which can be used to produce test suites (subset of tests):
 unit, integration, acceptance, backend, frontend
 https://github.com/testmoapp/junitxml
 
@@ -321,7 +321,7 @@ test cases on test-runner/IDE side.
        run-summary-with-failures-and-errors)))))
 
 (define-test-suite nested-test-suites-and-test-macros-tests
-  ;; Nested testsuits requires double parentesis to be immediately
+  ;; Nested test-suites requires double parentesis to be immediately
   ;; called on evaluation
   (test "expression throws programming-error on unbound variable"
     (is (throws-exception? (+ b 1 2) programming-error?)))
@@ -411,7 +411,7 @@ run summary is #f by default, but appears after test suite is executed"
 (define-public (run-tests)
   (let* ((test-runner (create-suitbl-test-runner)))
     (parameterize ((test-reporter* test-reporter-dots))
-      (schedule-and-run-test-suits
+      (schedule-and-run-test-suites
        test-runner
        (list base-test-runner-tests)))
     (format #t "\n~a" (test-runner `((type . get-run-summary))))

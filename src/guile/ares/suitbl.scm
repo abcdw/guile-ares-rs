@@ -14,7 +14,7 @@
             test-reporter-dots
 
             create-suitbl-test-runner
-            schedule-and-run-test-suits
+            schedule-and-run-test-suites
             get-current-or-create-test-runner
 
             define-test-suite
@@ -36,7 +36,7 @@ Asserts can be grouped with test macro to make a simple unit of
 testing.  Test can also be evaluated on it's own, test runner knows
 what to do with it.
 
-Tests can be grouped into test suites.  Test suits can be nested in
+Tests can be grouped into test suites.  Test suites can be nested in
 each other.  It allows to combine related tests, build hierarchy,
 control the test execution logic, skipping, shuffling, whatever.
 
@@ -60,7 +60,7 @@ developer to distinguish functions containing tests inside.
   (subtraction-tests))
 
 When you call a test suite, the test runner will build hierarchy of
-nested tests and test suits add it into test runner, later those
+nested tests and test suites add it into test runner, later those
 loaded tests will be executed.  The order and concurrency of execution
 depends on the runner implementation.
 
@@ -421,12 +421,12 @@ runner and ask it to execute itself?
            (format #f "no handler for message type ~a" msg-type)))))))
   test-runner)
 
-(define (schedule-and-run-test-suits test-runner test-suits)
+(define (schedule-and-run-test-suites test-runner test-suites)
   (parameterize ((%current-test-runner* test-runner))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
-    (for-each (lambda (ts) (ts)) test-suits)
     (test-runner
      `((type . run-scheduled-tests)))
+    (for-each (lambda (ts) (ts)) test-suites)
     ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
     ))
 
@@ -498,7 +498,7 @@ more asserts."
 (define-syntax test-suite
   (lambda (x)
     "Test suite is simple unit of testing, it can be executed in parallel,
-allows to group tests and other test suits."
+allows to group tests and other test suites."
     (syntax-case x ()
       ((_ suite-description expression ...)
        #'(let* ((load-test-suite-thunk
