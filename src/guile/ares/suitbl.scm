@@ -610,28 +610,31 @@ allows to group tests and other test suites."
                                    (cons suite-description (%test-path*))))
                      expression ...)))
                 (test-suite-thunk
-                 (lambda ()
-                   (let ((test-runner (get-current-or-create-test-runner)))
-                     (test-runner
-                      `((type . load-test-suite)
-                        (load-test-suite-thunk . ,load-test-suite-thunk)
-                        (description . ,suite-description)))
-                     ;; TODO: [Andrew Tropin, 2025-05-05] Can be done
-                     ;; on a test runner side, right?
-                     (when (null? (%test-path*))
-                       (test-runner `((type . run-scheduled-tests))))))))
+                 ;; Wrapping into identity to prevent setting procedure-name
+                 (identity
+                  (lambda ()
+                    (let ((test-runner (get-current-or-create-test-runner)))
+                      (test-runner
+                       `((type . load-test-suite)
+                         (load-test-suite-thunk . ,load-test-suite-thunk)
+                         (description . ,suite-description)))
+                      ;; TODO: [Andrew Tropin, 2025-05-05] Can be done
+                      ;; on a test runner side, right?
+                      (when (null? (%test-path*))
+                        (test-runner `((type . run-scheduled-tests)))))))))
            (set-procedure-properties!
             test-suite-thunk
-            `((name . test-suite)
-              (documentation . ,suite-description)
+            `((documentation . ,suite-description)
               (suitbl-test-suite? . #t)))
            test-suite-thunk)))))
 
 (define-syntax define-test-suite
   (syntax-rules ()
     ((_ test-suite-name expression ...)
-     (define test-suite-name
-       (test-suite (symbol->string 'test-suite-name) expression ...)))))
+     (begin
+       (define-public test-suite-name
+         (test-suite (symbol->string 'test-suite-name) expression ...))
+       (set-procedure-property! test-suite-name 'name 'test-suite-name)))))
 
 (define-syntax reset-test-environment
   (lambda (stx)
