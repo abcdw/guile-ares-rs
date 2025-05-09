@@ -295,6 +295,14 @@ runner and ask it to execute itself?
              (1+ tests)
              (cdr remaining-tests)))))))
 
+(define (test? x)
+  (and (procedure? x)
+       (procedure-property x 'suitbl-test?)))
+
+(define (test-suite? x)
+  (and (procedure? x)
+       (procedure-property x 'suitbl-test-suite?)))
+
 (define (create-suitbl-test-runner)
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
@@ -471,6 +479,11 @@ more asserts."
                                  (%test* case-description))
                     expression
                     expressions ...))))
+           (set-procedure-properties!
+            test-thunk
+            `((name . test)
+              (documentation . ,case-description)
+              (suitbl-test? . #t)))
            (let ((test-runner (get-current-or-create-test-runner)))
              (test-runner
               `((type . schedule-test)
@@ -522,7 +535,7 @@ allows to group tests and other test suits."
             test-suite-thunk
             `((name . test-suite)
               (documentation . ,suite-description)
-              (srfi-264-test-suite? . #t)))
+              (suitbl-test-suite? . #t)))
            test-suite-thunk)))))
 
 (define-syntax define-test-suite
