@@ -279,7 +279,7 @@ test cases on test-runner/IDE side.
            (+ 20000000000000000000000000
               20000000000000000000000000))))
 
-  (test "is outside of test"
+  (test "if is assert fails when inside test-suite outside of test macro"
     (is
      (throws-exception?
       (with-silent-test-environment
@@ -303,10 +303,10 @@ test cases on test-runner/IDE side.
   ;;   #:metadata `((expected-to-fail . #t))
   ;;   (is #f))
 
-  (test "zero asserts test case"
+  (test "zero asserts test macro works fine"
     "Not yet implemented")
 
-  (test "using test on its own"
+  (test "using test macro on its own"
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
        (test "simple failure"
@@ -322,37 +322,35 @@ test cases on test-runner/IDE side.
 (define-test-suite nested-test-suites-and-test-macros-tests
   ;; Nested testsuits requires double parentesis to be immediately
   ;; called on evaluation
-  (test "throws programming-error on unbound variable"
+  (test "expression throws programming-error on unbound variable"
     (is (throws-exception? (+ b 1 2) programming-error?)))
 
-  (test "nested test cases are forbidden"
+  (test "nested test macro usage is forbidden"
     (is
      (throws-exception?
       (with-silent-test-environment
-       (test
-           "case1"
-         (test "nested case" (is #t))))
+       (test "outer test macro"
+         (test "nested test macro" (is #t))))
       (lambda (ex)
         (string=? "Test Cases can't be nested"
                   (exception-message ex))))))
 
-  (test "test suite nested in test case is forbidden"
+  (test "that test-suite nested in test case is forbidden"
     (is
      (throws-exception?
       (with-silent-test-environment
-       (test
-           "case1"
-         ((test-suite "nested suite" (is #t)))))
+       (test "test macro"
+         ((test-suite "nested test-suite" (is #t)))))
       (lambda (ex)
-        (string=? "Test Suite can't be nested into Test Case"
+        (string=? "Test Suite can't be nested into Test Macro"
                   (exception-message ex))))))
 
-  ((test-suite "test suite 1"
-     (test "test case 1#1"
+  ((test-suite "nested test suite 1"
+     (test "test macro 1#1"
        (is #t)
        (is "very true"))
-     ((test-suite "test suite 1.1"
-        (test "test case 1.1#1"
+     ((test-suite "even more nested test suite 1.1"
+        (test "test macro 1.1#1"
           (is (= 4 (+ 2 2)))))))))
 
 (define-test-suite test-suite-usage-tests

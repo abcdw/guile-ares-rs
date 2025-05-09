@@ -485,7 +485,7 @@ more asserts."
 (define-syntax test-suite
   (lambda (x)
     "Test suite is simple unit of testing, it can be executed in parallel,
-allows to group test cases, can include other test suits."
+allows to group tests and other test suits."
     (syntax-case x ()
       ((_ suite-description expression ...)
        #'(let* ((load-test-suite-thunk
@@ -493,7 +493,7 @@ allows to group test cases, can include other test suits."
                    (when (%test*)
                      (raise-exception
                       (make-exception-with-message
-                       "Test Suite can't be nested into Test Case")))
+                       "Test Suite can't be nested into Test Macro")))
 
                    ;; TODO: [Andrew Tropin, 2025-05-05] The test
                    ;; runner definitely exists at this point of time,
