@@ -3,6 +3,7 @@
   #:use-module (ares suitbl)
   #:use-module (ares alist)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-197)
   #:use-module (ice-9 exceptions))
 
 
@@ -414,6 +415,15 @@ run summary is #f by default, but appears after test suite is executed"
        test-runner
        (list base-test-runner-tests)))
     (format #t "\n~a" (test-runner `((type . get-run-summary))))
+
+    (define number-of-tests
+      (assoc-ref (test-runner `((type . get-run-summary))) 'tests))
+
+    (unless (= 14 number-of-tests)
+      (chain "Unexpected number of tests, make sure all tests are executed and
+expected number of tests is up-to-date."
+             (make-exception-with-message _)
+             (raise-exception _)))
     0))
 
 ;; TODO: [Andrew Tropin, 2025-05-01] Add variable
