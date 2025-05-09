@@ -303,8 +303,21 @@ test cases on test-runner/IDE side.
   ;;   #:metadata `((expected-to-fail . #t))
   ;;   (is #f))
 
-  (test "Zero asserts test case"
-    "Not yet implemented"))
+  (test "zero asserts test case"
+    "Not yet implemented")
+
+  (test "using test on its own"
+    (define run-summary-with-failures-and-errors
+      (with-silent-test-environment
+       (test "simple failure"
+         (is #f))))
+
+    (is
+     (equal?
+      '((errors . 0) (failures . 1) (assertions . 1) (tests . 1))
+      (alist-select-keys
+       '(errors failures assertions tests)
+       run-summary-with-failures-and-errors)))))
 
 (define-test-suite nested-test-suites-and-test-macros-tests
   ;; Nested testsuits requires double parentesis to be immediately
