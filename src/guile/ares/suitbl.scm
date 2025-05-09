@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl)
   #:use-module (ice-9 atomic)
+  #:use-module (ice-9 match)
   #:use-module (ice-9 exceptions)
   #:use-module (ares atomic)
   #:use-module (srfi srfi-1)
@@ -123,6 +124,8 @@ depends on the runner implementation.
     ((assert-error)
      (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
              (assoc-ref message 'quoted-form) (assoc-ref message 'error)))
+    ((test-suite-start test-suite-end)
+     'do-nothing)
 
     (else
      (raise-exception
@@ -135,9 +138,9 @@ depends on the runner implementation.
 (define (test-reporter-dots message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((test-suite-enter)
+    ((test-suite-start)
      (format (test-reporter-output-port*) "["))
-    ((test-suite-leave)
+    ((test-suite-end)
      (format (test-reporter-output-port*) "]"))
 
     ((test-start)
@@ -152,8 +155,8 @@ depends on the runner implementation.
     ((assert-error)
      (format (test-reporter-output-port*) "E"))
 
-    ((test-scheduled)
-     (format (test-reporter-output-port*) "T"))
+    ((test-scheduled test-suite-enter test-suite-leave)
+     'do-nothing)
 
     (else
      (raise-exception
@@ -303,9 +306,53 @@ runner and ask it to execute itself?
   (and (procedure? x)
        (procedure-property x 'suitbl-test-suite?)))
 
+(define (run-scheduled-test test)
+  (let* ((result (run-test test))
+         (error? (any (lambda (x) (eq? x 'error)) result))
+         (fail? (any (lambda (x) (eq? x 'fail)) result)))
+    `((errors . ,(if error? 1 0))
+      (failures . ,(if (and fail? (not error?)) 1 0))
+      (assertions . ,(length result))
+      (tests . 1))))
+
+(define (merge-summaries s1 s2)
+  (map
+   (lambda (v)
+     (match v
+       ((key . value)
+        (cons key (+ (assoc-ref s2 key) value)))))
+   s1))
+
+(define (run-scheduled-suite suite)
+  ;; TODO: [Andrew Tropin, 2025-05-08] Add reporting of suite start/end
+  (let ((result #f))
+    ((test-reporter*)
+     `((type . test-suite-start)
+       (description . ,(car suite))))
+    (set! result
+          (let loop ((summary `((errors . 0)
+                                (failures . 0)
+                                (assertions . 0)
+                                (tests . 0)))
+                     (remaining-items (cdr suite)))
+            (if (null? remaining-items)
+                summary
+                (let ((item (car remaining-items)))
+                  (loop
+                   (merge-summaries
+                    summary
+                    ((if (test? item) run-scheduled-test run-scheduled-suite)
+                     item))
+                   (cdr remaining-items))))))
+    ((test-reporter*)
+     `((type . test-suite-end)
+       (description . ,(car suite))))
+    result))
+
 (define (create-suitbl-test-runner)
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
+  (define %current-test-suite-items* (make-parameter #f))
 
   (define (update-atomic-alist-value! alist-atom key f)
     (atomic-box-update!
@@ -316,6 +363,18 @@ runner and ask it to execute itself?
          (chain alist
                 (alist-delete key _)
                 (alist-cons key new-value _))))))
+
+  (define (print-test-suite suite)
+    (define (prettify-list l)
+      (map
+       (lambda (i)
+         (cond
+          ((test? i) (string-append "test: " (procedure-documentation i)))
+          ((string? i) (string-append "suite: " i))
+          ((list? i) (prettify-list i))
+          (else i)))
+       l))
+    (format #t "~y" (prettify-list suite)))
 
   (define (test-runner x)
     "Default test runner"
@@ -352,9 +411,18 @@ runner and ask it to execute itself?
                            (lambda (ex)
                              (cons 'exception ex))
                            (lambda ()
-                             (cons
-                              'value
-                               ((assoc-ref x 'load-test-suite-thunk))))
+                             ;; TODO: [Andrew Tropin, 2025-05-08]
+                             ;; Change the condition of top-level
+                             ;; suite.  Or wrap list of test-suites
+                             ;; into one more.
+                             (parameterize ((%current-test-suite-items*
+                                             (make-atomic-box '())))
+                               ((assoc-ref x 'load-test-suite-thunk))
+                               (chain (%current-test-suite-items*)
+                                      (atomic-box-ref _)
+                                      (reverse _)
+                                      (cons description _)
+                                      (cons 'value _))))
                            #:unwind? #t)))
                      (test-suite-leave!)
                      result))))
@@ -363,23 +431,43 @@ runner and ask it to execute itself?
              (('exception . ex)
               (raise-exception ex))
              (('value . val)
+              (let ((suite-items (%current-test-suite-items*)))
+                (if suite-items
+                    (atomic-box-update!
+                     suite-items
+                     (lambda (items) (cons val items)))
+
+                    (update-atomic-alist-value! state 'suite (lambda (l) val))))
               val))))
+
         ((schedule-test)
-         (let* ((description (assoc-ref x 'description))
-                (test-thunk
+         (let* ((original-test-thunk (assoc-ref x 'test-thunk))
+                (description (procedure-documentation original-test-thunk))
+                (new-test-thunk
                  (lambda ()
                    (let ((test-reporter (test-reporter*)))
                      (test-reporter
                       `((type . test-start)
                         (description . ,description)))
-                     ((assoc-ref x 'test-thunk))
+                     (original-test-thunk)
                      (test-reporter
                       `((type . test-end)
                         (description . ,description))))))
-                (test-item
-                 (cons test-thunk
-                       `((description . ,description)
-                         (test-path . ,(%test-path*))))))
+                (test-item new-test-thunk))
+
+           (set-procedure-properties!
+            new-test-thunk
+            (procedure-properties original-test-thunk))
+           (let ((suite-items (%current-test-suite-items*)))
+             (if suite-items
+                 (atomic-box-update!
+                  suite-items
+                  (lambda (items) (cons test-item items)))
+                 (update-atomic-alist-value!
+                  state 'suite
+                  ;; TODO: [Andrew Tropin, 2025-05-08] Remove unnamed suite wrap
+                  (lambda (l) (list "unnamed suite" test-item)))))
+
            (update-atomic-alist-value!
             state 'tests
             (lambda (l)
@@ -400,16 +488,14 @@ runner and ask it to execute itself?
            (default-run-assert assert-thunk #f assert-quoted-form)))
 
         ((run-scheduled-tests)
+         ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
          (atomic-box-set!
           last-run-summary
           (chain
            (atomic-box-ref state)
-           (assoc-ref _ 'tests)
-           (or _ '())
-           ;; (sort _ (lambda (x y) (rand-boolean)))
-           ;; (for-each (lambda (t) ((car t))) _)
-           (reverse _)
-           (run-scheduled-tests _)))
+           (assoc-ref _ 'suite)
+           (run-scheduled-suite _)))
+
          (atomic-box-ref last-run-summary))
 
         ((get-run-summary)
