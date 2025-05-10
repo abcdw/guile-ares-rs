@@ -41,10 +41,12 @@
 
 (define bootstrap-extensions
   (list
-   ;; TODO: [Andrew Tropin, 2023-09-25] Add extension extension
    ares.core
    ares.bencode
    ares.extension
+   ;; While it's not a part of nREPL specification, it's almost
+   ;; impossible to operate without ares.guile.utils/load-path
+   ;; operation, so we enable ares.guile.utils by default
    ares.guile.utils
    nrepl.completion
    nrepl.evaluation
