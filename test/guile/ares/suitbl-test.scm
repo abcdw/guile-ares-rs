@@ -300,9 +300,10 @@ test cases on test-runner/IDE side.
     (is (= 7 (is (+ 3 4))))))
 
 (define-test-suite test-macro-usage-tests
-  ;; (test "simple test case with metadata"
-  ;;   #:metadata `((expected-to-fail . #t))
-  ;;   (is #f))
+  (test "simple test case with metadata marking it as slow"
+    #:metadata `((slow? . #t))
+    (sleep 1)
+    (is #t))
 
   (test "zero asserts test macro works fine"
     "Not yet implemented")
@@ -419,7 +420,7 @@ run summary is #f by default, but appears after test suite is executed"
     (define number-of-tests
       (assoc-ref (test-runner `((type . get-run-summary))) 'tests))
 
-    (unless (= 14 number-of-tests)
+    (unless (= 15 number-of-tests)
       (chain "Unexpected number of tests, make sure all tests are executed and
 expected number of tests is up-to-date."
              (make-exception-with-message _)
@@ -440,9 +441,6 @@ expected number of tests is up-to-date."
 
 ;; TODO: [Andrew Tropin, 2025-04-11] Specify test timeouts to 10 by
 ;; default, so the test evaluation never hangs.
-
-;; TODO: [Andrew Tropin, 2025-04-11] Make it easy to add tags/metainfo
-;; to tests to be able to run/skip them flexibly
 
 ;; TODO: [Andrew Tropin, 2025-04-22] Add enable-re-run-failed-tests-on-eval,
 ;; which will re-run last failed tests on each eval

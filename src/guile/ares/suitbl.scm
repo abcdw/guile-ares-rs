@@ -552,12 +552,15 @@ creates one."
             (assert-thunk . ,(lambda () form))
             (assert-quoted-form . form)))))))
 
+(define (alist-merge l1 l2)
+  (append l1 l2))
+
 (define-syntax test
   (lambda (x)
     "Test case represent a logical unit of testing, can include zero or
 more asserts."
     (syntax-case x ()
-      ((test case-description expression expressions ...)
+      ((test case-description #:metadata metadata expression expressions ...)
        #'(let ((test-thunk
                 (lambda ()
                   (when (%test*)
@@ -572,9 +575,11 @@ more asserts."
                     expressions ...))))
            (set-procedure-properties!
             test-thunk
-            `((name . test)
-              (documentation . ,case-description)
-              (suitbl-test? . #t)))
+            (alist-merge
+             metadata
+             `((name . test)
+               (documentation . ,case-description)
+               (suitbl-test? . #t))))
            (let ((test-runner (get-current-or-create-test-runner)))
              (test-runner
               `((type . schedule-test)
@@ -583,6 +588,8 @@ more asserts."
                 (test-body . (expression expressions ...))))
              (when (null? (%test-path*))
                (test-runner `((type . run-scheduled-tests)))))))
+      ((test case-description expression expressions ...)
+       #'(test case-description #:metadata '() expression expressions ...))
       ((_ rest ...)
        #'(syntax-error "Wrong usage of test")))))
 
