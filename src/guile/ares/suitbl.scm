@@ -560,9 +560,9 @@ more asserts."
       ((test case-description expression expressions ...)
        #'(let ((test-thunk
                 (lambda ()
-                  ;; TODO: [Andrew Tropin, 2025-04-11] Notify test case
-                  ;; started (for cases with zero asserts)
                   (when (%test*)
+                    ;; TODO: [Andrew Tropin, 2025-05-12] Move this
+                    ;; constraint to test runner
                     (raise-exception
                      (make-exception-with-message "Test Cases can't be nested")))
                   (parameterize ((%current-test-runner*
@@ -594,6 +594,8 @@ allows to group tests and other test suites."
       ((_ suite-description expression ...)
        #'(let* ((load-test-suite-thunk
                  (lambda ()
+                   ;; TODO: [Andrew Tropin, 2025-05-12] Move this
+                   ;; constraint to the test runner
                    (when (%test*)
                      (raise-exception
                       (make-exception-with-message
