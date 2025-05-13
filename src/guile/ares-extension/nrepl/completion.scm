@@ -26,6 +26,8 @@
   #:use-module (srfi srfi-197)
   #:export (nrepl.completion))
 
+;; TODO: [Andrew Tropin, 2025-05-13] Reduce the number of completions
+;; based on type inference https://github.com/ashinn/scheme-complete
 (define* (simple-completions prefix module #:optional options)
   (define (get-candidates)
     (let ((extra-meta
