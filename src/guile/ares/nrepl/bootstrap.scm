@@ -28,6 +28,7 @@
   #:use-module (ares-extension ares core)
   #:use-module (ares-extension ares extension)
   #:use-module (ares-extension ares guile utils)
+  #:use-module (ares-extension ares guile evaluation)
   #:use-module (ares-extension nrepl completion)
   #:use-module (ares-extension nrepl evaluation)
   #:use-module (ares-extension nrepl lookup)
@@ -50,6 +51,7 @@
    ares.guile.utils
    nrepl.completion
    nrepl.evaluation
+   ares.guile.evaluation
    nrepl.lookup
    nrepl.session))
 
