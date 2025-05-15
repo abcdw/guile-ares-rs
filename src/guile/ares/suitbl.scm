@@ -425,6 +425,10 @@ runner and ask it to execute itself?
                            (lambda (ex)
                              (cons 'exception ex))
                            (lambda ()
+                             (when (%test*)
+                               (raise-exception
+                                (make-exception-with-message
+                                 "Test Suite can't be nested into Test Macro")))
                              ;; TODO: [Andrew Tropin, 2025-05-08]
                              ;; Change the condition of top-level
                              ;; suite.  Or wrap list of test-suites
@@ -459,6 +463,10 @@ runner and ask it to execute itself?
                 (description (procedure-documentation original-test-thunk))
                 (new-test-thunk
                  (lambda ()
+                   (when (%test*)
+                     (chain "Test Cases can't be nested"
+                            (make-exception-with-message _)
+                            (raise-exception _)))
                    (let ((test-reporter (test-reporter*)))
                      (test-reporter
                       `((type . test-start)
@@ -575,11 +583,6 @@ more asserts."
       ((test case-description #:metadata metadata expression expressions ...)
        #'(let ((test-thunk
                 (lambda ()
-                  (when (%test*)
-                    ;; TODO: [Andrew Tropin, 2025-05-12] Move this
-                    ;; constraint to test runner
-                    (raise-exception
-                     (make-exception-with-message "Test Cases can't be nested")))
                   (parameterize ((%current-test-runner*
                                   (get-current-or-create-test-runner))
                                  (%test* case-description))
@@ -613,13 +616,6 @@ allows to group tests and other test suites."
       ((_ suite-description expression expressions ...)
        #'(let* ((load-test-suite-thunk
                  (lambda ()
-                   ;; TODO: [Andrew Tropin, 2025-05-12] Move this
-                   ;; constraint to the test runner
-                   (when (%test*)
-                     (raise-exception
-                      (make-exception-with-message
-                       "Test Suite can't be nested into Test Macro")))
-
                    ;; TODO: [Andrew Tropin, 2025-05-05] The test
                    ;; runner definitely exists at this point of time,
                    ;; because somebody already called load-test-suite
