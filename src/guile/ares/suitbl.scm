@@ -598,7 +598,7 @@ more asserts."
     "Test suite is simple unit of testing, it can be executed in parallel,
 allows to group tests and other test suites."
     (syntax-case x ()
-      ((_ suite-description expression ...)
+      ((_ suite-description expression expressions ...)
        #'(let* ((load-test-suite-thunk
                  (lambda ()
                    ;; TODO: [Andrew Tropin, 2025-05-12] Move this
@@ -619,7 +619,8 @@ allows to group tests and other test suites."
                                    (get-current-or-create-test-runner))
                                   (%test-path*
                                    (cons suite-description (%test-path*))))
-                     expression ...)))
+                     expression
+                     expressions ...)))
                 (test-suite-thunk
                  ;; Wrapping into identity to prevent setting procedure-name
                  (identity
