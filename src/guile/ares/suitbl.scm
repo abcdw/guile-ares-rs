@@ -19,16 +19,33 @@
             test-suite test is
 
             test-reporter-output-port*
+            ;; TODO: [Andrew Tropin, 2025-05-15] Add support for
+            ;; multiple composable test reporters? or at least make
+            ;; test-reporters more composable, so we can combine them
+            ;; in "megareporter" and use it as a test-reporter*
             test-reporter*
 
             test-reporter-silent
             test-reporter-base
             test-reporter-dots
 
+            ;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
+            ;; test-reporter-print-failures-and-errors, which will be
+            ;; executed at the end and provide detailed info of
+            ;; locations with failed tests
+
+            ;; TODO: [Andrew Tropin, 2025-05-15] Create separate
+            ;; test-reporter-asserrt-minimal (showing only ✗ or ✓) and
+            ;; test-reporter-assert-simple (like current base), which
+            ;; can be used in base reporter.
+
             test-runner-create-suitbl
             test-runner-get-current-or-create
             test-runner-run-test-suites
 
+            ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
+            ;; introduces ambiguity and doesn't have a private
+            ;; counterpart
             define-test-suite
 
             throws-exception?))
@@ -587,6 +604,22 @@ more asserts."
       ((test case-description #:metadata metadata expression expressions ...)
        #'(let ((test-thunk
                 (lambda ()
+                  ;; TODO: [Andrew Tropin, 2025-05-15] Move this logic
+                  ;; to test-runner side because right now to
+                  ;; implement a usable test runner we need to access
+                  ;; those variables and thus export them as public
+                  ;; API.  We can avoid all of those problems by
+                  ;; offloading this to test runner implementers.
+                  ;; Anyway they need to keep track of the test suite
+                  ;; hierarchy and all that stuff.
+
+                  ;; The only problem I see here is that
+                  ;; test-environment-reset macro won't be able to
+                  ;; clean %test* and %test-path*, so it must be
+                  ;; implemented on test runner side as well.  Which
+                  ;; is a bit sad.  However, the new test runner will
+                  ;; have new parameters, which will be empty.  So the
+                  ;; resetting test-runner is enough.
                   (parameterize ((%current-test-runner*
                                   (test-runner-get-current-or-create))
                                  (%test* case-description))
@@ -609,6 +642,7 @@ more asserts."
       ((_ rest ...)
        #'(syntax-error "Wrong usage of test")))))
 
+;; TODO: [Andrew Tropin, 2025-05-15] Add metedata to test-suite
 (define-syntax test-suite
   (lambda (x)
     "Test suite is simple unit of testing, it can be executed in parallel,
