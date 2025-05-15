@@ -451,7 +451,13 @@ runner and ask it to execute itself?
                      (lambda (items) (cons val items)))
 
                     (update-atomic-alist-value! state 'suite (lambda (l) val))))
-              val))))
+              val))
+           ;; test-runner-run-test-suites sets %current-test-runner*
+           ;; and also calls run-scheduled-tests, so to prevent double
+           ;; execution of scheduled test suites we add this condition.
+           (when (and (null? (%test-path*)) (not (%current-test-runner*)))
+             ((test-runner-get-current-or-create)
+              `((type . run-scheduled-tests))))))
 
         ((schedule-test)
          (let* ((original-test-thunk (assoc-ref x 'test-thunk))
@@ -491,7 +497,10 @@ runner and ask it to execute itself?
               (cons test-item (or l '()))))
            ((test-reporter*)
             `((type . test-scheduled)
-              (description . ,description)))))
+              (description . ,description)))
+           (when (null? (%test-path*))
+             ((test-runner-get-current-or-create)
+              `((type . run-scheduled-tests))))))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
@@ -531,8 +540,8 @@ runner and ask it to execute itself?
     ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
     ;; suites, only schedule them
 
-    ;; (test-runner
-    ;;  `((type . run-scheduled-tests)))
+    (test-runner
+     `((type . run-scheduled-tests)))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
     ))
 
@@ -590,14 +599,11 @@ more asserts."
              `((name . test)
                (documentation . ,case-description)
                (suitbl-test? . #t))))
-           (let ((test-runner (test-runner-get-current-or-create)))
-             (test-runner
-              `((type . schedule-test)
-                (test-thunk . ,test-thunk)
-                (description . ,case-description)
-                (test-body . (expression expressions ...))))
-             (when (null? (%test-path*))
-               (test-runner `((type . run-scheduled-tests)))))))
+           ((test-runner-get-current-or-create)
+            `((type . schedule-test)
+              (test-thunk . ,test-thunk)
+              (description . ,case-description)
+              (test-body . (expression expressions ...))))))
       ((test case-description expression expressions ...)
        #'(test case-description #:metadata '() expression expressions ...))
       ((_ rest ...)
@@ -628,15 +634,10 @@ allows to group tests and other test suites."
                  ;; Wrapping into identity to prevent setting procedure-name
                  (identity
                   (lambda ()
-                    (let ((test-runner (test-runner-get-current-or-create)))
-                      (test-runner
-                       `((type . load-test-suite)
-                         (load-test-suite-thunk . ,load-test-suite-thunk)
-                         (description . ,suite-description)))
-                      ;; TODO: [Andrew Tropin, 2025-05-05] Can be done
-                      ;; on a test runner side, right?
-                      (when (null? (%test-path*))
-                        (test-runner `((type . run-scheduled-tests)))))))))
+                    ((test-runner-get-current-or-create)
+                     `((type . load-test-suite)
+                       (load-test-suite-thunk . ,load-test-suite-thunk)
+                       (description . ,suite-description)))))))
            (set-procedure-properties!
             test-suite-thunk
             `((documentation . ,suite-description)
