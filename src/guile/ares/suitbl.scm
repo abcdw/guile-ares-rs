@@ -2,14 +2,17 @@
 ;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl)
-  #:use-module (ice-9 atomic)
-  #:use-module (ice-9 match)
-  #:use-module (ice-9 exceptions)
-  #:use-module (ice-9 ftw)
-  #:use-module (ice-9 regex)
-  #:use-module (ares atomic)
-  #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-197)
+  #:use-module ((ice-9 atomic)
+                #:select (make-atomic-box atomic-box-ref atomic-box-set!))
+  #:use-module ((ice-9 match) #:select (match))
+  #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
+  #:use-module ((ice-9 ftw) #:select (nftw))
+  #:use-module ((ice-9 regex) #:select (string-match))
+  #:use-module ((ares atomic) #:select (atomic-box-update!))
+  #:use-module ((srfi srfi-1)
+                #:select (last drop-right any fold alist-delete alist-cons))
+  #:use-module ((srfi srfi-197) #:select (chain))
+
   #:export (test-reporter-output-port*
             test-reporter*
             test-reporter-silent
