@@ -464,7 +464,7 @@ runner and ask it to execute itself?
                 (new-test-thunk
                  (lambda ()
                    (when (%test*)
-                     (chain "Test Cases can't be nested"
+                     (chain "Test Macros can't be nested"
                             (make-exception-with-message _)
                             (raise-exception _)))
                    (let ((test-reporter (test-reporter*)))

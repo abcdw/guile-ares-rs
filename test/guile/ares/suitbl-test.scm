@@ -334,7 +334,7 @@ test cases on test-runner/IDE side.
        (test "outer test macro"
          (test "nested test macro" (is #t))))
       (lambda (ex)
-        (string=? "Test Cases can't be nested"
+        (string=? "Test Macros can't be nested"
                   (exception-message ex))))))
 
   (test "that test-suite nested in test case is forbidden"
