@@ -101,11 +101,12 @@ Saying that in expression (string=? (string-append a "he") b)
 that (not (string=? (string-append a "he") b)) is not so.
 
 5.
-load-tests* variable, which controls macro expansion logic, setting it
-to #f will make all test defining functions to produce empty results.
-Probably we don't need it, because all tests are deffered.  The
-only possible use case is stripping out tests from production code,
-when the tests are in the same module with the subject under the test.
+load-tests* variable (or syntax-parameter), which controls macro
+expansion logic, setting it to #f will make all test defining
+functions to produce empty results.  Probably we don't need it,
+because all tests are deffered.  The only possible use case is
+stripping out tests from production code, when the tests are in the
+same module with the subject under the test.
 
 6.
 Skip test functionality.  Do we want a special test-skip
@@ -230,6 +231,7 @@ test cases on test-runner/IDE side.
   (raise-exception
    (make-exception-with-message "hello"))))
 
+;; TODO: [Andrew Tropin, 2025-05-15] Rename to test-environment-silent
 (define-syntax with-silent-test-environment
   (lambda (stx)
     (syntax-case stx ()
@@ -322,8 +324,6 @@ test cases on test-runner/IDE side.
        run-summary-with-failures-and-errors)))))
 
 (define-test-suite nested-test-suites-and-test-macros-tests
-  ;; Nested test-suites requires double parentesis to be immediately
-  ;; called on evaluation
   (test "expression throws programming-error on unbound variable"
     (is (throws-exception? (+ b 1 2) programming-error?)))
 
@@ -357,6 +357,17 @@ test cases on test-runner/IDE side.
 
 (define-test-suite test-suite-usage-tests
   "description here?"
+
+  ;; TODO: [Andrew Tropin, 2025-05-09] Just think about what test
+  ;; suite returns, because the expectation that it returns run
+  ;; summary, however, it's not the case, when suite is nested
+
+  ;; (define test-suite-results
+  ;;   (failing-asserts-tests))
+  ;; (pk test-suite-results)
+  ;; (test "suite-results"
+  ;;   (is (equal? 'hi test-suite-results)))
+
   (nested-test-suites-and-test-macros-tests))
 
 
@@ -427,6 +438,25 @@ expected number of tests is up-to-date."
              (raise-exception _)))
     0))
 
+
+;; TODO: [Andrew Tropin, 2025-05-12] Add metadata for test suites
+
+;; TODO: [Andrew Tropin, 2025-05-12] Preserve execution information,
+;; so we can re-run failed tests
+
+;; TODO: [Andrew Tropin, 2025-05-09] Revisit test-path* usage on test
+;; loading, we preserve test suite hierarchy now and it maybe redundant
+
+;; TODO: [Andrew Tropin, 2025-05-09] Describe private/public test
+;; suite logic, if you don't want test-suite to be executed by
+;; run-project-tests, just don't export it, right?
+
+;; TODO: [Andrew Tropin, 2025-05-09] Make it possible to specify
+;; multiple composable reporters
+
+;; TODO: [Andrew Tropin, 2025-05-09] ?Rename test to check as this
+;; name suites better the purpose
+
 ;; TODO: [Andrew Tropin, 2025-05-01] Add variable
 ;; test-runner-under-test* and make-clean-test-runner-environment
 ;; macro, which will reset the environment and use
@@ -445,5 +475,23 @@ expected number of tests is up-to-date."
 ;; TODO: [Andrew Tropin, 2025-04-22] Add enable-re-run-failed-tests-on-eval,
 ;; which will re-run last failed tests on each eval
 
+;; TODO: [Andrew Tropin, 2025-05-03] Add SRFI-64 migration tooling?
+
 ;; TODO: [Andrew Tropin, 2025-05-01] Return back profiling to test-runner
 
+;; TODO: [Andrew Tropin, 2025-05-12] Add load-tests* syntax parameter,
+;; which will control if tests should be evaluated/loaded.
+
+;; TODO: [Andrew Tropin, 2025-05-12] How to access private functions
+;; of SUT (subject module under test)?  Rust have nested tests
+;; submodule, which lexcally closed over parent module (have access to
+;; private vars)
+;; https://doc.rust-lang.org/rust-by-example/testing/unit_testing.html
+
+;; TODO: [Andrew Tropin, 2025-05-12] Add documentation tests
+;; https://doc.rust-lang.org/rust-by-example/testing/doc_testing.html
+;; They get executed with all the usual tests and also get embedded in
+;; the documentation
+;; https://doc.rust-lang.org/stable/std/ptr/macro.addr_of.html
+
+
