@@ -237,7 +237,7 @@ test cases on test-runner/IDE side.
     (syntax-case stx ()
       ((_ body body* ...)
        #'(reset-test-environment
-          create-suitbl-test-runner
+          test-runner-create-suitbl
           (parameterize ((test-reporter* test-reporter-silent))
             body body* ...))))))
 
@@ -378,7 +378,7 @@ run summary is #f by default, but appears after test suite is executed"
     (is (equal?
          #f
          (with-silent-test-environment
-          ((get-current-or-create-test-runner)
+          ((test-runner-get-current-or-create)
            `((type . get-run-summary))))))
 
     (is (not
@@ -387,7 +387,7 @@ run summary is #f by default, but appears after test suite is executed"
            ((test-suite "suite1"
               (test "case1"
                 (is #t))))
-           ((get-current-or-create-test-runner)
+           ((test-runner-get-current-or-create)
             `((type . get-run-summary)))))))
 
     (define run-summary-with-failures-and-errors
@@ -400,7 +400,7 @@ run summary is #f by default, but appears after test suite is executed"
           (test "error > failure"
             (is #f)
             (is (throw 'hi)))))
-       ((get-current-or-create-test-runner)
+       ((test-runner-get-current-or-create)
         `((type . get-run-summary)))))
 
     (is
@@ -421,9 +421,9 @@ run summary is #f by default, but appears after test suite is executed"
   (is #f))
 
 (define-public (run-tests)
-  (let* ((test-runner (create-suitbl-test-runner)))
+  (let* ((test-runner (test-runner-create-suitbl)))
     (parameterize ((test-reporter* test-reporter-dots))
-      (schedule-and-run-test-suites
+      (test-runner-run-test-suites
        test-runner
        (list base-test-runner-tests)))
     (format #t "\n~a" (test-runner `((type . get-run-summary))))

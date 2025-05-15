@@ -25,14 +25,9 @@
             test-reporter-base
             test-reporter-dots
 
-            test-runner-create-base
+            test-runner-create-suitbl
             test-runner-get-current-or-create
             test-runner-run-test-suites
-
-            create-suitbl-test-runner
-            schedule-and-run-test-suites
-            get-current-or-create-test-runner
-
 
             define-test-suite
 
@@ -363,7 +358,7 @@ runner and ask it to execute itself?
        (description . ,(car suite))))
     result))
 
-(define (create-suitbl-test-runner)
+(define (test-runner-create-suitbl)
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
   (define %current-test-suite-items* (make-parameter #f))
@@ -529,7 +524,7 @@ runner and ask it to execute itself?
            (format #f "no handler for message type ~a" msg-type)))))))
   test-runner)
 
-(define (schedule-and-run-test-suites test-runner test-suites)
+(define (test-runner-run-test-suites test-runner test-suites)
   (parameterize ((%current-test-runner* test-runner))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
     (for-each (lambda (ts) (ts)) test-suites)
@@ -542,10 +537,10 @@ runner and ask it to execute itself?
     ))
 
 
-(define get-test-runner* (make-parameter create-suitbl-test-runner))
+(define get-test-runner* (make-parameter test-runner-create-suitbl))
 (define %current-test-runner* (make-parameter #f))
 
-(define (get-current-or-create-test-runner)
+(define (test-runner-get-current-or-create)
   "Tries to obtain current test runner and if there is no such present
 creates one."
   (or
@@ -561,13 +556,13 @@ creates one."
     (syntax-case x ()
       ((_ (pred args ...))
        (with-syntax ((form #'(pred args ...)))
-         #'((get-current-or-create-test-runner)
+         #'((test-runner-get-current-or-create)
             `((type . run-assert)
               (assert-thunk . ,(lambda () form))
               (assert-args-thunk . ,(lambda () (list args ...)))
               (assert-quoted-form .  form)))))
       ((_ form)
-       #'((get-current-or-create-test-runner)
+       #'((test-runner-get-current-or-create)
           `((type . run-assert)
             (assert-thunk . ,(lambda () form))
             (assert-quoted-form . form)))))))
@@ -584,7 +579,7 @@ more asserts."
        #'(let ((test-thunk
                 (lambda ()
                   (parameterize ((%current-test-runner*
-                                  (get-current-or-create-test-runner))
+                                  (test-runner-get-current-or-create))
                                  (%test* case-description))
                     expression
                     expressions ...))))
@@ -595,7 +590,7 @@ more asserts."
              `((name . test)
                (documentation . ,case-description)
                (suitbl-test? . #t))))
-           (let ((test-runner (get-current-or-create-test-runner)))
+           (let ((test-runner (test-runner-get-current-or-create)))
              (test-runner
               `((type . schedule-test)
                 (test-thunk . ,test-thunk)
@@ -624,7 +619,7 @@ allows to group tests and other test suites."
                    ;; who need to call run-scheduled-tests (probably
                    ;; not this function).
                    (parameterize ((%current-test-runner*
-                                   (get-current-or-create-test-runner))
+                                   (test-runner-get-current-or-create))
                                   (%test-path*
                                    (cons suite-description (%test-path*))))
                      expression
@@ -633,7 +628,7 @@ allows to group tests and other test suites."
                  ;; Wrapping into identity to prevent setting procedure-name
                  (identity
                   (lambda ()
-                    (let ((test-runner (get-current-or-create-test-runner)))
+                    (let ((test-runner (test-runner-get-current-or-create)))
                       (test-runner
                        `((type . load-test-suite)
                          (load-test-suite-thunk . ,load-test-suite-thunk)
