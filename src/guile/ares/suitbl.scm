@@ -13,20 +13,29 @@
                 #:select (last drop-right any fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain))
 
-  #:export (test-reporter-output-port*
+  ;; TODO: [Andrew Tropin, 2025-05-15] reset-test-environment ->
+  ;; with-clean-test-environment?/test-environment-clean
+  #:export (reset-test-environment
+            test-suite test is
+
+            test-reporter-output-port*
             test-reporter*
+
             test-reporter-silent
             test-reporter-base
             test-reporter-dots
+
+            test-runner-create-base
+            test-runner-get-current-or-create
+            test-runner-run-test-suites
 
             create-suitbl-test-runner
             schedule-and-run-test-suites
             get-current-or-create-test-runner
 
-            define-test-suite
-            test-suite test is
 
-            reset-test-environment
+            define-test-suite
+
             throws-exception?))
 
 
