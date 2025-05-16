@@ -150,7 +150,7 @@ depends on the runner implementation.
     ((assert-error)
      (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
              (assoc-ref message 'quoted-form) (assoc-ref message 'error)))
-    ((test-suite-start test-suite-end)
+    ((test-suite-start test-suite-end test-skip)
      'do-nothing)
 
     (else
@@ -173,6 +173,8 @@ depends on the runner implementation.
      (format (test-reporter-output-port*) "("))
     ((test-end)
      (format (test-reporter-output-port*) ")"))
+    ((test-skip)
+     (format (test-reporter-output-port*) "(S)"))
 
     ((assert-pass)
      (format (test-reporter-output-port*) "."))
