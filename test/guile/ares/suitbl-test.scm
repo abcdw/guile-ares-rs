@@ -426,17 +426,19 @@ run summary is #f by default, but appears after test suite is executed"
       (test-runner-run-test-suites
        test-runner
        (list base-test-runner-tests)))
-    (format #t "\n~a" (test-runner `((type . get-run-summary))))
+    (define summary (test-runner `((type . get-run-summary))))
+    (format #t "\n~a\n" summary)
 
     (define number-of-tests
-      (assoc-ref (test-runner `((type . get-run-summary))) 'tests))
+      (assoc-ref summary 'tests))
 
     (unless (= 15 number-of-tests)
       (chain "Unexpected number of tests, make sure all tests are executed and
 expected number of tests is up-to-date."
              (make-exception-with-message _)
              (raise-exception _)))
-    0))
+    (when (> (+ (assoc-ref summary 'failures) (assoc-ref summary 'errors)) 0)
+      (exit 1))))
 
 
 ;; TODO: [Andrew Tropin, 2025-05-12] Add metadata for test suites
