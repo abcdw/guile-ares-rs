@@ -377,6 +377,9 @@ runner and ask it to execute itself?
        (description . ,(car suite))))
     result))
 
+;; A temporary hack to prevent double execution
+(define %external-executor* (make-parameter #f))
+
 (define (test-runner-create-suitbl)
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
@@ -471,10 +474,10 @@ runner and ask it to execute itself?
 
                     (update-atomic-alist-value! state 'suite (lambda (l) val))))
               val))
-           ;; test-runner-run-test-suites sets %current-test-runner*
+           ;; test-runner-run-test-suites sets %external-executor*
            ;; and also calls run-scheduled-tests, so to prevent double
            ;; execution of scheduled test suites we add this condition.
-           (when (and (null? (%test-path*)) (not (%current-test-runner*)))
+           (when (and (null? (%test-path*)) (not (%external-executor*)))
              ((test-runner-get-current-or-create)
               `((type . run-scheduled-tests))))))
 
@@ -518,7 +521,7 @@ runner and ask it to execute itself?
             `((type . test-scheduled)
               (description . ,description)))
            (when (null? (%test-path*))
-             ((test-runner-get-current-or-create)
+             ((%current-test-runner*)
               `((type . run-scheduled-tests))))))
 
         ((run-assert)
@@ -553,7 +556,8 @@ runner and ask it to execute itself?
   test-runner)
 
 (define (test-runner-run-test-suites test-runner test-suites)
-  (parameterize ((%current-test-runner* test-runner))
+  (parameterize ((%current-test-runner* test-runner)
+                 (%external-executor* #t))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
     (for-each (lambda (ts) (ts)) test-suites)
     ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
@@ -612,8 +616,8 @@ more asserts."
                   ;; those variables and thus export them as public
                   ;; API.  We can avoid all of those problems by
                   ;; offloading this to test runner implementers.
-                  ;; Anyway they need to keep track of the test suite
-                  ;; hierarchy and all that stuff.
+                  ;; They need to keep track of the test suite
+                  ;; hierarchy and all that stuff anyway.
 
                   ;; The only problem I see here is that
                   ;; test-environment-reset macro won't be able to
@@ -621,7 +625,10 @@ more asserts."
                   ;; implemented on test runner side as well.  Which
                   ;; is a bit sad.  However, the new test runner will
                   ;; have new parameters, which will be empty.  So the
-                  ;; resetting test-runner is enough.
+                  ;; resetting test-runner is enough.  Also, we can
+                  ;; have (with-clean-test-env new-runner thunk),
+                  ;; which will run thunk in clean test env.
+
                   (parameterize ((%current-test-runner*
                                   (test-runner-get-current-or-create))
                                  (%test* case-description))
@@ -634,11 +641,13 @@ more asserts."
              `((name . test)
                (documentation . ,case-description)
                (suitbl-test? . #t))))
-           ((test-runner-get-current-or-create)
-            `((type . schedule-test)
-              (test-thunk . ,test-thunk)
-              (description . ,case-description)
-              (test-body . (expression expressions ...))))))
+           (parameterize ((%current-test-runner*
+                           (test-runner-get-current-or-create)))
+             ((%current-test-runner*)
+              `((type . schedule-test)
+                (test-thunk . ,test-thunk)
+                (description . ,case-description)
+                (test-body . (expression expressions ...)))))))
       ((test case-description expression expressions ...)
        #'(test case-description #:metadata '() expression expressions ...))
       ((_ rest ...)
@@ -670,10 +679,12 @@ allows to group tests and other test suites."
                  ;; Wrapping into identity to prevent setting procedure-name
                  (identity
                   (lambda ()
-                    ((test-runner-get-current-or-create)
-                     `((type . load-test-suite)
-                       (load-test-suite-thunk . ,load-test-suite-thunk)
-                       (description . ,suite-description)))))))
+                    (parameterize ((%current-test-runner*
+                                    (test-runner-get-current-or-create)))
+                      ((%current-test-runner*)
+                       `((type . load-test-suite)
+                         (load-test-suite-thunk . ,load-test-suite-thunk)
+                         (description . ,suite-description))))))))
            (set-procedure-properties!
             test-suite-thunk
             `((documentation . ,suite-description)
@@ -693,6 +704,7 @@ allows to group tests and other test suites."
     (syntax-case stx ()
       ((_ get-test-runner body body* ...)
        #'(parameterize ((%current-test-runner* (get-test-runner))
+                        (%external-executor* #f)
                         (%test-path* '())
                         (%test* #f))
            body body* ...)))))
