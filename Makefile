@@ -50,3 +50,6 @@ README.html: README
 deploy-README.html: README.html
 	${HUT} git update --readme README.html \
 	--repo https://git.sr.ht/~abcdw/guile-ares-rs
+
+clean:
+	rm README.html
