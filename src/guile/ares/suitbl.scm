@@ -748,7 +748,7 @@ allows to group tests and other test suites."
   (test-suite "sample private test suite"
     (test "sample test"
       (is "true assert"))))
-(private-samples-tests)
+;; (private-samples-tests)
 
 (define* (load-test-modules-thunk
           #:key
