@@ -28,7 +28,9 @@
   #:use-module (ice-9 match)
   #:use-module ((system base compile) #:select (read-and-compile))
   #:use-module ((system vm loader) #:select (load-thunk-from-memory))
-  #:export (evaluation-thunk))
+  #:use-module (fibers channels)
+  #:export (evaluation-thunk
+            evaluation-loop))
 
 (define (evaluation-thunk nrepl-message)
   "Return a thunk, which evaluate code in appropriate module and handle
@@ -84,3 +86,13 @@ exceptions."
                 `((result-type . multiple-values)
                   (eval-value . ,vals)))))))
        #:unwind? #f))))
+
+(define (evaluation-loop channel)
+  "Loop over CHANNEL's messages, reading evaluation requests and sending
+the results."
+  (define action (get-message channel))
+
+  (match action
+    (('evaluate message)
+     (put-message channel `(result ,((evaluation-thunk message))))
+     (evaluation-loop channel))))
