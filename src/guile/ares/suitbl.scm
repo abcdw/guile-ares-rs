@@ -274,35 +274,6 @@ runner and ask it to execute itself?
 
 (define %test-events* (make-parameter #f))
 
-(define (default-run-assert form-thunk args-thunk quoted-form)
-  (with-exception-handler
-   (lambda (ex)
-     (when (%test*)
-       (atomic-box-update!
-        (%test-events*)
-        (lambda (value)
-          (cons 'error value))))
-     ((test-reporter*)
-      `((type . assert-error)
-        (quoted-form . ,quoted-form)
-        (assert/error . ,ex))))
-   (lambda ()
-     ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-     ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-     (let* ((result (form-thunk)))
-       (when (%test*)
-         (atomic-box-update!
-          (%test-events*)
-          (lambda (value)
-            (cons (if result 'pass 'fail) value))))
-       ((test-reporter*)
-        `((type . ,(if result 'assert-pass 'assert-fail))
-          (assert/result . ,result)
-          (assert/arguments-thunk . ,args-thunk)
-          (assert/quoted-form . ,quoted-form)))
-       result))
-   #:unwind? #t))
-
 
 (define (run-test test-thunk)
   (parameterize ((%test-events* (make-atomic-box '())))
@@ -392,9 +363,40 @@ runner and ask it to execute itself?
 (define %schedule-only?* (make-parameter #f))
 
 (define (test-runner-create-suitbl)
+  (define %test-path* (make-parameter '()))
+  (define %test* (make-parameter #f))
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
   (define %current-test-suite-items* (make-parameter #f))
+
+  (define (default-run-assert form-thunk args-thunk quoted-form)
+    (with-exception-handler
+     (lambda (ex)
+       (when (%test*)
+         (atomic-box-update!
+          (%test-events*)
+          (lambda (value)
+            (cons 'error value))))
+       ((test-reporter*)
+        `((type . assert-error)
+          (quoted-form . ,quoted-form)
+          (assert/error . ,ex))))
+     (lambda ()
+       ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+       ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+       (let* ((result (form-thunk)))
+         (when (%test*)
+           (atomic-box-update!
+            (%test-events*)
+            (lambda (value)
+              (cons (if result 'pass 'fail) value))))
+         ((test-reporter*)
+          `((type . ,(if result 'assert-pass 'assert-fail))
+            (assert/result . ,result)
+            (assert/arguments-thunk . ,args-thunk)
+            (assert/quoted-form . ,quoted-form)))
+         result))
+     #:unwind? #t))
 
   (define (update-atomic-alist-value! alist-atom key f)
     (atomic-box-update!
@@ -464,7 +466,9 @@ runner and ask it to execute itself?
                              ;; suite.  Or wrap list of test-suites
                              ;; into one more.
                              (parameterize ((%current-test-suite-items*
-                                             (make-atomic-box '())))
+                                             (make-atomic-box '()))
+                                            (%test-path*
+                                             (cons description (%test-path*))))
                                ((assoc-ref x 'load-test-suite-thunk))
                                (chain (%current-test-suite-items*)
                                       (atomic-box-ref _)
@@ -507,7 +511,8 @@ runner and ask it to execute itself?
                      (test-reporter
                       `((type . test-start)
                         (description . ,description)))
-                     (original-test-thunk)
+                     (parameterize ((%test* description))
+                       (original-test-thunk))
                      (test-reporter
                       `((type . test-end)
                         (description . ,description))))))
@@ -596,9 +601,6 @@ creates one."
    ((get-test-runner*))))
 
 
-(define %test-path* (make-parameter '()))
-(define %test* (make-parameter #f))
-
 (define-syntax is
   (lambda (x)
     (syntax-case x ()
@@ -646,8 +648,7 @@ more asserts."
                   ;; which will run thunk in clean test env.
 
                   (parameterize ((%current-test-runner*
-                                  (test-runner-get-current-or-create))
-                                 (%test* case-description))
+                                  (test-runner-get-current-or-create)))
                     expression
                     expressions ...))))
            (set-procedure-properties!
@@ -686,9 +687,7 @@ allows to group tests and other test suites."
                    ;; who need to call run-scheduled-tests (probably
                    ;; not this function).
                    (parameterize ((%current-test-runner*
-                                   (test-runner-get-current-or-create))
-                                  (%test-path*
-                                   (cons suite-description (%test-path*))))
+                                   (test-runner-get-current-or-create)))
                      expression
                      expressions ...)))
                 (test-suite-thunk
@@ -720,9 +719,7 @@ allows to group tests and other test suites."
     (syntax-case stx ()
       ((_ get-test-runner body body* ...)
        #'(parameterize ((%current-test-runner* (get-test-runner))
-                        (%schedule-only?* #f)
-                        (%test-path* '())
-                        (%test* #f))
+                        (%schedule-only?* #f))
            body body* ...)))))
 
 (define-syntax throws-exception?
