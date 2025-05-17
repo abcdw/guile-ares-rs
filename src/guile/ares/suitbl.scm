@@ -114,21 +114,21 @@ depends on the runner implementation.
     ((test-suite-enter)
      (format (test-reporter-output-port*)
              (string-append
-              (string-repeat "|" (length (%test-path*)))
+              (string-repeat "|" (length (assoc-ref message 'test-path)))
               "┌"))
      (format (test-reporter-output-port*)
              "> ~a\n" (assoc-ref message 'description)))
     ((test-suite-leave)
      (format (test-reporter-output-port*)
              (string-append
-              (string-repeat "|" (length (%test-path*)))
+              (string-repeat "|" (length (assoc-ref message 'test-path)))
               "└"))
      (format (test-reporter-output-port*)
              "> ~a\n" (assoc-ref message 'description)))
 
     ((test-scheduled)
      (format (test-reporter-output-port*)
-             (string-repeat "|" (length (%test-path*))))
+             (string-repeat "|" (length (assoc-ref message 'test-path))))
      (format (test-reporter-output-port*)
              " + test ~a\n" (assoc-ref message 'description)))
 
@@ -429,10 +429,12 @@ runner and ask it to execute itself?
                 (test-suite-enter! (lambda ()
                                      (test-reporter
                                       `((type . test-suite-enter)
+                                        (test-path . ,(%test-path*))
                                         (description . ,description)))))
                 (test-suite-leave! (lambda ()
                                      (test-reporter
                                       `((type . test-suite-leave)
+                                        (test-path . ,(%test-path*))
                                         (description . ,description)))))
                 (try-load-suite
                  (lambda ()
@@ -519,6 +521,7 @@ runner and ask it to execute itself?
               (cons test-item (or l '()))))
            ((test-reporter*)
             `((type . test-scheduled)
+              (test-path . ,(%test-path*))
               (description . ,description)))
            (when (null? (%test-path*))
              ((%current-test-runner*)
