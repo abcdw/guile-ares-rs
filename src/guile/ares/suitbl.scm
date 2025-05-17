@@ -389,7 +389,7 @@ runner and ask it to execute itself?
     result))
 
 ;; A temporary hack to prevent double execution
-(define %external-executor* (make-parameter #f))
+(define %schedule-only?* (make-parameter #f))
 
 (define (test-runner-create-suitbl)
   (define state (make-atomic-box '()))
@@ -487,10 +487,10 @@ runner and ask it to execute itself?
 
                     (update-atomic-alist-value! state 'suite (lambda (l) val))))
               val))
-           ;; test-runner-run-test-suites sets %external-executor*
+           ;; test-runner-run-test-suites sets %schedule-only?*
            ;; and also calls run-scheduled-tests, so to prevent double
            ;; execution of scheduled test suites we add this condition.
-           (when (and (null? (%test-path*)) (not (%external-executor*)))
+           (when (and (null? (%test-path*)) (not (%schedule-only?*)))
              ((test-runner-get-current-or-create)
               `((type . run-scheduled-tests))))))
 
@@ -573,7 +573,7 @@ runner and ask it to execute itself?
 
 (define (test-runner-run-test-suites test-runner test-suites)
   (parameterize ((%current-test-runner* test-runner)
-                 (%external-executor* #t))
+                 (%schedule-only?* #t))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
     (for-each (lambda (ts) (ts)) test-suites)
     ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
@@ -720,7 +720,7 @@ allows to group tests and other test suites."
     (syntax-case stx ()
       ((_ get-test-runner body body* ...)
        #'(parameterize ((%current-test-runner* (get-test-runner))
-                        (%external-executor* #f)
+                        (%schedule-only?* #f)
                         (%test-path* '())
                         (%test* #f))
            body body* ...)))))
