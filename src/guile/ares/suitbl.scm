@@ -627,30 +627,7 @@ more asserts."
     (syntax-case x ()
       ((test case-description #:metadata metadata expression expressions ...)
        #'(let ((test-thunk
-                (lambda ()
-                  ;; TODO: [Andrew Tropin, 2025-05-15] Move this logic
-                  ;; to test-runner side because right now to
-                  ;; implement a usable test runner we need to access
-                  ;; those variables and thus export them as public
-                  ;; API.  We can avoid all of those problems by
-                  ;; offloading this to test runner implementers.
-                  ;; They need to keep track of the test suite
-                  ;; hierarchy and all that stuff anyway.
-
-                  ;; The only problem I see here is that
-                  ;; test-environment-reset macro won't be able to
-                  ;; clean %test* and %test-path*, so it must be
-                  ;; implemented on test runner side as well.  Which
-                  ;; is a bit sad.  However, the new test runner will
-                  ;; have new parameters, which will be empty.  So the
-                  ;; resetting test-runner is enough.  Also, we can
-                  ;; have (with-clean-test-env new-runner thunk),
-                  ;; which will run thunk in clean test env.
-
-                  (parameterize ((%current-test-runner*
-                                  (test-runner-get-current-or-create)))
-                    expression
-                    expressions ...))))
+                (lambda () expression expressions ...)))
            (set-procedure-properties!
             test-thunk
             (alist-merge
@@ -678,18 +655,7 @@ allows to group tests and other test suites."
     (syntax-case x ()
       ((_ suite-description expression expressions ...)
        #'(let* ((load-test-suite-thunk
-                 (lambda ()
-                   ;; TODO: [Andrew Tropin, 2025-05-05] The test
-                   ;; runner definitely exists at this point of time,
-                   ;; because somebody already called load-test-suite
-                   ;; method of a test runner, and that's why we got
-                   ;; here.  Clean up this parameterization and think
-                   ;; who need to call run-scheduled-tests (probably
-                   ;; not this function).
-                   (parameterize ((%current-test-runner*
-                                   (test-runner-get-current-or-create)))
-                     expression
-                     expressions ...)))
+                 (lambda () expression expressions ...))
                 (test-suite-thunk
                  ;; Wrapping into identity to prevent setting procedure-name
                  (identity
