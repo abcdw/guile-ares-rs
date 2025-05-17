@@ -115,7 +115,7 @@ depends on the runner implementation.
       (if (= 3 (length quoted-form))
           (match (arguments-thunk)
             ((first second)
-             (format #f "~a is not ~a ~a" first (car quoted-form) second)))
+             (format #f "~a and ~a are not ~a" first second (car quoted-form))))
           (assoc-ref message 'assert/result))))
 
   (define msg-type (assoc-ref message 'type))
