@@ -109,6 +109,15 @@ depends on the runner implementation.
      ""
      (iota n)))
 
+  (define (actual message)
+    (let ((quoted-form (assoc-ref message 'assert/quoted-form))
+          (arguments-thunk (assoc-ref message 'assert/arguments-thunk)))
+      (if (= 3 (length quoted-form))
+          (match (arguments-thunk)
+            ((first second)
+             (format #f "~a is not ~a ~a" first (car quoted-form) second)))
+          (assoc-ref message 'assert/result))))
+
   (define msg-type (assoc-ref message 'type))
   (case msg-type
     ((test-suite-enter)
@@ -141,15 +150,16 @@ depends on the runner implementation.
 
     ((assert-pass)
      (format (test-reporter-output-port*) "✓ ~s\n"
-             (assoc-ref message 'quoted-form)))
+             (assoc-ref message 'assert/quoted-form)))
 
     ((assert-fail)
-     (format (test-reporter-output-port*) "✗ Expected: ~s\n   Actual:   ~s\n"
-             (assoc-ref message 'quoted-form) (assoc-ref message 'result)))
+     (format (test-reporter-output-port*) "✗ Expected: ~s\n   Actual:   ~a\n"
+             (assoc-ref message 'assert/quoted-form) (actual message)))
 
     ((assert-error)
      (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
-             (assoc-ref message 'quoted-form) (assoc-ref message 'error)))
+             (assoc-ref message 'assert/quoted-form)
+             (assoc-ref message 'assert/error)))
     ((test-suite-start test-suite-end test-skip)
      'do-nothing)
 
@@ -275,7 +285,7 @@ runner and ask it to execute itself?
      ((test-reporter*)
       `((type . assert-error)
         (quoted-form . ,quoted-form)
-        (error . ,ex))))
+        (assert/error . ,ex))))
    (lambda ()
      ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
      ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
@@ -287,8 +297,9 @@ runner and ask it to execute itself?
             (cons (if result 'pass 'fail) value))))
        ((test-reporter*)
         `((type . ,(if result 'assert-pass 'assert-fail))
-          (result . ,result)
-          (quoted-form . ,quoted-form)))
+          (assert/result . ,result)
+          (assert/arguments-thunk . ,args-thunk)
+          (assert/quoted-form . ,quoted-form)))
        result))
    #:unwind? #t))
 
@@ -528,15 +539,17 @@ runner and ask it to execute itself?
               `((type . run-scheduled-tests))))))
 
         ((run-assert)
-         (let ((assert-thunk (assoc-ref x 'assert-thunk))
-               (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
+         (let ((assert-thunk (assoc-ref x 'assert/thunk))
+               (assert-arguments-thunk (assoc-ref x 'assert/arguments-thunk))
+               (assert-quoted-form (assoc-ref x 'assert/quoted-form)))
            (when (and (not (null? (%test-path*)))
                       (not (%test*)))
              (chain
               "Assert encountered inside test-suite, but outside of test"
               (make-exception-with-message _)
               (raise-exception _)))
-           (default-run-assert assert-thunk #f assert-quoted-form)))
+           (default-run-assert
+             assert-thunk assert-arguments-thunk assert-quoted-form)))
 
         ((run-scheduled-tests)
          ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
@@ -593,14 +606,14 @@ creates one."
        (with-syntax ((form #'(pred args ...)))
          #'((test-runner-get-current-or-create)
             `((type . run-assert)
-              (assert-thunk . ,(lambda () form))
-              (assert-args-thunk . ,(lambda () (list args ...)))
-              (assert-quoted-form .  form)))))
+              (assert/thunk . ,(lambda () form))
+              (assert/arguments-thunk . ,(lambda () (list args ...)))
+              (assert/quoted-form .  form)))))
       ((_ form)
        #'((test-runner-get-current-or-create)
           `((type . run-assert)
-            (assert-thunk . ,(lambda () form))
-            (assert-quoted-form . form)))))))
+            (assert/thunk . ,(lambda () form))
+            (assert/quoted-form . form)))))))
 
 (define (alist-merge l1 l2)
   (append l1 l2))
