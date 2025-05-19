@@ -19,12 +19,6 @@
             test-suite test is
 
             test-reporter-output-port*
-            ;; TODO: [Andrew Tropin, 2025-05-15] Add support for
-            ;; multiple composable test reporters? or at least make
-            ;; test-reporters more composable, so we can combine them
-            ;; in "megareporter" and use it as a test-reporter*
-            test-reporter*
-
             test-reporter-silent
             test-reporter-base
             test-reporter-dots
@@ -160,16 +154,11 @@ depends on the runner implementation.
      (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
              (assoc-ref message 'assert/quoted-form)
              (assoc-ref message 'assert/error)))
-    ((test-suite-start test-suite-end test-skip)
-     'do-nothing)
 
-    (else
-     (raise-exception
-      (make-exception-with-message
-       (format #f "no reporting implemented for message type ~a" msg-type))))))
+    (else #f)))
 
 (define (test-reporter-silent message)
-  #f)
+  #t)
 
 (define (test-reporter-dots message)
   (define msg-type (assoc-ref message 'type))
@@ -193,13 +182,8 @@ depends on the runner implementation.
     ((assert-error)
      (format (test-reporter-output-port*) "E"))
 
-    ((test-scheduled test-suite-enter test-suite-leave)
-     'do-nothing)
+    (else #f)))
 
-    (else
-     (raise-exception
-      (make-exception-with-message
-       (format #f "no reporting implemented for message type ~a" msg-type))))))
 
 (define-syntax simple-profile
   (lambda (stx)
@@ -214,6 +198,25 @@ depends on the runner implementation.
            return-value)))))
 
 (define test-reporter* (make-parameter test-reporter-base))
+
+(define (test-reporters-use-all reporters)
+  "Create a reporter, which combines all reporters."
+  (lambda (message)
+    (for-each (lambda (r) (r message)) reporters)))
+
+(define (test-reporters-use-first reporters)
+  "Create a reporter, which uses the first successful reporter."
+  (lambda (message)
+    (let loop ((reporters reporters))
+      (unless (null? reporters)
+        (let ((reporter-result ((car reporters) message)))
+          (or reporter-result (loop (cdr reporters))))))))
+
+;; (let ((r (test-reporters-use-all
+;;           (list test-reporter-base test-reporter-logging))))
+;;   (r '((type . unknown)))
+;;   (r '((type . test-scheduled)
+;;        (test-path . ()))))
 
 
 ;;;
