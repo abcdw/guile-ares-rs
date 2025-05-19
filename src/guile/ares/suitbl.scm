@@ -95,6 +95,13 @@ depends on the runner implementation.
 
 (define test-reporter-output-port* (make-parameter (current-output-port)))
 
+(define (test-reporter-silent message)
+  #t)
+
+(define (test-reporter-logging message)
+  "Just log the @code{message}."
+  (format (test-reporter-output-port*) "message: ~y" message))
+
 (define (test-reporter-base message)
   (define (string-repeat s n)
     "Returns string S repeated N times."
@@ -158,9 +165,6 @@ depends on the runner implementation.
 
     (else #f)))
 
-(define (test-reporter-silent message)
-  #t)
-
 (define (test-reporter-dots message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
@@ -184,10 +188,6 @@ depends on the runner implementation.
      (format (test-reporter-output-port*) "E"))
 
     (else #f)))
-
-(define (test-reporter-logging message)
-  "Just log the @code{message}."
-  (format (test-reporter-output-port*) "message: ~y" message))
 
 (define-syntax simple-profile
   (lambda (stx)
