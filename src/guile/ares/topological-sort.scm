@@ -1,82 +1,56 @@
-;; (ares topological-sort) -- topological sorting
-;; Written 1995 by Mikael Durfeldt.
-
-;; This file is based on tsort.scm from SLIB, and is in the public
-;; domain. This file is from guile-lib. Only the define-module call
-;; was changed to fit the project.
-
-;;; Commentary:
-;; The algorithm is inspired by Cormen, Leiserson and Rivest (1990)
-;; ``Introduction to Algorithms'', chapter 23.
-;;; Code:
-
 (define-module (ares topological-sort)
-  #:export (topological-sort)
-  #:use-module (math primes))
+  #:use-module (srfi srfi-1)
+  #:export (topological-sort))
 
-(define (topological-sort-helper dag insert lookup)
-  (if (null? dag)
-      '()
-      (let* ((adj-table (make-hash-table
-			 (car (primes> (length dag) 1))))
-	     (sorted '()))
-	(letrec ((visit
-		  (lambda (u adj-list)
-		    ;; Color vertex u
-		    (insert adj-table u 'colored)
-		    ;; Visit uncolored vertices which u connects to
-		    (for-each (lambda (v)
-				(let ((val (lookup adj-table v)))
-				  (if (not (eq? val 'colored))
-				      (visit v (or val '())))))
-			      adj-list)
-		    ;; Since all vertices downstream u are visited
-		    ;; by now, we can safely put u on the output list
-		    (set! sorted (cons u sorted)))))
-	  ;; Hash adjacency lists
-	  (for-each (lambda (def)
-		      (insert adj-table (car def) (cdr def)))
-		    (cdr dag))
-	  ;; Visit vertices
-	  (visit (caar dag) (cdar dag))
-	  (for-each (lambda (def)
-		      (let ((val (lookup adj-table (car def))))
-			(if (not (eq? val 'colored))
-			    (visit (car def) (cdr def)))))
-		    (cdr dag)))
-	sorted)))
+;;; toposort.scm - topological sorting
+;;;
+;;;  Written by Shiro Kawai (shiro@acm.org)  2001
+;;;  Public Domain..  I guess lots of Scheme programmers have already
+;;;  written similar code.
+;;;
+;;;  Modified 2025 to make EQ default to equal?
 
-(define (topological-sort dag)
-"Returns a list of the objects in the directed acyclic graph, @var{dag}, topologically sorted.  Objects are
-compared using @code{equal?}.  The graph has the form:
-@lisp
- (list (obj1 . (dependents-of-obj1)) 
-       (obj2 . (dependents-of-obj2)) ...)
-@end lisp
-...specifying, for example, that @code{obj1} must come before all the objects in @code{(dependents-of-obj1)} in
-the sort."
-  (topological-sort-helper dag hash-set! hash-ref))
+(define* (topological-sort nodes #:optional (eq equal?))
+  (define table (map (lambda (n) (cons (car n) 0)) nodes))
+  (define queue '())
+  (define result '())
 
-(define (topological-sortq dag)
-"Returns a list of the objects in the directed acyclic graph, @var{dag}, topologically sorted.  Objects are
-compared using @code{eq?}.  The graph has the form:
-@lisp
- (list (obj1 . (dependents-of-obj1)) 
-       (obj2 . (dependents-of-obj2)) ...)
-@end lisp
-...specifying, for example, that @code{obj1} must come before all the objects in @code{(dependents-of-obj1)} in
-the sort."
-  (topological-sort-helper dag hashq-set! hashq-ref))
+  (define (set-up)
+    ;; Compute the number of nodes that each node depends on.
+    (for-each
+      (lambda (node)
+        (for-each
+          (lambda (to)
+            (let ((p (assoc to table eq)))
+              (if p
+                  (set-cdr! p (+ 1 (cdr p)))
+                  (set! table (cons (cons to 1) table)))))
+          (cdr node)))
+      nodes))
 
-(define (topological-sortv dag)
-"Returns a list of the objects in the directed acyclic graph, @var{dag}, topologically sorted.  Objects are
-compared using @code{eqv?}.  The graph has the form:
-@lisp
- (list (obj1 . (dependents-of-obj1)) 
-       (obj2 . (dependents-of-obj2)) ...)
-@end lisp
-...specifying, for example, that @code{obj1} must come before all the objects in @code{(dependents-of-obj1)} in
-the sort."
-  (topological-sort-helper dag hashv-set! hashv-ref))
+  (define (traverse)
+    (unless (null? queue)
+      (let ((nq (car queue)))
+        (set! queue (cdr queue))
+        (let ((n0 (assoc nq nodes eq)))
+          (when n0
+            (for-each
+              (lambda (to)
+                (let ((p (assoc to table eq)))
+                  (when p
+                    (let ((cnt (- (cdr p) 1)))
+                      (when (zero? cnt)
+                        (set! result (cons to result))
+                        (set! queue (cons to queue)))
+                      (set-cdr! p cnt)))))
+              (cdr n0)))
+          (traverse)))))
 
-;;; arch-tag: 9ef30b53-688a-43fc-b208-df78d5b38c74
+  (set-up)
+  (set! queue (map car (filter (lambda (p) (zero? (cdr p))) table)))
+  (set! result queue)
+  (traverse)
+  (let ((rest (filter (lambda (e) (not (zero? (cdr e)))) table)))
+    (unless (null? rest)
+      (error "Graph has circular dependency" (map car rest))))
+  (reverse result))
