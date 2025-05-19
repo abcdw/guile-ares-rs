@@ -121,26 +121,21 @@ depends on the runner implementation.
   "Just log the @code{message}."
   (format (test-reporter-output-port*) "message: ~y" message))
 
-(define (test-reporter-base message)
-  (define (string-repeat s n)
-    "Returns string S repeated N times."
-    (fold
-     (lambda (_ str)
-       (string-append str s))
-     ""
-     (iota n)))
+(define (string-repeat s n)
+  "Returns string S repeated N times."
+  (fold
+   (lambda (_ str)
+     (string-append str s))
+   ""
+   (iota n)))
 
-  (define (actual message)
-    (let ((quoted-form (assoc-ref message 'assert/quoted-form))
-          (arguments-thunk (assoc-ref message 'assert/arguments-thunk)))
-      (if (= 3 (length quoted-form))
-          (match (arguments-thunk)
-            ((first second)
-             (format #f "~a and ~a are not ~a" first second (car quoted-form))))
-          (assoc-ref message 'assert/result))))
-
-  (define msg-type (assoc-ref message 'type))
-  (case msg-type
+(define (test-reporter-hierarchy message)
+  (case (assoc-ref message 'type)
+    ((test-scheduled)
+     (format (test-reporter-output-port*)
+             (string-repeat "|" (length (assoc-ref message 'test-path))))
+     (format (test-reporter-output-port*)
+             " + test ~a\n" (assoc-ref message 'description)))
     ((test-suite-enter)
      (format (test-reporter-output-port*)
              (string-append
@@ -155,13 +150,19 @@ depends on the runner implementation.
               "└"))
      (format (test-reporter-output-port*)
              "> ~a\n" (assoc-ref message 'description)))
+    (else #f)))
 
-    ((test-scheduled)
-     (format (test-reporter-output-port*)
-             (string-repeat "|" (length (assoc-ref message 'test-path))))
-     (format (test-reporter-output-port*)
-             " + test ~a\n" (assoc-ref message 'description)))
+(define (test-reporter-verbose message)
+  (define (actual message)
+    (let ((quoted-form (assoc-ref message 'assert/quoted-form))
+          (arguments-thunk (assoc-ref message 'assert/arguments-thunk)))
+      (if (= 3 (length quoted-form))
+          (match (arguments-thunk)
+            ((first second)
+             (format #f "~a and ~a are not ~a" first second (car quoted-form))))
+          (assoc-ref message 'assert/result))))
 
+  (case (assoc-ref message 'type)
     ((test-start)
      (format (test-reporter-output-port*)
              "\n┌Test ~a\n" (assoc-ref message 'description)))
@@ -183,6 +184,11 @@ depends on the runner implementation.
              (assoc-ref message 'assert/error)))
 
     (else #f)))
+
+(define test-reporter-base
+  (test-reporters-use-all
+   (list test-reporter-hierarchy
+         test-reporter-verbose)))
 
 (define (test-reporter-dots message)
   (define msg-type (assoc-ref message 'type))
