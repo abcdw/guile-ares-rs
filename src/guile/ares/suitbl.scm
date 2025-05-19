@@ -95,6 +95,25 @@ depends on the runner implementation.
 
 (define test-reporter-output-port* (make-parameter (current-output-port)))
 
+(define (test-reporters-use-all reporters)
+  "Create a reporter, which combines all reporters."
+  (lambda (message)
+    (for-each (lambda (r) (r message)) reporters)))
+
+(define (test-reporters-use-first reporters)
+  "Create a reporter, which uses the first successful reporter."
+  (lambda (message)
+    (let loop ((reporters reporters))
+      (unless (null? reporters)
+        (let ((reporter-result ((car reporters) message)))
+          (or reporter-result (loop (cdr reporters))))))))
+
+;; (let ((r (test-reporters-use-all
+;;           (list test-reporter-base test-reporter-logging))))
+;;   (r '((type . unknown)))
+;;   (r '((type . test-scheduled)
+;;        (test-path . ()))))
+
 (define (test-reporter-silent message)
   #t)
 
@@ -202,25 +221,6 @@ depends on the runner implementation.
            return-value)))))
 
 (define test-reporter* (make-parameter test-reporter-base))
-
-(define (test-reporters-use-all reporters)
-  "Create a reporter, which combines all reporters."
-  (lambda (message)
-    (for-each (lambda (r) (r message)) reporters)))
-
-(define (test-reporters-use-first reporters)
-  "Create a reporter, which uses the first successful reporter."
-  (lambda (message)
-    (let loop ((reporters reporters))
-      (unless (null? reporters)
-        (let ((reporter-result ((car reporters) message)))
-          (or reporter-result (loop (cdr reporters))))))))
-
-;; (let ((r (test-reporters-use-all
-;;           (list test-reporter-base test-reporter-logging))))
-;;   (r '((type . unknown)))
-;;   (r '((type . test-scheduled)
-;;        (test-path . ()))))
 
 
 ;;;
