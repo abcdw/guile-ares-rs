@@ -20,6 +20,7 @@
 
             test-reporter-output-port*
             test-reporter-silent
+            test-reporter-logging
             test-reporter-base
             test-reporter-dots
 
@@ -184,6 +185,9 @@ depends on the runner implementation.
 
     (else #f)))
 
+(define (test-reporter-logging message)
+  "Just log the @code{message}."
+  (format (test-reporter-output-port*) "message: ~y" message))
 
 (define-syntax simple-profile
   (lambda (stx)
