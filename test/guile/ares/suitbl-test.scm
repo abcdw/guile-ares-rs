@@ -422,7 +422,7 @@ run summary is #f by default, but appears after test suite is executed"
 
 (define-public (run-tests)
   (let* ((test-runner (test-runner-create-suitbl)))
-    (parameterize ((test-reporter* test-reporter-dots))
+    (parameterize ((test-reporter* test-reporter-dots-with-hierarchy))
       (test-runner-run-test-suites
        test-runner
        (list base-test-runner-tests)))

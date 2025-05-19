@@ -23,6 +23,7 @@
             test-reporter-logging
             test-reporter-base
             test-reporter-dots
+            test-reporter-dots-with-hierarchy
 
             ;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
             ;; test-reporter-print-failures-and-errors, which will be
@@ -30,7 +31,7 @@
             ;; locations with failed tests
 
             ;; TODO: [Andrew Tropin, 2025-05-15] Create separate
-            ;; test-reporter-asserrt-minimal (showing only ✗ or ✓) and
+            ;; test-reporter-assert-minimal (showing only ✗ or ✓) and
             ;; test-reporter-assert-simple (like current base), which
             ;; can be used in base reporter.
 
@@ -213,6 +214,10 @@ depends on the runner implementation.
      (format (test-reporter-output-port*) "E"))
 
     (else #f)))
+
+(define test-reporter-dots-with-hierarchy
+  (test-reporters-use-all
+   (list test-reporter-dots test-reporter-hierarchy)))
 
 (define-syntax simple-profile
   (lambda (stx)
