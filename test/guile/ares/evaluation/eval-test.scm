@@ -76,4 +76,14 @@
       (send channel '(evaluate (("code" . "(+ 1 (call/cc (lambda (k) (set! kont k) 5)))"))))
       (test-value "call/cc" channel 6)
       (send channel '(evaluate (("code" . "(kont 41)"))))
-      (test-value "calling continuation" channel 42)))))
+      (test-value "calling continuation" channel 42)
+
+      (test-begin "exit recursive evaluation")
+      (test-eq #f (quickly (wait-operation stopped-condition)))
+      (quickly (put-operation channel '(quit)))
+      (test-eq #f (quickly (wait-operation stopped-condition)))
+      (quickly (put-operation channel '(quit)))
+      (test-eq #t (call-with-values
+                      (lambda () (quickly (wait-operation stopped-condition)))
+                    (lambda values (null? values))))
+      (test-end)))))

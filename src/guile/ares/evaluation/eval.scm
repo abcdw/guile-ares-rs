@@ -85,12 +85,25 @@ exceptions."
                   (eval-value . ,vals)))))))
        #:unwind? #f))))
 
-(define (evaluation-loop channel)
+(define* (evaluation-loop channel
+                          #:key
+                          (frame #f)
+                          (recursion-level 0))
   "Loop over CHANNEL's messages, reading evaluation requests and sending
-the results."
+the results. When called recursively, FRAME represents the stack frame
+before recursion and RECURSION-LEVEL the depth of the recursion."
+  (unless (= recursion-level 0)
+    (format #t "Entered recursive evaluation ~a~%" recursion-level))
   (define action (get-message channel))
 
   (match action
     (('evaluate message)
-     (put-message channel `(result ,((evaluation-thunk message))))
-     (evaluation-loop channel))))
+     (let ((result ((evaluation-thunk message))))
+       (put-message channel `(result ,result))
+       (when (eq? (assq-ref result 'result-type) 'exception)
+         (evaluation-loop channel #:recursion-level (1+ recursion-level))))
+     (evaluation-loop channel))
+    (('quit)
+     (unless (= recursion-level 0)
+       (format #t "Left recursive evaluation ~a~%" recursion-level))
+     *unspecified*)))
