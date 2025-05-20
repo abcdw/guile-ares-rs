@@ -36,7 +36,7 @@
             ;; can be used in base reporter.
 
             test-runner-create-suitbl
-            test-runner-get-current-or-create
+            current-test-runner*
             test-runner-run-test-suites
 
             ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
@@ -514,7 +514,7 @@ runner and ask it to execute itself?
            ;; and also calls run-scheduled-tests, so to prevent double
            ;; execution of scheduled test suites we add this condition.
            (when (and (null? (%test-path*)) (not (%schedule-only?*)))
-             ((test-runner-get-current-or-create)
+             ((current-test-runner*)
               `((type . run-scheduled-tests))))))
 
         ((schedule-test)
@@ -559,7 +559,7 @@ runner and ask it to execute itself?
               (test-path . ,(%test-path*))
               (description . ,description)))
            (when (null? (%test-path*))
-             ((%current-test-runner*)
+             ((current-test-runner*)
               `((type . run-scheduled-tests))))))
 
         ((run-assert)
@@ -596,7 +596,7 @@ runner and ask it to execute itself?
   test-runner)
 
 (define (test-runner-run-test-suites test-runner test-suites)
-  (parameterize ((%current-test-runner* test-runner)
+  (parameterize ((current-test-runner* test-runner)
                  (%schedule-only?* #t))
     ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
     (for-each (lambda (ts) (ts)) test-suites)
@@ -608,16 +608,7 @@ runner and ask it to execute itself?
     ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
     ))
 
-
-(define get-test-runner* (make-parameter test-runner-create-suitbl))
-(define %current-test-runner* (make-parameter #f))
-
-(define (test-runner-get-current-or-create)
-  "Tries to obtain current test runner and if there is no such present
-creates one."
-  (or
-   (%current-test-runner*)
-   ((get-test-runner*))))
+(define current-test-runner* (make-parameter (test-runner-create-suitbl)))
 
 
 (define-syntax is
@@ -625,13 +616,13 @@ creates one."
     (syntax-case x ()
       ((_ (pred args ...))
        (with-syntax ((form #'(pred args ...)))
-         #'((test-runner-get-current-or-create)
+         #'((current-test-runner*)
             `((type . run-assert)
               (assert/thunk . ,(lambda () form))
               (assert/arguments-thunk . ,(lambda () (list args ...)))
               (assert/quoted-form .  form)))))
       ((_ form)
-       #'((test-runner-get-current-or-create)
+       #'((current-test-runner*)
           `((type . run-assert)
             (assert/thunk . ,(lambda () form))
             (assert/quoted-form . form)))))))
@@ -654,13 +645,11 @@ more asserts."
              `((name . test)
                (documentation . ,case-description)
                (suitbl-test? . #t))))
-           (parameterize ((%current-test-runner*
-                           (test-runner-get-current-or-create)))
-             ((%current-test-runner*)
-              `((type . schedule-test)
-                (test-thunk . ,test-thunk)
-                (description . ,case-description)
-                (test-body . (expression expressions ...)))))))
+           ((current-test-runner*)
+            `((type . schedule-test)
+              (test-thunk . ,test-thunk)
+              (description . ,case-description)
+              (test-body . (expression expressions ...))))))
       ((test case-description expression expressions ...)
        #'(test case-description #:metadata '() expression expressions ...))
       ((_ rest ...)
@@ -678,12 +667,10 @@ allows to group tests and other test suites."
                  ;; Wrapping into identity to prevent setting procedure-name
                  (identity
                   (lambda ()
-                    (parameterize ((%current-test-runner*
-                                    (test-runner-get-current-or-create)))
-                      ((%current-test-runner*)
-                       `((type . load-test-suite)
-                         (load-test-suite-thunk . ,load-test-suite-thunk)
-                         (description . ,suite-description))))))))
+                    ((current-test-runner*)
+                     `((type . load-test-suite)
+                       (load-test-suite-thunk . ,load-test-suite-thunk)
+                       (description . ,suite-description)))))))
            (set-procedure-properties!
             test-suite-thunk
             (alist-merge
@@ -706,7 +693,7 @@ allows to group tests and other test suites."
   (lambda (stx)
     (syntax-case stx ()
       ((_ get-test-runner body body* ...)
-       #'(parameterize ((%current-test-runner* (get-test-runner))
+       #'(parameterize ((current-test-runner* (get-test-runner))
                         (%schedule-only?* #f))
            body body* ...)))))
 

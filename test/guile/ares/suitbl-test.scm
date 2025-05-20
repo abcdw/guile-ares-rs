@@ -385,7 +385,7 @@ run summary is #f by default, but appears after test suite is executed"
     (is (equal?
          #f
          (with-silent-test-environment
-          ((test-runner-get-current-or-create)
+          ((current-test-runner*)
            `((type . get-run-summary))))))
 
     (is (not
@@ -394,7 +394,7 @@ run summary is #f by default, but appears after test suite is executed"
            ((test-suite "suite1"
               (test "case1"
                 (is #t))))
-           ((test-runner-get-current-or-create)
+           ((current-test-runner*)
             `((type . get-run-summary)))))))
 
     (define run-summary-with-failures-and-errors
@@ -407,7 +407,7 @@ run summary is #f by default, but appears after test suite is executed"
           (test "error > failure"
             (is #f)
             (is (throw 'hi)))))
-       ((test-runner-get-current-or-create)
+       ((current-test-runner*)
         `((type . get-run-summary)))))
 
     (is
@@ -451,9 +451,6 @@ expected number of tests is up-to-date."
 ;;; Today/Next
 
 ;; TODO: [Andrew Tropin, 2025-05-19] Add reporters to the test runner
-
-;; TODO: [Andrew Tropin, 2025-05-19] Make test-runner public and to be
-;; set by default
 
 ;; TODO: [Andrew Tropin, 2025-05-18] Make test return unspecified, so
 ;; noboday tries to use it to obtain test summary.  However, we still
