@@ -37,7 +37,7 @@
 
             test-runner-create-suitbl
             current-test-runner*
-            test-runner-run-test-suites
+            run-test-suites
 
             ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
             ;; introduces ambiguity and doesn't have a private
@@ -387,6 +387,7 @@ runner and ask it to execute itself?
 
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
+  (define this #f)
 
   (define (default-run-assert form-thunk args-thunk quoted-form)
     (with-exception-handler
@@ -589,24 +590,30 @@ runner and ask it to execute itself?
         ((get-run-summary)
          (atomic-box-ref last-run-summary))
 
+        ((run-test-suites)
+         (parameterize ((current-test-runner* this)
+                        (%schedule-only?* #t))
+           ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
+           (for-each (lambda (ts) (ts)) (assoc-ref x 'test-suites))
+           ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
+           ;; suites, only schedule them
+
+           (test-runner
+            `((type . run-scheduled-tests)))
+           ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
+           ))
+
         (else
          (raise-exception
           (make-exception-with-message
            (format #f "no handler for message type ~a" msg-type)))))))
+  (set! this test-runner)
   test-runner)
 
-(define (test-runner-run-test-suites test-runner test-suites)
-  (parameterize ((current-test-runner* test-runner)
-                 (%schedule-only?* #t))
-    ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
-    (for-each (lambda (ts) (ts)) test-suites)
-    ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
-    ;; suites, only schedule them
-
-    (test-runner
-     `((type . run-scheduled-tests)))
-    ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
-    ))
+(define (run-test-suites test-runner test-suites)
+  (test-runner
+   `((type . run-test-suites)
+     (test-suites . ,test-suites))))
 
 (define current-test-runner* (make-parameter (test-runner-create-suitbl)))
 
