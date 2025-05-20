@@ -290,15 +290,7 @@ runner and ask it to execute itself?
 
 |#
 
-(define %test-events* (make-parameter #f))
 
-
-(define (run-test test-thunk)
-  (parameterize ((%test-events* (make-atomic-box '())))
-    ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
-    ;; happen inside test case, but outside of assert
-    (test-thunk)
-    (atomic-box-ref (%test-events*))))
 
 (define (test? x)
   (and (procedure? x)
@@ -308,15 +300,6 @@ runner and ask it to execute itself?
   (and (procedure? x)
        (procedure-property x 'suitbl-test-suite?)))
 
-(define (run-scheduled-test test)
-  (let* ((result (run-test test))
-         (error? (any (lambda (x) (eq? x 'error)) result))
-         (fail? (any (lambda (x) (eq? x 'fail)) result)))
-    `((errors . ,(if error? 1 0))
-      (failures . ,(if (and fail? (not error?)) 1 0))
-      (assertions . ,(length result))
-      (tests . 1))))
-
 (define (merge-summaries s1 s2)
   (map
    (lambda (v)
@@ -325,41 +308,60 @@ runner and ask it to execute itself?
         (cons key (+ (assoc-ref s2 key) value)))))
    s1))
 
-(define (run-scheduled-suite suite)
-  ;; TODO: [Andrew Tropin, 2025-05-08] Add reporting of suite start/end
-  (let ((result #f))
-    ((test-reporter*)
-     `((type . test-suite-start)
-       (description . ,(car suite))))
-    (set! result
-          (let loop ((summary `((errors . 0)
-                                (failures . 0)
-                                (assertions . 0)
-                                (tests . 0)))
-                     (remaining-items (cdr suite)))
-            (if (null? remaining-items)
-                summary
-                (let ((item (car remaining-items)))
-                  (loop
-                   (merge-summaries
-                    summary
-                    ((if (test? item) run-scheduled-test run-scheduled-suite)
-                     item))
-                   (cdr remaining-items))))))
-    ((test-reporter*)
-     `((type . test-suite-end)
-       (description . ,(car suite))))
-    result))
 
 (define (test-runner-create-suitbl)
   (define %test-path* (make-parameter '()))
   (define %test* (make-parameter #f))
+  (define %test-events* (make-parameter #f))
   (define %current-test-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
 
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
   (define this #f)
+
+
+  (define (run-test test-thunk)
+    (parameterize ((%test-events* (make-atomic-box '())))
+      ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
+      ;; happen inside test case, but outside of assert
+      (test-thunk)
+      (atomic-box-ref (%test-events*))))
+
+  (define (run-scheduled-test test)
+    (let* ((result (run-test test))
+           (error? (any (lambda (x) (eq? x 'error)) result))
+           (fail? (any (lambda (x) (eq? x 'fail)) result)))
+      `((errors . ,(if error? 1 0))
+        (failures . ,(if (and fail? (not error?)) 1 0))
+        (assertions . ,(length result))
+        (tests . 1))))
+
+  (define (run-scheduled-suite suite)
+    ;; TODO: [Andrew Tropin, 2025-05-08] Add reporting of suite start/end
+    (let ((result #f))
+      ((test-reporter*)
+       `((type . test-suite-start)
+         (description . ,(car suite))))
+      (set! result
+            (let loop ((summary `((errors . 0)
+                                  (failures . 0)
+                                  (assertions . 0)
+                                  (tests . 0)))
+                       (remaining-items (cdr suite)))
+              (if (null? remaining-items)
+                  summary
+                  (let ((item (car remaining-items)))
+                    (loop
+                     (merge-summaries
+                      summary
+                      ((if (test? item) run-scheduled-test run-scheduled-suite)
+                       item))
+                     (cdr remaining-items))))))
+      ((test-reporter*)
+       `((type . test-suite-end)
+         (description . ,(car suite))))
+      result))
 
   (define (default-run-assert form-thunk args-thunk quoted-form)
     (with-exception-handler
