@@ -440,8 +440,39 @@ expected number of tests is up-to-date."
     (when (> (+ (assoc-ref summary 'failures) (assoc-ref summary 'errors)) 0)
       (exit 1))))
 
+
+;;; Today/Next
+
+;; TODO: [Andrew Tropin, 2025-05-19] Add reporters to the test runner
+
+;; TODO: [Andrew Tropin, 2025-05-19] Make test-runner public and to be
+;; set by default
+
+;; TODO: [Andrew Tropin, 2025-05-18] Make test return unspecified, so
+;; noboday tries to use it to obtain test summary.  However, we still
+;; can print test summary for auto-runned tests via test-reporter.
 
 ;; TODO: [Andrew Tropin, 2025-05-12] Add metadata for test suites
+
+
+;; TODO: [Andrew Tropin, 2025-05-20] Reference test runner with 'this'
+;; instead of dynamic variable
+
+;; TODO: [Andrew Tropin, 2025-05-20] Rename current- to test-runner*
+
+;; TODO: [Andrew Tropin, 2025-05-19] Provide state argument to each
+;; message of reporter from test runner, it will allow to make a
+;; stateful reporters without making reporters to reset the state
+;; themselves on test re-runs.  However, there is a potential problem
+;; with it, when we use test reporter combinators and a few of the
+;; reporters are stateful.
+
+;; TODO: [Andrew Tropin, 2025-05-19] Add delayed logging reporter
+
+;; TODO: [Andrew Tropin, 2025-05-19] Add testing started/finished
+;; message (make sure all test runners get this message) (maybe not,
+;; because it's necessary only for reporters to reset state) (the
+;; previous message related only to the message in parentheses before)
 
 ;; TODO: [Andrew Tropin, 2025-05-12] Preserve execution information,
 ;; so we can re-run failed tests
@@ -490,10 +521,16 @@ expected number of tests is up-to-date."
 ;; private vars)
 ;; https://doc.rust-lang.org/rust-by-example/testing/unit_testing.html
 
+
+;;; Feature requests
+
 ;; TODO: [Andrew Tropin, 2025-05-12] Add documentation tests
 ;; https://doc.rust-lang.org/rust-by-example/testing/doc_testing.html
 ;; They get executed with all the usual tests and also get embedded in
 ;; the documentation
 ;; https://doc.rust-lang.org/stable/std/ptr/macro.addr_of.html
+
+;; TODO: [Andrew Tropin, 2025-05-20] Implement snapshot testing workflow
+;; TODO: [Andrew Tropin, 2025-05-20] Implement doctest testing workflow
 
 

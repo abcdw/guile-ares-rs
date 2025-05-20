@@ -665,7 +665,7 @@ more asserts."
       ((_ rest ...)
        #'(syntax-error "Wrong usage of test")))))
 
-;; TODO: [Andrew Tropin, 2025-05-15] Add metedata to test-suite
+;; TODO: [Andrew Tropin, 2025-05-15] Add metadata to test-suite
 (define-syntax test-suite
   (lambda (x)
     "Test suite is simple unit of testing, it can be executed in parallel,
