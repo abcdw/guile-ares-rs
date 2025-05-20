@@ -383,9 +383,10 @@ runner and ask it to execute itself?
 (define (test-runner-create-suitbl)
   (define %test-path* (make-parameter '()))
   (define %test* (make-parameter #f))
+  (define %current-test-suite-items* (make-parameter #f))
+
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
-  (define %current-test-suite-items* (make-parameter #f))
 
   (define (default-run-assert form-thunk args-thunk quoted-form)
     (with-exception-handler
