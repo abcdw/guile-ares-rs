@@ -236,10 +236,10 @@ test cases on test-runner/IDE side.
   (lambda (stx)
     (syntax-case stx ()
       ((_ body body* ...)
-       #'(reset-test-environment
-          test-runner-create-suitbl
-          (parameterize ((test-reporter* test-reporter-silent))
-            body body* ...))))))
+       #'(parameterize ((current-test-runner*
+                         (test-runner-create-suitbl
+                          #:test-reporter test-reporter-silent)))
+           body body* ...)))))
 
 
 ;;;
@@ -428,11 +428,11 @@ run summary is #f by default, but appears after test suite is executed"
   (is #f))
 
 (define-public (run-tests)
-  (let* ((test-runner (test-runner-create-suitbl)))
-    (parameterize ((test-reporter* test-reporter-dots-with-hierarchy))
-      (run-test-suites
-       test-runner
-       (list base-test-runner-tests)))
+  (let* ((test-runner (test-runner-create-suitbl
+                       #:test-reporter test-reporter-dots-with-hierarchy)))
+    (run-test-suites
+     test-runner
+     (list base-test-runner-tests))
     (define summary (test-runner `((type . get-run-summary))))
     (format #t "\n~a\n" summary)
 
@@ -450,10 +450,8 @@ expected number of tests is up-to-date."
 
 ;;; Today/Next
 
-;; TODO: [Andrew Tropin, 2025-05-19] Add reporters to the test runner
-
 ;; TODO: [Andrew Tropin, 2025-05-18] Make test return unspecified, so
-;; noboday tries to use it to obtain test summary.  However, we still
+;; nobody tries to use it to obtain test summary.  However, we still
 ;; can print test summary for auto-runned tests via test-reporter.
 
 

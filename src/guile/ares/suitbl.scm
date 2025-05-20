@@ -231,8 +231,6 @@ depends on the runner implementation.
                        internal-time-units-per-second)))
            return-value)))))
 
-(define test-reporter* (make-parameter test-reporter-base))
-
 
 ;;;
 ;;; Test runners
@@ -309,7 +307,8 @@ runner and ask it to execute itself?
    s1))
 
 
-(define (test-runner-create-suitbl)
+(define* (test-runner-create-suitbl
+          #:key (test-reporter test-reporter-base))
   (define %test-path* (make-parameter '()))
   (define %test* (make-parameter #f))
   (define %test-events* (make-parameter #f))
@@ -319,7 +318,6 @@ runner and ask it to execute itself?
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
   (define this #f)
-
 
   (define (run-test test-thunk)
     (parameterize ((%test-events* (make-atomic-box '())))
@@ -340,7 +338,7 @@ runner and ask it to execute itself?
   (define (run-scheduled-suite suite)
     ;; TODO: [Andrew Tropin, 2025-05-08] Add reporting of suite start/end
     (let ((result #f))
-      ((test-reporter*)
+      (test-reporter
        `((type . test-suite-start)
          (description . ,(car suite))))
       (set! result
@@ -358,7 +356,7 @@ runner and ask it to execute itself?
                       ((if (test? item) run-scheduled-test run-scheduled-suite)
                        item))
                      (cdr remaining-items))))))
-      ((test-reporter*)
+      (test-reporter
        `((type . test-suite-end)
          (description . ,(car suite))))
       result))
@@ -371,7 +369,7 @@ runner and ask it to execute itself?
           (%test-events*)
           (lambda (value)
             (cons 'error value))))
-       ((test-reporter*)
+       (test-reporter
         `((type . assert-error)
           (quoted-form . ,quoted-form)
           (assert/error . ,ex))))
@@ -384,7 +382,7 @@ runner and ask it to execute itself?
             (%test-events*)
             (lambda (value)
               (cons (if result 'pass 'fail) value))))
-         ((test-reporter*)
+         (test-reporter
           `((type . ,(if result 'assert-pass 'assert-fail))
             (assert/result . ,result)
             (assert/arguments-thunk . ,args-thunk)
@@ -432,8 +430,6 @@ runner and ask it to execute itself?
 
       ((load-test-suite)
        (let* ((description (assoc-ref x 'description))
-              (test-reporter (test-reporter*))
-
               (test-suite-enter! (lambda ()
                                    (test-reporter
                                     `((type . test-suite-enter)
@@ -502,15 +498,14 @@ runner and ask it to execute itself?
                    (chain "Test Macros can't be nested"
                           (make-exception-with-message _)
                           (raise-exception _)))
-                 (let ((test-reporter (test-reporter*)))
-                   (test-reporter
-                    `((type . test-start)
-                      (description . ,description)))
-                   (parameterize ((%test* description))
-                     (original-test-thunk))
-                   (test-reporter
-                    `((type . test-end)
-                      (description . ,description))))))
+                 (test-reporter
+                  `((type . test-start)
+                    (description . ,description)))
+                 (parameterize ((%test* description))
+                   (original-test-thunk))
+                 (test-reporter
+                  `((type . test-end)
+                    (description . ,description)))))
               (test-item new-test-thunk))
 
          (set-procedure-properties!
@@ -530,7 +525,7 @@ runner and ask it to execute itself?
           state 'tests
           (lambda (l)
             (cons test-item (or l '()))))
-         ((test-reporter*)
+         (test-reporter
           `((type . test-scheduled)
             (test-path . ,(%test-path*))
             (description . ,description)))
