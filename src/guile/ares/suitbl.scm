@@ -377,13 +377,11 @@ runner and ask it to execute itself?
        (description . ,(car suite))))
     result))
 
-;; A temporary hack to prevent double execution
-(define %schedule-only?* (make-parameter #f))
-
 (define (test-runner-create-suitbl)
   (define %test-path* (make-parameter '()))
   (define %test* (make-parameter #f))
   (define %current-test-suite-items* (make-parameter #f))
+  (define %schedule-only?* (make-parameter #f))
 
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
@@ -701,8 +699,7 @@ allows to combine tests and other test suites."
   (lambda (stx)
     (syntax-case stx ()
       ((_ get-test-runner body body* ...)
-       #'(parameterize ((current-test-runner* (get-test-runner))
-                        (%schedule-only?* #f))
+       #'(parameterize ((current-test-runner* (get-test-runner)))
            body body* ...)))))
 
 (define-syntax throws-exception?
