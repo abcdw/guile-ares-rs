@@ -448,165 +448,166 @@ runner and ask it to execute itself?
        (lambda (l)
          (cons x (or l '())))))
 
-    (let ((msg-type (assoc-ref x 'type)))
-      (case msg-type
-        ((get-state)
-         state)
-        ((get-log)
-         (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
+    (define msg-type (assoc-ref x 'type))
 
-        ((load-test-suite)
-         (let* ((description (assoc-ref x 'description))
-                (test-reporter (test-reporter*))
+    (case msg-type
+      ((get-state)
+       state)
+      ((get-log)
+       (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-                (test-suite-enter! (lambda ()
-                                     (test-reporter
-                                      `((type . test-suite-enter)
-                                        (test-path . ,(%test-path*))
-                                        (description . ,description)))))
-                (test-suite-leave! (lambda ()
-                                     (test-reporter
-                                      `((type . test-suite-leave)
-                                        (test-path . ,(%test-path*))
-                                        (description . ,description)))))
-                (try-load-suite
-                 (lambda ()
-                   (test-suite-enter!)
-                   (let ((result
-                          (with-exception-handler
-                           (lambda (ex)
-                             (cons 'exception ex))
-                           (lambda ()
-                             (when (%test*)
-                               (raise-exception
-                                (make-exception-with-message
-                                 "Test Suite can't be nested into Test Macro")))
-                             ;; TODO: [Andrew Tropin, 2025-05-08]
-                             ;; Change the condition of top-level
-                             ;; suite.  Or wrap list of test-suites
-                             ;; into one more.
-                             (parameterize ((%current-test-suite-items*
-                                             (make-atomic-box '()))
-                                            (%test-path*
-                                             (cons description (%test-path*))))
-                               ((assoc-ref x 'load-test-suite-thunk))
-                               (chain (%current-test-suite-items*)
-                                      (atomic-box-ref _)
-                                      (reverse _)
-                                      (cons description _)
-                                      (cons 'value _))))
-                           #:unwind? #t)))
-                     (test-suite-leave!)
-                     result))))
+      ((load-test-suite)
+       (let* ((description (assoc-ref x 'description))
+              (test-reporter (test-reporter*))
 
-           (match (try-load-suite)
-             (('exception . ex)
-              (raise-exception ex))
-             (('value . val)
-              (let ((suite-items (%current-test-suite-items*)))
-                (if suite-items
-                    (atomic-box-update!
-                     suite-items
-                     (lambda (items) (cons val items)))
+              (test-suite-enter! (lambda ()
+                                   (test-reporter
+                                    `((type . test-suite-enter)
+                                      (test-path . ,(%test-path*))
+                                      (description . ,description)))))
+              (test-suite-leave! (lambda ()
+                                   (test-reporter
+                                    `((type . test-suite-leave)
+                                      (test-path . ,(%test-path*))
+                                      (description . ,description)))))
+              (try-load-suite
+               (lambda ()
+                 (test-suite-enter!)
+                 (let ((result
+                        (with-exception-handler
+                         (lambda (ex)
+                           (cons 'exception ex))
+                         (lambda ()
+                           (when (%test*)
+                             (raise-exception
+                              (make-exception-with-message
+                               "Test Suite can't be nested into Test Macro")))
+                           ;; TODO: [Andrew Tropin, 2025-05-08]
+                           ;; Change the condition of top-level
+                           ;; suite.  Or wrap list of test-suites
+                           ;; into one more.
+                           (parameterize ((%current-test-suite-items*
+                                           (make-atomic-box '()))
+                                          (%test-path*
+                                           (cons description (%test-path*))))
+                             ((assoc-ref x 'load-test-suite-thunk))
+                             (chain (%current-test-suite-items*)
+                                    (atomic-box-ref _)
+                                    (reverse _)
+                                    (cons description _)
+                                    (cons 'value _))))
+                         #:unwind? #t)))
+                   (test-suite-leave!)
+                   result))))
 
-                    (update-atomic-alist-value! state 'suite (lambda (l) val))))
-              val))
-           ;; test-runner-run-test-suites sets %schedule-only?*
-           ;; and also calls run-scheduled-tests, so to prevent double
-           ;; execution of scheduled test suites we add this condition.
-           (when (and (null? (%test-path*)) (not (%schedule-only?*)))
-             ((current-test-runner*)
-              `((type . run-scheduled-tests))))))
+         (match (try-load-suite)
+           (('exception . ex)
+            (raise-exception ex))
+           (('value . val)
+            (let ((suite-items (%current-test-suite-items*)))
+              (if suite-items
+                  (atomic-box-update!
+                   suite-items
+                   (lambda (items) (cons val items)))
 
-        ((schedule-test)
-         (let* ((original-test-thunk (assoc-ref x 'test-thunk))
-                (description (procedure-documentation original-test-thunk))
-                (new-test-thunk
-                 (lambda ()
-                   (when (%test*)
-                     (chain "Test Macros can't be nested"
-                            (make-exception-with-message _)
-                            (raise-exception _)))
-                   (let ((test-reporter (test-reporter*)))
-                     (test-reporter
-                      `((type . test-start)
-                        (description . ,description)))
-                     (parameterize ((%test* description))
-                       (original-test-thunk))
-                     (test-reporter
-                      `((type . test-end)
-                        (description . ,description))))))
-                (test-item new-test-thunk))
+                  (update-atomic-alist-value! state 'suite (lambda (l) val))))
+            val))
+         ;; test-runner-run-test-suites sets %schedule-only?*
+         ;; and also calls run-scheduled-tests, so to prevent double
+         ;; execution of scheduled test suites we add this condition.
+         (when (and (null? (%test-path*)) (not (%schedule-only?*)))
+           ((current-test-runner*)
+            `((type . run-scheduled-tests))))))
 
-           (set-procedure-properties!
-            new-test-thunk
-            (procedure-properties original-test-thunk))
-           (let ((suite-items (%current-test-suite-items*)))
-             (if suite-items
-                 (atomic-box-update!
-                  suite-items
-                  (lambda (items) (cons test-item items)))
-                 (update-atomic-alist-value!
-                  state 'suite
-                  ;; TODO: [Andrew Tropin, 2025-05-08] Remove unnamed suite wrap
-                  (lambda (l) (list "unnamed suite" test-item)))))
+      ((schedule-test)
+       (let* ((original-test-thunk (assoc-ref x 'test-thunk))
+              (description (procedure-documentation original-test-thunk))
+              (new-test-thunk
+               (lambda ()
+                 (when (%test*)
+                   (chain "Test Macros can't be nested"
+                          (make-exception-with-message _)
+                          (raise-exception _)))
+                 (let ((test-reporter (test-reporter*)))
+                   (test-reporter
+                    `((type . test-start)
+                      (description . ,description)))
+                   (parameterize ((%test* description))
+                     (original-test-thunk))
+                   (test-reporter
+                    `((type . test-end)
+                      (description . ,description))))))
+              (test-item new-test-thunk))
 
-           (update-atomic-alist-value!
-            state 'tests
-            (lambda (l)
-              (cons test-item (or l '()))))
-           ((test-reporter*)
-            `((type . test-scheduled)
-              (test-path . ,(%test-path*))
-              (description . ,description)))
-           (when (null? (%test-path*))
-             ((current-test-runner*)
-              `((type . run-scheduled-tests))))))
+         (set-procedure-properties!
+          new-test-thunk
+          (procedure-properties original-test-thunk))
+         (let ((suite-items (%current-test-suite-items*)))
+           (if suite-items
+               (atomic-box-update!
+                suite-items
+                (lambda (items) (cons test-item items)))
+               (update-atomic-alist-value!
+                state 'suite
+                ;; TODO: [Andrew Tropin, 2025-05-08] Remove unnamed suite wrap
+                (lambda (l) (list "unnamed suite" test-item)))))
 
-        ((run-assert)
-         (let ((assert-thunk (assoc-ref x 'assert/thunk))
-               (assert-arguments-thunk (assoc-ref x 'assert/arguments-thunk))
-               (assert-quoted-form (assoc-ref x 'assert/quoted-form)))
-           (when (and (not (null? (%test-path*)))
-                      (not (%test*)))
-             (chain
-              "Assert encountered inside test-suite, but outside of test"
-              (make-exception-with-message _)
-              (raise-exception _)))
-           (default-run-assert
-             assert-thunk assert-arguments-thunk assert-quoted-form)))
+         (update-atomic-alist-value!
+          state 'tests
+          (lambda (l)
+            (cons test-item (or l '()))))
+         ((test-reporter*)
+          `((type . test-scheduled)
+            (test-path . ,(%test-path*))
+            (description . ,description)))
+         (when (null? (%test-path*))
+           ((current-test-runner*)
+            `((type . run-scheduled-tests))))))
 
-        ((run-scheduled-tests)
-         ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
-         (atomic-box-set!
-          last-run-summary
-          (chain
-           (atomic-box-ref state)
-           (assoc-ref _ 'suite)
-           (run-scheduled-suite _)))
+      ((run-assert)
+       (let ((assert-thunk (assoc-ref x 'assert/thunk))
+             (assert-arguments-thunk (assoc-ref x 'assert/arguments-thunk))
+             (assert-quoted-form (assoc-ref x 'assert/quoted-form)))
+         (when (and (not (null? (%test-path*)))
+                    (not (%test*)))
+           (chain
+            "Assert encountered inside test-suite, but outside of test"
+            (make-exception-with-message _)
+            (raise-exception _)))
+         (default-run-assert
+           assert-thunk assert-arguments-thunk assert-quoted-form)))
 
-         (atomic-box-ref last-run-summary))
+      ((run-scheduled-tests)
+       ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
+       (atomic-box-set!
+        last-run-summary
+        (chain
+         (atomic-box-ref state)
+         (assoc-ref _ 'suite)
+         (run-scheduled-suite _)))
 
-        ((get-run-summary)
-         (atomic-box-ref last-run-summary))
+       (atomic-box-ref last-run-summary))
 
-        ((run-test-suites)
-         (parameterize ((current-test-runner* this)
-                        (%schedule-only?* #t))
-           ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
-           (for-each (lambda (ts) (ts)) (assoc-ref x 'test-suites))
-           ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
-           ;; suites, only schedule them
+      ((get-run-summary)
+       (atomic-box-ref last-run-summary))
 
-           (test-runner
-            `((type . run-scheduled-tests)))
-           ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
-           ))
+      ((run-test-suites)
+       (parameterize ((current-test-runner* this)
+                      (%schedule-only?* #t))
+         ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
+         (for-each (lambda (ts) (ts)) (assoc-ref x 'test-suites))
+         ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
+         ;; suites, only schedule them
 
-        (else
-         (raise-exception
-          (make-exception-with-message
-           (format #f "no handler for message type ~a" msg-type)))))))
+         (test-runner
+          `((type . run-scheduled-tests)))
+         ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
+         ))
+
+      (else
+       (raise-exception
+        (make-exception-with-message
+         (format #f "no handler for message type ~a" msg-type))))))
   (set! this test-runner)
   test-runner)
 
