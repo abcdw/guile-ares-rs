@@ -300,32 +300,6 @@ runner and ask it to execute itself?
     (test-thunk)
     (atomic-box-ref (%test-events*))))
 
-(define (run-scheduled-tests tests)
-  ;; pass, fail, skip(?), error
-  (let loop ((errors 0)
-             (failures 0)
-             (assertions 0)
-             (tests 0)
-             (remaining-tests tests))
-    (if (null? remaining-tests)
-        `((errors . ,errors)
-          (failures . ,failures)
-          (assertions . ,assertions)
-          (tests . ,tests))
-        (begin
-          (let* ((result (run-test (caar remaining-tests)))
-                 (error? (any (lambda (x) (eq? x 'error)) result))
-                 (fail? (any (lambda (x) (eq? x 'fail)) result))
-                 (inc-if (lambda (condition value)
-                           (if condition (1+ value) value))))
-            ;; (pk failed)
-            (loop
-             (inc-if error? errors)
-             (inc-if (and fail? (not error?)) failures)
-             (+ assertions (length result))
-             (1+ tests)
-             (cdr remaining-tests)))))))
-
 (define (test? x)
   (and (procedure? x)
        (procedure-property x 'suitbl-test?)))
