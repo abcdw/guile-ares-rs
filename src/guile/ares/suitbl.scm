@@ -665,13 +665,12 @@ more asserts."
       ((_ rest ...)
        #'(syntax-error "Wrong usage of test")))))
 
-;; TODO: [Andrew Tropin, 2025-05-15] Add metadata to test-suite
 (define-syntax test-suite
   (lambda (x)
     "Test suite is simple unit of testing, it can be executed in parallel,
 allows to group tests and other test suites."
     (syntax-case x ()
-      ((_ suite-description expression expressions ...)
+      ((_ suite-description #:metadata metadata expression expressions ...)
        #'(let* ((load-test-suite-thunk
                  (lambda () expression expressions ...))
                 (test-suite-thunk
@@ -686,9 +685,13 @@ allows to group tests and other test suites."
                          (description . ,suite-description))))))))
            (set-procedure-properties!
             test-suite-thunk
-            `((documentation . ,suite-description)
-              (suitbl-test-suite? . #t)))
-           test-suite-thunk)))))
+            (alist-merge
+             metadata
+             `((documentation . ,suite-description)
+               (suitbl-test-suite? . #t))))
+           test-suite-thunk))
+      ((test suite-description expression expressions ...)
+       #'(test suite-description #:metadata '() expression expressions ...)))))
 
 (define-syntax define-test-suite
   (syntax-rules ()

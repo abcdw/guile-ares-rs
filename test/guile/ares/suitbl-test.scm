@@ -368,6 +368,13 @@ test cases on test-runner/IDE side.
   ;; (test "suite-results"
   ;;   (is (equal? 'hi test-suite-results)))
 
+  ;; TODO: [Andrew Tropin, 2025-05-20] Improve this test, check that
+  ;; metadata saved and we can retrive it.
+  ((test-suite "test suite with metadata"
+     #:metadata `((interesting? . #t))
+     (test "simple"
+       (is #t))))
+
   (nested-test-suites-and-test-macros-tests))
 
 
@@ -432,7 +439,7 @@ run summary is #f by default, but appears after test suite is executed"
     (define number-of-tests
       (assoc-ref summary 'tests))
 
-    (unless (= 15 number-of-tests)
+    (unless (= 16 number-of-tests)
       (chain "Unexpected number of tests, make sure all tests are executed and
 expected number of tests is up-to-date."
              (make-exception-with-message _)
@@ -451,8 +458,6 @@ expected number of tests is up-to-date."
 ;; TODO: [Andrew Tropin, 2025-05-18] Make test return unspecified, so
 ;; noboday tries to use it to obtain test summary.  However, we still
 ;; can print test summary for auto-runned tests via test-reporter.
-
-;; TODO: [Andrew Tropin, 2025-05-12] Add metadata for test suites
 
 
 ;; TODO: [Andrew Tropin, 2025-05-20] Reference test runner with 'this'
