@@ -619,78 +619,78 @@ runner and ask it to execute itself?
 (define current-test-runner* (make-parameter (test-runner-create-suitbl)))
 
 
+;;; We use syntax-rules, because it save patterns into transformer's
+;;; metadata, which allows to generate "signature" of the macro.
+
 (define-syntax is
-  (lambda (x)
-    (syntax-case x ()
-      ((_ (pred args ...))
-       (with-syntax ((form #'(pred args ...)))
-         #'((current-test-runner*)
-            `((type . run-assert)
-              (assert/thunk . ,(lambda () form))
-              (assert/arguments-thunk . ,(lambda () (list args ...)))
-              (assert/quoted-form .  form)))))
-      ((_ form)
-       #'((current-test-runner*)
-          `((type . run-assert)
-            (assert/thunk . ,(lambda () form))
-            (assert/quoted-form . form)))))))
+  (syntax-rules ()
+    "A flexible assert macro.  Can be customized by test runner and
+reporter."
+    ((_ (pred args ...))
+     ((current-test-runner*)
+      `((type . run-assert)
+        (assert/thunk . ,(lambda () (pred args ...)))
+        (assert/arguments-thunk . ,(lambda () (list args ...)))
+        (assert/quoted-form .  form))))
+    ((_ form)
+     ((current-test-runner*)
+      `((type . run-assert)
+        (assert/thunk . ,(lambda () form))
+        (assert/quoted-form . form))))))
 
 (define (alist-merge l1 l2)
   (append l1 l2))
 
 (define-syntax test
-  (lambda (x)
-    "Test case represent a logical unit of testing, can include zero or
-more asserts."
-    (syntax-case x ()
-      ((test case-description #:metadata metadata expression expressions ...)
-       #'(let ((test-thunk
-                (lambda () expression expressions ...)))
-           (set-procedure-properties!
-            test-thunk
-            (alist-merge
-             metadata
-             `((name . test)
-               (documentation . ,case-description)
-               (suitbl-test? . #t))))
-           ((current-test-runner*)
-            `((type . schedule-test)
-              (test-thunk . ,test-thunk)
-              (description . ,case-description)
-              (test-body . (expression expressions ...))))))
-      ((test case-description expression expressions ...)
-       #'(test case-description #:metadata '() expression expressions ...))
-      ((_ rest ...)
-       #'(syntax-error "Wrong usage of test")))))
+  (syntax-rules ()
+    "Test represent a logical unit of testing, usually includes zero or
+more @code{is} asserts."
+    ((test test-description #:metadata metadata expression expressions ...)
+     (let ((test-thunk
+            (lambda () expression expressions ...)))
+       (set-procedure-properties!
+        test-thunk
+        (alist-merge
+         metadata
+         `((name . test)
+           (documentation . ,test-description)
+           (suitbl-test? . #t))))
+       ((current-test-runner*)
+        `((type . schedule-test)
+          (test-thunk . ,test-thunk)
+          (description . ,test-description)
+          (test-body . (expression expressions ...))))))
+    ((test test-description expression expressions ...)
+     (test test-description #:metadata '() expression expressions ...))))
 
 (define-syntax test-suite
-  (lambda (x)
-    "Test suite is simple unit of testing, it can be executed in parallel,
-allows to group tests and other test suites."
-    (syntax-case x ()
-      ((_ suite-description #:metadata metadata expression expressions ...)
-       #'(let* ((load-test-suite-thunk
-                 (lambda () expression expressions ...))
-                (test-suite-thunk
-                 ;; Wrapping into identity to prevent setting procedure-name
-                 (identity
-                  (lambda ()
-                    ((current-test-runner*)
-                     `((type . load-test-suite)
-                       (load-test-suite-thunk . ,load-test-suite-thunk)
-                       (description . ,suite-description)))))))
-           (set-procedure-properties!
-            test-suite-thunk
-            (alist-merge
-             metadata
-             `((documentation . ,suite-description)
-               (suitbl-test-suite? . #t))))
-           test-suite-thunk))
-      ((test suite-description expression expressions ...)
-       #'(test suite-description #:metadata '() expression expressions ...)))))
+  (syntax-rules ()
+    "Test suite is a grouping unit, it can be executed in parallel,
+allows to combine tests and other test suites."
+    ((_ suite-description #:metadata metadata expression expressions ...)
+     (let* ((load-test-suite-thunk
+             (lambda () expression expressions ...))
+            (test-suite-thunk
+             ;; Wrapping into identity to prevent setting procedure-name
+             (identity
+              (lambda ()
+                ((current-test-runner*)
+                 `((type . load-test-suite)
+                   (load-test-suite-thunk . ,load-test-suite-thunk)
+                   (description . ,suite-description)))))))
+       (set-procedure-properties!
+        test-suite-thunk
+        (alist-merge
+         metadata
+         `((documentation . ,suite-description)
+           (suitbl-test-suite? . #t))))
+       test-suite-thunk))
+    ((test-suite suite-description expression expressions ...)
+     (test-suite suite-description #:metadata '() expression expressions ...))))
 
 (define-syntax define-test-suite
   (syntax-rules ()
+    "Equivalent of (define-public NAME (test-suite ...))."
     ((_ test-suite-name expression ...)
      (begin
        (define-public test-suite-name
