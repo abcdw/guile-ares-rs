@@ -65,19 +65,27 @@ not a requirement, but a convention to make it easier for the
 developer to visually distinguish functions containing tests
 inside (aka test suits) from usual functions.
 
-(define-test-suite addition-tests
-  (test "small numbers addition"
-    (is (= 4 (+ 2 2)))
-    (is (= 7 (+ 3 4)))))
+(define addition-tests
+  (test-suite "addition"
+    (test "small numbers addition"
+      (is (= 4 (+ 2 2)))
+      (is (= 7 (+ 3 4))))
 
-(define-test subtraction-tests
-  (test "small numbers subtraction"
-    (is (= 1 (- 4 3)))
-    (is (= 3 (- 7 4)))))
+    (test "big numbers addition"
+      (is (=    4000000000000
+             (+ 2000000000000
+                2000000000000))))))
 
-(define-test arithmetic-tests
-  (addition-tests)
-  (subtraction-tests))
+(define subtraction-tests
+  (test-suite "substraction"
+    (test "small numbers subtraction"
+      (is (= 1 (- 4 3)))
+      (is (= 3 (- 7 4))))))
+
+(define-public arithmetic-tests
+  (test-suite "arithmetic"
+    (addition-tests)
+    (subtraction-tests)))
 
 When you call a test suite, the test runner will build hierarchy of
 nested tests and test suites, add it into test runner, later those
