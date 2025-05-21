@@ -455,9 +455,6 @@ expected number of tests is up-to-date."
 ;; can print test summary for auto-runned tests via test-reporter.
 
 
-;; TODO: [Andrew Tropin, 2025-05-20] Reference test runner with 'this'
-;; instead of dynamic variable
-
 ;; TODO: [Andrew Tropin, 2025-05-20] Rename current- to test-runner*
 
 ;; TODO: [Andrew Tropin, 2025-05-19] Provide state argument to each

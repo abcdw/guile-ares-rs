@@ -486,8 +486,7 @@ runner and ask it to execute itself?
          ;; and also calls run-scheduled-tests, so to prevent double
          ;; execution of scheduled test suites we add this condition.
          (when (and (null? (%test-path*)) (not (%schedule-only?*)))
-           ((current-test-runner*)
-            `((type . run-scheduled-tests))))))
+           (this `((type . run-scheduled-tests))))))
 
       ((schedule-test)
        (let* ((original-test-thunk (assoc-ref x 'test-thunk))
@@ -530,8 +529,7 @@ runner and ask it to execute itself?
             (test-path . ,(%test-path*))
             (description . ,description)))
          (when (null? (%test-path*))
-           ((current-test-runner*)
-            `((type . run-scheduled-tests))))))
+           (this `((type . run-scheduled-tests))))))
 
       ((run-assert)
        (let ((assert-thunk (assoc-ref x 'assert/thunk))
