@@ -53,7 +53,8 @@ control the test execution logic, skipping, shuffling, whatever.
 Test suite is a function, it can be executed to load tests defined
 inside.  The name of such functions should contain -tests prefix, it's
 not a requirement, but a convention to make it easier for the
-developer to distinguish functions containing tests inside.
+developer to visually distinguish functions containing tests
+inside (aka test suits) from usual functions.
 
 (define-test-suite addition-tests
   (test "small numbers addition"
@@ -72,14 +73,33 @@ developer to distinguish functions containing tests inside.
 When you call a test suite, the test runner will build hierarchy of
 nested tests and test suites add it into test runner, later those
 loaded tests will be executed.  The order and concurrency of execution
-depends on the runner implementation.
+depends on the test runner implementation.
 
 |#
 
 
 ;;;
-;;; Reporters
+;;; Test Reporters
 ;;;
+
+#|
+
+Test reporters are simple functions which accept a message in format
+of Association List (alist) and produce an output to
+test-reporter-output-port*.
+
+(test-reporter
+ `((type . test-scheduled)
+   (test-path . ("test-suite1" "nested-test-suite"))
+   (description . "basic arithmetics")))
+
+
+Test reporters can be comined with test-reporters-use-all or
+test-reporters-use-first to compliment each other or override.
+
+A final test reporter can be attached to test runner.
+
+|#
 
 (define test-reporter-output-port* (make-parameter (current-output-port)))
 
@@ -95,12 +115,6 @@ depends on the runner implementation.
       (unless (null? reporters)
         (let ((reporter-result ((car reporters) message)))
           (or reporter-result (loop (cdr reporters))))))))
-
-;; (let ((r (test-reporters-use-all
-;;           (list test-reporter-base test-reporter-logging))))
-;;   (r '((type . unknown)))
-;;   (r '((type . test-scheduled)
-;;        (test-path . ()))))
 
 (define (test-reporter-silent message)
   #t)
@@ -220,62 +234,18 @@ depends on the runner implementation.
 
 
 ;;;
-;;; Test runners
+;;; Test Runners
 ;;;
 
 #|
 
-Contains information:
-- The capture of stdout/stderr.
+The same test runner can be used to run and re-run tests and test
+suits multiple times.
 
-- the structure suite1.suite2.suite3.case1.assert1
-
-- for every assert it will contain the result and time start/end
-
-- for every case it will contain the summary on the number of asserts,
-number of fails and successes, total time spent.
-
-- similiar for test suite.
-
-
-Life cycle:
-
-We can either create a test runner and pass it a list of tests to
-execute or asserts, tests and test-suites can instantiate some
-default test-runner.
-
-
-Operations on test runner:
-begin-suite (time)
-begin-case (time)
-
-begin-assert (time)
-end-assert (time, pass or fail)
-
-end-case (time)
-end-suite (time)
-
-(message-test-runner
- (get-current-test-runner)
- `((type . run-test-suites)
-   (test-suites . ,(get-list-of-test))))
-
-(message-test-runner
- (get-current-test-runner)
- `((type . test-suite-start)
-   (path . (list "suite 1" "suite 2"))
-   (time . ,(current-time))))
-
-(message-test-runner
- (get-current-test-runner)
- `((type . get-run-result)))
-
-What `is` does, when it executed on its own? Does it create a test
-runner and ask it to execute itself?
+There is a test-runner* dynamic variable (parameter), to reset test
+environment just set it to new instance of test runner.
 
 |#
-
-
 
 (define (test? x)
   (and (procedure? x)
@@ -550,8 +520,6 @@ runner and ask it to execute itself?
                       (%schedule-only?* #t))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
          (for-each (lambda (ts) (ts)) (assoc-ref x 'test-suites))
-         ;; TODO: [Andrew Tropin, 2025-05-08] Prevent execution of test
-         ;; suites, only schedule them
 
          (test-runner
           `((type . run-scheduled-tests)))
@@ -573,8 +541,12 @@ runner and ask it to execute itself?
 (define test-runner* (make-parameter (test-runner-create-suitbl)))
 
 
-;;; We use syntax-rules, because it save patterns into transformer's
-;;; metadata, which allows to generate "signature" of the macro.
+;;;
+;;; Macros API
+;;;
+
+;; We use syntax-rules, because it save patterns into transformer's
+;; metadata, which allows to generate "signature" of the macro.
 
 (define-syntax is
   (syntax-rules ()
