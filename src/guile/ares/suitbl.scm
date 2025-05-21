@@ -240,24 +240,24 @@ A final test reporter can be attached to test runner.
 (define (test-reporter-hierarchy message)
   (case (assoc-ref message 'type)
     ((test-scheduled)
-     (format (test-reporter-output-port*)
+     (format (test-reporter-output-port*) "~a"
              (string-repeat "|" (length (assoc-ref message 'test-path))))
-     (format (test-reporter-output-port*)
-             " + test ~a\n" (assoc-ref message 'description)))
+     (format (test-reporter-output-port*) " + test ~a\n"
+             (assoc-ref message 'description)))
     ((test-suite-enter)
-     (format (test-reporter-output-port*)
+     (format (test-reporter-output-port*) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'test-path)))
               "┌"))
-     (format (test-reporter-output-port*)
-             "> ~a\n" (assoc-ref message 'description)))
+     (format (test-reporter-output-port*) "> ~a\n"
+             (assoc-ref message 'description)))
     ((test-suite-leave)
-     (format (test-reporter-output-port*)
+     (format (test-reporter-output-port*) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'test-path)))
               "└"))
-     (format (test-reporter-output-port*)
-             "> ~a\n" (assoc-ref message 'description)))
+     (format (test-reporter-output-port*) "> ~a\n"
+             (assoc-ref message 'description)))
     (else #f)))
 
 (define (test-reporter-verbose message)
@@ -272,11 +272,11 @@ A final test reporter can be attached to test runner.
 
   (case (assoc-ref message 'type)
     ((test-start)
-     (format (test-reporter-output-port*)
-             "\n┌Test ~a\n" (assoc-ref message 'description)))
+     (format (test-reporter-output-port*) "\n┌Test ~a\n"
+             (assoc-ref message 'description)))
     ((test-end)
-     (format (test-reporter-output-port*)
-             "└Test ~a\n" (assoc-ref message 'description)))
+     (format (test-reporter-output-port*) "└Test ~a\n"
+             (assoc-ref message 'description)))
 
     ((assert-pass)
      (format (test-reporter-output-port*) "✓ ~s\n"
