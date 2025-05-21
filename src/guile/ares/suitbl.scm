@@ -22,7 +22,7 @@
             test-reporter-dots
             test-reporter-dots-with-hierarchy
 
-            test-runner-create-suitbl
+            make-suitbl-test-runner
             test-runner*
             run-test-suites
 
@@ -82,7 +82,7 @@ depends on the test runner implementation.
 ;;; Primary API
 ;;;
 
-(define test-runner* (make-parameter (test-runner-create-suitbl)))
+(define test-runner* (make-parameter (make-suitbl-test-runner)))
 
 (define (test? x)
   (and (procedure? x)
@@ -361,8 +361,10 @@ environment just set it to new instance of test runner.
         (cons key (+ (assoc-ref s2 key) value)))))
    s1))
 
-(define* (test-runner-create-suitbl
-          #:key (test-reporter test-reporter-base))
+(define* (make-suitbl-test-runner
+          #:key
+          (test-reporter test-reporter-base))
+  "A flexible test runner factory, which spawns new test runners."
   (define %test-path* (make-parameter '()))
   (define %test* (make-parameter #f))
   (define %test-events* (make-parameter #f))

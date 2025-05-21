@@ -228,7 +228,7 @@ test cases on test-runner/IDE side.
     (syntax-case stx ()
       ((_ body body* ...)
        #'(parameterize ((test-runner*
-                         (test-runner-create-suitbl
+                         (make-suitbl-test-runner
                           #:test-reporter test-reporter-silent)))
            body body* ...)))))
 
@@ -419,7 +419,7 @@ run summary is #f by default, but appears after test suite is executed"
   (is #f))
 
 (define-public (run-tests)
-  (let* ((test-runner (test-runner-create-suitbl
+  (let* ((test-runner (make-suitbl-test-runner
                        #:test-reporter test-reporter-dots-with-hierarchy)))
     (run-test-suites
      test-runner
