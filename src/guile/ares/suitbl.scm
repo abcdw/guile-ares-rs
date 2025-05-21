@@ -44,13 +44,20 @@ The primary tool of the test library is assert macro @code{is}.  You
 can use it on it's own and evaluate it, test runner will take care of
 executing the body of assert and calling reporter to report result.
 
+The unevaluated form and thunk returning evaluated arguments are
+preserved, so it's up to the test report to provide a nice readable
+message.  For example if reporter encounters a failure and sees lset=
+as a predicate it can say what the difference between sets instead of
+using generic message.
+
 Asserts can be grouped with test macro to make a simple unit of
-testing.  Test can also be evaluated on it's own, test runner knows
-what to do with it.
+testing with additional documentation string attached to it.  Test can
+also be evaluated on it's own, test runner knows what to do with it.
 
 Tests can be grouped into test suites.  Test suites can be nested in
 each other.  It allows to combine related tests, build hierarchy,
-control the test execution logic, skipping, shuffling, whatever.
+control the test execution logic: skipping, shuffling, running in
+parallel or whatever.
 
 Test suite is a function, it can be executed to load tests defined
 inside.  The name of such functions should contain -tests prefix, it's
@@ -73,7 +80,7 @@ inside (aka test suits) from usual functions.
   (subtraction-tests))
 
 When you call a test suite, the test runner will build hierarchy of
-nested tests and test suites add it into test runner, later those
+nested tests and test suites, add it into test runner, later those
 loaded tests will be executed.  The order and concurrency of execution
 depends on the test runner implementation.
 
