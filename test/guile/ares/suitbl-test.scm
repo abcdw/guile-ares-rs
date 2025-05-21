@@ -197,15 +197,6 @@ test cases on test-runner/IDE side.
       ((_ body body* ...)
        #'(parameterize ((test-reporter-output-port* (open-output-string)))
            body body* ...)))))
-#;
-(reset-test-environment
- get-simple-test-runner
- (is
-  (ignore-current-output-port
-   (reset-test-environment
-    (@@ (ares suitbl) default-get-test-runner)
-    (test "test"
-      (is 123))))))
 
 
 

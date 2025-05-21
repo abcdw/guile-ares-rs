@@ -13,10 +13,7 @@
                 #:select (last drop-right any fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain))
 
-  ;; TODO: [Andrew Tropin, 2025-05-15] reset-test-environment ->
-  ;; with-clean-test-environment?/test-environment-clean
-  #:export (reset-test-environment
-            test-suite test is
+  #:export (test-suite test is
 
             test-reporter-output-port*
             test-reporter-silent
@@ -663,13 +660,6 @@ allows to combine tests and other test suites."
        (define-public test-suite-name
          (test-suite (symbol->string 'test-suite-name) expression ...))
        (set-procedure-property! test-suite-name 'name 'test-suite-name)))))
-
-(define-syntax reset-test-environment
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ get-test-runner body body* ...)
-       #'(parameterize ((test-runner* (get-test-runner)))
-           body body* ...)))))
 
 (define-syntax throws-exception?
   (lambda (x)
