@@ -236,7 +236,7 @@ test cases on test-runner/IDE side.
   (lambda (stx)
     (syntax-case stx ()
       ((_ body body* ...)
-       #'(parameterize ((current-test-runner*
+       #'(parameterize ((test-runner*
                          (test-runner-create-suitbl
                           #:test-reporter test-reporter-silent)))
            body body* ...)))))
@@ -385,7 +385,7 @@ run summary is #f by default, but appears after test suite is executed"
     (is (equal?
          #f
          (with-silent-test-environment
-          ((current-test-runner*)
+          ((test-runner*)
            `((type . get-run-summary))))))
 
     (is (not
@@ -394,7 +394,7 @@ run summary is #f by default, but appears after test suite is executed"
            ((test-suite "suite1"
               (test "case1"
                 (is #t))))
-           ((current-test-runner*)
+           ((test-runner*)
             `((type . get-run-summary)))))))
 
     (define run-summary-with-failures-and-errors
@@ -407,7 +407,7 @@ run summary is #f by default, but appears after test suite is executed"
           (test "error > failure"
             (is #f)
             (is (throw 'hi)))))
-       ((current-test-runner*)
+       ((test-runner*)
         `((type . get-run-summary)))))
 
     (is
@@ -455,8 +455,6 @@ expected number of tests is up-to-date."
 ;; can print test summary for auto-runned tests via test-reporter.
 
 
-;; TODO: [Andrew Tropin, 2025-05-20] Rename current- to test-runner*
-
 ;; TODO: [Andrew Tropin, 2025-05-19] Provide state argument to each
 ;; message of reporter from test runner, it will allow to make a
 ;; stateful reporters without making reporters to reset the state

@@ -36,7 +36,7 @@
             ;; can be used in base reporter.
 
             test-runner-create-suitbl
-            current-test-runner*
+            test-runner*
             run-test-suites
 
             ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
@@ -559,7 +559,7 @@ runner and ask it to execute itself?
        (atomic-box-ref last-run-summary))
 
       ((run-test-suites)
-       (parameterize ((current-test-runner* this)
+       (parameterize ((test-runner* this)
                       (%schedule-only?* #t))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
          (for-each (lambda (ts) (ts)) (assoc-ref x 'test-suites))
@@ -583,7 +583,7 @@ runner and ask it to execute itself?
    `((type . run-test-suites)
      (test-suites . ,test-suites))))
 
-(define current-test-runner* (make-parameter (test-runner-create-suitbl)))
+(define test-runner* (make-parameter (test-runner-create-suitbl)))
 
 
 ;;; We use syntax-rules, because it save patterns into transformer's
@@ -594,13 +594,13 @@ runner and ask it to execute itself?
     "A flexible assert macro.  Can be customized by test runner and
 reporter."
     ((_ (pred args ...))
-     ((current-test-runner*)
+     ((test-runner*)
       `((type . run-assert)
         (assert/thunk . ,(lambda () (pred args ...)))
         (assert/arguments-thunk . ,(lambda () (list args ...)))
         (assert/quoted-form .  form))))
     ((_ form)
-     ((current-test-runner*)
+     ((test-runner*)
       `((type . run-assert)
         (assert/thunk . ,(lambda () form))
         (assert/quoted-form . form))))))
@@ -622,7 +622,7 @@ more @code{is} asserts."
          `((name . test)
            (documentation . ,test-description)
            (suitbl-test? . #t))))
-       ((current-test-runner*)
+       ((test-runner*)
         `((type . schedule-test)
           (test-thunk . ,test-thunk)
           (description . ,test-description)
@@ -641,7 +641,7 @@ allows to combine tests and other test suites."
              ;; Wrapping into identity to prevent setting procedure-name
              (identity
               (lambda ()
-                ((current-test-runner*)
+                ((test-runner*)
                  `((type . load-test-suite)
                    (load-test-suite-thunk . ,load-test-suite-thunk)
                    (description . ,suite-description)))))))
@@ -668,7 +668,7 @@ allows to combine tests and other test suites."
   (lambda (stx)
     (syntax-case stx ()
       ((_ get-test-runner body body* ...)
-       #'(parameterize ((current-test-runner* (get-test-runner)))
+       #'(parameterize ((test-runner* (get-test-runner)))
            body body* ...)))))
 
 (define-syntax throws-exception?
