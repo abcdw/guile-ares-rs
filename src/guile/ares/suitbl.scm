@@ -79,6 +79,112 @@ depends on the test runner implementation.
 
 
 ;;;
+;;; Primary API
+;;;
+
+(define test-runner* (make-parameter (test-runner-create-suitbl)))
+
+(define (test? x)
+  (and (procedure? x)
+       (procedure-property x 'suitbl-test?)))
+
+(define (test-suite? x)
+  (and (procedure? x)
+       (procedure-property x 'suitbl-test-suite?)))
+
+;; We use syntax-rules because it save patterns into transformer's
+;; metadata, which allows to generate "signature" of the macro.
+
+(define-syntax is
+  (syntax-rules ()
+    "A flexible assert macro.  Can be customized by test runner and
+reporter."
+    ((_ (pred args ...))
+     ((test-runner*)
+      `((type . run-assert)
+        (assert/thunk . ,(lambda () (pred args ...)))
+        (assert/arguments-thunk . ,(lambda () (list args ...)))
+        (assert/quoted-form .  form))))
+    ((_ form)
+     ((test-runner*)
+      `((type . run-assert)
+        (assert/thunk . ,(lambda () form))
+        (assert/quoted-form . form))))))
+
+(define (alist-merge l1 l2)
+  (append l1 l2))
+
+(define-syntax test
+  (syntax-rules ()
+    "Test represent a logical unit of testing, usually includes zero or
+more @code{is} asserts."
+    ((test test-description #:metadata metadata expression expressions ...)
+     (let ((test-thunk
+            (lambda () expression expressions ...)))
+       (set-procedure-properties!
+        test-thunk
+        (alist-merge
+         metadata
+         `((name . test)
+           (documentation . ,test-description)
+           (suitbl-test? . #t))))
+       ((test-runner*)
+        `((type . schedule-test)
+          (test-thunk . ,test-thunk)
+          (description . ,test-description)
+          (test-body . (expression expressions ...))))))
+    ((test test-description expression expressions ...)
+     (test test-description #:metadata '() expression expressions ...))))
+
+(define-syntax test-suite
+  (syntax-rules ()
+    "Test suite is a grouping unit, it can be executed in parallel,
+allows to combine tests and other test suites."
+    ((_ suite-description #:metadata metadata expression expressions ...)
+     (let* ((load-test-suite-thunk
+             (lambda () expression expressions ...))
+            (test-suite-thunk
+             ;; Wrapping into identity to prevent setting procedure-name
+             (identity
+              (lambda ()
+                ((test-runner*)
+                 `((type . load-test-suite)
+                   (load-test-suite-thunk . ,load-test-suite-thunk)
+                   (description . ,suite-description)))))))
+       (set-procedure-properties!
+        test-suite-thunk
+        (alist-merge
+         metadata
+         `((documentation . ,suite-description)
+           (suitbl-test-suite? . #t))))
+       test-suite-thunk))
+    ((test-suite suite-description expression expressions ...)
+     (test-suite suite-description #:metadata '() expression expressions ...))))
+
+(define-syntax define-test-suite
+  (syntax-rules ()
+    "Equivalent of (define-public NAME (test-suite ...))."
+    ((_ test-suite-name expression ...)
+     (begin
+       (define-public test-suite-name
+         (test-suite (symbol->string 'test-suite-name) expression ...))
+       (set-procedure-property! test-suite-name 'name 'test-suite-name)))))
+
+(define-syntax throws-exception?
+  (lambda (x)
+    (syntax-case x ()
+      ((throws-exception? expression)
+       #'(throws-exception? expression exception?))
+      ((throws-exception? expression predicate)
+       #'(with-exception-handler
+          (lambda (ex) (predicate ex))
+          (lambda ()
+            expression
+            #f)
+          #:unwind? #t)))))
+
+
+;;;
 ;;; Test Reporters
 ;;;
 
@@ -247,14 +353,6 @@ environment just set it to new instance of test runner.
 
 |#
 
-(define (test? x)
-  (and (procedure? x)
-       (procedure-property x 'suitbl-test?)))
-
-(define (test-suite? x)
-  (and (procedure? x)
-       (procedure-property x 'suitbl-test-suite?)))
-
 (define (merge-summaries s1 s2)
   (map
    (lambda (v)
@@ -262,7 +360,6 @@ environment just set it to new instance of test runner.
        ((key . value)
         (cons key (+ (assoc-ref s2 key) value)))))
    s1))
-
 
 (define* (test-runner-create-suitbl
           #:key (test-reporter test-reporter-base))
@@ -537,104 +634,6 @@ environment just set it to new instance of test runner.
   (test-runner
    `((type . run-test-suites)
      (test-suites . ,test-suites))))
-
-(define test-runner* (make-parameter (test-runner-create-suitbl)))
-
-
-;;;
-;;; Macros API
-;;;
-
-;; We use syntax-rules, because it save patterns into transformer's
-;; metadata, which allows to generate "signature" of the macro.
-
-(define-syntax is
-  (syntax-rules ()
-    "A flexible assert macro.  Can be customized by test runner and
-reporter."
-    ((_ (pred args ...))
-     ((test-runner*)
-      `((type . run-assert)
-        (assert/thunk . ,(lambda () (pred args ...)))
-        (assert/arguments-thunk . ,(lambda () (list args ...)))
-        (assert/quoted-form .  form))))
-    ((_ form)
-     ((test-runner*)
-      `((type . run-assert)
-        (assert/thunk . ,(lambda () form))
-        (assert/quoted-form . form))))))
-
-(define (alist-merge l1 l2)
-  (append l1 l2))
-
-(define-syntax test
-  (syntax-rules ()
-    "Test represent a logical unit of testing, usually includes zero or
-more @code{is} asserts."
-    ((test test-description #:metadata metadata expression expressions ...)
-     (let ((test-thunk
-            (lambda () expression expressions ...)))
-       (set-procedure-properties!
-        test-thunk
-        (alist-merge
-         metadata
-         `((name . test)
-           (documentation . ,test-description)
-           (suitbl-test? . #t))))
-       ((test-runner*)
-        `((type . schedule-test)
-          (test-thunk . ,test-thunk)
-          (description . ,test-description)
-          (test-body . (expression expressions ...))))))
-    ((test test-description expression expressions ...)
-     (test test-description #:metadata '() expression expressions ...))))
-
-(define-syntax test-suite
-  (syntax-rules ()
-    "Test suite is a grouping unit, it can be executed in parallel,
-allows to combine tests and other test suites."
-    ((_ suite-description #:metadata metadata expression expressions ...)
-     (let* ((load-test-suite-thunk
-             (lambda () expression expressions ...))
-            (test-suite-thunk
-             ;; Wrapping into identity to prevent setting procedure-name
-             (identity
-              (lambda ()
-                ((test-runner*)
-                 `((type . load-test-suite)
-                   (load-test-suite-thunk . ,load-test-suite-thunk)
-                   (description . ,suite-description)))))))
-       (set-procedure-properties!
-        test-suite-thunk
-        (alist-merge
-         metadata
-         `((documentation . ,suite-description)
-           (suitbl-test-suite? . #t))))
-       test-suite-thunk))
-    ((test-suite suite-description expression expressions ...)
-     (test-suite suite-description #:metadata '() expression expressions ...))))
-
-(define-syntax define-test-suite
-  (syntax-rules ()
-    "Equivalent of (define-public NAME (test-suite ...))."
-    ((_ test-suite-name expression ...)
-     (begin
-       (define-public test-suite-name
-         (test-suite (symbol->string 'test-suite-name) expression ...))
-       (set-procedure-property! test-suite-name 'name 'test-suite-name)))))
-
-(define-syntax throws-exception?
-  (lambda (x)
-    (syntax-case x ()
-      ((throws-exception? expression)
-       #'(throws-exception? expression exception?))
-      ((throws-exception? expression predicate)
-       #'(with-exception-handler
-          (lambda (ex) (predicate ex))
-          (lambda ()
-            expression
-            #f)
-          #:unwind? #t)))))
 
 
 ;;;
