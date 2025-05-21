@@ -21,6 +21,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares evaluation eval)
+  #:use-module (ares evaluation io)
   #:use-module (ares reflection modules)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 and-let-star)
@@ -87,18 +88,24 @@ exceptions."
 
 (define* (evaluation-loop channel
                           #:key
+                          (stdin-channel #f)
                           (frame #f)
                           (recursion-level 0))
   "Loop over CHANNEL's messages, reading evaluation requests and sending
-the results. When called recursively, FRAME represents the stack frame
-before recursion and RECURSION-LEVEL the depth of the recursion."
+the results. Read from STDIN-CHANNEL for standard input. When called
+recursively, FRAME represents the stack frame before recursion and
+RECURSION-LEVEL the depth of the recursion."
   (unless (= recursion-level 0)
     (format #t "Entered recursive evaluation ~a~%" recursion-level))
   (define action (get-message channel))
 
   (match action
     (('evaluate message)
-     (let ((result ((evaluation-thunk message))))
+     (let* ((result (call-with-current-ports
+                     (evaluation-thunk message)
+                     #:input (if stdin-channel
+                                   (open-channel-input-port channel stdin-channel '(need-input))
+                                   (%make-void-port "r")))))
        (put-message channel `(result ,result))
        (when (eq? (assq-ref result 'result-type) 'exception)
          (evaluation-loop channel #:recursion-level (1+ recursion-level))))

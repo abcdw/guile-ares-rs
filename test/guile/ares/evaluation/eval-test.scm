@@ -86,4 +86,18 @@
       (test-eq #t (call-with-values
                       (lambda () (quickly (wait-operation stopped-condition)))
                     (lambda values (null? values))))
-      (test-end)))))
+      (test-end))))
+  (test-group
+   "Testing Evaluation Loop ports"
+   (run-fibers
+    (lambda ()
+      (define channel (make-channel))
+      (define stdin-channel (make-channel))
+      (spawn-fiber
+       (lambda ()
+         (evaluation-loop channel #:stdin-channel stdin-channel)))
+
+      (send channel '(evaluate (("code" . "(read)"))))
+      (test-message "needs input" channel '(need-input))
+      (send stdin-channel "(hello world !)")
+      (test-value "received input" channel '(hello world !))))))
