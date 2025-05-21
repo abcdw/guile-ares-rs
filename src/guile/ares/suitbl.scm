@@ -84,8 +84,6 @@ depends on the test runner implementation.
 ;;; Primary API
 ;;;
 
-(define test-runner* (make-parameter (make-suitbl-test-runner)))
-
 (define (test? x)
   (and (procedure? x)
        (procedure-property x 'suitbl-test?)))
@@ -634,6 +632,8 @@ environment just set it to new instance of test runner.
   (test-runner
    `((type . run-test-suites)
      (test-suites . ,test-suites))))
+
+(define test-runner* (make-parameter (make-suitbl-test-runner)))
 
 
 ;;;
