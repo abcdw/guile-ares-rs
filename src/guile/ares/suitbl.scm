@@ -578,10 +578,6 @@ environment just set it to new instance of test runner.
                 ;; TODO: [Andrew Tropin, 2025-05-08] Remove unnamed suite wrap
                 (lambda (l) (list "unnamed suite" test-item)))))
 
-         (update-atomic-alist-value!
-          state 'tests
-          (lambda (l)
-            (cons test-item (or l '()))))
          (test-reporter
           `((type . test-scheduled)
             (test-path . ,(%test-path*))
