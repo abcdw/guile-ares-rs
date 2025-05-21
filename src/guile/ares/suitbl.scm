@@ -106,7 +106,7 @@ reporter."
       `((type . run-assert)
         (assert/thunk . ,(lambda () (pred args ...)))
         (assert/arguments-thunk . ,(lambda () (list args ...)))
-        (assert/quoted-form .  form))))
+        (assert/quoted-form . (pred args ...)))))
     ((_ form)
      ((test-runner*)
       `((type . run-assert)
