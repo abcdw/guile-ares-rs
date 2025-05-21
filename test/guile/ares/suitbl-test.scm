@@ -446,6 +446,16 @@ expected number of tests is up-to-date."
 ;; can print test summary for auto-runned tests via test-reporter.
 
 
+;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
+;; test-reporter-print-failures-and-errors, which will be
+;; executed at the end and provide detailed info of
+;; locations with failed tests
+
+;; TODO: [Andrew Tropin, 2025-05-15] Create separate
+;; test-reporter-assert-minimal (showing only ✗ or ✓) and
+;; test-reporter-assert-simple (like current base), which
+;; can be used in base reporter.
+
 ;; TODO: [Andrew Tropin, 2025-05-19] Provide state argument to each
 ;; message of reporter from test runner, it will allow to make a
 ;; stateful reporters without making reporters to reset the state

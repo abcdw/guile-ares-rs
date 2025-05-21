@@ -22,16 +22,6 @@
             test-reporter-dots
             test-reporter-dots-with-hierarchy
 
-            ;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
-            ;; test-reporter-print-failures-and-errors, which will be
-            ;; executed at the end and provide detailed info of
-            ;; locations with failed tests
-
-            ;; TODO: [Andrew Tropin, 2025-05-15] Create separate
-            ;; test-reporter-assert-minimal (showing only ✗ or ✓) and
-            ;; test-reporter-assert-simple (like current base), which
-            ;; can be used in base reporter.
-
             test-runner-create-suitbl
             test-runner*
             run-test-suites
