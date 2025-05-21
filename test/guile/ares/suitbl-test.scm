@@ -301,18 +301,33 @@ test cases on test-runner/IDE side.
   (test "zero asserts test macro works fine"
     "Not yet implemented")
 
-  (test "using test macro on its own"
+  (test "standalone test macro usage"
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
        (test "simple failure"
-         (is #f))))
+         (is #f))
+       ((test-runner*)
+        `((type . get-run-summary)))))
 
     (is
      (equal?
       '((errors . 0) (failures . 1) (assertions . 1) (tests . 1))
       (alist-select-keys
        '(errors failures assertions tests)
-       run-summary-with-failures-and-errors)))))
+       run-summary-with-failures-and-errors)))
+
+    (define run-summary-without-failures
+      (with-silent-test-environment
+       (test "simple success"
+         (is #t))
+       ((test-runner*)
+        `((type . get-run-summary)))))
+    (is
+     (equal?
+      '((errors . 0) (failures . 0) (assertions . 1) (tests . 1))
+      (alist-select-keys
+       '(errors failures assertions tests)
+       run-summary-without-failures)))))
 
 (define-test-suite nested-test-suites-and-test-macros-tests
   (test "expression throws programming-error on unbound variable"
