@@ -2,6 +2,8 @@
 ;;;
 ;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2024 Nikita Domnitskii <nikita@domnitskii.me>
+;;; Copyright © 2025 Libre en Communs <contact@a-lec.org>
+;;; Copyright © 2025 Noé Lopez <noelopez@free.fr>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -17,6 +19,24 @@
 ;;;
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;;; The code in this module is for the thread manager thread. The
+;;; thread manager is an asynchronous interface to the evaluation
+;;; thread.
+;;;
+;;; The nrepl channel receives messages from the evaluation and
+;;; extended-evaluation nREPL operations. Messages are passed to the
+;;; evaluation thread through the thread channel. Evaluations are
+;;; queued in case the evaluation thread is already evaluating.
+;;;
+;;; Each request to the thread channel is paired with a reply callback
+;;; to match each reply with the right nREPL request.
+;;;
+;;; The stdin channel is used to communicate standard input.
+
+;;; Code:
 
 (define-module (ares evaluation thread-manager)
   #:use-module (ares reusable-thread)
@@ -34,8 +54,10 @@
   #:use-module (ice-9 match)
   #:use-module (ice-9 control)
   #:use-module (ice-9 and-let-star)
+  #:use-module (ice-9 threads)
   #:use-module (srfi srfi-1)
-  #:export (evaluation-thread-manager-thunk))
+  #:export (evaluation-thread-manager-thunk
+            evaluation-thread-manager))
 
 (define* (evaluation-thread-manager-thunk
           command-channel
@@ -163,3 +185,51 @@ COMMAND-CHANNEL."
               (repeat-loop))
              (else
               (error "it sholud not get here")))))))))
+
+(define (evaluation-thread-manager nrepl-channel)
+  "Spawn a thread and can run/interrupt evaluation on it via commands sent to
+COMMAND-CHANNEL."
+  (define thread-channel (make-channel))
+  (define stdin-channel (make-channel))
+  (define thread
+    (call-with-new-thread
+     (lambda ()
+       (evaluation-loop thread-channel
+                        #:stdin-channel stdin-channel))))
+
+  (define (eval-callback reply!)
+    "Returns a lambda that receives a message from the evaluation loop and
+sends it as an nREPL message to REPLY!."
+    (lambda (command)
+      (let ((type (car command)))
+        (case type
+          ((need-input)
+           (reply! '(("status" . #("need-input")))))
+          ((result)
+           (for-each reply! (evaluation-result->nrepl-messages (cadr command))))
+          ((output)
+           (reply! `(("out" . ,(cadr command)))))
+          ((error)
+           (reply! `(("err" . ,(cadr command)))))
+          (else (error "unknown thread command"))))))
+
+  (let loop ()
+    (let* ((message (get-message nrepl-channel))
+           (nrepl-reply! (assoc-ref message "reply!"))
+           (eval-reply (eval-callback nrepl-reply!))
+           (op (assoc-ref message "op")))
+      (define (send-action message)
+        (put-message thread-channel `((reply . ,eval-reply)
+                                      (action . ,message))))
+      (match op
+        ("eval"
+         ;; TODO: queue
+         (send-action `(evaluate ,message)))
+        ("stdin"
+         (put-message stdin-channel (assoc-ref message "stdin"))
+         (nrepl-reply! `(("status" . #("done")))))
+        ;; TODO: interrupt
+        (_
+         (format (current-error-port)
+                 "unknown nREPL action ~a~%" op))))
+    (loop)))
