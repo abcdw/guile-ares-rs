@@ -110,6 +110,10 @@ depends on the test runner implementation.
   (and (procedure? x)
        (procedure-property x 'suitbl-test-suite?)))
 
+(define (load-test-suite-thunk? x)
+  (and (procedure? x)
+       (procedure-property x 'suitbl-load-test-suite-thunk?)))
+
 ;; We use syntax-rules because it save patterns into transformer's
 ;; metadata, which allows to generate "signature" of the macro.
 
@@ -169,13 +173,27 @@ allows to combine tests and other test suites."
                  `((type . load-test-suite)
                    (load-test-suite-thunk . ,load-test-suite-thunk)
                    (description . ,suite-description)))))))
+
+       ;; Inside test runner we don't have access to test-suites
+       ;; themselves, only to load-test-suite-thunk.
        (set-procedure-properties!
-        test-suite-thunk
+        load-test-suite-thunk
         (alist-merge
          metadata
          `((documentation . ,suite-description)
-           (suitbl-test-suite? . #t))))
+           ;; We need it to make it possible to customize
+           ;; running/skipping logic
+           (suitbl-load-test-suite-thunk? . #t))))
+
+       (set-procedure-properties!
+        test-suite-thunk
+        `((documentation . ,suite-description)
+          (load-test-suite . ,load-test-suite-thunk)
+          ;; We need it to automate the loading of suites.
+          (suitbl-test-suite? . #t)))
+
        test-suite-thunk))
+
     ((test-suite suite-description expression expressions ...)
      (test-suite suite-description #:metadata '() expression expressions ...))))
 
