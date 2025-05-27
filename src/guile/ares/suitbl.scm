@@ -171,8 +171,7 @@ allows to combine tests and other test suites."
               (lambda ()
                 ((test-runner*)
                  `((type . load-test-suite)
-                   (load-test-suite-thunk . ,load-test-suite-thunk)
-                   (description . ,suite-description)))))))
+                   (load-test-suite-thunk . ,load-test-suite-thunk)))))))
 
        ;; Inside test runner we don't have access to test-suites
        ;; themselves, only to load-test-suite-thunk.
@@ -521,7 +520,9 @@ environment just set it to new instance of test runner.
        l))
     (format #t "~y" (prettify-list suite)))
 
-  (define (make-try-load-suite description load-test-suite-thunk)
+  (define (make-try-load-suite load-test-suite-thunk)
+    (define description
+      (procedure-documentation load-test-suite-thunk))
     (define test-suite-enter!
       (lambda ()
         (%test-reporter
@@ -575,9 +576,7 @@ environment just set it to new instance of test runner.
        (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
       ((load-test-suite)
-       (let* ((description (assoc-ref x 'description))
-              (try-load-suite (make-try-load-suite
-                               description
+       (let* ((try-load-suite (make-try-load-suite
                                (assoc-ref x 'load-test-suite-thunk))))
 
          (match (try-load-suite)
