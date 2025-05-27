@@ -613,21 +613,21 @@ environment just set it to new instance of test runner.
                    (original-test-thunk))
                  (%test-reporter
                   `((type . test-end)
-                    (description . ,description)))))
-              (test-item new-test-thunk))
+                    (description . ,description))))))
 
          (set-procedure-properties!
           new-test-thunk
           (procedure-properties original-test-thunk))
+
          (let ((suite-items (%current-test-suite-items*)))
            (if suite-items
                (atomic-box-update!
                 suite-items
-                (lambda (items) (cons test-item items)))
+                (lambda (items) (cons new-test-thunk items)))
                (update-atomic-alist-value!
                 state 'suite
                 ;; TODO: [Andrew Tropin, 2025-05-08] Remove unnamed suite wrap
-                (lambda (l) (list "unnamed suite" test-item)))))
+                (lambda (l) (list "unnamed suite" new-test-thunk)))))
 
          (%test-reporter
           `((type . test-scheduled)
