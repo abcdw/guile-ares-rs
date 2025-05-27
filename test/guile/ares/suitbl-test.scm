@@ -113,6 +113,10 @@ Skip test functionality.  Do we want a special test-skip
 statement or something similiar?  Probably no, because we can skip
 test cases on test-runner/IDE side.
 
+7.
+Fixtures must be implemented on test-suite/test metadata side,
+because test macro is not composable and can't be wrapped.
+
 |#
 
 
@@ -362,7 +366,6 @@ test cases on test-runner/IDE side.
           (is (= 4 (+ 2 2)))))))))
 
 (define-test-suite test-suite-usage-tests
-  "description here?"
 
   ;; TODO: [Andrew Tropin, 2025-05-09] Just think about what test
   ;; suite returns, because the expectation that it returns run
@@ -452,6 +455,61 @@ expected number of tests is up-to-date."
              (raise-exception _)))
     (when (> (+ (assoc-ref summary 'failures) (assoc-ref summary 'errors)) 0)
       (exit 1))))
+
+;;; Notes from the call with Josep
+
+#|
+
+Truncating long lines is asserts report/diff.
+Colorizing can also help for readability.
+
+The execution order should be random by default.
+
+The test runner, should redefine current-output/error-port and manage
+them explicitly, so our tests are not interfering with test reporters.
+By default print them as they come, but make it possible to print it
+after the whole test suite executed.
+
+Provide an API for running test from CLI.
+
+
+The future reporter:
+┌> base-test-runner-tests
+|┌> test-macro-usage-tests
+|| + test simple test case with metadata marking it as slow
+|| + test zero asserts test macro works fine
+|| + test standalone test macro usage
+|└> test-macro-usage-tests
+|┌> test-suite-usage-tests
+||┌> test suite with metadata
+||| + test simple
+||└> test suite with metadata
+||┌> nested-test-suites-and-test-macros-tests
+||| + test expression throws programming-error on unbound variable
+||| + test nested test macro usage is forbidden
+||| + test that test-suite nested in test case is forbidden
+|||┌> nested test suite 1
+|||| + test test macro 1#1
+||||┌> even more nested test suite 1.1
+||||| + test test macro 1.1#1
+||||└> even more nested test suite 1.1
+|||└> nested test suite 1
+||└> nested-test-suites-and-test-macros-tests
+|└> test-suite-usage-tests
+└> base-test-runner-tests
+
+Loaded 200 tests and 12 test suits.
+
+[[(...)(..)(....)(.)(.)(..)][(...)][(.)()(..)][[(.)][(.)(.)(.)[(F.)[(.)]]]]]
+
+┌Test nested test macro usage is forbidden
+(throws-exception? (with-silent-test-environment (test "outer test macro" (test "nested test macro" (is #t)))) (lambda (ex) (string=? "Test Macros can't be nested" (exception-message ex))))
+X #f
+└Test nested test macro usage is forbidden
+
+((errors . 0) (failures . 1) (assertions . 26) (tests . 16))
+
+|#
 
 
 ;;; Today/Next
@@ -461,6 +519,10 @@ expected number of tests is up-to-date."
 ;; can print test summary for auto-runned tests via test-reporter.
 
 
+
+;; TODO: [Andrew Tropin, 2025-05-21] Add message is not handled by
+;; test reporter warning. (Can be implemented via use-first combinator)
+
 ;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
 ;; test-reporter-print-failures-and-errors, which will be
 ;; executed at the end and provide detailed info of
@@ -543,5 +605,7 @@ expected number of tests is up-to-date."
 
 ;; TODO: [Andrew Tropin, 2025-05-20] Implement snapshot testing workflow
 ;; TODO: [Andrew Tropin, 2025-05-20] Implement doctest testing workflow
+
+;; TODO: [Andrew Tropin, 2025-05-25] Add an example of custom test runner
 
 
