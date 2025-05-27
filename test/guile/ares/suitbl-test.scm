@@ -520,9 +520,6 @@ X #f
 
 
 
-;; TODO: [Andrew Tropin, 2025-05-21] Add message is not handled by
-;; test reporter warning. (Can be implemented via use-first combinator)
-
 ;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
 ;; test-reporter-print-failures-and-errors, which will be
 ;; executed at the end and provide detailed info of

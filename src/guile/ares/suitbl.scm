@@ -18,6 +18,7 @@
             test-reporter-output-port*
             test-reporter-silent
             test-reporter-logging
+            test-reporter-unhandled
             test-reporter-base
             test-reporter-dots
             test-reporter-dots-with-hierarchy
@@ -240,11 +241,19 @@ A final test reporter can be attached to test runner.
           (or reporter-result (loop (cdr reporters))))))))
 
 (define (test-reporter-silent message)
+  "Do nothing, return @code{#t}."
   #t)
 
 (define (test-reporter-logging message)
   "Just log the @code{message}."
   (format (test-reporter-output-port*) "message: ~y" message))
+
+(define (test-reporter-unhandled message)
+  "A simple test reporter, which prints incomming message.  It can be
+combined with another reporter using @code{test-reporters-use-first}
+to catch unhandled messages."
+  (format (test-reporter-output-port*)
+          "\nmessage is not handled:\n~y\n" message))
 
 (define (string-repeat s n)
   "Returns string S repeated N times."
@@ -311,9 +320,10 @@ A final test reporter can be attached to test runner.
     (else #f)))
 
 (define test-reporter-base
-  (test-reporters-use-all
-   (list test-reporter-hierarchy
-         test-reporter-verbose)))
+  (chain (list test-reporter-verbose test-reporter-hierarchy)
+    (test-reporters-use-all _)
+    (list _ test-reporter-unhandled)
+    (test-reporters-use-first _)))
 
 (define (test-reporter-dots message)
   (define msg-type (assoc-ref message 'type))
@@ -340,8 +350,10 @@ A final test reporter can be attached to test runner.
     (else #f)))
 
 (define test-reporter-dots-with-hierarchy
-  (test-reporters-use-all
-   (list test-reporter-dots test-reporter-hierarchy)))
+  (chain (list test-reporter-dots test-reporter-hierarchy)
+    (test-reporters-use-all _)
+    (list _ test-reporter-unhandled)
+    (test-reporters-use-first _)))
 
 (define-syntax simple-profile
   (lambda (stx)
