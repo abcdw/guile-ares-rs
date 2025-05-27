@@ -48,6 +48,7 @@
   #:use-module (ares evaluation eval)
   #:use-module (ares evaluation serialization)
   #:use-module (ares ports)
+  #:use-module (ice-9 atomic)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 pretty-print)
   #:use-module (ice-9 exceptions)
@@ -191,11 +192,22 @@ COMMAND-CHANNEL."
 COMMAND-CHANNEL."
   (define thread-channel (make-channel))
   (define stdin-channel (make-channel))
+  (define reset-evaluation #f)          ;use only in evaluation thread
   (define thread
     (call-with-new-thread
      (lambda ()
-       (evaluation-loop thread-channel
-                        #:stdin-channel stdin-channel))))
+       (call/cc
+        (lambda (cont)
+          (set! reset-evaluation cont)))
+       (evaluation-loop
+        thread-channel
+        #:stdin-channel stdin-channel))))
+  ;; If we get two interruption requests in quick succession, the
+  ;; previous async-mark can still be in queue, therefore
+  ;; system-async-mark will do nothing and the user will get no
+  ;; reply. We use this variable to check for that case and send a
+  ;; reply.
+  (define waiting-for-async-mark? (make-atomic-box #f))
 
   (define (eval-callback reply!)
     "Returns a lambda that receives a message from the evaluation loop and
@@ -228,7 +240,28 @@ sends it as an nREPL message to REPLY!."
         ("stdin"
          (put-message stdin-channel (assoc-ref message "stdin"))
          (nrepl-reply! `(("status" . #("done")))))
-        ;; TODO: interrupt
+        ("interrupt"
+         (if (atomic-box-ref waiting-for-async-mark?)
+             (nrepl-reply! `(("status" . #("done" "interrupting"))))
+             (system-async-mark
+              (lambda ()
+                (atomic-box-set! waiting-for-async-mark? #f)
+                (let ((state (fluid-ref evaluation-state)))
+                  (fluid-set! evaluation-state 'interrupting)
+                  (case state
+                    ((idle)
+                     (nrepl-reply! `(("status" . #("done" "session-idle")))))
+                    ((evaluation)
+                     (abort-to-prompt
+                      evaluation-tag
+                      eval-reply))
+                    ((interrupting)
+                     (nrepl-reply! `(("status" . #("done" "interrupting")))))
+                    (else
+                     (nrepl-reply! `(("status" . #("done" "error"))
+                                     ("error" . "unknown evaluation state")))
+                     (error "unknown evaluation state")))))
+                thread)))
         (_
          (format (current-error-port)
                  "unknown nREPL action ~a~%" op))))

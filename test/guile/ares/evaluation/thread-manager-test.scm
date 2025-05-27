@@ -19,6 +19,7 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares evaluation thread-manager-test)
+  #:use-module (ares guile prelude)
   #:use-module (ares evaluation thread-manager)
   #:use-module (ares evaluation test-utils)
   #:use-module (srfi srfi-1)
@@ -27,6 +28,11 @@
   #:use-module (fibers channels)
   #:use-module (fibers operations)
   #:use-module (test-utils))
+
+;; Channel use to synchronise evaluation thread with tests. The
+;; evaluation simply writes a message to the channel and the test can
+;; wait for it before starting.
+(define sync-channel (make-channel))
 
 (define-test test-new-evaluation-thread-manager
   (define (send channel message)
@@ -127,4 +133,58 @@
                   `(("out" . "hi-out")))
       (check-reply "received evaluation result" reply-channel
                   `(("value" . "code-value")
-                    ("status" . #("done"))))))))
+                    ("status" . #("done"))))
+
+      (send-eval channel "(begin
+(display \"before sleep\")
+(force-output (current-output-port))
+(sleep 10)
+(display \"after sleep\")
+'code-value)")
+      (check-reply "received message before sleep" reply-channel
+                  `(("out" . "before sleep")))
+      (send channel `(("op" . "interrupt")
+                      ("reply!" . ,reply!)))
+      (check-reply "received interrupt done" reply-channel
+                  `(("status" . #("done" "interrupted"))))
+      (check-reply "received evaluation interrupt" reply-channel
+                  `(("status" . #("done" "interrupted"))))
+
+      (send-eval channel "(put-message sync-channel 'ready)(let loop ((a 0)) (loop (1+ a)))"
+                 #:ns '(ares evaluation thread-manager-test))
+      (test-equal 'ready (quickly (get-operation sync-channel)))
+      (send channel `(("op" . "interrupt")
+                      ("reply!" . ,reply!)))
+      (check-reply "interruption done" reply-channel
+                  `(("status" . #("done" "interrupted"))))
+      (check-reply "interrupted evaluation" reply-channel
+                  `(("status" . #("done" "interrupted"))))
+      (send-eval channel "(+ 3 4)")
+      (check-reply "evaluation after interrupt" reply-channel
+                  `(("value" . "7")
+                    ("status" . #("done"))))
+
+      (send channel `(("op" . "interrupt")
+                      ("reply!" . ,reply!)))
+      (check-reply "idle interruption" reply-channel
+                  `(("status" . #("done" "session-idle"))))
+
+      (send-eval channel "(put-message sync-channel 'ready)(let loop ((a 0)) (loop (1+ a)))"
+                 #:ns '(ares evaluation thread-manager-test))
+      (test-equal 'ready (quickly (get-operation sync-channel)))
+      ((@ (ice-9 threads) call-with-new-thread)
+       (lambda ()
+         (check-reply "interruption waiting for async mark" reply-channel
+                     `(("status" . #("done" "interrupting"))))
+         (check-reply "interruption done" reply-channel
+                     `(("status" . #("done" "interrupted"))))
+         (check-reply "interrupted evaluation" reply-channel
+                     `(("status" . #("done" "interrupted"))))))
+      ;; The first one interrupts, goes to code of after
+      ;; evaluation. Second one fires and sends session-idle
+      ;; immediately. After evaluation finishes and sends interrupted.
+      (send channel `(("op" . "interrupt")
+                      ("reply!" . ,reply!)))
+      (send channel `(("op" . "interrupt")
+                      ("reply!" . ,reply!))))
+    #:drain? #t)))

@@ -39,8 +39,13 @@
   #:use-module ((system base compile) #:select (read-and-compile))
   #:use-module ((system vm loader) #:select (load-thunk-from-memory))
   #:use-module (fibers channels)
-  #:export (evaluation-thunk
+  #:export (evaluation-tag
+            evaluation-state
+            evaluation-thunk
             evaluation-loop))
+
+(define evaluation-tag (make-prompt-tag "ares-evaluation"))
+(define evaluation-state (make-thread-local-fluid 'idle))
 
 (define (evaluation-thunk nrepl-message)
   "Return a thunk, which evaluate code in appropriate module and handle
@@ -67,7 +72,17 @@ exceptions."
             (let ((thunk (load-thunk-from-memory
                           (read-and-compile port #:env module
                                             #:optimization-level 0))))
-              (start-stack "ares-evaluation" (begin (thunk))))))))))
+              (call-with-prompt evaluation-tag
+                (lambda ()
+                  (fluid-set! evaluation-state 'evaluation)
+                  (let ((result (start-stack "ares-evaluation" (thunk))))
+                    (fluid-set! evaluation-state 'idle)
+                    result))
+                (lambda (_ reply)
+                  (fluid-set! evaluation-state 'idle)
+                  ;; Reply directly to the interruption request.
+                  (reply `(result ((result-type . interrupted))))
+                  'interrupted)))))))))
 
   (define (capture-stack)
     "Captures the current stack without any unwanted frames."
@@ -101,6 +116,8 @@ exceptions."
          (call-with-values eval-code
            (lambda vals
              (match vals
+               (('interrupted)
+                `((result-type . interrupted)))
                ((val)
                 `((result-type . value)
                   (eval-value . ,val)))
