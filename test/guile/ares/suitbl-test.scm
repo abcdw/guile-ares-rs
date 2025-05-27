@@ -530,13 +530,6 @@ X #f
 ;; test-reporter-assert-simple (like current base), which
 ;; can be used in base reporter.
 
-;; TODO: [Andrew Tropin, 2025-05-19] Provide state argument to each
-;; message of reporter from test runner, it will allow to make a
-;; stateful reporters without making reporters to reset the state
-;; themselves on test re-runs.  However, there is a potential problem
-;; with it, when we use test reporter combinators and a few of the
-;; reporters are stateful.
-
 ;; TODO: [Andrew Tropin, 2025-05-19] Add delayed logging reporter
 
 ;; TODO: [Andrew Tropin, 2025-05-19] Add testing started/finished

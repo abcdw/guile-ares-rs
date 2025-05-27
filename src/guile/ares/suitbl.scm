@@ -403,6 +403,12 @@ environment just set it to new instance of test runner.
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
   (define this #f)
+  (define reporter-state (make-atomic-box '()))
+
+  (define %test-reporter
+    (lambda (message)
+      (test-reporter
+       (alist-cons 'state reporter-state message))))
 
   (define (run-test test-thunk)
     (parameterize ((%test-events* (make-atomic-box '())))
@@ -423,7 +429,7 @@ environment just set it to new instance of test runner.
   (define (run-scheduled-suite suite)
     ;; TODO: [Andrew Tropin, 2025-05-08] Add reporting of suite start/end
     (let ((result #f))
-      (test-reporter
+      (%test-reporter
        `((type . test-suite-start)
          (description . ,(car suite))))
       (set! result
@@ -441,7 +447,7 @@ environment just set it to new instance of test runner.
                       ((if (test? item) run-scheduled-test run-scheduled-suite)
                        item))
                      (cdr remaining-items))))))
-      (test-reporter
+      (%test-reporter
        `((type . test-suite-end)
          (description . ,(car suite))))
       result))
@@ -454,7 +460,7 @@ environment just set it to new instance of test runner.
           (%test-events*)
           (lambda (value)
             (cons 'error value))))
-       (test-reporter
+       (%test-reporter
         `((type . assert-error)
           (quoted-form . ,quoted-form)
           (assert/error . ,ex))))
@@ -467,7 +473,7 @@ environment just set it to new instance of test runner.
             (%test-events*)
             (lambda (value)
               (cons (if result 'pass 'fail) value))))
-         (test-reporter
+         (%test-reporter
           `((type . ,(if result 'assert-pass 'assert-fail))
             (assert/result . ,result)
             (assert/arguments-thunk . ,args-thunk)
@@ -516,12 +522,12 @@ environment just set it to new instance of test runner.
       ((load-test-suite)
        (let* ((description (assoc-ref x 'description))
               (test-suite-enter! (lambda ()
-                                   (test-reporter
+                                   (%test-reporter
                                     `((type . test-suite-enter)
                                       (test-path . ,(%test-path*))
                                       (description . ,description)))))
               (test-suite-leave! (lambda ()
-                                   (test-reporter
+                                   (%test-reporter
                                     `((type . test-suite-leave)
                                       (test-path . ,(%test-path*))
                                       (description . ,description)))))
@@ -582,12 +588,12 @@ environment just set it to new instance of test runner.
                    (chain "Test Macros can't be nested"
                           (make-exception-with-message _)
                           (raise-exception _)))
-                 (test-reporter
+                 (%test-reporter
                   `((type . test-start)
                     (description . ,description)))
                  (parameterize ((%test* description))
                    (original-test-thunk))
-                 (test-reporter
+                 (%test-reporter
                   `((type . test-end)
                     (description . ,description)))))
               (test-item new-test-thunk))
@@ -605,7 +611,7 @@ environment just set it to new instance of test runner.
                 ;; TODO: [Andrew Tropin, 2025-05-08] Remove unnamed suite wrap
                 (lambda (l) (list "unnamed suite" test-item)))))
 
-         (test-reporter
+         (%test-reporter
           `((type . test-scheduled)
             (test-path . ,(%test-path*))
             (description . ,description)))
