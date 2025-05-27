@@ -153,8 +153,8 @@ more @code{is} asserts."
        ((test-runner*)
         `((type . schedule-test)
           (test-thunk . ,test-thunk)
-          (description . ,test-description)
           (test-body . (expression expressions ...))))))
+
     ((test test-description expression expressions ...)
      (test test-description #:metadata '() expression expressions ...))))
 
