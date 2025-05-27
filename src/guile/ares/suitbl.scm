@@ -503,6 +503,43 @@ environment just set it to new instance of test runner.
        l))
     (format #t "~y" (prettify-list suite)))
 
+  (define (make-try-load-suite description load-test-suite-thunk)
+    (define test-suite-enter!
+      (lambda ()
+        (%test-reporter
+         `((type . test-suite-enter)
+           (test-path . ,(%test-path*))
+           (description . ,description)))))
+    (define test-suite-leave!
+      (lambda ()
+        (%test-reporter
+         `((type . test-suite-leave)
+           (test-path . ,(%test-path*))
+           (description . ,description)))))
+
+    (lambda ()
+      (test-suite-enter!)
+      (define result
+        (with-exception-handler
+         (lambda (ex)
+           (cons 'exception ex))
+         (lambda ()
+           (when (%test*)
+             (raise-exception
+              (make-exception-with-message
+               "Test Suite can't be nested into Test Macro")))
+           (parameterize ((%current-test-suite-items* (make-atomic-box '()))
+                          (%test-path* (cons description (%test-path*))))
+             (load-test-suite-thunk)
+             (chain (%current-test-suite-items*)
+               (atomic-box-ref _)
+               (reverse _)
+               (cons description _)
+               (cons 'value _))))
+         #:unwind? #t))
+      (test-suite-leave!)
+      result))
+
   (define (test-runner x)
     "Default test runner"
     (unless (member (assoc-ref x 'type) '(get-state get-log))
@@ -521,45 +558,9 @@ environment just set it to new instance of test runner.
 
       ((load-test-suite)
        (let* ((description (assoc-ref x 'description))
-              (test-suite-enter! (lambda ()
-                                   (%test-reporter
-                                    `((type . test-suite-enter)
-                                      (test-path . ,(%test-path*))
-                                      (description . ,description)))))
-              (test-suite-leave! (lambda ()
-                                   (%test-reporter
-                                    `((type . test-suite-leave)
-                                      (test-path . ,(%test-path*))
-                                      (description . ,description)))))
-              (try-load-suite
-               (lambda ()
-                 (test-suite-enter!)
-                 (let ((result
-                        (with-exception-handler
-                         (lambda (ex)
-                           (cons 'exception ex))
-                         (lambda ()
-                           (when (%test*)
-                             (raise-exception
-                              (make-exception-with-message
-                               "Test Suite can't be nested into Test Macro")))
-                           ;; TODO: [Andrew Tropin, 2025-05-08]
-                           ;; Change the condition of top-level
-                           ;; suite.  Or wrap list of test-suites
-                           ;; into one more.
-                           (parameterize ((%current-test-suite-items*
-                                           (make-atomic-box '()))
-                                          (%test-path*
-                                           (cons description (%test-path*))))
-                             ((assoc-ref x 'load-test-suite-thunk))
-                             (chain (%current-test-suite-items*)
-                                    (atomic-box-ref _)
-                                    (reverse _)
-                                    (cons description _)
-                                    (cons 'value _))))
-                         #:unwind? #t)))
-                   (test-suite-leave!)
-                   result))))
+              (try-load-suite (make-try-load-suite
+                               description
+                               (assoc-ref x 'load-test-suite-thunk))))
 
          (match (try-load-suite)
            (('exception . ex)
