@@ -20,6 +20,14 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
+;;; Commentary:
+
+;;; The code in this module is for the evaluation thread. Its purpose
+;;; is to execute evaluations synchronously while capturing input,
+;;; output, exceptions and return values.
+
+;;; Code:
+
 (define-module (ares evaluation eval)
   #:use-module (ares evaluation io)
   #:use-module (ares reflection modules)
