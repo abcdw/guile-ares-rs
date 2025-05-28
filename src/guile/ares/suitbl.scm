@@ -305,9 +305,11 @@ to catch unhandled messages."
 
 (define (test-reporter-verbose message)
   (define (actual message)
-    (let ((quoted-form (assoc-ref message 'assert/quoted-form))
-          (arguments-thunk (assoc-ref message 'assert/arguments-thunk)))
-      (if (= 3 (length quoted-form))
+    (let* ((quoted-form (assoc-ref message 'assert/quoted-form))
+           (arguments-thunk (assoc-ref message 'assert/arguments-thunk)))
+      ;; TODO: [Andrew Tropin, 2025-05-28] Ensure arguments-thunk
+      ;; exception handled.
+      (if (and (list? quoted-form) (= 3 (length quoted-form)))
           (match (arguments-thunk)
             ((first second)
              (format #f "~a and ~a are not ~a" first second (car quoted-form))))
