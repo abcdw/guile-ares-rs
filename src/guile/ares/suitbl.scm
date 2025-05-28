@@ -694,8 +694,9 @@ environment just set it to new instance of test runner.
          (format #f "no handler for message type ~a" _)
          (make-exception-with-message _)
          (raise-exception _)))))
+
   (set! this test-runner)
-  test-runner)
+  this)
 
 (define (run-test-suites test-runner test-suites)
   (test-runner
