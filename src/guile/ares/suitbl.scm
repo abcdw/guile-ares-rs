@@ -559,9 +559,9 @@ environment just set it to new instance of test runner.
            (cons 'exception ex))
          (lambda ()
            (when (%test*)
-             (raise-exception
-              (make-exception-with-message
-               "Test Suite can't be nested into Test Macro")))
+             (chain "Test Suite can't be nested into Test Macro"
+               (make-exception-with-message _)
+               (raise-exception _)))
            (parameterize ((%current-test-suite-items* (make-atomic-box '()))
                           (%test-path* (cons description (%test-path*))))
              (load-test-suite-thunk)
@@ -690,9 +690,10 @@ environment just set it to new instance of test runner.
          ))
 
       (else
-       (raise-exception
-        (make-exception-with-message
-         (format #f "no handler for message type ~a" msg-type))))))
+       (chain msg-type
+         (format #f "no handler for message type ~a" _)
+         (make-exception-with-message _)
+         (raise-exception _)))))
   (set! this test-runner)
   test-runner)
 
