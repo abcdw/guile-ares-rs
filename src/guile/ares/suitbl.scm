@@ -324,15 +324,15 @@ to catch unhandled messages."
              (assoc-ref message 'description)))
 
     ((assert-pass)
-     (format (test-reporter-output-port*) "✓ ~s\n"
+     (format (test-reporter-output-port*) "~y✓\n"
              (assoc-ref message 'assert/quoted-form)))
 
     ((assert-fail)
-     (format (test-reporter-output-port*) "✗ Expected: ~s\n   Actual:   ~a\n"
+     (format (test-reporter-output-port*) "~y✗ ~a\n"
              (assoc-ref message 'assert/quoted-form) (actual message)))
 
     ((assert-error)
-     (format (test-reporter-output-port*) "✗ ~s produced error:\n   ~s\n"
+     (format (test-reporter-output-port*) "~y✗ produced error:\n ~s\n"
              (assoc-ref message 'assert/quoted-form)
              (assoc-ref message 'assert/error)))
 
