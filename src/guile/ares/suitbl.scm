@@ -481,7 +481,7 @@ environment just set it to new instance of test runner.
             (cons 'error value))))
        (%test-reporter
         `((type . assert-error)
-          (quoted-form . ,quoted-form)
+          (assert/quoted-form . ,quoted-form)
           (assert/error . ,ex))))
      (lambda ()
        ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
