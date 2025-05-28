@@ -303,16 +303,29 @@ to catch unhandled messages."
              (assoc-ref message 'description)))
     (else #f)))
 
+
+(define (safify-thunk thunk)
+  (lambda ()
+    (with-exception-handler
+     (lambda (ex)
+       `(exception . ,ex))
+     (lambda ()
+       `(value . ,(thunk)))
+     #:unwind? #t)))
+
 (define (test-reporter-verbose message)
   (define (actual message)
     (let* ((quoted-form (assoc-ref message 'assert/quoted-form))
-           (arguments-thunk (assoc-ref message 'assert/arguments-thunk)))
+           (arguments-thunk (assoc-ref message 'assert/arguments-thunk))
+           (safe-arguments-thunk (safify-thunk arguments-thunk)))
       ;; TODO: [Andrew Tropin, 2025-05-28] Ensure arguments-thunk
       ;; exception handled.
       (if (and (list? quoted-form) (= 3 (length quoted-form)))
-          (match (arguments-thunk)
-            ((first second)
-             (format #f "~a and ~a are not ~a" first second (car quoted-form))))
+          (match (safe-arguments-thunk)
+            ((value . (first second))
+             (format #f "~a and ~a are not ~a" first second (car quoted-form)))
+            ((exception . ex)
+             (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
           (assoc-ref message 'assert/result))))
 
   (case (assoc-ref message 'type)
