@@ -13,4 +13,5 @@
    ;; SRFI-64
    (eval . (put 'test-group 'scheme-indent-function 1))
    (eval . (put 'with-dynamic-state 'scheme-indent-function 1))
-   (eval . (put 'with-fluids 'scheme-indent-function 1)))))
+   (eval . (put 'with-fluids 'scheme-indent-function 1))
+   (eval . (put 'while 'scheme-indent-function 1)))))

@@ -57,6 +57,8 @@
   #:use-module (ice-9 and-let-star)
   #:use-module (ice-9 threads)
   #:use-module (srfi srfi-1)
+  #:use-module (ice-9 threads)
+  #:use-module (ice-9 q)
   #:export (evaluation-thread-manager-thunk
             evaluation-thread-manager))
 
@@ -202,6 +204,7 @@ COMMAND-CHANNEL."
        (evaluation-loop
         thread-channel
         #:stdin-channel stdin-channel))))
+  (define actions (make-q))
   ;; If we get two interruption requests in quick succession, the
   ;; previous async-mark can still be in queue, therefore
   ;; system-async-mark will do nothing and the user will get no
@@ -225,18 +228,28 @@ sends it as an nREPL message to REPLY!."
            (reply! `(("err" . ,(cadr command)))))
           (else (error "unknown thread command"))))))
 
-  (let loop ()
-    (let* ((message (get-message nrepl-channel))
+  (define (enq-action message reply)
+    (enq! actions `((reply . ,reply)
+                    (action . ,message))))
+
+  (while #t
+    (let* ((message
+            (perform-operation
+             (apply choice-operation
+                    (get-operation nrepl-channel)
+                    (if (q-empty? actions)
+                        '()
+                        (list
+                         (wrap-operation (put-operation thread-channel (q-front actions))
+                                         (lambda ()
+                                           (deq! actions)
+                                           (continue))))))))
            (nrepl-reply! (assoc-ref message "reply!"))
            (eval-reply (eval-callback nrepl-reply!))
            (op (assoc-ref message "op")))
-      (define (send-action message)
-        (put-message thread-channel `((reply . ,eval-reply)
-                                      (action . ,message))))
       (match op
         ("eval"
-         ;; TODO: queue
-         (send-action `(evaluate ,message)))
+         (enq-action `(evaluate ,message) eval-reply))
         ("stdin"
          (put-message stdin-channel (assoc-ref message "stdin"))
          (nrepl-reply! `(("status" . #("done")))))
@@ -264,5 +277,4 @@ sends it as an nREPL message to REPLY!."
                 thread)))
         (_
          (format (current-error-port)
-                 "unknown nREPL action ~a~%" op))))
-    (loop)))
+                 "unknown nREPL action ~a~%" op))))))
