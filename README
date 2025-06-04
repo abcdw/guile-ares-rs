@@ -12,8 +12,8 @@ implementing REPLs, IDEs, test runners or other tools. It also can be
 potentially used as a backend or library for LSP server.
 
 #+BEGIN_EXPORT html
-<p><a href="https://builds.sr.ht/~abcdw/guile-ares-rs?">
-<img src="https://builds.sr.ht/~abcdw/guile-ares-rs.svg" alt="builds.sr.ht status" />
+<p><a href="https://builds.sr.ht/~abcdw/guile-ares-rs">
+<img src="https://builds.sr.ht/~abcdw/guile-ares-rs/commits/master.svg" alt="builds.sr.ht status" />
 </a>
 <a href="https://www.gnu.org/software/guile/">
 <img src="https://luis-felipe.gitlab.io/media/badges/gnu-guile-made.svg" alt="" />
