@@ -541,6 +541,12 @@ X #f
 ;; TODO: [Andrew Tropin, 2025-05-12] Preserve execution information,
 ;; so we can re-run failed tests
 
+
+;; TODO: [Andrew Tropin, 2025-06-05] Implement testing-test-runner,
+;; which just saves every message comming to it.  To write tests for
+;; is/test/test-suite macros, to set expectation for them in the
+;; stone (tests) (:
+
 ;; TODO: [Andrew Tropin, 2025-05-09] Revisit test-path* usage on test
 ;; loading, we preserve test suite hierarchy now and it maybe redundant
 

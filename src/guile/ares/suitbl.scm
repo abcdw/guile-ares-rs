@@ -203,6 +203,8 @@ allows to combine tests and other test suites."
      (begin
        (define-public test-suite-name
          (test-suite (symbol->string 'test-suite-name) expression ...))
+       ;; TODO: [Andrew Tropin, 2025-06-02] Maybe remove next line, we
+       ;; can set the same value throught test-suite macro
        (set-procedure-property! test-suite-name 'name 'test-suite-name)))))
 
 (define-syntax throws-exception?
@@ -439,12 +441,17 @@ environment just set it to new instance of test runner.
           #:key
           (test-reporter test-reporter-base))
   "A flexible test runner factory, which spawns new test runners."
+  ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,
+  ;; they can cause problems when using with continuations and thus
+  ;; with concurrent test runs implemented on top of fibers
   (define %test-path* (make-parameter '()))
   (define %test* (make-parameter #f))
   (define %test-events* (make-parameter #f))
   (define %current-test-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
 
+  ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
+  ;; and make it accessible via "class" methods.
   (define state (make-atomic-box '()))
   (define last-run-summary (make-atomic-box #f))
   (define this #f)
@@ -459,6 +466,8 @@ environment just set it to new instance of test runner.
     (parameterize ((%test-events* (make-atomic-box '())))
       ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
       ;; happen inside test case, but outside of assert
+
+      ;; What to do with exception outside of assert?
       (test-thunk)
       (atomic-box-ref (%test-events*))))
 
@@ -471,17 +480,19 @@ environment just set it to new instance of test runner.
         (assertions . ,(length result))
         (tests . 1))))
 
-  (define (run-scheduled-suite suite)
-    ;; TODO: [Andrew Tropin, 2025-05-08] Add reporting of suite start/end
+  (define initial-run-summary
+    `((errors . 0)
+      (failures . 0)
+      (assertions . 0)
+      (tests . 0)))
+
+  (define (run-test-suite suite)
     (let ((result #f))
       (%test-reporter
        `((type . test-suite-start)
          (description . ,(car suite))))
       (set! result
-            (let loop ((summary `((errors . 0)
-                                  (failures . 0)
-                                  (assertions . 0)
-                                  (tests . 0)))
+            (let loop ((summary initial-run-summary)
                        (remaining-items (cdr suite)))
               (if (null? remaining-items)
                   summary
@@ -489,7 +500,7 @@ environment just set it to new instance of test runner.
                     (loop
                      (merge-run-summaries
                       summary
-                      ((if (test? item) run-test run-scheduled-suite)
+                      ((if (test? item) run-test run-test-suite)
                        item))
                      (cdr remaining-items))))))
       (%test-reporter
@@ -672,7 +683,7 @@ environment just set it to new instance of test runner.
         (chain
          (atomic-box-ref state)
          (assoc-ref _ 'suite)
-         (run-scheduled-suite _)))
+         (run-test-suite _)))
 
        (atomic-box-ref last-run-summary))
 
