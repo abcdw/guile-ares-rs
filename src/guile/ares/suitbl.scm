@@ -303,6 +303,19 @@ to catch unhandled messages."
               "└"))
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
+    ((print-test-suite)
+     (define (prettify-list l)
+      (map
+       (lambda (i)
+         (cond
+          ((test? i) (string-append "test: " (procedure-documentation i)))
+          ((load-test-suite-thunk? i)
+           (string-append "suite: " (procedure-documentation i)))
+          ((list? i) (prettify-list i))
+          (else i)))
+       l))
+     (format (test-reporter-output-port*) "~y"
+             (prettify-list (assoc-ref message 'test-suite))))
     (else #f)))
 
 
@@ -538,17 +551,9 @@ environment just set it to new instance of test runner.
      #:unwind? #t))
 
   (define (print-test-suite suite)
-    (define (prettify-list l)
-      (map
-       (lambda (i)
-         (cond
-          ((test? i) (string-append "test: " (procedure-documentation i)))
-          ((load-test-suite-thunk? i)
-           (string-append "suite: " (procedure-documentation i)))
-          ((list? i) (prettify-list i))
-          (else i)))
-       l))
-    (format #t "~y" (prettify-list suite)))
+    (%test-reporter
+     `((type . print-test-suite)
+       (test-suite . ,suite))))
 
   (define (make-try-load-suite load-test-suite-thunk)
     (define description
