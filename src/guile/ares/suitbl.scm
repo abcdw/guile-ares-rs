@@ -151,7 +151,7 @@ more @code{is} asserts."
            (documentation . ,test-description)
            (suitbl-test? . #t))))
        ((test-runner*)
-        `((type . schedule-test)
+        `((type . load-test)
           (test-thunk . ,test-thunk)
           (test-body . (expression expressions ...))))))
 
@@ -615,7 +615,7 @@ environment just set it to new instance of test runner.
          (when (and (null? (%test-path*)) (not (%schedule-only?*)))
            (this `((type . run-scheduled-tests))))))
 
-      ((schedule-test)
+      ((load-test)
        (let* ((original-test-thunk (assoc-ref x 'test-thunk))
               (description (procedure-documentation original-test-thunk))
               (new-test-thunk
