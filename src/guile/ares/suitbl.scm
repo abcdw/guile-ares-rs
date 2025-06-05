@@ -442,15 +442,15 @@ environment just set it to new instance of test runner.
       (test-reporter
        (alist-cons 'state reporter-state message))))
 
-  (define (run-test test-thunk)
+  (define (%run-test test-thunk)
     (parameterize ((%test-events* (make-atomic-box '())))
       ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
       ;; happen inside test case, but outside of assert
       (test-thunk)
       (atomic-box-ref (%test-events*))))
 
-  (define (run-scheduled-test test)
-    (let* ((result (run-test test))
+  (define (run-test test)
+    (let* ((result (%run-test test))
            (error? (any (lambda (x) (eq? x 'error)) result))
            (fail? (any (lambda (x) (eq? x 'fail)) result)))
       `((errors . ,(if error? 1 0))
@@ -476,7 +476,7 @@ environment just set it to new instance of test runner.
                     (loop
                      (merge-summaries
                       summary
-                      ((if (test? item) run-scheduled-test run-scheduled-suite)
+                      ((if (test? item) run-test run-scheduled-suite)
                        item))
                      (cdr remaining-items))))))
       (%test-reporter
@@ -630,26 +630,26 @@ environment just set it to new instance of test runner.
                   `((type . test-end)
                     (description . ,description))))))
 
+
          (set-procedure-properties!
           new-test-thunk
           (procedure-properties original-test-thunk))
-
          (let ((suite-items (%current-test-suite-items*)))
            (if suite-items
-               (atomic-box-update!
-                suite-items
-                (lambda (items) (cons new-test-thunk items)))
-               (update-atomic-alist-value!
-                state 'suite
-                ;; TODO: [Andrew Tropin, 2025-05-08] Remove unnamed suite wrap
-                (lambda (l) (list "unnamed suite" new-test-thunk)))))
+               (begin
+                 (atomic-box-update!
+                  suite-items
+                  (lambda (items) (cons new-test-thunk items)))
+                 (%test-reporter
+                  `((type . test-scheduled)
+                    (test-path . ,(%test-path*))
+                    (description . ,description))))
+               (begin
+                 (atomic-box-set!
+                  last-run-summary
+                  (run-test new-test-thunk)))))
 
-         (%test-reporter
-          `((type . test-scheduled)
-            (test-path . ,(%test-path*))
-            (description . ,description)))
-         (when (null? (%test-path*))
-           (this `((type . run-scheduled-tests))))))
+         *unspecified*))
 
       ((run-assert)
        (let ((assert-thunk (assoc-ref x 'assert/thunk))

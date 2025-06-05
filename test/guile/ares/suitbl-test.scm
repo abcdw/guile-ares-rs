@@ -306,6 +306,13 @@ because test macro is not composable and can't be wrapped.
     "Not yet implemented")
 
   (test "standalone test macro usage"
+    (define standalone-test-macro-return-value
+      (with-silent-test-environment
+       (test "simple failure"
+         (is #t))))
+
+    (is (unspecified? standalone-test-macro-return-value))
+
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
        (test "simple failure"
@@ -513,12 +520,6 @@ X #f
 
 
 ;;; Today/Next
-
-;; TODO: [Andrew Tropin, 2025-05-18] Make test return unspecified, so
-;; nobody tries to use it to obtain test summary.  However, we still
-;; can print test summary for auto-runned tests via test-reporter.
-
-
 
 ;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
 ;; test-reporter-print-failures-and-errors, which will be
