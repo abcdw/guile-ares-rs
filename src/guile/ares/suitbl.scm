@@ -414,13 +414,26 @@ environment just set it to new instance of test runner.
 
 |#
 
-(define (merge-summaries s1 s2)
+(define (merge-run-summaries s1 s2)
   (map
    (lambda (v)
      (match v
        ((key . value)
         (cons key (+ (assoc-ref s2 key) value)))))
    s1))
+
+(define (copy-procedure-properties! from to)
+  (set-procedure-properties! to (procedure-properties from)))
+
+(define (update-atomic-alist-value! alist-atom key f)
+  (atomic-box-update!
+   alist-atom
+   (lambda (alist)
+     (let* ((value (or (assoc-ref alist key) #f))
+            (new-value (f value)))
+       (chain alist
+         (alist-delete key _)
+         (alist-cons key new-value _))))))
 
 (define* (make-suitbl-test-runner
           #:key
@@ -474,7 +487,7 @@ environment just set it to new instance of test runner.
                   summary
                   (let ((item (car remaining-items)))
                     (loop
-                     (merge-summaries
+                     (merge-run-summaries
                       summary
                       ((if (test? item) run-test run-scheduled-suite)
                        item))
@@ -512,16 +525,6 @@ environment just set it to new instance of test runner.
             (assert/quoted-form . ,quoted-form)))
          result))
      #:unwind? #t))
-
-  (define (update-atomic-alist-value! alist-atom key f)
-    (atomic-box-update!
-     alist-atom
-     (lambda (alist)
-       (let* ((value (or (assoc-ref alist key) #f))
-              (new-value (f value)))
-         (chain alist
-                (alist-delete key _)
-                (alist-cons key new-value _))))))
 
   (define (print-test-suite suite)
     (define (prettify-list l)
@@ -630,10 +633,8 @@ environment just set it to new instance of test runner.
                   `((type . test-end)
                     (description . ,description))))))
 
+         (copy-procedure-properties! original-test-thunk new-test-thunk)
 
-         (set-procedure-properties!
-          new-test-thunk
-          (procedure-properties original-test-thunk))
          (let ((suite-items (%current-test-suite-items*)))
            (if suite-items
                (begin
