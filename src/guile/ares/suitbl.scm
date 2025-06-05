@@ -543,7 +543,8 @@ environment just set it to new instance of test runner.
        (lambda (i)
          (cond
           ((test? i) (string-append "test: " (procedure-documentation i)))
-          ((string? i) (string-append "suite: " i))
+          ((load-test-suite-thunk? i)
+           (string-append "suite: " (procedure-documentation i)))
           ((list? i) (prettify-list i))
           (else i)))
        l))
@@ -552,6 +553,7 @@ environment just set it to new instance of test runner.
   (define (make-try-load-suite load-test-suite-thunk)
     (define description
       (procedure-documentation load-test-suite-thunk))
+
     (define test-suite-enter!
       (lambda ()
         (%test-reporter
@@ -582,7 +584,7 @@ environment just set it to new instance of test runner.
              (chain (%current-test-suite-items*)
                (atomic-box-ref _)
                (reverse _)
-               (cons description _)
+               (cons load-test-suite-thunk _)
                (cons 'value _))))
          #:unwind? #t))
       (test-suite-leave!)
