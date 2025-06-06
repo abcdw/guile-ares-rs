@@ -178,10 +178,9 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
         path
         (lambda (file-path _ flags _1 _2)
           (when (eq? flags 'regular)
-            (define relative-path
-              (string-drop file-path (1+ (string-length path))))
-            (when (string-match test-file-pattern file-path)
-              (load-file file-path relative-path)))
+            (let ((relative-path (string-drop file-path (1+ (string-length path)))))
+              (when (string-match test-file-pattern file-path)
+                (load-file file-path relative-path))))
           #t)))
      %load-path)))
 
