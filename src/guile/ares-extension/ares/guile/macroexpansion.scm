@@ -25,7 +25,7 @@
 
 (define (expand-macro module code)
   "Returns a pretty-printed representation of macro expansion."
-  ((@@ (ares evaluation) object->pretty-string)
+  (object->pretty-string
    (call-with-input-string code
     (lambda (port)
       (decompile

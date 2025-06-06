@@ -23,6 +23,7 @@
   #:use-module (ares file)
   #:use-module (ares reflection modules)
   #:use-module (ares reusable-thread)
+  #:use-module (ares guile)
   #:use-module (fibers)
   #:use-module (fibers channels)
   #:use-module (fibers conditions)
@@ -241,15 +242,6 @@ Stream managers waits until THUNK-FINISHED is signalled."
       (("ex" . ,(symbol->string (exception-kind exception)))
        ("status" . #("error" "eval-error" "done")))
       (("status" . #("done"))))))
-
-(define (object->pretty-string x)
-  "Same as @code{object->string}, but with @var{printer} set to
-@code{pretty-print}.  Last newline produced by @code{pretty-print} is
-dropped."
-  (string-drop-right
-   (object->string x pretty-print)
-   ;; pretty-print adds a newline, so we remove it
-   1))
 
 (define* (evaluation-result->nrepl-messages
           result

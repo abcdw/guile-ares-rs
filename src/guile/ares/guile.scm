@@ -19,7 +19,9 @@
 
 (define-module (ares guile)
   #:use-module (ice-9 match)
-  #:export (define-with-meta))
+  #:use-module (ice-9 pretty-print)
+  #:export (define-with-meta
+            object->pretty-string))
 
 ;; The differences with usual define are: it always expects docstring
 ;; and meta, and meta is arbitrary expression returning alist.  The
@@ -36,3 +38,12 @@
             ((k . v)
              (set-procedure-property! name k v))))
         meta)))))
+
+(define (object->pretty-string x)
+  "Same as @code{object->string}, but with @var{printer} set to
+@code{pretty-print}.  Last newline produced by @code{pretty-print} is
+dropped."
+  (string-drop-right
+   (object->string x pretty-print)
+   ;; pretty-print adds a newline, so we remove it
+   1))

@@ -56,7 +56,7 @@
       (with-exception-handler
        (lambda (ex)
          (transport-reply!
-          `(("error" . ,((@@ (ares evaluation) object->pretty-string) ex))
+          `(("error" . ,(object->pretty-string ex))
             ("status" . #("error" "something-broken-after-ares-bencode"
                           "done")))))
        (lambda ()
