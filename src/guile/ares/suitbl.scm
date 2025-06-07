@@ -147,7 +147,7 @@ more @code{is} asserts."
         test-thunk
         (alist-merge
          metadata
-         `((name . test)
+         `((name . ,(string->symbol test-description))
            (documentation . ,test-description)
            (suitbl-test? . #t))))
        ((test-runner*)
@@ -180,6 +180,7 @@ allows to combine tests and other test suites."
         (alist-merge
          metadata
          `((documentation . ,suite-description)
+           (name . ,(string->symbol suite-description))
            ;; We need it to make it possible to customize
            ;; running/skipping logic
            (suitbl-load-test-suite-thunk? . #t))))
