@@ -122,7 +122,8 @@ exceptions."
             (and-let* ((column (assoc-ref nrepl-message "column")))
               (set-port-column! port column))
             (let ((thunk (load-thunk-from-memory
-                          (read-and-compile port #:env module))))
+                          (read-and-compile port #:env module
+                                            #:optimization-level 0))))
               (start-stack "ares-evaluation" (thunk)))))))))
 
   (lambda ()
