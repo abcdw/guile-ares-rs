@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -227,7 +227,9 @@ Stream managers waits until THUNK-FINISHED is signalled."
              (or
               (false-if-exception
                (apply format port
-                      (string-append (exception-message exception) "\n")
+                      (string-append
+                       "Origin: " (exception-origin exception) "\n"
+                       (exception-message exception) "\n")
                       (or (exception-irritants exception) '())))
               (pretty-print exception #:port port)))))
          (stack (assoc-ref result 'stack)))
