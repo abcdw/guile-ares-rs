@@ -235,8 +235,8 @@ Stream managers waits until THUNK-FINISHED is signalled."
          (stack (assoc-ref result 'stack)))
     ;; In the future this function can provide more information in a
     ;; more structured way to be processed by respective IDEs/clients.
-    `((("err" . ,error))
-      (("ares.evaluation/stack" . ,(stack->nrepl-value stack)))
+    `((("err" . ,error)
+       ("ares.evaluation/stack" . ,(stack->nrepl-value stack)))
       (("ex" . ,(symbol->string (exception-kind exception)))
        ("status" . #("error" "eval-error" "done")))
       (("status" . #("done"))))))
