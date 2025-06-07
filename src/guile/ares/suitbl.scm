@@ -282,6 +282,17 @@ to catch unhandled messages."
    ""
    (iota n)))
 
+(define (tests->pretty-string l)
+  (map
+   (lambda (i)
+     (cond
+      ((test? i) (string-append "test: " (procedure-documentation i)))
+      ((load-test-suite-thunk? i)
+       (string-append "suite: " (procedure-documentation i)))
+      ((list? i) (tests->pretty-string i))
+      (else i)))
+   l))
+
 (define (test-reporter-hierarchy message)
   (case (assoc-ref message 'type)
     ((test-scheduled)
@@ -304,18 +315,8 @@ to catch unhandled messages."
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
     ((print-test-suite)
-     (define (prettify-list l)
-      (map
-       (lambda (i)
-         (cond
-          ((test? i) (string-append "test: " (procedure-documentation i)))
-          ((load-test-suite-thunk? i)
-           (string-append "suite: " (procedure-documentation i)))
-          ((list? i) (prettify-list i))
-          (else i)))
-       l))
      (format (test-reporter-output-port*) "~y"
-             (prettify-list (assoc-ref message 'test-suite))))
+             (tests->pretty-string (assoc-ref message 'tset-suite))))
     (else #f)))
 
 
