@@ -18,10 +18,10 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares evaluation supervisor)
+  #:use-module (ares evaluation thread-manager)
   #:use-module (ice-9 atomic)
   #:use-module (ares atomic)
   #:use-module (ares guile)
-  #:use-module (ares evaluation)
   #:use-module (ares reusable-thread)
   #:use-module (ares alist)
   #:use-module (fibers)
