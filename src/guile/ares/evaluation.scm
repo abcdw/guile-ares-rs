@@ -23,6 +23,7 @@
   #:use-module (ares evaluation supervisor)
   #:use-module (ares evaluation thread)
   #:use-module (ares evaluation thread-manager)
+  #:use-module (ares evaluation io)
   #:use-module (ares alist)
   #:use-module (ares ports)
   #:use-module (ares file)
@@ -50,107 +51,8 @@
   #:use-module ((system vm loader) #:select (load-thunk-from-memory))
   #:use-module (system vm frame)
   #:use-module (system vm program)
-  #:export (output-stream-manager-thunk
-            setup-redirects-for-ports-thunk
-            evaluation-result->nrepl-messages)
   #:re-export (evaluation-supervisor-thunk
                evaluation-supervisor-shutdown
                evaluation-supervisor-process-nrepl-message
-               evaluation-thread-manager-thunk))
-
-
-;;;
-;;; I/O Handling
-;;;
-
-;; Do channel accepts nrepl messages or just strings?  Strings can
-;; help to delay nrepl related logic further up the stack.  But will
-;; require additional actor to wrap messages for each output port or
-;; one aggregating actor with non-trivial synchronization logic.
-(define* (output-stream-manager-thunk input-port
-                                      wrap-function
-                                      replies-channel
-                                      process-finished-condition
-                                      #:key
-                                      (finished-condition (make-condition)))
-  "Watches INPUT-PORT and when something arrives reads it as a string,
-wraps with WRAP-FUNCTION and sends to the REPLIES-CHANNEL.  Works
-until PROCESS-FINISHED-CONDITION is signaled or INPUT-PORT is closed.
-Signals FINISHED-CONDITION, when it is completed."
-  (define (port-open? port) (not (port-closed? port)))
-  (lambda ()
-    (let loop ()
-      (let ((op-value
-             (perform-operation
-              (choice-operation
-               (wrap-operation
-                (wait-until-port-readable-operation input-port)
-                (const 'ready))
-               (wrap-operation
-                (wait-operation process-finished-condition)
-                (const 'finished))))))
-
-        ;; Try to read anyway, in case something came before process finished
-        (when (and (port-open? input-port) (char-ready? input-port))
-          (put-message replies-channel
-                       (wrap-function (read-all-chars-as-string input-port))))
-
-        ;; It doesn't make sense to keep watching port if it's already closed
-        (if (and (equal? 'ready op-value) (port-open? input-port))
-            (loop)
-            (signal-condition! finished-condition))))))
-
-
-;;;
-;;; Eval Thread
-;;;
-
-(define (setup-redirects-for-ports-thunk output-pipes
-                                         input-port
-                                         thunk-finished-condition
-                                         replies-channel
-                                         wrap-with-ports-channel
-                                         finished-condition)
-  "Returns a thunk, which setups redirects for ports, spawning respective
-output stream managers and wait until they finished.  After everything
-is set, puts a wrap-with-ports function into WRAP-WITH-PORTS-CHANNEL.
-Stream managers waits until THUNK-FINISHED is signalled."
-
-  (define (wrap-output-with tag)
-    "Return a function, which wraps argument into alist."
-    (lambda (v) `((,tag . ,v))))
-
-  (lambda ()
-    (match output-pipes
-      ;; Destructure a list of 2 pipes into 4 separate variables
-      (((stdout-input-port . stdout-output-port)
-        (stderr-input-port . stderr-output-port))
-       (let ((wrap-with-ports (lambda (thunk)
-                                (lambda ()
-                                  (with-current-ports
-                                   stdout-output-port
-                                   stderr-output-port
-                                   input-port
-                                   thunk))))
-             (stdout-finished (make-condition))
-             (stderr-finished (make-condition)))
-         ;; TODO: [Andrew Tropin, 2023-09-06] Add input-stream-manager
-         ;; use custom or soft ports?
-
-         (spawn-fiber
-          (output-stream-manager-thunk stdout-input-port
-                                       (wrap-output-with "out")
-                                       replies-channel
-                                       thunk-finished-condition
-                                       #:finished-condition stdout-finished))
-         (spawn-fiber
-          (output-stream-manager-thunk stderr-input-port
-                                       (wrap-output-with "err")
-                                       replies-channel
-                                       thunk-finished-condition
-                                       #:finished-condition stderr-finished))
-
-         (put-message wrap-with-ports-channel wrap-with-ports)
-         (wait stdout-finished)
-         (wait stderr-finished)
-         (signal-condition! finished-condition))))))
+               evaluation-thread-manager-thunk
+               output-stream-manager-thunk))

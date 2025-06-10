@@ -24,7 +24,7 @@
   #:use-module (fibers conditions)
   #:use-module (fibers channels)
   #:use-module (fibers operations)
-  #:use-module ((ares evaluation) #:select (setup-redirects-for-ports-thunk))
+  #:use-module (ares evaluation io)
   #:use-module (ares evaluation thread)
   #:use-module (ares ports)
   #:use-module (ares guile)
