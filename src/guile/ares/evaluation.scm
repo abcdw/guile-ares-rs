@@ -21,6 +21,7 @@
 
 (define-module (ares evaluation)
   #:use-module (ares evaluation supervisor)
+  #:use-module (ares evaluation thread)
   #:use-module (ares alist)
   #:use-module (ares ports)
   #:use-module (ares file)
@@ -100,61 +101,6 @@ Signals FINISHED-CONDITION, when it is completed."
 ;;;
 ;;; Eval Thread
 ;;;
-
-(define (evaluation-thunk nrepl-message)
-  "Return a thunk, which evaluate code in appropriate module and handle
-exceptions."
-  (define out (current-output-port))
-
-  (define (eval-code)
-    (let* ((code (assoc-ref nrepl-message "code"))
-           (ns (assoc-ref nrepl-message "ns"))
-           (module
-            (or
-             (string->resolved-module ns)
-             (current-module))))
-      (save-module-excursion
-       (lambda ()
-         (set-current-module module)
-         (call-with-input-string
-          code
-          (lambda (port)
-            (and-let* ((file (assoc-ref nrepl-message "file")))
-              (set-port-filename! port file))
-            (and-let* ((line (assoc-ref nrepl-message "line")))
-              (set-port-line! port line))
-            (and-let* ((column (assoc-ref nrepl-message "column")))
-              (set-port-column! port column))
-            (let ((thunk (load-thunk-from-memory
-                          (read-and-compile port #:env module
-                                            #:optimization-level 0))))
-              (start-stack "ares-evaluation" (thunk)))))))))
-
-  (lambda ()
-    ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
-    (let/ec return
-      (with-exception-handler
-       (lambda (exception)
-         (let ((stack
-                (make-stack
-                 #t
-                 ;; Cut three frames from the top of the stack:
-                 ;; make-stack, this one, and the throw handler.
-                 3)))
-           (return `((result-type . exception)
-                     (exception-value . ,exception)
-                     (stack . ,stack)))))
-       (lambda ()
-         (call-with-values eval-code
-           (lambda vals
-             (match vals
-               ((val)
-                `((result-type . value)
-                  (eval-value . ,val)))
-               (vals
-                `((result-type . multiple-values)
-                  (eval-value . ,vals)))))))
-       #:unwind? #f))))
 
 (define (setup-redirects-for-ports-thunk output-pipes
                                          input-port
