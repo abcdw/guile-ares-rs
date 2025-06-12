@@ -201,12 +201,8 @@ allows to combine tests and other test suites."
   (syntax-rules ()
     "Equivalent of (define-public NAME (test-suite ...))."
     ((_ test-suite-name expression ...)
-     (begin
-       (define-public test-suite-name
-         (test-suite (symbol->string 'test-suite-name) expression ...))
-       ;; TODO: [Andrew Tropin, 2025-06-02] Maybe remove next line, we
-       ;; can set the same value throught test-suite macro
-       (set-procedure-property! test-suite-name 'name 'test-suite-name)))))
+     (define-public test-suite-name
+       (test-suite (symbol->string 'test-suite-name) expression ...)))))
 
 (define-syntax throws-exception?
   (lambda (x)
