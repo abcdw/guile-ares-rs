@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2025 Libre en Communs <contact@a-lec.org>
 ;;; Copyright © 2025 Noé Lopez <noelopez@free.fr>
 ;;;
@@ -21,36 +21,8 @@
 
 (define-module (ares evaluation)
   #:use-module (ares evaluation supervisor)
-  #:use-module (ares evaluation thread)
   #:use-module (ares evaluation thread-manager)
   #:use-module (ares evaluation io)
-  #:use-module (ares alist)
-  #:use-module (ares ports)
-  #:use-module (ares file)
-  #:use-module (ares reflection modules)
-  #:use-module (ares reusable-thread)
-  #:use-module (ares guile)
-  #:use-module (fibers)
-  #:use-module (fibers channels)
-  #:use-module (fibers conditions)
-  #:use-module (fibers io-wakeup)
-  #:use-module (fibers operations)
-  #:use-module (fibers scheduler)
-  #:use-module (fibers timers)
-  #:use-module (ice-9 control)
-  #:use-module (ice-9 exceptions)
-  #:use-module (ice-9 match)
-  #:use-module (ice-9 pretty-print)
-  #:use-module (ice-9 textual-ports)
-  #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-197)
-  #:use-module (srfi srfi-2)
-  #:use-module (srfi srfi-9)
-  #:use-module ((system base compile) #:select (read-and-compile))
-  #:use-module ((system repl debug) #:prefix repl-debug:)
-  #:use-module ((system vm loader) #:select (load-thunk-from-memory))
-  #:use-module (system vm frame)
-  #:use-module (system vm program)
   #:re-export (evaluation-supervisor-thunk
                evaluation-supervisor-shutdown
                evaluation-supervisor-process-nrepl-message
