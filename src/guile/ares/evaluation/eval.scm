@@ -20,7 +20,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (ares evaluation thread)
+(define-module (ares evaluation eval)
   #:use-module (ares reflection modules)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 and-let-star)

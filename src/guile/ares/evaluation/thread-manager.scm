@@ -25,7 +25,7 @@
   #:use-module (fibers channels)
   #:use-module (fibers operations)
   #:use-module (ares evaluation io)
-  #:use-module (ares evaluation thread)
+  #:use-module (ares evaluation eval)
   #:use-module (ares ports)
   #:use-module (ares guile)
   #:use-module (ares file)
