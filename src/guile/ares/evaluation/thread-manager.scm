@@ -254,7 +254,7 @@ the last message doesn't contain the value, it contains only
         (source (and-let* ((source (frame-source frame)))
                   `((line . ,(source:line source))
                     (column . ,(source:column source))
-                    (file . ,(or (search-in-load-path (source:file source))
+                    (file . ,(or (and (source:file source) (search-in-load-path (source:file source)))
                                  (source:file source)))))))
     `((procedure-name . ,name)
       (arguments . ,(list->vector arguments))
