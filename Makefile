@@ -1,5 +1,5 @@
 GUIXTM=guix time-machine -C ./rde/channels-lock.scm
-GUILE=$(GUIXTM) -- shell guile-next guile-fibers -- guile
+GUILE=$(GUIXTM) -- shell guile guile-fibers guile-custom-ports -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
