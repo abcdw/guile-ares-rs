@@ -757,12 +757,6 @@ environment just set it to new instance of test runner.
 (define (get-module-public-test-suites module)
   (get-module-test-suites (module-public-interface module)))
 
-(define private-samples-tests
-  (test-suite "sample private test suite"
-    (test "sample test"
-      (is "true assert"))))
-;; (private-samples-tests)
-
 (define* (load-test-modules-thunk
           #:key
           (test-file-pattern ".*-test(\\.scm|\\.ss)")
