@@ -313,7 +313,7 @@ to catch unhandled messages."
              (assoc-ref message 'description)))
     ((print-test-suite)
      (format (test-reporter-output-port*) "~y"
-             (tests->pretty-string (assoc-ref message 'tset-suite))))
+             (tests->pretty-string (assoc-ref message 'test-suite))))
     (else #f)))
 
 
