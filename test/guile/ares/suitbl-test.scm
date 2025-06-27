@@ -281,8 +281,8 @@ because test macro is not composable and can't be wrapped.
     (is
      (throws-exception?
       (with-silent-test-environment
-       ((test-suite "sample test suite"
-          (is (= 7 (+ 3 4))))))
+       (test-suite "sample test suite"
+         (is (= 7 (+ 3 4)))))
       (lambda (ex)
         (string=?
          "Assert encountered inside test-suite, but outside of test"
@@ -354,23 +354,45 @@ because test macro is not composable and can't be wrapped.
         (string=? "Test Macros can't be nested"
                   (exception-message ex))))))
 
+  (define specific-type-of-exception
+    (lambda (ex)
+      (string=? "Test Suite can't be nested into Test Macro"
+                (exception-message ex))))
   (test "that test-suite nested in test case is forbidden"
     (is
      (throws-exception?
       (with-silent-test-environment
        (test "test macro"
-         ((test-suite "nested test-suite" (is #t)))))
-      (lambda (ex)
-        (string=? "Test Suite can't be nested into Test Macro"
-                  (exception-message ex))))))
+         (test-suite "nested test-suite" (is #t))))
+      specific-type-of-exception)))
 
-  ((test-suite "nested test suite 1"
-     (test "test macro 1#1"
-       (is #t)
-       (is "very true"))
-     ((test-suite "even more nested test suite 1.1"
-        (test "test macro 1.1#1"
-          (is (= 4 (+ 2 2)))))))))
+  ;; TODO: [Andrew Tropin, 2025-05-23] Make reporter to provide
+  ;; following error:
+
+  ;; The expression
+  ;; (with-silent-test-environment
+  ;;  (test "test macro"
+  ;;    (test-suite "nested test-suite" (is #t))))
+  ;; expected to throw a 'specific-type-of-exception', but thrown
+  ;; <pretty-printed-exception>
+
+  (test-suite "nested test suite 1"
+    (test "test macro 1#1"
+      (is #t)
+      (is "very true"))
+    (test-suite "even more nested test suite 1.1"
+      (test "test macro 1.1#1"
+        (is (= 4 (+ 2 2)))))))
+
+(define failing-asserts-tests
+  (test-suite-thunk "suite"
+    (test "simple failure"
+      (is #f))
+    (test "simple error"
+      (is (throw 'hi)))
+    (test "error > failure"
+      (is #f)
+      (is (throw 'hi)))))
 
 (define-test-suite test-suite-usage-tests
 
@@ -386,10 +408,10 @@ because test macro is not composable and can't be wrapped.
 
   ;; TODO: [Andrew Tropin, 2025-05-20] Improve this test, check that
   ;; metadata saved and we can retrive it.
-  ((test-suite "test suite with metadata"
-     #:metadata `((interesting? . #t))
-     (test "simple"
-       (is #t))))
+  (test-suite "test suite with metadata"
+    #:metadata `((interesting? . #t))
+    (test "simple"
+      (is #t)))
 
   (nested-test-suites-and-test-macros-tests))
 
@@ -407,22 +429,22 @@ run summary is #f by default, but appears after test suite is executed"
     (is (not
          (null?
           (with-silent-test-environment
-           ((test-suite "suite1"
-              (test "case1"
-                (is #t))))
+           (test-suite "suite1"
+             (test "case1"
+               (is #t)))
            ((test-runner*)
             `((type . get-run-summary)))))))
 
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
-       ((test-suite "suite"
-          (test "simple failure"
-            (is #f))
-          (test "simple error"
-            (is (throw 'hi)))
-          (test "error > failure"
-            (is #f)
-            (is (throw 'hi)))))
+       (test-suite "suite"
+         (test "simple failure"
+           (is #f))
+         (test "simple error"
+           (is (throw 'hi)))
+         (test "error > failure"
+           (is #f)
+           (is (throw 'hi))))
        ((test-runner*)
         `((type . get-run-summary)))))
 

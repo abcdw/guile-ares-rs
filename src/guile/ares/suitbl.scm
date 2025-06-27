@@ -13,7 +13,12 @@
                 #:select (last drop-right any fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain))
 
-  #:export (test-suite test is
+  #:export (test-runner*
+            make-suitbl-test-runner
+            run-test-suites
+
+            test-suite test is
+            test-suite-thunk test-thunk
 
             test-reporter-output-port*
             test-reporter-silent
@@ -24,10 +29,6 @@
             test-reporter-dots-with-hierarchy
             test-reporters-use-all
             test-reporters-use-first
-
-            make-suitbl-test-runner
-            test-runner*
-            run-test-suites
 
             ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
             ;; introduces ambiguity and doesn't have a private
@@ -67,7 +68,7 @@ developer to visually distinguish functions containing tests
 inside (aka test suits) from usual functions.
 
 (define addition-tests
-  (test-suite "addition"
+  (test-suite-thunk "addition"
     (test "small numbers addition"
       (is (= 4 (+ 2 2)))
       (is (= 7 (+ 3 4))))
@@ -78,13 +79,13 @@ inside (aka test suits) from usual functions.
                 2000000000000))))))
 
 (define subtraction-tests
-  (test-suite "substraction"
+  (test-suite-thunk "substraction"
     (test "small numbers subtraction"
       (is (= 1 (- 4 3)))
       (is (= 3 (- 7 4))))))
 
 (define-public arithmetic-tests
-  (test-suite "arithmetic"
+  (test-suite-thunk "arithmetic"
     (addition-tests)
     (subtraction-tests)))
 
@@ -119,8 +120,7 @@ depends on the test runner implementation.
 
 (define-syntax is
   (syntax-rules ()
-    "A flexible assert macro.  Can be customized by test runner and
-reporter."
+    "A flexible assert macro.  The behavior can be customized by test runner."
     ((_ (pred args ...))
      ((test-runner*)
       `((type . run-assert)
@@ -136,11 +136,9 @@ reporter."
 (define (alist-merge l1 l2)
   (append l1 l2))
 
-(define-syntax test
+(define-syntax test-thunk
   (syntax-rules ()
-    "Test represent a logical unit of testing, usually includes zero or
-more @code{is} asserts."
-    ((test test-description #:metadata metadata expression expressions ...)
+    ((test-thunk test-description #:metadata metadata expression expressions ...)
      (let ((test-thunk
             (lambda () expression expressions ...)))
        (set-procedure-properties!
@@ -150,28 +148,34 @@ more @code{is} asserts."
          `((name . ,(string->symbol test-description))
            (documentation . ,test-description)
            (suitbl-test? . #t))))
-       ((test-runner*)
-        `((type . load-test)
-          (test-thunk . ,test-thunk)
-          (test-body . (expression expressions ...))))))
+       (lambda ()
+         ((test-runner*)
+          `((type . load-test)
+            (test-thunk . ,test-thunk)
+            (test-body . (expression expressions ...)))))))
 
-    ((test test-description expression expressions ...)
-     (test test-description #:metadata '() expression expressions ...))))
+    ((test-thunk test-description expression expressions ...)
+     (test-thunk test-description #:metadata '() expression expressions ...))))
 
-(define-syntax test-suite
+(define-syntax test
   (syntax-rules ()
-    "Test suite is a grouping unit, it can be executed in parallel,
-allows to combine tests and other test suites."
+    "Test represent a logical unit of testing, usually includes zero or
+more @code{is} asserts."
+    ((test test-description arguments ...)
+     ((test-thunk test-description arguments ...)))))
+
+(define-syntax test-suite-thunk
+  (syntax-rules ()
     ((_ suite-description #:metadata metadata expression expressions ...)
      (let* ((load-test-suite-thunk
              (lambda () expression expressions ...))
             (test-suite-thunk
-             ;; Wrapping into identity to prevent setting procedure-name
-             (identity
-              (lambda ()
-                ((test-runner*)
-                 `((type . load-test-suite)
-                   (load-test-suite-thunk . ,load-test-suite-thunk)))))))
+                ;; Wrapping into identity to prevent setting procedure-name
+                (identity
+                 (lambda ()
+                   ((test-runner*)
+                    `((type . load-test-suite)
+                      (load-test-suite-thunk . ,load-test-suite-thunk)))))))
 
        ;; Inside test runner we don't have access to test-suites
        ;; themselves, only to load-test-suite-thunk.
@@ -194,15 +198,24 @@ allows to combine tests and other test suites."
 
        test-suite-thunk))
 
-    ((test-suite suite-description expression expressions ...)
-     (test-suite suite-description #:metadata '() expression expressions ...))))
+    ((test-suite-thunk suite-description expression expressions ...)
+     (test-suite-thunk
+         suite-description #:metadata '() expression expressions ...))))
+
+(define-syntax test-suite
+  (syntax-rules ()
+    "Test suite is a grouping unit, it allows to combine tests and other
+test suites."
+    ((test-suite suite-description arguments ...)
+     ((test-suite-thunk suite-description
+        arguments ...)))))
 
 (define-syntax define-test-suite
   (syntax-rules ()
-    "Equivalent of (define-public NAME (test-suite ...))."
+    "Equivalent of (define-public NAME (test-suite-thunk ...))."
     ((_ test-suite-name expression ...)
      (define-public test-suite-name
-       (test-suite (symbol->string 'test-suite-name) expression ...)))))
+       (test-suite-thunk (symbol->string 'test-suite-name) expression ...)))))
 
 (define-syntax throws-exception?
   (lambda (x)
