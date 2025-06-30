@@ -19,6 +19,7 @@
 
 (define-module (ares evaluation-test)
   #:use-module (ares evaluation)
+  #:use-module (ares evaluation test-utils)
   #:use-module (fibers)
   #:use-module (fibers channels)
   #:use-module (fibers operations)
@@ -47,17 +48,6 @@
        (assq 'environment (car stack))
        (assq 'source (car stack))
        (valid-stack? (cdr stack)))))
-
-(define* (quickly operation
-                  #:key
-                  (timeout 1)
-                  (default-value #f))
-  (perform-operation
-   (choice-operation
-    (wrap-operation
-     (sleep-operation timeout)
-     (const default-value))
-    operation)))
 
 (define-test test-output-stream-manager
   (test-group "Testing Output Stream Manager"
