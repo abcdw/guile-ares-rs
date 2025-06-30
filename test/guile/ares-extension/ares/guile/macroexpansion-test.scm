@@ -64,7 +64,9 @@
        ("code" . "(match '(a . b) ((k . v) k))")
        ("module" . "(ares-extension ares guile macroexpansion-test)"))
      `(("status" . #("done"))
-       ("expansion" . "(let* ((v '(a . b))\n       (failure\n        (lambda ()\n          ((@@ (ice-9 match) throw)\n           'match-error\n           \"match\"\n           \"no matching pattern\"\n           v)\n          #f)))\n  (if ((@@ (ice-9 match) pair?) v)\n      (let ((w ((@@ (ice-9 match) car) v)) (x ((@@ (ice-9 match) cdr) v)))\n        (let* ((k w) (v x)) k))\n      (failure)))")))
+       ("expansion" . ,(if (string<= (version) "3.0.9") ;different indentation rules
+                           "(let* ((v '(a . b))\n       (failure\n         (lambda ()\n           ((@@ (ice-9 match) throw)\n            'match-error\n            \"match\"\n            \"no matching pattern\"\n            v)\n           #f)))\n  (if ((@@ (ice-9 match) pair?) v)\n    (let ((w ((@@ (ice-9 match) car) v))\n          (x ((@@ (ice-9 match) cdr) v)))\n      (let* ((k w) (v x)) k))\n    (failure)))"
+                           "(let* ((v '(a . b))\n       (failure\n        (lambda ()\n          ((@@ (ice-9 match) throw)\n           'match-error\n           \"match\"\n           \"no matching pattern\"\n           v)\n          #f)))\n  (if ((@@ (ice-9 match) pair?) v)\n      (let ((w ((@@ (ice-9 match) car) v)) (x ((@@ (ice-9 match) cdr) v)))\n        (let* ((k w) (v x)) k))\n      (failure)))"))))
 
     (check-response
      "Unparsable code"
