@@ -38,17 +38,6 @@
           #:key (predicate equal?))
   (lset<= predicate `(,obj) list))
 
-(define (valid-stack? stack)
-  (if (null? stack)
-      #t
-      (and
-       (car stack)
-       (assq 'procedure-name (car stack))
-       (assq 'arguments (car stack))
-       (assq 'environment (car stack))
-       (assq 'source (car stack))
-       (valid-stack? (cdr stack)))))
-
 (define-test test-output-stream-manager
   (test-group "Testing Output Stream Manager"
     (run-fibers
