@@ -15,7 +15,7 @@ ares: server
 
 check: check-suitbl
 	${GUILE_DEV} \
-	-c "((@ (ares srfi-64 test-runners) run-project-tests))"
+	-c "((@ (ares srfi-64 test-runners) run-project-tests-cli))"
 
 check-suitbl:
 	${GUILE_DEV} \
