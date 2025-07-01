@@ -1,6 +1,8 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
 ;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2025 Libre en Communs <contact@a-lec.org>
+;;; Copyright © 2025 Noé Lopez <noelopez@free.fr>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -19,6 +21,7 @@
 
 (define-module (ares evaluation io)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 textual-ports)
   #:use-module (fibers conditions)
   #:use-module (fibers operations)
   #:use-module (fibers channels)
@@ -26,7 +29,10 @@
   #:use-module (fibers)
   #:use-module (ares ports)
   #:export (setup-redirects-for-ports-thunk
-            output-stream-manager-thunk))
+            output-stream-manager-thunk
+            open-channel-input-port
+            open-channel-output-port
+            call-with-current-ports))
 
 ;; Do channel accepts nrepl messages or just strings?  Strings can
 ;; help to delay nrepl related logic further up the stack.  But will
@@ -114,3 +120,53 @@ Stream managers waits until THUNK-FINISHED is signalled."
          (wait stdout-finished)
          (wait stderr-finished)
          (signal-condition! finished-condition))))))
+
+(define* (open-channel-input-port request-channel input-channel
+                                  #:optional (request-message '((action . need-input))))
+    (define buffer "")
+    (define position 0)
+    (define (length)
+      (string-length buffer))
+    ;; https://tonsky.me/blog/unicode/
+    (define (code-points-left)
+      (- (length) position))
+
+    (define (read! dst start count)
+      (when (= 0 (code-points-left))
+        (put-message request-channel request-message)
+        (set! buffer (get-message input-channel))
+        (set! position 0))
+      (let ((count (min count (code-points-left))))
+        (string-copy! dst start buffer position (+ position count))
+        (set! position (+ position count))
+        count))
+
+    (make-custom-textual-input-port "channel-input-port" read! #f #f #f))
+
+(define* (open-channel-output-port output-channel
+                                   #:optional (output-message (lambda (str) `(output ,str))))
+  (define (write! str start count)
+    (put-message output-channel (output-message str))
+    count)
+
+  (make-custom-textual-output-port "channel-output-port" write! #f #f #f))
+
+(define* (call-with-current-ports thunk
+                                  #:key
+                                  (input (current-input-port))
+                                  (output (current-output-port))
+                                  (error (current-error-port))
+                                  (warning (current-warning-port)))
+  (define value
+    (parameterize ((current-input-port input)
+                   (current-output-port output)
+                   (current-error-port error)
+                   (current-warning-port warning))
+      (thunk)))
+  (define (flush port)
+    (unless (port-closed? port)
+      (force-output port)))
+  (flush output)
+  (flush error)
+  (flush warning)
+  value)
