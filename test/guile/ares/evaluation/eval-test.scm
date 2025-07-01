@@ -100,4 +100,7 @@
       (send channel '(evaluate (("code" . "(read)"))))
       (test-message "needs input" channel '(need-input))
       (send stdin-channel "(hello world !)")
-      (test-value "received input" channel '(hello world !))))))
+      (test-value "received input" channel '(hello world !))
+      (send channel '(evaluate (("code" . "(format #t \"Hello!\")"))))
+      (test-message "received stdout" channel '(output "Hello!"))
+      (test-value "write to stdout" channel #t)))))

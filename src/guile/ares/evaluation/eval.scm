@@ -105,7 +105,10 @@ RECURSION-LEVEL the depth of the recursion."
                      (evaluation-thunk message)
                      #:input (if stdin-channel
                                    (open-channel-input-port channel stdin-channel '(need-input))
-                                   (%make-void-port "r")))))
+                                   (%make-void-port "r"))
+                     #:output (open-channel-output-port channel (lambda (str) `(output ,str)))
+                     #:error (open-channel-output-port channel (lambda (str) `(error ,str)))
+                     #:warning (open-channel-output-port channel (lambda (str) `(error ,str))))))
        (put-message channel `(result ,result))
        (when (eq? (assq-ref result 'result-type) 'exception)
          (evaluation-loop channel #:recursion-level (1+ recursion-level))))
