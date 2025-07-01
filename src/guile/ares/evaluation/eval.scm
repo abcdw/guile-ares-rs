@@ -35,8 +35,6 @@
 (define (evaluation-thunk nrepl-message)
   "Return a thunk, which evaluate code in appropriate module and handle
 exceptions."
-  (define out (current-output-port))
-
   (define (eval-code)
     (let* ((code (assoc-ref nrepl-message "code"))
            (ns (assoc-ref nrepl-message "ns"))
