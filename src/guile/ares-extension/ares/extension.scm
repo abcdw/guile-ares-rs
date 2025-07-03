@@ -27,6 +27,17 @@
   #:use-module (srfi srfi-197)
   #:export (ares.extension))
 
+(define (extension-in-list? extension list)
+  "If any symbol provided by EXTENSION is already provided
+by an extension in LIST, returns the conflicting extension, otherwise
+return #f."
+  (define (provides e) (procedure-property e 'provides))
+  (define search (provides extension))
+  (find
+   (lambda (e)
+     (pair? (lset-intersection eq? search (provides e))))
+   list))
+
 (define (add-extension context)
   "Tries to add an extension to the list of extensions and rebuild
 @code{ares/handler}, if succeed the next and following iterations of
@@ -36,22 +47,25 @@ the loop will be using new handler."
          (handler (assoc-ref context 'ares/handler))
          (state (atomic-box-ref (assoc-ref context 'ares/state)))
          (extensions-atom (assoc-ref state 'extensions))
-         (extensions (atomic-box-ref extensions-atom))
-         (new-extension (eval-string (assoc-ref message "extension")))
-         (new-extensions (cons new-extension extensions))
-         (new-handler (false-if-exception (make-handler new-extensions))))
-    ;; (format #t "~y" new-extensions)
-    (if new-handler
-        (begin
-          ;; TODO: [Andrew Tropin, 2024-06-26] Add check that
-          ;; extension already exists in the list
-          (atomic-box-set! handler new-handler)
-          (atomic-box-set! extensions-atom new-extensions)
-          (reply!
-           `(("status" . #("done")))))
-        (reply!
-         ;; TODO: [Andrew Tropin, 2024-06-26] Send exception/problem back
-         `(("status" . #("error" "cant-build-handler" "done")))))))
+         (extensions (atomic-box-ref extensions-atom)))
+    (catch
+     #t
+     (lambda ()
+       (let* ((new-extension (eval-string (assoc-ref message "extension")))
+              (new-extensions (cons new-extension extensions)))
+         (if (extension-in-list? new-extension extensions)
+             (reply! `(("status" . #("error" "feature-already-provided" "done"))))
+             (begin
+               (atomic-box-set! handler (make-handler new-extensions))
+               (atomic-box-set! extensions-atom new-extensions)
+               (reply! `(("status" . #("done"))))))))
+     (lambda (_ . args)
+       (reply!
+        ;; TODO: [Noé Lopez, 2025-07-03] Send exception in more
+        ;; organized way that display to have something readable like
+        ;; in backtraces.
+        `(("status" . #("error" "cant-build-handler" "done"))
+          ("error" . ,(format #f "~a" args))))))))
 
 (define swap-extension
   (lambda (state message reply-function)
