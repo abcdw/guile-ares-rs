@@ -263,11 +263,13 @@ a bug with bindings."
 
 (define (frame->nrepl-value frame)
   "Serializes FRAME into a value that can be sent in nREPL messages."
+  (define (ensure-list d) (if (list? d) d (list d)))
+
   (let ((name (symbol->string (or (frame-procedure-name frame) '_)))
         (arguments
          (map (lambda (argument)
                 (format #f "~s" argument))
-              (frame-arguments frame)))
+              (ensure-list (frame-arguments frame))))
         (environment
          (map (lambda (binding)
                 (match-let (((name . value) binding))
