@@ -189,21 +189,25 @@ COMMAND-CHANNEL."
              (else
               (error "it sholud not get here")))))))))
 
-(define (evaluation-thread-manager nrepl-channel)
+(define* (evaluation-thread-manager nrepl-channel
+                                   #:optional
+                                   (pure-dynamic-state (current-dynamic-state)))
   "Spawn a thread and can run/interrupt evaluation on it via commands sent to
 COMMAND-CHANNEL."
   (define thread-channel (make-channel))
   (define stdin-channel (make-channel))
   (define reset-evaluation #f)          ;use only in evaluation thread
   (define thread
-    (call-with-new-thread
-     (lambda ()
-       (call/cc
-        (lambda (cont)
-          (set! reset-evaluation cont)))
-       (evaluation-loop
-        thread-channel
-        #:stdin-channel stdin-channel))))
+    (with-dynamic-state pure-dynamic-state
+      (lambda ()
+        (call-with-new-thread
+         (lambda ()
+           (call/cc
+            (lambda (cont)
+              (set! reset-evaluation cont)))
+           (evaluation-loop
+            thread-channel
+            #:stdin-channel stdin-channel))))))
   (define actions (make-q))
   ;; If we get two interruption requests in quick succession, the
   ;; previous async-mark can still be in queue, therefore
