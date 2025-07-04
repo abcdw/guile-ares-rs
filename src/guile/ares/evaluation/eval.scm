@@ -88,32 +88,30 @@ exceptions."
 
 (define* (evaluation-loop channel
                           #:key
-                          (stdin-channel #f)
-                          (frame #f)
-                          (recursion-level 0))
+                          (stdin-channel #f))
   "Loop over CHANNEL's messages, reading evaluation requests and sending
-the results. Read from STDIN-CHANNEL for standard input. When called
-recursively, FRAME represents the stack frame before recursion and
-RECURSION-LEVEL the depth of the recursion."
-  (unless (= recursion-level 0)
-    (format #t "Entered recursive evaluation ~a~%" recursion-level))
-  (define action (get-message channel))
+the results. Read from STDIN-CHANNEL for standard input."
+  (let loop ((frame #f)                 ;latest stack frame in case of recursive evaluation
+             (recursion-level 0))
+    (unless (= recursion-level 0)
+      (format #t "Entered recursive evaluation ~a~%" recursion-level))
+    (define action (get-message channel))
 
-  (match action
-    (('evaluate message)
-     (let* ((result (call-with-current-ports
-                     (evaluation-thunk message)
-                     #:input (if stdin-channel
+    (match action
+      (('evaluate message)
+       (let* ((result (call-with-current-ports
+                       (evaluation-thunk message)
+                       #:input (if stdin-channel
                                    (open-channel-input-port channel stdin-channel '(need-input))
                                    (%make-void-port "r"))
-                     #:output (open-channel-output-port channel (lambda (str) `(output ,str)))
-                     #:error (open-channel-output-port channel (lambda (str) `(error ,str)))
-                     #:warning (open-channel-output-port channel (lambda (str) `(error ,str))))))
-       (put-message channel `(result ,result))
-       (when (eq? (assq-ref result 'result-type) 'exception)
-         (evaluation-loop channel #:recursion-level (1+ recursion-level))))
-     (evaluation-loop channel))
-    (('quit)
-     (unless (= recursion-level 0)
-       (format #t "Left recursive evaluation ~a~%" recursion-level))
-     *unspecified*)))
+                       #:output (open-channel-output-port channel (lambda (str) `(output ,str)))
+                       #:error (open-channel-output-port channel (lambda (str) `(error ,str)))
+                       #:warning (open-channel-output-port channel (lambda (str) `(error ,str))))))
+         (put-message channel `(result ,result))
+         (when (eq? (assq-ref result 'result-type) 'exception)
+           (loop frame (1+ recursion-level))))
+       (loop frame recursion-level))
+      (('quit)
+       (unless (= recursion-level 0)
+         (format #t "Left recursive evaluation ~a~%" recursion-level))
+       *unspecified*))))
