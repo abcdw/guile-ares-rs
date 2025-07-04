@@ -65,6 +65,8 @@
       (test-value "multiplication" channel 24)
       (send channel '(evaluate (("code" . "(/ 4935 0)"))))
       (test-exception "enter recursive evaluation" channel 'numerical-overflow)
+      (test-message "enter recursive evaluation message" channel
+                    '(error "Entered recursive evaluation 1\n"))
 
       (send channel '(evaluate (("code" . "(define a (+ 4 5))"))))
       (test-value "define" channel *unspecified*)
@@ -82,6 +84,8 @@
       (test-eq #f (quickly (wait-operation stopped-condition)))
       (quickly (put-operation channel '(quit)))
       (test-eq #f (quickly (wait-operation stopped-condition)))
+      (test-message "left recursive evaluation message" channel
+                    '(error "Left recursive evaluation 1\n"))
       (quickly (put-operation channel '(quit)))
       (test-eq #t (call-with-values
                       (lambda () (quickly (wait-operation stopped-condition)))

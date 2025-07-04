@@ -93,8 +93,6 @@ exceptions."
 the results. Read from STDIN-CHANNEL for standard input."
   (let loop ((frame #f)                 ;latest stack frame in case of recursive evaluation
              (recursion-level 0))
-    (unless (= recursion-level 0)
-      (format #t "Entered recursive evaluation ~a~%" recursion-level))
     (define action (get-message channel))
 
     (match action
@@ -109,9 +107,13 @@ the results. Read from STDIN-CHANNEL for standard input."
                        #:warning (open-channel-output-port channel (lambda (str) `(error ,str))))))
          (put-message channel `(result ,result))
          (when (eq? (assq-ref result 'result-type) 'exception)
-           (loop frame (1+ recursion-level))))
-       (loop frame recursion-level))
+           (put-message
+            channel
+            `(error ,(format #f "Entered recursive evaluation ~a~%" (1+ recursion-level))))
+           (loop frame (1+ recursion-level)))
+       (loop frame recursion-level)))
       (('quit)
        (unless (= recursion-level 0)
-         (format #t "Left recursive evaluation ~a~%" recursion-level))
+         (put-message channel
+                      `(error ,(format #f "Left recursive evaluation ~a~%" recursion-level))))
        *unspecified*))))
