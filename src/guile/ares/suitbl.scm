@@ -111,9 +111,9 @@ depends on the test runner implementation.
   (and (procedure? x)
        (procedure-property x 'suitbl-test-suite?)))
 
-(define (load-test-suite-thunk? x)
+(define (test-suite-body-thunk? x)
   (and (procedure? x)
-       (procedure-property x 'suitbl-load-test-suite-thunk?)))
+       (procedure-property x 'suitbl-test-suite-body-thunk?)))
 
 ;; We use syntax-rules because it save patterns into transformer's
 ;; metadata, which allows to generate "signature" of the macro.
@@ -167,32 +167,32 @@ more @code{is} asserts."
 (define-syntax test-suite-thunk
   (syntax-rules ()
     ((_ suite-description #:metadata metadata expression expressions ...)
-     (let* ((load-test-suite-thunk
+     (let* ((test-suite-body-thunk
              (lambda () expression expressions ...))
             (test-suite-thunk
                 ;; Wrapping into identity to prevent setting procedure-name
                 (identity
                  (lambda ()
                    ((test-runner*)
-                    `((type . run-load-test-suite-thunk)
-                      (load-test-suite-thunk . ,load-test-suite-thunk)))))))
+                    `((type . run-test-suite-body-thunk)
+                      (test-suite-body-thunk . ,test-suite-body-thunk)))))))
 
        ;; Inside test runner we don't have access to test-suites
-       ;; themselves, only to load-test-suite-thunk.
+       ;; themselves, only to test-suite-body-thunk.
        (set-procedure-properties!
-        load-test-suite-thunk
+        test-suite-body-thunk
         (alist-merge
          metadata
          `((documentation . ,suite-description)
            (name . ,(string->symbol suite-description))
            ;; We need it to make it possible to customize
            ;; running/skipping logic
-           (suitbl-load-test-suite-thunk? . #t))))
+           (suitbl-test-suite-body-thunk? . #t))))
 
        (set-procedure-properties!
         test-suite-thunk
         `((documentation . ,suite-description)
-          (load-test-suite . ,load-test-suite-thunk)
+          (test-suite-body-thunk . ,test-suite-body-thunk)
           ;; We need it to automate the loading of suites.
           (suitbl-test-suite? . #t)))
 
@@ -297,7 +297,7 @@ to catch unhandled messages."
    (lambda (i)
      (cond
       ((test? i) (string-append "test: " (procedure-documentation i)))
-      ((load-test-suite-thunk? i)
+      ((test-suite-body-thunk? i)
        (string-append "suite: " (procedure-documentation i)))
       ((list? i) (tests->pretty-string i))
       (else i)))
@@ -566,9 +566,9 @@ environment just set it to new instance of test runner.
      `((type . print-test-suite)
        (test-suite . ,suite))))
 
-  (define (make-try-load-suite load-test-suite-thunk)
+  (define (make-try-load-suite test-suite-body-thunk)
     (define description
-      (procedure-documentation load-test-suite-thunk))
+      (procedure-documentation test-suite-body-thunk))
 
     (define test-suite-enter!
       (lambda ()
@@ -596,11 +596,11 @@ environment just set it to new instance of test runner.
                (raise-exception _)))
            (parameterize ((%current-test-suite-items* (make-atomic-box '()))
                           (%test-path* (cons description (%test-path*))))
-             (load-test-suite-thunk)
+             (test-suite-body-thunk)
              (chain (%current-test-suite-items*)
                (atomic-box-ref _)
                (reverse _)
-               (cons load-test-suite-thunk _)
+               (cons test-suite-body-thunk _)
                (cons 'value _))))
          #:unwind? #t))
       (test-suite-leave!)
@@ -622,9 +622,9 @@ environment just set it to new instance of test runner.
       ((get-log)
        (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-      ((run-load-test-suite-thunk)
+      ((run-test-suite-body-thunk)
        (let* ((try-load-suite (make-try-load-suite
-                               (assoc-ref x 'load-test-suite-thunk))))
+                               (assoc-ref x 'test-suite-body-thunk))))
 
          (match (try-load-suite)
            (('exception . ex)
@@ -709,12 +709,12 @@ environment just set it to new instance of test runner.
        (atomic-box-ref last-run-summary))
 
       ((load-test-suite)
-       (let ((load-test-suite-thunk
+       (let ((test-suite-body-thunk
               (chain (assoc-ref x 'test-suite)
-                (procedure-property _ 'load-test-suite))))
+                (procedure-property _ 'test-suite-body-thunk))))
          (this
-          `((type . run-load-test-suite-thunk)
-            (load-test-suite-thunk . ,load-test-suite-thunk)))))
+          `((type . run-test-suite-body-thunk)
+            (test-suite-body-thunk . ,test-suite-body-thunk)))))
 
       ((run-test-suites)
        (parameterize ((test-runner* this)
