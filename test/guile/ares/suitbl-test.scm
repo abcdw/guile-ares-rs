@@ -150,7 +150,7 @@ because test macro is not composable and can't be wrapped.
     "Default test runner"
     (let ((msg-type (assoc-ref x 'type)))
       (case msg-type
-        ((load-test-suite)
+        ((run-load-test-suite-thunk)
          ((assoc-ref x 'load-test-suite-thunk)))
 
         ((schedule-test)

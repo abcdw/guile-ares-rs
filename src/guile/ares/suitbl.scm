@@ -174,7 +174,7 @@ more @code{is} asserts."
                 (identity
                  (lambda ()
                    ((test-runner*)
-                    `((type . load-test-suite)
+                    `((type . run-load-test-suite-thunk)
                       (load-test-suite-thunk . ,load-test-suite-thunk)))))))
 
        ;; Inside test runner we don't have access to test-suites
@@ -622,7 +622,7 @@ environment just set it to new instance of test runner.
       ((get-log)
        (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-      ((load-test-suite)
+      ((run-load-test-suite-thunk)
        (let* ((try-load-suite (make-try-load-suite
                                (assoc-ref x 'load-test-suite-thunk))))
 
