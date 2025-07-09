@@ -708,11 +708,23 @@ environment just set it to new instance of test runner.
       ((get-run-summary)
        (atomic-box-ref last-run-summary))
 
+      ((load-test-suite)
+       (let ((load-test-suite-thunk
+              (chain (assoc-ref x 'test-suite)
+                (procedure-property _ 'load-test-suite))))
+         (this
+          `((type . run-load-test-suite-thunk)
+            (load-test-suite-thunk . ,load-test-suite-thunk)))))
+
       ((run-test-suites)
        (parameterize ((test-runner* this)
                       (%schedule-only?* #t))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
-         (for-each (lambda (ts) (ts)) (assoc-ref x 'test-suites))
+         (for-each
+          (lambda (ts) (test-runner
+                        `((type . load-test-suite)
+                          (test-suite . ,ts))))
+          (assoc-ref x 'test-suites))
 
          (test-runner
           `((type . run-scheduled-tests)))
