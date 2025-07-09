@@ -154,8 +154,8 @@ because test macro is not composable and can't be wrapped.
          ((assoc-ref x 'test-suite-body-thunk)))
 
         ((schedule-test)
-         (let ((test-thunk (assoc-ref x 'test-thunk)))
-           (test-thunk)))
+         (let ((test-body-thunk (assoc-ref x 'test-body-thunk)))
+           (test-body-thunk)))
         ((run-assert)
          (let ((assert-thunk (assoc-ref x 'assert-thunk))
                (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
@@ -179,9 +179,9 @@ because test macro is not composable and can't be wrapped.
     (let ((msg-type (assoc-ref message 'type)))
       (case msg-type
         ((schedule-test)
-         (let ((test-thunk (assoc-ref message 'test-thunk)))
+         (let ((test-body-thunk (assoc-ref message 'test-body-thunk)))
 
-           (test-thunk)))
+           (test-body-thunk)))
 
         ((run-assert)
          (let ((assert-thunk (assoc-ref message 'assert-thunk))

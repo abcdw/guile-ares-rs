@@ -139,10 +139,10 @@ depends on the test runner implementation.
 (define-syntax test-thunk
   (syntax-rules ()
     ((test-thunk test-description #:metadata metadata expression expressions ...)
-     (let ((test-thunk
+     (let ((test-body-thunk
             (lambda () expression expressions ...)))
        (set-procedure-properties!
-        test-thunk
+        test-body-thunk
         (alist-merge
          metadata
          `((name . ,(string->symbol test-description))
@@ -151,7 +151,7 @@ depends on the test runner implementation.
        (lambda ()
          ((test-runner*)
           `((type . load-test)
-            (test-thunk . ,test-thunk)
+            (test-body-thunk . ,test-body-thunk)
             (test-body . (expression expressions ...)))))))
 
     ((test-thunk test-description expression expressions ...)
@@ -486,13 +486,13 @@ environment just set it to new instance of test runner.
       (test-reporter
        (alist-cons 'state reporter-state message))))
 
-  (define (%run-test test-thunk)
+  (define (%run-test test-body-thunk)
     (parameterize ((%test-events* (make-atomic-box '())))
       ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
       ;; happen inside test case, but outside of assert
 
       ;; What to do with exception outside of assert?
-      (test-thunk)
+      (test-body-thunk)
       (atomic-box-ref (%test-events*))))
 
   (define (run-test test)
@@ -645,9 +645,9 @@ environment just set it to new instance of test runner.
            (this `((type . run-scheduled-tests))))))
 
       ((load-test)
-       (let* ((original-test-thunk (assoc-ref x 'test-thunk))
-              (description (procedure-documentation original-test-thunk))
-              (new-test-thunk
+       (let* ((original-test-body-thunk (assoc-ref x 'test-body-thunk))
+              (description (procedure-documentation original-test-body-thunk))
+              (new-test-body-thunk
                (lambda ()
                  (when (%test*)
                    (chain "Test Macros can't be nested"
@@ -657,19 +657,20 @@ environment just set it to new instance of test runner.
                   `((type . test-start)
                     (description . ,description)))
                  (parameterize ((%test* description))
-                   (original-test-thunk))
+                   (original-test-body-thunk))
                  (%test-reporter
                   `((type . test-end)
                     (description . ,description))))))
 
-         (copy-procedure-properties! original-test-thunk new-test-thunk)
+         (copy-procedure-properties!
+          original-test-body-thunk new-test-body-thunk)
 
          (let ((suite-items (%current-test-suite-items*)))
            (if suite-items
                (begin
                  (atomic-box-update!
                   suite-items
-                  (lambda (items) (cons new-test-thunk items)))
+                  (lambda (items) (cons new-test-body-thunk items)))
                  (%test-reporter
                   `((type . test-scheduled)
                     (test-path . ,(%test-path*))
@@ -677,7 +678,7 @@ environment just set it to new instance of test runner.
                (begin
                  (atomic-box-set!
                   last-run-summary
-                  (run-test new-test-thunk)))))
+                  (run-test new-test-body-thunk)))))
 
          *unspecified*))
 
