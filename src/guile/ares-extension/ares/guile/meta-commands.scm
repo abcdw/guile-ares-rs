@@ -43,6 +43,9 @@
          (name (assoc-ref message "command"))
          (arguments (string-append (assoc-ref message "arguments") "\n"))
          (code `((@ (ares meta-commands) call-meta-command) ,name ,arguments))
+         ;; FIXME: It would be better to not call nrepl.evaluation
+         ;; directly. Its better to transform the message and pass it
+         ;; down the extension stack.
          (evaluator (nrepl.evaluation handler)))
     (evaluator
      (acons
