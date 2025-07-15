@@ -54,7 +54,8 @@
     (check-response
      "Expansion of macro, which is not provided"
      `(("op" . "ares.guile.macroexpansion/macroexpand")
-       ("code" . "(match '(a . b) ((k . v) k))"))
+       ("code" . "(match '(a . b) ((k . v) k))")
+       ("module" . "(ares empty)"))
      `(("error" . "ice-9/psyntax.scm:2824:12: In procedure syntax-violation:\nSyntax error:\nunknown location: source expression failed to match any pattern in form (k . v)\n")
        ("status" . #("error" "macroexpand-error" "done"))))
 
