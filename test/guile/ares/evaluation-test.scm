@@ -348,7 +348,6 @@
            ;; We don’t look in more detail since the stack can change
            ;; easily.
            (let ((stack (cadr (quickly (get-operation replies-channel)))))
-             (pk stack)
              (test-equal "Returned stack" "ares.evaluation/stack" (car stack))
              (test-assert "Returned valid stack" (valid-stack? (vector->list (cdr stack)))))
 
