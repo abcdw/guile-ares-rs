@@ -29,24 +29,28 @@
   #:use-module (test-utils))
 
 (define-test test-evaluation-loop
-  (define (send channel message)
+  (define reply-channel (make-channel))
+  (define (reply-callback message)
+    (put-message reply-channel message))
+  (define (send-raw channel message)
     (quickly (put-operation channel message)))
-  (define (test-value name channel expected)
-    (test-begin name)
-    (let ((reply (quickly (get-operation channel))))
-      (test-eq 'result (car reply))
-      (test-eq "value" 'value (assq-ref (cadr reply) 'result-type))
-      (test-equal "evaluation value" expected (assq-ref (cadr reply) 'eval-value)))
-    (test-end name))
-  (define (test-exception name channel kind)
-    (test-begin name)
-    (let ((reply (quickly (get-operation channel))))
-      (test-eq 'result (car reply))
-      (test-eq "exception" 'exception (assq-ref (cadr reply) 'result-type))
-      (test-equal "exception kind" kind (exception-kind (assq-ref (cadr reply) 'exception-value))))
-    (test-end name))
-  (define (test-message name channel message)
-    (test-equal name message (quickly (get-operation channel))))
+  (define (send channel message)
+    (send-raw channel `((reply . ,reply-callback)
+                        (action . ,message))))
+  (define (check-value name expected)
+    (test-group name
+      (let ((reply (quickly (get-operation reply-channel))))
+        (test-eq 'result (car reply))
+        (test-eq "value" 'value (assq-ref (cadr reply) 'result-type))
+        (test-equal "evaluation value" expected (assq-ref (cadr reply) 'eval-value)))))
+  (define (check-exception name kind)
+    (test-group name
+      (let ((reply (quickly (get-operation reply-channel))))
+        (test-eq 'result (car reply))
+        (test-eq "exception" 'exception (assq-ref (cadr reply) 'result-type))
+        (test-equal "exception kind" kind (exception-kind (assq-ref (cadr reply) 'exception-value))))))
+  (define (check-message name message)
+    (test-equal name message (quickly (get-operation reply-channel))))
 
 
   (test-group
@@ -60,37 +64,36 @@
                      (signal-condition! stopped-condition)))
 
       (send channel '(evaluate (("code" . "(- 3 2)"))))
-      (test-value "addition" channel 1)
+      (check-value "addition" 1)
       (send channel '(evaluate (("code" . "(* 1 2 3 4)"))))
-      (test-value "multiplication" channel 24)
+      (check-value "multiplication" 24)
       (send channel '(evaluate (("code" . "(/ 4935 0)"))))
-      (test-exception "enter recursive evaluation" channel 'numerical-overflow)
-      (test-message "enter recursive evaluation message" channel
+      (check-exception "enter recursive evaluation" 'numerical-overflow)
+      (check-message "enter recursive evaluation message"
                     '(error "Entered recursive evaluation 1\n"))
 
       (send channel '(evaluate (("code" . "(define a (+ 4 5))"))))
-      (test-value "define" channel *unspecified*)
+      (check-value "define" *unspecified*)
       (send channel '(evaluate (("code" . "a"))))
-      (test-value "defined variable" channel 9)
+      (check-value "defined variable" 9)
 
       (send channel '(evaluate (("code" . "(define kont #f)"))))
-      (test-value "define" channel *unspecified*)
+      (check-value "define" *unspecified*)
       (send channel '(evaluate (("code" . "(+ 1 (call/cc (lambda (k) (set! kont k) 5)))"))))
-      (test-value "call/cc" channel 6)
+      (check-value "call/cc" 6)
       (send channel '(evaluate (("code" . "(kont 41)"))))
-      (test-value "calling continuation" channel 42)
+      (check-value "calling continuation" 42)
 
-      (test-begin "exit recursive evaluation")
-      (test-eq #f (quickly (wait-operation stopped-condition)))
-      (quickly (put-operation channel '(quit)))
-      (test-eq #f (quickly (wait-operation stopped-condition)))
-      (test-message "left recursive evaluation message" channel
-                    '(error "Left recursive evaluation 1\n"))
-      (quickly (put-operation channel '(quit)))
-      (test-eq #t (call-with-values
-                      (lambda () (quickly (wait-operation stopped-condition)))
-                    (lambda values (null? values))))
-      (test-end))))
+      (test-group "exit recursive evaluation"
+        (test-eq #f (quickly (wait-operation stopped-condition)))
+        (send channel '(quit))
+        (test-eq #f (quickly (wait-operation stopped-condition)))
+        (check-message "left recursive evaluation message"
+                       '(error "Left recursive evaluation 1\n"))
+        (send channel '(quit))
+        (test-eq #t (call-with-values
+                        (lambda () (quickly (wait-operation stopped-condition)))
+                      (lambda values (null? values))))))))
   (test-group
    "Testing Evaluation Loop ports"
    (run-fibers
@@ -102,9 +105,9 @@
          (evaluation-loop channel #:stdin-channel stdin-channel)))
 
       (send channel '(evaluate (("code" . "(read)"))))
-      (test-message "needs input" channel '(need-input))
-      (send stdin-channel "(hello world !)")
-      (test-value "received input" channel '(hello world !))
+      (check-message "needs input" '(need-input))
+      (send-raw stdin-channel "(hello world !)")
+      (check-value "received input" '(hello world !))
       (send channel '(evaluate (("code" . "(format #t \"Hello!\")"))))
-      (test-message "received stdout" channel '(output "Hello!"))
-      (test-value "write to stdout" channel #t)))))
+      (check-message "received stdout" '(output "Hello!"))
+      (check-value "write to stdout" #t)))))

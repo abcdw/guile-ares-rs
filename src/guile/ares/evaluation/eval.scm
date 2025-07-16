@@ -94,34 +94,60 @@ exceptions."
                   (eval-value . ,vals)))))))
        #:unwind? #f))))
 
+(define* (apply-evaluation message
+                           channel
+                           stdin-channel)
+  "Applies the evaluation in MESSAGE and returns the
+result. In the evaluation context, program output is sent to CHANNEL
+in the form `(output \"message\") or `(error \"message\"); program
+input is requested by sending '(need-input) to CHANNEL. The caller can
+provide input by sending a string on STDIN-CHANNEL."
+  (call-with-current-ports
+   (evaluation-thunk message)
+   #:input (open-callback-input-port
+            stdin-channel
+            (if stdin-channel
+                (lambda () (put-message channel '(need-input)))
+                (lambda () (error "input requested but no stdin-channel available"))))
+   #:output (open-callback-output-port (lambda (str) (put-message channel `(output ,str))))
+   #:error  (open-callback-output-port (lambda (str) (put-message channel `(error ,str))))
+   #:warning (open-callback-output-port (lambda (str) (put-message channel `(error ,str))))))
+
 (define* (evaluation-loop channel
                           #:key
                           (stdin-channel #f))
   "Loop over CHANNEL's messages, reading evaluation requests and sending
-the results. Read from STDIN-CHANNEL for standard input."
+the results by calling the message’s REPLY. Read from STDIN-CHANNEL
+for standard input.
+
+The messages are alists with at least the following elements:
+'((reply . <procedure MESSAGE>)
+  (action . <action>))
+
+ACTION can have the following values:
+'(evaluate <message>)                   ;evaluate <message>, an nREPL evaluation request
+'(quit)                                 ;quit the current evaluation loop"
   (let loop ((frame #f)                 ;latest stack frame in case of recursive evaluation
              (recursion-level 0))
-    (define action (get-message channel))
+    (let* ((message (get-message channel))
+           (action (assoc-ref message 'action))
+           (reply (assoc-ref message 'reply)))
+      (match action
+        (('evaluate message)
+         (let* ((result (apply-evaluation message channel stdin-channel)))
+           (reply `(result ,result))
+           (when (eq? (assq-ref result 'result-type) 'exception)
+             (reply
+              `(error ,(format #f "Entered recursive evaluation ~a~%" (1+ recursion-level))))
+             (loop frame (1+ recursion-level)))
+           (loop frame recursion-level)))
 
-    (match action
-      (('evaluate message)
-       (let* ((result (call-with-current-ports
-                       (evaluation-thunk message)
-                       #:input (if stdin-channel
-                                   (open-callback-input-port stdin-channel (lambda () (put-message channel '(need-input))))
-                                   (%make-void-port "r"))
-                       #:output (open-callback-output-port (lambda (str) (put-message channel `(output ,str))))
-                       #:error (open-callback-output-port (lambda (str) (put-message channel `(error ,str))))
-                       #:warning (open-callback-output-port (lambda (str) (put-message channel `(error ,str)))))))
-         (put-message channel `(result ,result))
-         (when (eq? (assq-ref result 'result-type) 'exception)
-           (put-message
-            channel
-            `(error ,(format #f "Entered recursive evaluation ~a~%" (1+ recursion-level))))
-           (loop frame (1+ recursion-level)))
-       (loop frame recursion-level)))
-      (('quit)
-       (unless (= recursion-level 0)
-         (put-message channel
-                      `(error ,(format #f "Left recursive evaluation ~a~%" recursion-level))))
-       *unspecified*))))
+        (('quit)
+         (unless (= recursion-level 0)
+           (reply `(error ,(format #f "Left recursive evaluation ~a~%" recursion-level))))
+         *unspecified*)
+
+        (_
+         (format (current-error-port)
+                 "unknown evaluation loop action ~a~%"
+                 message))))))
