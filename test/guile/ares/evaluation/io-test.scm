@@ -33,22 +33,26 @@
      (define channel (make-channel))
      (spawn-fiber
       (lambda ()
-        (define port (open-channel-output-port channel))
+        (define port (open-callback-output-port
+                      (lambda (str) (put-message channel str))))
         (put-string port "hello")
         (close port)))
-     (test-equal "received output" '(output "hello") (get-message channel)))))
+     (test-equal "received output" "hello" (get-message channel)))))
 
 (define-test test-input-ports
   (run-fibers
    (lambda ()
      (define input-channel (make-channel))
      (define request-channel (make-channel))
-     (define port (open-channel-input-port request-channel input-channel))
+     (define port (open-callback-input-port
+                   input-channel
+                   (lambda ()
+                     (put-message request-channel 'need-input))))
 
      (spawn-fiber
       (lambda ()
         (test-equal "received input request"
-          '((action . need-input))
+          'need-input
           (quickly (get-operation request-channel)))
         (put-message input-channel "\"hello\"")))
 

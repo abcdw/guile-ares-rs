@@ -108,11 +108,11 @@ the results. Read from STDIN-CHANNEL for standard input."
        (let* ((result (call-with-current-ports
                        (evaluation-thunk message)
                        #:input (if stdin-channel
-                                   (open-channel-input-port channel stdin-channel '(need-input))
+                                   (open-callback-input-port stdin-channel (lambda () (put-message channel '(need-input))))
                                    (%make-void-port "r"))
-                       #:output (open-channel-output-port channel (lambda (str) `(output ,str)))
-                       #:error (open-channel-output-port channel (lambda (str) `(error ,str)))
-                       #:warning (open-channel-output-port channel (lambda (str) `(error ,str))))))
+                       #:output (open-callback-output-port (lambda (str) (put-message channel `(output ,str))))
+                       #:error (open-callback-output-port (lambda (str) (put-message channel `(error ,str))))
+                       #:warning (open-callback-output-port (lambda (str) (put-message channel `(error ,str)))))))
          (put-message channel `(result ,result))
          (when (eq? (assq-ref result 'result-type) 'exception)
            (put-message

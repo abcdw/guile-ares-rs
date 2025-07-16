@@ -30,8 +30,8 @@
   #:use-module (ares ports)
   #:export (setup-redirects-for-ports-thunk
             output-stream-manager-thunk
-            open-channel-input-port
-            open-channel-output-port
+            open-callback-input-port
+            open-callback-output-port
             call-with-current-ports))
 
 ;; Do channel accepts nrepl messages or just strings?  Strings can
@@ -121,8 +121,7 @@ Stream managers waits until THUNK-FINISHED is signalled."
          (wait stderr-finished)
          (signal-condition! finished-condition))))))
 
-(define* (open-channel-input-port request-channel input-channel
-                                  #:optional (request-message '((action . need-input))))
+(define (open-callback-input-port input-channel request-callback)
     (define buffer "")
     (define position 0)
     (define (length)
@@ -133,7 +132,7 @@ Stream managers waits until THUNK-FINISHED is signalled."
 
     (define (read! dst start count)
       (when (= 0 (code-points-left))
-        (put-message request-channel request-message)
+        (request-callback)
         (set! buffer (get-message input-channel))
         (set! position 0))
       (let ((count (min count (code-points-left))))
@@ -143,10 +142,9 @@ Stream managers waits until THUNK-FINISHED is signalled."
 
     (make-custom-textual-input-port "channel-input-port" read! #f #f #f))
 
-(define* (open-channel-output-port output-channel
-                                   #:optional (output-message (lambda (str) `(output ,str))))
+(define (open-callback-output-port output-callback)
   (define (write! str start count)
-    (put-message output-channel (output-message str))
+    (output-callback str)
     count)
 
   (make-custom-textual-output-port "channel-output-port" write! #f #f #f))
