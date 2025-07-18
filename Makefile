@@ -1,4 +1,4 @@
-GUIXTM=guix time-machine -C ./rde/channels-lock.scm
+GUIXTM=guix time-machine -C ./env/guix/ares/env/guix/channels.scm
 GUILE=$(GUIXTM) -- shell guile guile-fibers guile-custom-ports -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
