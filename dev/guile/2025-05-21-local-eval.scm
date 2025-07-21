@@ -44,7 +44,7 @@
 (define (duplicate-module! module)
   (define new-module (make-fresh-user-module))
   (module-for-each
-   (lambda (name var) (module-define! new-module name var))
+   (lambda (name var) (module-define! new-module name (variable-ref var)))
    module)
   (set-module-name! new-module (module-name module))
   new-module)
@@ -71,7 +71,7 @@
   (format #t "~y" env)
   ;; (duplicate-module! (current-module))
   (define nested-eval-module
-    (add-bindings-to-module! (current-module) env))
+    (add-bindings-to-module! (duplicate-module! (current-module)) env))
   ;; (module-use! (current-module) (module-public-interface nested-eval-module))
   ;; (hash-map->list (lambda (k v) (cons k v)) (module-obarray nested-eval-module))
   ;; (hash-map->list (lambda (k v) (cons k v)) (module-obarray (current-module)))
