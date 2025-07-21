@@ -33,13 +33,13 @@
   module)
 
 (define (clear-module-bindings! module)
-  "Doesn't really work"
+  "Very hacky implementation, just for experimentation!"
   (hash-clear! (module-obarray module))
   (hash-clear! (module-obarray (module-public-interface module)))
   ;; TODO: [Andrew Tropin, 2025-07-03] Try to set some variable or
   ;; reload-module after clean.
   ;; TODO: [Andrew Tropin, 2025-07-03] Restore previous bindings
-  )
+  (reload-module module))
 
 (define (duplicate-module! module)
   (define new-module (make-fresh-user-module))
@@ -84,6 +84,14 @@
   ;; (clear-module-bindings! nested-eval-module)
   ;; (reload-module nested-eval-module)
   (format #t "compile: ~a\n" (compile '(+ a (t*)) #:env nested-eval-module))
+  ;; (format #t "a: ~a\n" a)
+
+  ;;; Try to uncomment this line and re-eval (tmp-fn)
+  ;; (clear-module-bindings! (current-module))
+  ;; (with-exception-handler
+  ;;  (lambda (ex) ex)
+  ;;  (lambda () (format #t "stale a: ~a\n" a))
+  ;;  #:unwind? #t)
 
   ;; (define tmp-module (make-fresh-user-module))
   ;; (set-module-name! tmp-module '(hello there))
