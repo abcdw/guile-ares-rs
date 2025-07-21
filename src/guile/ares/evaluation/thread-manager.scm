@@ -37,6 +37,7 @@
   #:use-module (ice-9 and-let-star)
   #:use-module (system vm frame)
   #:use-module (system vm program)
+  #:use-module (srfi srfi-1)
   #:export (evaluation-thread-manager-thunk))
 
 (define* (evaluation-thread-manager-thunk
@@ -238,6 +239,27 @@ the last message doesn't contain the value, it contains only
      `((("status" . #("done" "interrupted")))))
     ((idle)
      `((("status" . #("done" "session-idle")))))))
+
+(define (frame-environment frame)
+  "Like (@ (system vm frame) frame-environment) but with a workaround for
+a bug with bindings."
+  (let* ((frame-num-locals (@@ (system vm frame) frame-num-locals))
+         (nlocals (frame-num-locals frame)))
+    (fold
+     (lambda (binding acc)
+       (let* ((slot (binding-slot binding)))
+         ;; From frame-call-representation source:
+         ;; “HACK: Avoid out-of-range from frame-local-ref.
+         ;; Some frames have bindings beyond nlocals.  That
+         ;; is probably a bug somewhere else, but at least
+         ;; this workaround allows them to be printed.”
+         (if (< slot nlocals)
+	     (cons
+              (cons (binding-name binding) (binding-ref binding))
+              acc)
+             acc)))
+     '()
+     (frame-bindings frame))))
 
 (define (frame->nrepl-value frame)
   "Serializes FRAME into a value that can be sent in nREPL messages."
