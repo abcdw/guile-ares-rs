@@ -1,4 +1,4 @@
-#! /usr/bin/env -S guile -e '(ares scripts ares)' -s
+#! /usr/bin/env -S guile -e '(ares scripts ares-nrepl)' -s
 !#
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
@@ -7,7 +7,7 @@
 ;;;
 ;;; SPDX-License-Identifier: GPL-3.0-or-later
 
-(define-module (ares scripts ares)
+(define-module (ares scripts ares-nrepl)
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-37)
