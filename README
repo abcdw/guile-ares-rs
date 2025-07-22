@@ -34,14 +34,24 @@ It's intended for use with [[https://git.sr.ht/~abcdw/emacs-arei][Arei]] IDE, bu
 generic nREPL [[https://nrepl.org/nrepl/usage/clients.html][clients]].
 
 * Usage
-The are multiple ways to utilize Ares RS, but most straightforward is to spawn a standalone server and connect to it from a client ([[https://git.sr.ht/~abcdw/emacs-arei][Emacs Arei]] for example):
+The are multiple ways to utilize Ares RS, but most straightforward is
+to spawn a standalone server and connect to it from a client ([[https://git.sr.ht/~abcdw/emacs-arei][Emacs
+Arei]] for example):
 
 #+begin_src sh
-guix shell guile-next guile-ares-rs -- \
-guile -c '((@ (ares server) run-nrepl-server))'
+guix shell guile guile-ares-rs -- ares-nrepl
 #+end_src
 
-Don't forget to add your project source code and other dependencies to [[https://www.gnu.org/software/guile/manual/html_node/Load-Paths.html][load path]].
+Don't forget to add your project source code and other dependencies to
+[[https://www.gnu.org/software/guile/manual/html_node/Load-Paths.html][load path]]. For example:
+
+#+begin_src sh
+ares-nrepl -- -L src/guile
+#+end_src
+
+The ares-nrepl command is a wrapper around guile, the above command is
+equivalent to =guile -L src/guile -c '((@ (ares server)
+run-nrepl-server))'=
 
 To be able to use G-expression special syntax ~#~~, ~#$~ and ~#$@~ or when
 using Arei with Guix or other project, which have [[https://www.gnu.org/software/guile/manual/html_node/Reader-Extensions.html][reader extensions]],
