@@ -6,6 +6,6 @@
 ;;; SPDX-License-Identifier: GPL-3.0-or-later
 
 (define-module (ares version)
-  #:export (%ares-version))
+  #:export (ares-version))
 
-(define %ares-version "0.9.5")
+(define ares-version "0.9.5")

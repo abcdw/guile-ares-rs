@@ -31,7 +31,7 @@
 (define %options
   (list (option '(#\v "version") #f #f
                 (lambda _
-                  (format #t "~a ~a~%" (car (command-line)) %ares-version)
+                  (format #t "~a ~a~%" (car (command-line)) ares-version)
                   (exit 0)))
         (option '(#\h "help") #f #f
                 (lambda _
