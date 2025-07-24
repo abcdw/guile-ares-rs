@@ -94,24 +94,25 @@ exceptions."
                   (eval-value . ,vals)))))))
        #:unwind? #f))))
 
-(define* (apply-evaluation message
-                           channel
-                           stdin-channel)
+(define (apply-evaluation message
+                          stdin-channel
+                          reply)
   "Applies the evaluation in MESSAGE and returns the
-result. In the evaluation context, program output is sent to CHANNEL
-in the form `(output \"message\") or `(error \"message\"); program
-input is requested by sending '(need-input) to CHANNEL. The caller can
-provide input by sending a string on STDIN-CHANNEL."
+result. In the evaluation context, program output is sent in a call to
+REPLY with argument `(output \"message\") or `(error \"message\");
+program input is requested by calling REPLY with '(need-input). The
+caller can provide input by sending a string on STDIN-CHANNEL."
   (call-with-current-ports
    (evaluation-thunk message)
-   #:input (open-callback-input-port
+   #:input
+   (open-callback-input-port
             stdin-channel
             (if stdin-channel
-                (lambda () (put-message channel '(need-input)))
+                (lambda () (reply '(need-input)))
                 (lambda () (error "input requested but no stdin-channel available"))))
-   #:output (open-callback-output-port (lambda (str) (put-message channel `(output ,str))))
-   #:error  (open-callback-output-port (lambda (str) (put-message channel `(error ,str))))
-   #:warning (open-callback-output-port (lambda (str) (put-message channel `(error ,str))))))
+   #:output (open-callback-output-port (lambda (str) (reply `(output ,str))))
+   #:error (open-callback-output-port (lambda (str) (reply `(error ,str))))
+   #:warning (open-callback-output-port (lambda (str) (reply `(error ,str))))))
 
 (define* (evaluation-loop channel
                           #:key
@@ -134,7 +135,7 @@ ACTION can have the following values:
            (reply (assoc-ref message 'reply)))
       (match action
         (('evaluate message)
-         (let* ((result (apply-evaluation message channel stdin-channel)))
+         (let* ((result (apply-evaluation message stdin-channel reply)))
            (reply `(result ,result))
            (when (eq? (assq-ref result 'result-type) 'exception)
              (reply
