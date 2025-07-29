@@ -73,16 +73,34 @@
   (when (equal? 'normal (get-verbosity state))
     (ppk "=> " (shrink-alist message))))
 
+(define (set-verbosity context)
+  (let* ((message (assoc-ref context 'nrepl/message))
+         (state (assoc-ref context 'ares/state))
+         (verbosity (assoc-ref message "ares.logging/verbosity"))
+         (reply! (assoc-ref context 'reply!)))
+    (set-verbosity-level! state (string->symbol verbosity))
+    (reply! `(("status" . #("done"))
+              ("ares.logging/verbosity" . ,verbosity)))))
+
+(define operations
+  `(("ares.logging/set-verbosity" . ,set-verbosity)))
+
 (define-with-meta (ares.logging handler)
   "Prints @code{nrepl/message} and wraps @code{reply!} function to log
  outgoing nREPL messages."
   `((provides . (ares.logging))
-    (requires . (ares.core ares.transport)))
+    (requires . (ares.core ares.transport))
+    (handles . ,operations))
 
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (state (assoc-ref context 'ares/state))
+           (op (assoc-ref message "op"))
+           (operation-function (assoc-ref operations op))
            (original-reply! (assoc-ref context 'reply!))
-           (wrapped-reply! (wrap-reply-with-logging state original-reply!)))
+           (wrapped-reply! (wrap-reply-with-logging state original-reply!))
+           (new-context (acons 'reply! wrapped-reply! context)))
       (log-incomming-message state message)
-      (handler (acons 'reply! wrapped-reply! context)))))
+      (if operation-function
+          (operation-function new-context)
+          (handler new-context)))))
