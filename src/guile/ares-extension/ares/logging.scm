@@ -19,8 +19,10 @@
 
 (define-module (ares-extension ares logging)
   #:use-module (ares guile)
+  #:use-module (ares atomic)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
+  #:use-module (ice-9 atomic)
   #:use-module (ice-9 format)
   #:export (ares.logging))
 
@@ -44,14 +46,32 @@
 
 ;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
 ;; logging: enable/disable, supress some operations or fields in messages.
-(define (wrap-reply-with-logging original-reply!)
+
+(define (set-verbosity-level! state-atom verbosity)
+  (atomic-box-update!
+   state-atom
+   (lambda (state)
+     (chain state
+       (alist-delete 'ares.logging/verbosity _)
+       (alist-cons 'ares.logging/verbosity verbosity _)))))
+
+;; quite/silent normal/moderate verbose
+
+;; (set-verbosity-level! context-accessor 'quite)
+
+(define (get-verbosity state)
+  (assoc-ref (atomic-box-ref state) 'ares.logging/verbosity))
+
+(define (wrap-reply-with-logging state original-reply!)
   (lambda (reply-message)
     "Reply! wrapper from @code{ares.logging}."
-    (ppk "<= " (shrink-alist reply-message))
+    (when (equal? 'normal (get-verbosity state))
+      (ppk "<= " (shrink-alist reply-message)))
     (original-reply! reply-message)))
 
-(define (log-incomming-message message)
-  (ppk "=> " (shrink-alist message)))
+(define (log-incomming-message state message)
+  (when (equal? 'normal (get-verbosity state))
+    (ppk "=> " (shrink-alist message))))
 
 (define-with-meta (ares.logging handler)
   "Prints @code{nrepl/message} and wraps @code{reply!} function to log
@@ -61,7 +81,8 @@
 
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
+           (state (assoc-ref context 'ares/state))
            (original-reply! (assoc-ref context 'reply!))
-           (wrapped-reply! (wrap-reply-with-logging original-reply!)))
-      (log-incomming-message message)
+           (wrapped-reply! (wrap-reply-with-logging state original-reply!)))
+      (log-incomming-message state message)
       (handler (acons 'reply! wrapped-reply! context)))))
