@@ -90,7 +90,8 @@
   (test-equal "Operations information for base extensions is provided."
     '(("ares.extension/add-extension" . "Tries to add an extension to the list of extensions and rebuild\n@code{ares/handler}, if succeed the next and following iterations of\nthe loop will be using new handler.")
       ("ares.extension/describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint.")
-      ("describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint."))
+      ("describe" . "Provides a machine- and human-readable directory and documentation for\nthe operations supported by an nREPL endpoint.")
+      ("ares.logging/set-verbosity" . "Set nREPL messages logging verbosity, set\n@code{ares.logging/verbosity} to @code{\"normal\"} to enable usual\nlogging and to anything else to disable it."))
     (get-operations-directory base-extensions)))
 
 (define-test extension?-test

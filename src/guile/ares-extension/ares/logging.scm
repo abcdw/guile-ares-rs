@@ -74,6 +74,9 @@
     (ppk "=> " (shrink-alist message))))
 
 (define (set-verbosity context)
+  "Set nREPL messages logging verbosity, set
+@code{ares.logging/verbosity} to @code{\"normal\"} to enable usual
+logging and to anything else to disable it."
   (let* ((message (assoc-ref context 'nrepl/message))
          (state (assoc-ref context 'ares/state))
          (verbosity (assoc-ref message "ares.logging/verbosity"))
