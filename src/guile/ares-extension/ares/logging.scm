@@ -44,6 +44,15 @@
 
 ;; TODO: [Andrew Tropin, 2024-05-24] Add operations for controlling
 ;; logging: enable/disable, supress some operations or fields in messages.
+(define (wrap-reply-with-logging original-reply!)
+  (lambda (reply-message)
+    "Reply! wrapper from @code{ares.logging}."
+    (ppk "<= " (shrink-alist reply-message))
+    (original-reply! reply-message)))
+
+(define (log-incomming-message message)
+  (ppk "=> " (shrink-alist message)))
+
 (define-with-meta (ares.logging handler)
   "Prints @code{nrepl/message} and wraps @code{reply!} function to log
  outgoing nREPL messages."
@@ -53,9 +62,6 @@
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
            (original-reply! (assoc-ref context 'reply!))
-           (wrapped-reply! (lambda (reply-message)
-                             "Reply! wrapper from @code{ares.logging}."
-                             (ppk "<= " (shrink-alist reply-message))
-                             (original-reply! reply-message))))
-      (ppk "=> " (shrink-alist message))
+           (wrapped-reply! (wrap-reply-with-logging original-reply!)))
+      (log-incomming-message message)
       (handler (acons 'reply! wrapped-reply! context)))))
