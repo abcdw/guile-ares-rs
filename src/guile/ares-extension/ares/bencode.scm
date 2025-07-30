@@ -19,6 +19,7 @@
 
 (define-module (ares-extension ares bencode)
   #:use-module (ares guile)
+  #:use-module (ares guile exceptions)
   #:use-module (bencode)
   #:use-module (srfi srfi-197)
   #:export (ares.bencode))
@@ -53,12 +54,11 @@
                    (acons 'transport/reply! transport-reply! _)
                    (acons 'reply! transport-reply! _))))
 
-      (with-exception-handler
+      (with-exception-string-handler
        (lambda (ex)
          (transport-reply!
-          `(("error" . ,(object->pretty-string ex))
+          `(("error" . ,ex)
             ("status" . #("error" "something-broken-after-ares-bencode"
                           "done")))))
        (lambda ()
-         (handler new-context))
-       #:unwind? #t))))
+         (handler new-context))))))
