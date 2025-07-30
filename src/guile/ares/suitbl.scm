@@ -622,6 +622,19 @@ environment just set it to new instance of test runner.
       ((get-log)
        (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
+      ((run-assert)
+       (let ((assert-thunk (assoc-ref x 'assert/thunk))
+             (assert-arguments-thunk (assoc-ref x 'assert/arguments-thunk))
+             (assert-quoted-form (assoc-ref x 'assert/quoted-form)))
+         (when (and (not (null? (%test-path*)))
+                    (not (%test*)))
+           (chain
+               "Assert encountered inside test-suite, but outside of test"
+             (make-exception-with-message _)
+             (raise-exception _)))
+         (default-run-assert
+           assert-thunk assert-arguments-thunk assert-quoted-form)))
+
       ((run-test-suite-body-thunk)
        (let* ((try-load-suite (make-try-load-suite
                                (assoc-ref x 'test-suite-body-thunk))))
@@ -644,6 +657,36 @@ environment just set it to new instance of test runner.
          (when (and (null? (%test-path*)) (not (%schedule-only?*)))
            (this `((type . run-scheduled-tests))))))
 
+      ((run-scheduled-tests)
+       ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
+       (atomic-box-set!
+        last-run-summary
+        (chain
+            (atomic-box-ref state)
+          (assoc-ref _ 'suite)
+          (run-test-suite _)))
+
+       (atomic-box-ref last-run-summary))
+
+      ((run-test-suites)
+       (parameterize ((test-runner* this)
+                      (%schedule-only?* #t))
+         ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
+         (for-each
+          (lambda (ts) (test-runner
+                        `((type . load-test-suite)
+                          (test-suite . ,ts))))
+          (assoc-ref x 'test-suites))
+
+         (test-runner
+          `((type . run-scheduled-tests)))
+         ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
+         ))
+
+      ((run-tests)
+       (this `((type . run-scheduled-tests))))
+
+
       ((load-test)
        (let* ((original-test-body-thunk (assoc-ref x 'test-body-thunk))
               (description (procedure-documentation original-test-body-thunk))
@@ -651,8 +694,8 @@ environment just set it to new instance of test runner.
                (lambda ()
                  (when (%test*)
                    (chain "Test Macros can't be nested"
-                          (make-exception-with-message _)
-                          (raise-exception _)))
+                     (make-exception-with-message _)
+                     (raise-exception _)))
                  (%test-reporter
                   `((type . test-start)
                     (description . ,description)))
@@ -682,30 +725,6 @@ environment just set it to new instance of test runner.
 
          *unspecified*))
 
-      ((run-assert)
-       (let ((assert-thunk (assoc-ref x 'assert/thunk))
-             (assert-arguments-thunk (assoc-ref x 'assert/arguments-thunk))
-             (assert-quoted-form (assoc-ref x 'assert/quoted-form)))
-         (when (and (not (null? (%test-path*)))
-                    (not (%test*)))
-           (chain
-            "Assert encountered inside test-suite, but outside of test"
-            (make-exception-with-message _)
-            (raise-exception _)))
-         (default-run-assert
-           assert-thunk assert-arguments-thunk assert-quoted-form)))
-
-      ((run-scheduled-tests)
-       ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
-       (atomic-box-set!
-        last-run-summary
-        (chain
-         (atomic-box-ref state)
-         (assoc-ref _ 'suite)
-         (run-test-suite _)))
-
-       (atomic-box-ref last-run-summary))
-
       ((get-run-summary)
        (atomic-box-ref last-run-summary))
 
@@ -716,21 +735,6 @@ environment just set it to new instance of test runner.
          (this
           `((type . run-test-suite-body-thunk)
             (test-suite-body-thunk . ,test-suite-body-thunk)))))
-
-      ((run-test-suites)
-       (parameterize ((test-runner* this)
-                      (%schedule-only?* #t))
-         ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
-         (for-each
-          (lambda (ts) (test-runner
-                        `((type . load-test-suite)
-                          (test-suite . ,ts))))
-          (assoc-ref x 'test-suites))
-
-         (test-runner
-          `((type . run-scheduled-tests)))
-         ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
-         ))
 
       (else
        (chain msg-type
