@@ -566,9 +566,9 @@ environment just set it to new instance of test runner.
      `((type . print-test-suite)
        (test-suite . ,suite))))
 
-  (define (make-try-load-suite test-suite-body-thunk)
+  (define (make-try-load-suite suite-body-thunk)
     (define description
-      (procedure-documentation test-suite-body-thunk))
+      (procedure-documentation suite-body-thunk))
 
     (define test-suite-enter!
       (lambda ()
@@ -595,12 +595,12 @@ environment just set it to new instance of test runner.
                (make-exception-with-message _)
                (raise-exception _)))
            (parameterize ((%current-test-suite-items* (make-atomic-box '()))
-                          (%test-path* (cons description (%test-path*))))
-             (test-suite-body-thunk)
+                          (%test-path* (cons suite-body-thunk (%test-path*))))
+             (suite-body-thunk)
              (chain (%current-test-suite-items*)
                (atomic-box-ref _)
                (reverse _)
-               (cons test-suite-body-thunk _)
+               (cons suite-body-thunk _)
                (cons 'value _))))
          #:unwind? #t))
       (test-suite-leave!)
