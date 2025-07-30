@@ -19,6 +19,7 @@
 
 (define-module (ares-extension ares extension)
   #:use-module (ares guile)
+  #:use-module (ares guile exceptions)
   #:use-module (ares extensions)
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 match)
@@ -48,8 +49,11 @@ the loop will be using new handler."
          (state (atomic-box-ref (assoc-ref context 'ares/state)))
          (extensions-atom (assoc-ref state 'extensions))
          (extensions (atomic-box-ref extensions-atom)))
-    (catch
-     #t
+    (with-exception-string-handler
+     (lambda (error)
+       (reply!
+        `(("status" . #("error" "cant-build-handler" "done"))
+          ("error" . ,error))))
      (lambda ()
        (let* ((new-extension (eval-string (assoc-ref message "extension")))
               (new-extensions (cons new-extension extensions)))
@@ -58,14 +62,7 @@ the loop will be using new handler."
              (begin
                (atomic-box-set! handler (make-handler new-extensions))
                (atomic-box-set! extensions-atom new-extensions)
-               (reply! `(("status" . #("done"))))))))
-     (lambda (_ . args)
-       (reply!
-        ;; TODO: [Noé Lopez, 2025-07-03] Send exception in more
-        ;; organized way that display to have something readable like
-        ;; in backtraces.
-        `(("status" . #("error" "cant-build-handler" "done"))
-          ("error" . ,(format #f "~a" args))))))))
+               (reply! `(("status" . #("done")))))))))))
 
 (define swap-extension
   (lambda (state message reply-function)
