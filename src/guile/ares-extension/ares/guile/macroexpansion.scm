@@ -19,6 +19,7 @@
 
 (define-module (ares-extension ares guile macroexpansion)
   #:use-module (ares guile)
+  #:use-module (ares guile exceptions)
   #:use-module (ares reflection modules)
   #:use-module ((system base compile) #:select (read-and-compile decompile))
   #:export (ares.guile.macroexpansion))
@@ -37,9 +38,9 @@
   "Syncronously expand provided macro."
   (let* ((message (assoc-ref context 'nrepl/message))
          (reply! (assoc-ref context 'reply!)))
-    (with-exception-handler
+    (with-exception-string-handler
      (lambda (ex)
-       (reply! `(("error" . ,(format #f "~y" ex))
+       (reply! `(("error" . ,ex)
                  ("status" . #("error" "macroexpand-error" "done")))))
      (lambda ()
        (let ((module (or (string->resolved-module (assoc-ref message "module"))
@@ -50,8 +51,7 @@
                        ("expansion" . ,(expand-macro module code))))
              (reply! `(("error" . "\
 @code{code} argument is required and must be a string.")
-                       ("status" . #("error" "macroexpand-error" "done")))))))
-     #:unwind? #t)))
+                       ("status" . #("error" "macroexpand-error" "done"))))))))))
 
 (define operations
   `(("ares.guile.macroexpansion/macroexpand" . ,sync-macroexpand-op)))

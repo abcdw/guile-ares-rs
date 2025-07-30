@@ -55,7 +55,7 @@
      "Expansion of macro, which is not provided"
      `(("op" . "ares.guile.macroexpansion/macroexpand")
        ("code" . "(match '(a . b) ((k . v) k))"))
-     `(("error" . "#<&compound-exception components: (#<&syntax form: (k . v) subform: #f> #<&origin origin: #f> #<&message message: \"source expression failed to match any pattern\"> #<&exception-with-kind-and-args kind: syntax-error args: (#f \"source expression failed to match any pattern\" #f (k . v) #f)>)>\n")
+     `(("error" . "ice-9/psyntax.scm:2824:12: In procedure syntax-violation:\nSyntax error:\nunknown location: source expression failed to match any pattern in form (k . v)\n")
        ("status" . #("error" "macroexpand-error" "done"))))
 
     (check-response
@@ -72,7 +72,7 @@
      "Unparsable code"
      `(("op" . "ares.guile.macroexpansion/macroexpand")
        ("code" . "]()"))
-     `(("error" . "#<&compound-exception components: (#<&lexical> #<&origin origin: #f> #<&message message: \"#<unknown port>:1:2: unexpected \\\"]\\\"\"> #<&irritants irritants: ()> #<&exception-with-kind-and-args kind: read-error args: (#f \"#<unknown port>:1:2: unexpected \\\"]\\\"\" () #f)>)>\n")
+     `(("error" . "ice-9/read.scm:126:4: In procedure read-expr*:\n#<unknown port>:1:2: unexpected \"]\"\n")
        ("status" . #("error" "macroexpand-error" "done"))))
 
     (check-response
