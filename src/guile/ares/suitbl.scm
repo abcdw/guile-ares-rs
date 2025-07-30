@@ -606,6 +606,22 @@ environment just set it to new instance of test runner.
       (test-suite-leave!)
       result))
 
+  
+  ;;;
+  ;;; Tests state management
+  ;;;
+
+  (define (get-loaded-tests state)
+    (chain (atomic-box-ref state)
+      (assoc-ref _ 'loaded-tests)
+      (or _ '())))
+
+  (define (add-loaded-test! state test)
+    (update-atomic-alist-value!
+     state 'loaded-tests
+     (lambda (l) (cons test (or l '())))))
+
+
   (define (test-runner x)
     "Default test runner"
     (unless (member (assoc-ref x 'type) '(get-state get-log))
@@ -661,8 +677,7 @@ environment just set it to new instance of test runner.
        ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
        (atomic-box-set!
         last-run-summary
-        (chain
-            (atomic-box-ref state)
+        (chain (atomic-box-ref state)
           (assoc-ref _ 'suite)
           (run-test-suite _)))
 
@@ -684,7 +699,7 @@ environment just set it to new instance of test runner.
          ))
 
       ((run-tests)
-       (this `((type . run-scheduled-tests))))
+       (for-each run-test (get-loaded-tests state)))
 
 
       ((load-test)
@@ -707,6 +722,8 @@ environment just set it to new instance of test runner.
 
          (copy-procedure-properties!
           original-test-body-thunk new-test-body-thunk)
+
+         (add-loaded-test! state new-test-body-thunk)
 
          (let ((suite-items (%current-test-suite-items*)))
            (if suite-items
