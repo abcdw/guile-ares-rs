@@ -28,6 +28,7 @@
   #:use-module (ares evaluation eval)
   #:use-module (ares ports)
   #:use-module (ares guile)
+  #:use-module (ares guile exceptions)
   #:use-module (ares file)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 pretty-print)
@@ -169,33 +170,8 @@ COMMAND-CHANNEL."
 
 (define (exception->nrepl-messages result)
   (let* ((exception (assoc-ref result 'exception-value))
-         (error
-          ;; There are no particular special about this way of printing
-          ;; the exception, it's just a simple implementation, which
-          ;; usually provides enough information to understand the
-          ;; problem.
-          (call-with-output-string
-           (lambda (port)
-             ;; TODO: [Andrew Tropin, 2023-12-17] Cat out a meaninful
-             ;; stack part in evaluation thread.
-
-             ;; (false-if-exception
-             ;;  (begin
-             ;;    (repl-debug:print-frames
-             ;;     (repl-debug:stack->vector (assoc-ref result 'stack))
-             ;;     port)
-             ;;    (newline port)))
-             (or
-              (false-if-exception
-               (apply format port
-                      (string-append
-                       "Origin: " (exception-origin exception) "\n"
-                       (exception-message exception) "\n")
-                      (or (exception-irritants exception) '())))
-              (pretty-print exception #:port port)))))
-         (stack (assoc-ref result 'stack)))
-    ;; In the future this function can provide more information in a
-    ;; more structured way to be processed by respective IDEs/clients.
+         (stack (assoc-ref result 'stack))
+         (error (exception->string exception)))
     `((("err" . ,error)
        ("ares.evaluation/stack" . ,(stack->nrepl-value stack)))
       (("ex" . ,(symbol->string (exception-kind exception)))
