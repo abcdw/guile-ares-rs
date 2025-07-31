@@ -243,7 +243,7 @@ test-reporter-output-port*.
 
 (test-reporter
  `((type . test-scheduled)
-   (test-path . ("test-suite1" "nested-test-suite"))
+   (suite-path . ("test-suite1" "nested-test-suite"))
    (description . "basic arithmetics")))
 
 
@@ -307,23 +307,24 @@ to catch unhandled messages."
   (case (assoc-ref message 'type)
     ((test-scheduled)
      (format (test-reporter-output-port*) "~a"
-             (string-repeat "|" (length (assoc-ref message 'test-path))))
+             (string-repeat "|" (length (assoc-ref message 'suite-path))))
      (format (test-reporter-output-port*) " + test ~a\n"
              (assoc-ref message 'description)))
     ((test-suite-enter)
      (format (test-reporter-output-port*) "~a"
              (string-append
-              (string-repeat "|" (length (assoc-ref message 'test-path)))
+              (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "┌"))
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
     ((test-suite-leave)
      (format (test-reporter-output-port*) "~a"
              (string-append
-              (string-repeat "|" (length (assoc-ref message 'test-path)))
+              (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "└"))
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
+
     ((print-test-suite)
      (format (test-reporter-output-port*) "~y"
              (tests->pretty-string (assoc-ref message 'test-suite))))
@@ -468,7 +469,7 @@ environment just set it to new instance of test runner.
   ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,
   ;; they can cause problems when using with continuations and thus
   ;; with concurrent test runs implemented on top of fibers
-  (define %test-path* (make-parameter '()))
+  (define %suite-path* (make-parameter '()))
   (define %test* (make-parameter #f))
   (define %test-events* (make-parameter #f))
   (define %current-test-suite-items* (make-parameter #f))
@@ -574,13 +575,13 @@ environment just set it to new instance of test runner.
       (lambda ()
         (%test-reporter
          `((type . test-suite-enter)
-           (test-path . ,(%test-path*))
+           (suite-path . ,(%suite-path*))
            (description . ,description)))))
     (define test-suite-leave!
       (lambda ()
         (%test-reporter
          `((type . test-suite-leave)
-           (test-path . ,(%test-path*))
+           (suite-path . ,(%suite-path*))
            (description . ,description)))))
 
     (lambda ()
@@ -595,7 +596,7 @@ environment just set it to new instance of test runner.
                (make-exception-with-message _)
                (raise-exception _)))
            (parameterize ((%current-test-suite-items* (make-atomic-box '()))
-                          (%test-path* (cons suite-body-thunk (%test-path*))))
+                          (%suite-path* (cons suite-body-thunk (%suite-path*))))
              (suite-body-thunk)
              (chain (%current-test-suite-items*)
                (atomic-box-ref _)
@@ -642,7 +643,7 @@ environment just set it to new instance of test runner.
        (let ((assert-thunk (assoc-ref x 'assert/thunk))
              (assert-arguments-thunk (assoc-ref x 'assert/arguments-thunk))
              (assert-quoted-form (assoc-ref x 'assert/quoted-form)))
-         (when (and (not (null? (%test-path*)))
+         (when (and (not (null? (%suite-path*)))
                     (not (%test*)))
            (chain
                "Assert encountered inside test-suite, but outside of test"
@@ -670,7 +671,7 @@ environment just set it to new instance of test runner.
          ;; test-runner-run-test-suites sets %schedule-only?*
          ;; and also calls run-scheduled-tests, so to prevent double
          ;; execution of scheduled test suites we add this condition.
-         (when (and (null? (%test-path*)) (not (%schedule-only?*)))
+         (when (and (null? (%suite-path*)) (not (%schedule-only?*)))
            (this `((type . run-scheduled-tests))))))
 
       ((run-scheduled-tests)
@@ -733,7 +734,7 @@ environment just set it to new instance of test runner.
                   (lambda (items) (cons new-test-body-thunk items)))
                  (%test-reporter
                   `((type . test-scheduled)
-                    (test-path . ,(%test-path*))
+                    (suite-path . ,(%suite-path*))
                     (description . ,description))))
                (begin
                  (atomic-box-set!
