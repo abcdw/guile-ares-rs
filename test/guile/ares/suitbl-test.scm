@@ -543,6 +543,28 @@ X #f
 
 ;;; Today/Next
 
+;; TODO: [Andrew Tropin, 2025-08-01] Rename test-suite to suite and
+;; define-test-suite to define-suite
+
+;; TODO: [Andrew Tropin, 2025-08-01] Use records instead of procedure
+;; properties for test-body-thunk
+
+;; TODO: [Andrew Tropin, 2025-08-01] Rename suite-thunk in let to
+;; avoid confusion with macro name
+
+;; TODO: [Andrew Tropin, 2025-07-31] Make it possible to set test
+;; reporter for a particular run (we don't actually want to make a
+;; whole separate runner for changing reporting format)
+
+;; TODO: [Andrew Tropin, 2025-07-29] Create a list of loaded test
+
+;; TODO: [Andrew Tropin, 2025-07-29] Add composable immutable filters
+;; and transformers, (failing-first, fast-first,
+;; only-failing-but-if-no-failing-just-all, only-last-loaded :: by
+;; default load test adds test, this filter will allow to restart only
+;; last loaded test), they can be enabled/disabled with transient
+;; flags
+
 ;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
 ;; test-reporter-print-failures-and-errors, which will be
 ;; executed at the end and provide detailed info of
@@ -612,6 +634,17 @@ X #f
 ;; submodule, which lexcally closed over parent module (have access to
 ;; private vars)
 ;; https://doc.rust-lang.org/rust-by-example/testing/unit_testing.html
+
+;; TODO: [Andrew Tropin, 2025-06-30] Add continuation barries to
+;; asserts by default to avoid jumping out of the test
+
+;; TODO: [Andrew Tropin, 2025-07-10] Add test reporter, which pprints
+;; the value of the last expression in the (test ...), it's very
+;; useful for the evaluation of multiple expressions.  When using
+;; tests as repl history.
+
+;; TODO: [Andrew Tropin, 2025-07-29] Add hashes, time when loaded to
+;; textual representation for easier filtering
 
 
 ;;; Feature requests
