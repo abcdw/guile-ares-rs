@@ -1,5 +1,6 @@
 GUIXTM=guix time-machine -C ./env/guix/ares/env/guix/channels.scm
-GUILE=$(GUIXTM) -- shell guile guile-fibers guile-custom-ports --pure -- guile
+GUILE=$(GUIXTM) -- shell guile guile-fibers guile-custom-ports \
+--pure --preserve=.*LANG.* -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
