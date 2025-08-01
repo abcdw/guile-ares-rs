@@ -79,7 +79,7 @@ inside (aka test suits) from usual functions.
                 2000000000000))))))
 
 (define subtraction-tests
-  (suite-thunk "substraction"
+  (suite-thunk "subtraction"
     (test "small numbers subtraction"
       (is (= 1 (- 4 3)))
       (is (= 3 (- 7 4))))))
