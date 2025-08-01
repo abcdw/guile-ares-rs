@@ -114,7 +114,7 @@ statement or something similiar?  Probably no, because we can skip
 test cases on test-runner/IDE side.
 
 7.
-Fixtures must be implemented on test-suite/test metadata side,
+Fixtures must be implemented on suite/test metadata side,
 because test macro is not composable and can't be wrapped.
 
 |#
@@ -150,8 +150,8 @@ because test macro is not composable and can't be wrapped.
     "Default test runner"
     (let ((msg-type (assoc-ref x 'type)))
       (case msg-type
-        ((run-test-suite-body-thunk)
-         ((assoc-ref x 'test-suite-body-thunk)))
+        ((run-suite-body-thunk)
+         ((assoc-ref x 'suite-body-thunk)))
 
         ((schedule-test)
          (let ((test-body-thunk (assoc-ref x 'test-body-thunk)))
@@ -238,7 +238,7 @@ because test macro is not composable and can't be wrapped.
 
 
 ;;;
-;;; Tests for is, test, test-suite that we can use to test test runners
+;;; Tests for is, test, suite that we can use to test test runners
 ;;;
 
 (comment
@@ -246,8 +246,9 @@ because test macro is not composable and can't be wrapped.
  (+ 1 2)
  'hi)
 
+;; (is-usage-tests)
 
-(define-test-suite is-usage-tests
+(define-suite is-usage-tests
   (test "basic atomic values"
     (is #t)
     (is 123)
@@ -277,15 +278,15 @@ because test macro is not composable and can't be wrapped.
            (+ 20000000000000000000000000
               20000000000000000000000000))))
 
-  (test "if is assert fails when inside test-suite outside of test macro"
+  (test "if is assert fails when inside suite outside of test macro"
     (is
      (throws-exception?
       (with-silent-test-environment
-       (test-suite "sample test suite"
+       (suite "sample test suite"
          (is (= 7 (+ 3 4)))))
       (lambda (ex)
         (string=?
-         "Assert encountered inside test-suite, but outside of test"
+         "Assert encountered inside suite, but outside of test"
          (exception-message ex))))))
 
   (test "is on it's own in empty env"
@@ -296,7 +297,7 @@ because test macro is not composable and can't be wrapped.
   (test "nested is and is return value"
     (is (= 7 (is (+ 3 4))))))
 
-(define-test-suite test-macro-usage-tests
+(define-suite test-macro-usage-tests
   (test "simple test case with metadata marking it as slow"
     #:metadata `((slow? . #t))
     (sleep 1)
@@ -340,7 +341,7 @@ because test macro is not composable and can't be wrapped.
        '(errors failures assertions tests)
        run-summary-without-failures)))))
 
-(define-test-suite nested-test-suites-and-test-macros-tests
+(define-suite nested-suites-and-test-macros-tests
   (test "expression throws programming-error on unbound variable"
     (is (throws-exception? (+ b 1 2) programming-error?)))
 
@@ -358,12 +359,12 @@ because test macro is not composable and can't be wrapped.
     (lambda (ex)
       (string=? "Test Suite can't be nested into Test Macro"
                 (exception-message ex))))
-  (test "that test-suite nested in test case is forbidden"
+  (test "that suite nested in test case is forbidden"
     (is
      (throws-exception?
       (with-silent-test-environment
        (test "test macro"
-         (test-suite "nested test-suite" (is #t))))
+         (suite "nested suite" (is #t))))
       specific-type-of-exception)))
 
   ;; TODO: [Andrew Tropin, 2025-05-23] Make reporter to provide
@@ -372,20 +373,20 @@ because test macro is not composable and can't be wrapped.
   ;; The expression
   ;; (with-silent-test-environment
   ;;  (test "test macro"
-  ;;    (test-suite "nested test-suite" (is #t))))
+  ;;    (suite "nested suite" (is #t))))
   ;; expected to throw a 'specific-type-of-exception', but thrown
   ;; <pretty-printed-exception>
 
-  (test-suite "nested test suite 1"
+  (suite "nested test suite 1"
     (test "test macro 1#1"
       (is #t)
       (is "very true"))
-    (test-suite "even more nested test suite 1.1"
+    (suite "even more nested test suite 1.1"
       (test "test macro 1.1#1"
         (is (= 4 (+ 2 2)))))))
 
 (define failing-asserts-tests
-  (test-suite-thunk "suite"
+  (suite-thunk "suite"
     (test "simple failure"
       (is #f))
     (test "simple error"
@@ -394,30 +395,30 @@ because test macro is not composable and can't be wrapped.
       (is #f)
       (is (throw 'hi)))))
 
-(define-test-suite test-suite-usage-tests
+(define-suite suite-usage-tests
 
   ;; TODO: [Andrew Tropin, 2025-05-09] Just think about what test
   ;; suite returns, because the expectation that it returns run
   ;; summary, however, it's not the case, when suite is nested
 
-  ;; (define test-suite-results
+  ;; (define suite-results
   ;;   (failing-asserts-tests))
-  ;; (pk test-suite-results)
+  ;; (pk suite-results)
   ;; (test "suite-results"
-  ;;   (is (equal? 'hi test-suite-results)))
+  ;;   (is (equal? 'hi suite-results)))
 
   ;; TODO: [Andrew Tropin, 2025-05-20] Improve this test, check that
   ;; metadata saved and we can retrive it.
-  (test-suite "test suite with metadata"
+  (suite "test suite with metadata"
     #:metadata `((interesting? . #t))
     (test "simple"
       (is #t)))
 
-  (nested-test-suites-and-test-macros-tests))
+  (nested-suites-and-test-macros-tests))
 
 
 
-(define-test-suite test-runner-operations-tests
+(define-suite test-runner-operations-tests
   (test "\
 run summary is #f by default, but appears after test suite is executed"
     (is (equal?
@@ -429,7 +430,7 @@ run summary is #f by default, but appears after test suite is executed"
     (is (not
          (null?
           (with-silent-test-environment
-           (test-suite "suite1"
+           (suite "suite1"
              (test "case1"
                (is #t)))
            ((test-runner*)
@@ -437,7 +438,7 @@ run summary is #f by default, but appears after test suite is executed"
 
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
-       (test-suite "suite"
+       (suite "suite"
          (test "simple failure"
            (is #f))
          (test "simple error"
@@ -455,13 +456,13 @@ run summary is #f by default, but appears after test suite is executed"
        '(errors failures assertions tests)
        run-summary-with-failures-and-errors)))))
 
-(define-test-suite base-test-runner-tests
+(define-suite base-test-runner-tests
   (is-usage-tests)
   (test-runner-operations-tests)
   (test-macro-usage-tests)
-  (test-suite-usage-tests))
+  (suite-usage-tests))
 
-(define-test-suite execution-timeout-tests
+(define-suite execution-timeout-tests
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf
   (is #f))
 
@@ -509,22 +510,22 @@ The future reporter:
 || + test zero asserts test macro works fine
 || + test standalone test macro usage
 |└> test-macro-usage-tests
-|┌> test-suite-usage-tests
+|┌> suite-usage-tests
 ||┌> test suite with metadata
 ||| + test simple
 ||└> test suite with metadata
-||┌> nested-test-suites-and-test-macros-tests
+||┌> nested-suites-and-test-macros-tests
 ||| + test expression throws programming-error on unbound variable
 ||| + test nested test macro usage is forbidden
-||| + test that test-suite nested in test case is forbidden
+||| + test that suite nested in test case is forbidden
 |||┌> nested test suite 1
 |||| + test test macro 1#1
 ||||┌> even more nested test suite 1.1
 ||||| + test test macro 1.1#1
 ||||└> even more nested test suite 1.1
 |||└> nested test suite 1
-||└> nested-test-suites-and-test-macros-tests
-|└> test-suite-usage-tests
+||└> nested-suites-and-test-macros-tests
+|└> suite-usage-tests
 └> base-test-runner-tests
 
 Loaded 200 tests and 12 test suits.
@@ -542,9 +543,6 @@ X #f
 
 
 ;;; Today/Next
-
-;; TODO: [Andrew Tropin, 2025-08-01] Rename test-suite to suite and
-;; define-test-suite to define-suite
 
 ;; TODO: [Andrew Tropin, 2025-08-01] Use records instead of procedure
 ;; properties for test-body-thunk
@@ -588,14 +586,14 @@ X #f
 
 ;; TODO: [Andrew Tropin, 2025-06-05] Implement testing-test-runner,
 ;; which just saves every message comming to it.  To write tests for
-;; is/test/test-suite macros, to set expectation for them in the
+;; is/test/suite macros, to set expectation for them in the
 ;; stone (tests) (:
 
 ;; TODO: [Andrew Tropin, 2025-05-09] Revisit test-path* usage on test
 ;; loading, we preserve test suite hierarchy now and it maybe redundant
 
 ;; TODO: [Andrew Tropin, 2025-05-09] Describe private/public test
-;; suite logic, if you don't want test-suite to be executed by
+;; suite logic, if you don't want suite to be executed by
 ;; run-project-tests, just don't export it, right?
 
 ;; TODO: [Andrew Tropin, 2025-05-09] Make it possible to specify

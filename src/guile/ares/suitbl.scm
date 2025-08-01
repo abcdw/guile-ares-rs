@@ -17,8 +17,8 @@
             make-suitbl-test-runner
             run-test-suites
 
-            test-suite test is
-            test-suite-thunk test-thunk
+            suite test is
+            suite-thunk test-thunk
 
             test-reporter-output-port*
             test-reporter-silent
@@ -33,7 +33,7 @@
             ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
             ;; introduces ambiguity and doesn't have a private
             ;; counterpart
-            define-test-suite
+            define-suite
 
             throws-exception?))
 
@@ -68,7 +68,7 @@ developer to visually distinguish functions containing tests
 inside (aka test suits) from usual functions.
 
 (define addition-tests
-  (test-suite-thunk "addition"
+  (suite-thunk "addition"
     (test "small numbers addition"
       (is (= 4 (+ 2 2)))
       (is (= 7 (+ 3 4))))
@@ -79,13 +79,13 @@ inside (aka test suits) from usual functions.
                 2000000000000))))))
 
 (define subtraction-tests
-  (test-suite-thunk "substraction"
+  (suite-thunk "substraction"
     (test "small numbers subtraction"
       (is (= 1 (- 4 3)))
       (is (= 3 (- 7 4))))))
 
 (define-public arithmetic-tests
-  (test-suite-thunk "arithmetic"
+  (suite-thunk "arithmetic"
     (addition-tests)
     (subtraction-tests)))
 
@@ -107,13 +107,13 @@ depends on the test runner implementation.
   (and (procedure? x)
        (procedure-property x 'suitbl-test?)))
 
-(define (test-suite? x)
+(define (suite? x)
   (and (procedure? x)
-       (procedure-property x 'suitbl-test-suite?)))
+       (procedure-property x 'suitbl-suite?)))
 
-(define (test-suite-body-thunk? x)
+(define (suite-body-thunk? x)
   (and (procedure? x)
-       (procedure-property x 'suitbl-test-suite-body-thunk?)))
+       (procedure-property x 'suitbl-suite-body-thunk?)))
 
 ;; We use syntax-rules because it save patterns into transformer's
 ;; metadata, which allows to generate "signature" of the macro.
@@ -164,58 +164,58 @@ more @code{is} asserts."
     ((test test-description arguments ...)
      ((test-thunk test-description arguments ...)))))
 
-(define-syntax test-suite-thunk
+(define-syntax suite-thunk
   (syntax-rules ()
     ((_ suite-description #:metadata metadata expression expressions ...)
-     (let* ((test-suite-body-thunk
+     (let* ((suite-body-thunk
              (lambda () expression expressions ...))
-            (test-suite-thunk
+
+            (suite-thunk
                 ;; Wrapping into identity to prevent setting procedure-name
                 (identity
                  (lambda ()
                    ((test-runner*)
-                    `((type . run-test-suite-body-thunk)
-                      (test-suite-body-thunk . ,test-suite-body-thunk)))))))
+                    `((type . run-suite-body-thunk)
+                      (suite-body-thunk . ,suite-body-thunk)))))))
 
-       ;; Inside test runner we don't have access to test-suites
-       ;; themselves, only to test-suite-body-thunk.
+       ;; Inside test runner we don't have access to suites
+       ;; themselves, only to suite-body-thunk.
        (set-procedure-properties!
-        test-suite-body-thunk
+        suite-body-thunk
         (alist-merge
          metadata
          `((documentation . ,suite-description)
            (name . ,(string->symbol suite-description))
            ;; We need it to make it possible to customize
            ;; running/skipping logic
-           (suitbl-test-suite-body-thunk? . #t))))
+           (suitbl-suite-body-thunk? . #t))))
 
        (set-procedure-properties!
-        test-suite-thunk
+        suite-thunk
         `((documentation . ,suite-description)
-          (test-suite-body-thunk . ,test-suite-body-thunk)
+          (suite-body-thunk . ,suite-body-thunk)
           ;; We need it to automate the loading of suites.
-          (suitbl-test-suite? . #t)))
+          (suitbl-suite? . #t)))
 
-       test-suite-thunk))
+       suite-thunk))
 
-    ((test-suite-thunk suite-description expression expressions ...)
-     (test-suite-thunk
+    ((suite-thunk suite-description expression expressions ...)
+     (suite-thunk
          suite-description #:metadata '() expression expressions ...))))
 
-(define-syntax test-suite
+(define-syntax suite
   (syntax-rules ()
     "Test suite is a grouping unit, it allows to combine tests and other
 test suites."
-    ((test-suite suite-description arguments ...)
-     ((test-suite-thunk suite-description
-        arguments ...)))))
+    ((suite suite-description arguments ...)
+     ((suite-thunk suite-description arguments ...)))))
 
-(define-syntax define-test-suite
+(define-syntax define-suite
   (syntax-rules ()
-    "Equivalent of (define-public NAME (test-suite-thunk ...))."
-    ((_ test-suite-name expression ...)
-     (define-public test-suite-name
-       (test-suite-thunk (symbol->string 'test-suite-name) expression ...)))))
+    "Equivalent of (define-public NAME (suite-thunk ...))."
+    ((_ suite-name expression ...)
+     (define-public suite-name
+       (suite-thunk (symbol->string 'suite-name) expression ...)))))
 
 (define-syntax throws-exception?
   (lambda (x)
@@ -243,7 +243,7 @@ test-reporter-output-port*.
 
 (test-reporter
  `((type . test-scheduled)
-   (suite-path . ("test-suite1" "nested-test-suite"))
+   (suite-path . ("suite1" "nested-suite"))
    (description . "basic arithmetics")))
 
 
@@ -297,7 +297,7 @@ to catch unhandled messages."
    (lambda (i)
      (cond
       ((test? i) (string-append "test: " (procedure-documentation i)))
-      ((test-suite-body-thunk? i)
+      ((suite-body-thunk? i)
        (string-append "suite: " (procedure-documentation i)))
       ((list? i) (tests->pretty-string i))
       (else i)))
@@ -310,14 +310,14 @@ to catch unhandled messages."
              (string-repeat "|" (length (assoc-ref message 'suite-path))))
      (format (test-reporter-output-port*) " + test ~a\n"
              (assoc-ref message 'description)))
-    ((test-suite-enter)
+    ((suite-enter)
      (format (test-reporter-output-port*) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "┌"))
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
-    ((test-suite-leave)
+    ((suite-leave)
      (format (test-reporter-output-port*) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
@@ -325,9 +325,9 @@ to catch unhandled messages."
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
 
-    ((print-test-suite)
+    ((print-suite)
      (format (test-reporter-output-port*) "~y"
-             (tests->pretty-string (assoc-ref message 'test-suite))))
+             (tests->pretty-string (assoc-ref message 'suite))))
     (else #f)))
 
 
@@ -387,9 +387,9 @@ to catch unhandled messages."
 (define (test-reporter-dots message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((test-suite-start)
+    ((suite-start)
      (format (test-reporter-output-port*) "["))
-    ((test-suite-end)
+    ((suite-end)
      (format (test-reporter-output-port*) "]"))
 
     ((test-start)
@@ -472,7 +472,7 @@ environment just set it to new instance of test runner.
   (define %suite-path* (make-parameter '()))
   (define %test* (make-parameter #f))
   (define %test-events* (make-parameter #f))
-  (define %current-test-suite-items* (make-parameter #f))
+  (define %current-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
 
   ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
@@ -511,10 +511,10 @@ environment just set it to new instance of test runner.
       (assertions . 0)
       (tests . 0)))
 
-  (define (run-test-suite suite)
+  (define (run-suite suite)
     (let ((result #f))
       (%test-reporter
-       `((type . test-suite-start)
+       `((type . suite-start)
          (description . ,(car suite))))
       (set! result
             (let loop ((summary initial-run-summary)
@@ -525,11 +525,11 @@ environment just set it to new instance of test runner.
                     (loop
                      (merge-run-summaries
                       summary
-                      ((if (test? item) run-test run-test-suite)
+                      ((if (test? item) run-test run-suite)
                        item))
                      (cdr remaining-items))))))
       (%test-reporter
-       `((type . test-suite-end)
+       `((type . suite-end)
          (description . ,(car suite))))
       result))
 
@@ -562,30 +562,31 @@ environment just set it to new instance of test runner.
          result))
      #:unwind? #t))
 
-  (define (print-test-suite suite)
+  (define (print-suite suite)
     (%test-reporter
-     `((type . print-test-suite)
-       (test-suite . ,suite))))
+     `((type . print-suite)
+       (show-suite-info . ,procedure-documentation)
+       (suite . ,suite))))
 
   (define (make-try-load-suite suite-body-thunk)
     (define description
       (procedure-documentation suite-body-thunk))
 
-    (define test-suite-enter!
+    (define suite-enter!
       (lambda ()
         (%test-reporter
-         `((type . test-suite-enter)
+         `((type . suite-enter)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
-    (define test-suite-leave!
+    (define suite-leave!
       (lambda ()
         (%test-reporter
-         `((type . test-suite-leave)
+         `((type . suite-leave)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
 
     (lambda ()
-      (test-suite-enter!)
+      (suite-enter!)
       (define result
         (with-exception-handler
          (lambda (ex)
@@ -595,16 +596,16 @@ environment just set it to new instance of test runner.
              (chain "Test Suite can't be nested into Test Macro"
                (make-exception-with-message _)
                (raise-exception _)))
-           (parameterize ((%current-test-suite-items* (make-atomic-box '()))
+           (parameterize ((%current-suite-items* (make-atomic-box '()))
                           (%suite-path* (cons suite-body-thunk (%suite-path*))))
              (suite-body-thunk)
-             (chain (%current-test-suite-items*)
+             (chain (%current-suite-items*)
                (atomic-box-ref _)
                (reverse _)
                (cons suite-body-thunk _)
                (cons 'value _))))
          #:unwind? #t))
-      (test-suite-leave!)
+      (suite-leave!)
       result))
 
   
@@ -646,21 +647,21 @@ environment just set it to new instance of test runner.
          (when (and (not (null? (%suite-path*)))
                     (not (%test*)))
            (chain
-               "Assert encountered inside test-suite, but outside of test"
+               "Assert encountered inside suite, but outside of test"
              (make-exception-with-message _)
              (raise-exception _)))
          (default-run-assert
            assert-thunk assert-arguments-thunk assert-quoted-form)))
 
-      ((run-test-suite-body-thunk)
+      ((run-suite-body-thunk)
        (let* ((try-load-suite (make-try-load-suite
-                               (assoc-ref x 'test-suite-body-thunk))))
+                               (assoc-ref x 'suite-body-thunk))))
 
          (match (try-load-suite)
            (('exception . ex)
             (raise-exception ex))
            (('value . val)
-            (let ((suite-items (%current-test-suite-items*)))
+            (let ((suite-items (%current-suite-items*)))
               (if suite-items
                   (atomic-box-update!
                    suite-items
@@ -668,31 +669,31 @@ environment just set it to new instance of test runner.
 
                   (update-atomic-alist-value! state 'suite (lambda (l) val))))
             val))
-         ;; test-runner-run-test-suites sets %schedule-only?*
+         ;; test-runner-run-suites sets %schedule-only?*
          ;; and also calls run-scheduled-tests, so to prevent double
          ;; execution of scheduled test suites we add this condition.
          (when (and (null? (%suite-path*)) (not (%schedule-only?*)))
            (this `((type . run-scheduled-tests))))))
 
       ((run-scheduled-tests)
-       ;; (print-test-suite (assoc-ref (atomic-box-ref state) 'suite))
+       ;; (print-suite (assoc-ref (atomic-box-ref state) 'suite))
        (atomic-box-set!
         last-run-summary
         (chain (atomic-box-ref state)
           (assoc-ref _ 'suite)
-          (run-test-suite _)))
+          (run-suite _)))
 
        (atomic-box-ref last-run-summary))
 
-      ((run-test-suites)
+      ((run-suites)
        (parameterize ((test-runner* this)
                       (%schedule-only?* #t))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
          (for-each
           (lambda (ts) (test-runner
-                        `((type . load-test-suite)
-                          (test-suite . ,ts))))
-          (assoc-ref x 'test-suites))
+                        `((type . load-suite)
+                          (suite . ,ts))))
+          (assoc-ref x 'suites))
 
          (test-runner
           `((type . run-scheduled-tests)))
@@ -726,7 +727,7 @@ environment just set it to new instance of test runner.
 
          (add-loaded-test! state new-test-body-thunk)
 
-         (let ((suite-items (%current-test-suite-items*)))
+         (let ((suite-items (%current-suite-items*)))
            (if suite-items
                (begin
                  (atomic-box-update!
@@ -746,13 +747,13 @@ environment just set it to new instance of test runner.
       ((get-run-summary)
        (atomic-box-ref last-run-summary))
 
-      ((load-test-suite)
-       (let ((test-suite-body-thunk
-              (chain (assoc-ref x 'test-suite)
-                (procedure-property _ 'test-suite-body-thunk))))
+      ((load-suite)
+       (let ((suite-body-thunk
+              (chain (assoc-ref x 'suite)
+                (procedure-property _ 'suite-body-thunk))))
          (this
-          `((type . run-test-suite-body-thunk)
-            (test-suite-body-thunk . ,test-suite-body-thunk)))))
+          `((type . run-suite-body-thunk)
+            (suite-body-thunk . ,suite-body-thunk)))))
 
       (else
        (chain msg-type
@@ -763,10 +764,10 @@ environment just set it to new instance of test runner.
   (set! this test-runner)
   this)
 
-(define (run-test-suites test-runner test-suites)
+(define (run-test-suites test-runner suites)
   (test-runner
-   `((type . run-test-suites)
-     (test-suites . ,test-suites))))
+   `((type . run-suites)
+     (suites . ,suites))))
 
 ;; Set default test runner.
 (test-runner* (make-suitbl-test-runner))
@@ -793,17 +794,17 @@ environment just set it to new instance of test runner.
 
 ;; (get-test-module '(ares suitbl))
 
-(define (get-module-test-suites module)
+(define (get-module-suites module)
   (filter
    identity
    (module-map (lambda (k v)
                  (and (variable-bound? v)
-                      (test-suite? (variable-ref v))
+                      (suite? (variable-ref v))
                       (variable-ref v)))
                module)))
 
-(define (get-module-public-test-suites module)
-  (get-module-test-suites (module-public-interface module)))
+(define (get-module-public-suites module)
+  (get-module-suites (module-public-interface module)))
 
 (define* (load-test-modules-thunk
           #:key
@@ -843,10 +844,10 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
 ;;   (lambda (m)
 ;;     (cons
 ;;      (module-name m)
-;;      (get-module-public-test-suites m))) (get-all-test-modules)))
+;;      (get-module-public-suites m))) (get-all-test-modules)))
 
-;; (define-test-suite public-suite
+;; (define-suite public-suite
 ;;   'hey)
 
 ;; (variable-set!)
-;; (get-module-test-suites (module-public-interface (current-module)))
+;; (get-module-suites (module-public-interface (current-module)))
