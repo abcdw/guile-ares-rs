@@ -143,67 +143,6 @@ because test macro is not composable and can't be wrapped.
 
 
 
-;; TODO: [Andrew Tropin, 2025-04-22] Check if we need to implement
-;; scheduling of tests or running them immediately is ok
-(define (get-silent-test-runner)
-  (define (test-runner x)
-    "Default test runner"
-    (let ((msg-type (assoc-ref x 'type)))
-      (case msg-type
-        ((run-suite-body-thunk)
-         ((assoc-ref x 'suite-body-thunk)))
-
-        ((schedule-test)
-         (let ((test-body-thunk (assoc-ref x 'test-body-thunk)))
-           (test-body-thunk)))
-        ((run-assert)
-         (let ((assert-thunk (assoc-ref x 'assert-thunk))
-               (assert-quoted-form (assoc-ref x 'assert-quoted-form)))
-           (assert-thunk)))
-
-        (else #t))))
-  test-runner)
-
-(define (get-simple-test-runner)
-  (define (simple-test-runner message)
-    "Very simple test runner, just returns the result of @code{is} assert."
-    (define (simple-run-assert form-thunk args-thunk quoted-form)
-      (with-exception-handler
-       (lambda (ex)
-         'error)
-       (lambda ()
-         (let* ((result (form-thunk)))
-           (if result 'pass 'fail)))
-       #:unwind? #t))
-
-    (let ((msg-type (assoc-ref message 'type)))
-      (case msg-type
-        ((schedule-test)
-         (let ((test-body-thunk (assoc-ref message 'test-body-thunk)))
-
-           (test-body-thunk)))
-
-        ((run-assert)
-         (let ((assert-thunk (assoc-ref message 'assert-thunk))
-               (assert-quoted-form (assoc-ref message 'assert-quoted-form)))
-           (simple-run-assert assert-thunk #f assert-quoted-form)))
-
-        (else
-         (raise-exception
-          (make-exception-with-message
-           (format #f "~a handling is not implemented by simple test runner"
-                   (assoc-ref message 'type))))))))
-  simple-test-runner)
-
-(define-syntax ignore-current-output-port
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ body body* ...)
-       #'(parameterize ((test-reporter-output-port* (open-output-string)))
-           body body* ...)))))
-
-
-
 ;; TODO: [Andrew Tropin, 2025-05-01] Make this macro provide useful
 ;; information to test runner or reporter, so it's easy to understand
 ;; what went wrong here.
