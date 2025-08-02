@@ -348,7 +348,7 @@ to catch unhandled messages."
              (format #f "~a and ~a are not ~a" first second (car quoted-form)))
             ((exception . ex)
              (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
-          (assoc-ref message 'assert/result))))
+          (assoc-ref message 'assertion/result))))
 
   (case (assoc-ref message 'type)
     ((test-start)
@@ -358,19 +358,19 @@ to catch unhandled messages."
      (format (test-reporter-output-port*) "└Test ~a\n"
              (assoc-ref message 'description)))
 
-    ((assert-pass)
+    ((assertion-pass)
      (format (test-reporter-output-port*) "~y✓\n"
              (assoc-ref message 'assert/quoted-form)))
 
-    ((assert-fail)
+    ((assertion-fail)
      (format (test-reporter-output-port*) "~y✗ ~a\n"
              (assoc-ref message 'assert/quoted-form) (actual message)))
 
-    ((assert-error)
+    ((assertion-error)
      (format (test-reporter-output-port*) "~y✗ produced error:\n ~s\n"
              (assoc-ref message 'assert/quoted-form)
              (exception->string
-              (assoc-ref message 'assert/error))))
+              (assoc-ref message 'assertion/error))))
 
     (else #f)))
 
@@ -395,11 +395,11 @@ to catch unhandled messages."
     ((test-skip)
      (format (test-reporter-output-port*) "(S)"))
 
-    ((assert-pass)
+    ((assertion-pass)
      (format (test-reporter-output-port*) "."))
-    ((assert-fail)
+    ((assertion-fail)
      (format (test-reporter-output-port*) "F"))
-    ((assert-error)
+    ((assertion-error)
      (format (test-reporter-output-port*) "E"))
 
     (else #f)))
@@ -556,9 +556,9 @@ environment just set it to new instance of test runner.
             (lambda (value)
               (cons 'error value))))
          (%test-reporter
-          `((type . assert-error)
+          `((type . assertion-error)
             (assert/quoted-form . ,quoted-form)
-            (assert/error . ,ex))))
+            (assertion/error . ,ex))))
        (lambda ()
          ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
          ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
@@ -569,8 +569,8 @@ environment just set it to new instance of test runner.
               (lambda (value)
                 (cons (if result 'pass 'fail) value))))
            (%test-reporter
-            `((type . ,(if result 'assert-pass 'assert-fail))
-              (assert/result . ,result)
+            `((type . ,(if result 'assertion-pass 'assertion-fail))
+              (assertion/result . ,result)
               (assert/arguments-thunk . ,args-thunk)
               (assert/quoted-form . ,quoted-form)))
            result))
