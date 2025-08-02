@@ -481,17 +481,32 @@ environment just set it to new instance of test runner.
       (test-reporter
        (alist-cons 'state reporter-state message))))
 
-  (define (%run-test test-body-thunk)
+  (define (%run-test test)
     (parameterize ((%test-events* (make-atomic-box '())))
       ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
       ;; happen inside test case, but outside of assert
 
       ;; What to do with exception outside of assert?
-      (test-body-thunk)
+
+      (let ((description (assoc-ref test 'test/description))
+            (test-body-thunk (assoc-ref test 'test/body-thunk)))
+        (when (%test*)
+          (chain "Test Macros can't be nested"
+            (make-exception-with-message _)
+            (raise-exception _)))
+        (%test-reporter
+         `((type . test-start)
+           (description . ,description)))
+        (parameterize ((%test* description))
+          (test-body-thunk))
+        (%test-reporter
+         `((type . test-end)
+           (description . ,description))))
+
       (atomic-box-ref (%test-events*))))
 
   (define (run-test test)
-    (let* ((result (%run-test (assoc-ref test 'test/body-thunk)))
+    (let* ((result (%run-test test))
            (error? (any (lambda (x) (eq? x 'error)) result))
            (fail? (any (lambda (x) (eq? x 'fail)) result)))
       `((errors . ,(if error? 1 0))
@@ -700,35 +715,17 @@ environment just set it to new instance of test runner.
 
       ((load-test)
        (let* ((test (assoc-ref x 'test))
-              (original-test-body-thunk (assoc-ref test 'test/body-thunk))
-              (description (assoc-ref test 'test/description))
-              (new-test-body-thunk
-               (lambda ()
-                 (when (%test*)
-                   (chain "Test Macros can't be nested"
-                     (make-exception-with-message _)
-                     (raise-exception _)))
-                 (%test-reporter
-                  `((type . test-start)
-                    (description . ,description)))
-                 (parameterize ((%test* description))
-                   (original-test-body-thunk))
-                 (%test-reporter
-                  `((type . test-end)
-                    (description . ,description)))))
+              (description (assoc-ref test 'test/description)))
 
-              (new-test
-               `((test/body-thunk . ,new-test-body-thunk)
-                 (metadata . ,(assoc-ref test 'test/metadata)))))
-
-         (add-loaded-test! state new-test)
+         (add-loaded-test! state test)
 
          (let ((suite-items (%current-suite-items*)))
+           ;; (pk (%suite-path*))
            (if suite-items
                (begin
                  (atomic-box-update!
                   suite-items
-                  (lambda (items) (cons new-test items)))
+                  (lambda (items) (cons test items)))
                  (%test-reporter
                   `((type . test-scheduled)
                     (suite-path . ,(%suite-path*))
@@ -736,7 +733,7 @@ environment just set it to new instance of test runner.
                (begin
                  (atomic-box-set!
                   last-run-summary
-                  (run-test new-test)))))
+                  (run-test test)))))
 
          *unspecified*))
 
