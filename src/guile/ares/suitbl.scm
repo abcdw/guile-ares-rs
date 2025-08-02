@@ -104,8 +104,8 @@ depends on the test runner implementation.
 (define test-runner* (make-parameter #f))
 
 (define (test? x)
-  (and (procedure? x)
-       (procedure-property x 'suitbl-test?)))
+  (and (list? x)
+       (assoc-ref x 'test/body-thunk)))
 
 (define (suite? x)
   (and (procedure? x)
@@ -139,20 +139,14 @@ depends on the test runner implementation.
 (define-syntax test-thunk
   (syntax-rules ()
     ((test-thunk test-description #:metadata metadata expression expressions ...)
-     (let ((test-body-thunk
-            (lambda () expression expressions ...)))
-       (set-procedure-properties!
-        test-body-thunk
-        (alist-merge
-         metadata
-         `((name . ,(string->symbol test-description))
-           (documentation . ,test-description)
-           (suitbl-test? . #t))))
+     (let ((test `((test/body-thunk . ,(lambda () expression expressions ...))
+                   (test/body . (expression expressions ...))
+                   (test/description . ,test-description)
+                   (test/metadata . ,metadata))))
        (lambda ()
          ((test-runner*)
           `((type . load-test)
-            (test-body-thunk . ,test-body-thunk)
-            (test-body . (expression expressions ...)))))))
+            (test . ,test))))))
 
     ((test-thunk test-description expression expressions ...)
      (test-thunk test-description #:metadata '() expression expressions ...))))
@@ -497,7 +491,7 @@ environment just set it to new instance of test runner.
       (atomic-box-ref (%test-events*))))
 
   (define (run-test test)
-    (let* ((result (%run-test test))
+    (let* ((result (%run-test (assoc-ref test 'test/body-thunk)))
            (error? (any (lambda (x) (eq? x 'error)) result))
            (fail? (any (lambda (x) (eq? x 'fail)) result)))
       `((errors . ,(if error? 1 0))
@@ -705,8 +699,9 @@ environment just set it to new instance of test runner.
 
 
       ((load-test)
-       (let* ((original-test-body-thunk (assoc-ref x 'test-body-thunk))
-              (description (procedure-documentation original-test-body-thunk))
+       (let* ((test (assoc-ref x 'test))
+              (original-test-body-thunk (assoc-ref test 'test/body-thunk))
+              (description (assoc-ref test 'test/description))
               (new-test-body-thunk
                (lambda ()
                  (when (%test*)
@@ -720,19 +715,20 @@ environment just set it to new instance of test runner.
                    (original-test-body-thunk))
                  (%test-reporter
                   `((type . test-end)
-                    (description . ,description))))))
+                    (description . ,description)))))
 
-         (copy-procedure-properties!
-          original-test-body-thunk new-test-body-thunk)
+              (new-test
+               `((test/body-thunk . ,new-test-body-thunk)
+                 (metadata . ,(assoc-ref test 'test/metadata)))))
 
-         (add-loaded-test! state new-test-body-thunk)
+         (add-loaded-test! state new-test)
 
          (let ((suite-items (%current-suite-items*)))
            (if suite-items
                (begin
                  (atomic-box-update!
                   suite-items
-                  (lambda (items) (cons new-test-body-thunk items)))
+                  (lambda (items) (cons new-test items)))
                  (%test-reporter
                   `((type . test-scheduled)
                     (suite-path . ,(%suite-path*))
@@ -740,7 +736,7 @@ environment just set it to new instance of test runner.
                (begin
                  (atomic-box-set!
                   last-run-summary
-                  (run-test new-test-body-thunk)))))
+                  (run-test new-test)))))
 
          *unspecified*))
 
