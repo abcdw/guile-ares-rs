@@ -337,15 +337,15 @@ to catch unhandled messages."
 
 (define (test-reporter-verbose message)
   (define (actual message)
-    (let* ((quoted-form (assoc-ref message 'assert/quoted-form))
-           (arguments-thunk (assoc-ref message 'assert/arguments-thunk))
-           (safe-arguments-thunk (safify-thunk arguments-thunk)))
+    (let* ((assert-body (assoc-ref message 'assert/body))
+           (args-thunk (assoc-ref message 'assert/args-thunk))
+           (safe-args-thunk (safify-thunk args-thunk)))
       ;; TODO: [Andrew Tropin, 2025-05-28] Ensure arguments-thunk
       ;; exception handled.
-      (if (and (list? quoted-form) (= 3 (length quoted-form)))
-          (match (safe-arguments-thunk)
+      (if (and (list? assert-body) (= 3 (length assert-body)))
+          (match (safe-args-thunk)
             ((value . (first second))
-             (format #f "~a and ~a are not ~a" first second (car quoted-form)))
+             (format #f "~a and ~a are not ~a" first second (car assert-body)))
             ((exception . ex)
              (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
           (assoc-ref message 'assertion/result))))
@@ -360,15 +360,15 @@ to catch unhandled messages."
 
     ((assertion-pass)
      (format (test-reporter-output-port*) "~y✓\n"
-             (assoc-ref message 'assert/quoted-form)))
+             (assoc-ref message 'assert/body)))
 
     ((assertion-fail)
      (format (test-reporter-output-port*) "~y✗ ~a\n"
-             (assoc-ref message 'assert/quoted-form) (actual message)))
+             (assoc-ref message 'assert/body) (actual message)))
 
     ((assertion-error)
      (format (test-reporter-output-port*) "~y✗ produced error:\n ~s\n"
-             (assoc-ref message 'assert/quoted-form)
+             (assoc-ref message 'assert/body)
              (exception->string
               (assoc-ref message 'assertion/error))))
 
@@ -545,9 +545,9 @@ environment just set it to new instance of test runner.
       result))
 
   (define (default-run-assert assert)
-    (let ((form-thunk (assoc-ref assert 'assert/body-thunk))
+    (let ((body-thunk (assoc-ref assert 'assert/body-thunk))
           (args-thunk (assoc-ref assert 'assert/args-thunk))
-          (quoted-form (assoc-ref assert 'assert/body)))
+          (body (assoc-ref assert 'assert/body)))
       (with-exception-handler
        (lambda (ex)
          (when (%test*)
@@ -557,12 +557,12 @@ environment just set it to new instance of test runner.
               (cons 'error value))))
          (%test-reporter
           `((type . assertion-error)
-            (assert/quoted-form . ,quoted-form)
+            (assert/body . ,body)
             (assertion/error . ,ex))))
        (lambda ()
          ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
          ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-         (let* ((result (form-thunk)))
+         (let* ((result (body-thunk)))
            (when (%test*)
              (atomic-box-update!
               (%test-events*)
@@ -571,8 +571,8 @@ environment just set it to new instance of test runner.
            (%test-reporter
             `((type . ,(if result 'assertion-pass 'assertion-fail))
               (assertion/result . ,result)
-              (assert/arguments-thunk . ,args-thunk)
-              (assert/quoted-form . ,quoted-form)))
+              (assert/args-thunk . ,args-thunk)
+              (assert/body . ,body)))
            result))
        #:unwind? #t)))
 
