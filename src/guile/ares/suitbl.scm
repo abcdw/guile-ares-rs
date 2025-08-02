@@ -9,6 +9,7 @@
   #:use-module ((ice-9 ftw) #:select (nftw))
   #:use-module ((ice-9 regex) #:select (string-match))
   #:use-module ((ares atomic) #:select (atomic-box-update!))
+  #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1)
                 #:select (last drop-right any fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain))
@@ -368,7 +369,8 @@ to catch unhandled messages."
     ((assert-error)
      (format (test-reporter-output-port*) "~y✗ produced error:\n ~s\n"
              (assoc-ref message 'assert/quoted-form)
-             (assoc-ref message 'assert/error)))
+             (exception->string
+              (assoc-ref message 'assert/error))))
 
     (else #f)))
 
