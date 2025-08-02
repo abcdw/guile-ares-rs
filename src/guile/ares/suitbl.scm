@@ -542,34 +542,37 @@ environment just set it to new instance of test runner.
          (description . ,(car suite))))
       result))
 
-  (define (default-run-assert form-thunk args-thunk quoted-form)
-    (with-exception-handler
-     (lambda (ex)
-       (when (%test*)
-         (atomic-box-update!
-          (%test-events*)
-          (lambda (value)
-            (cons 'error value))))
-       (%test-reporter
-        `((type . assert-error)
-          (assert/quoted-form . ,quoted-form)
-          (assert/error . ,ex))))
-     (lambda ()
-       ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-       ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-       (let* ((result (form-thunk)))
+  (define (default-run-assert assert)
+    (let ((form-thunk (assoc-ref assert 'assert/thunk))
+          (args-thunk (assoc-ref assert 'assert/arguments-thunk))
+          (quoted-form (assoc-ref assert 'assert/quoted-form)))
+      (with-exception-handler
+       (lambda (ex)
          (when (%test*)
            (atomic-box-update!
             (%test-events*)
             (lambda (value)
-              (cons (if result 'pass 'fail) value))))
+              (cons 'error value))))
          (%test-reporter
-          `((type . ,(if result 'assert-pass 'assert-fail))
-            (assert/result . ,result)
-            (assert/arguments-thunk . ,args-thunk)
-            (assert/quoted-form . ,quoted-form)))
-         result))
-     #:unwind? #t))
+          `((type . assert-error)
+            (assert/quoted-form . ,quoted-form)
+            (assert/error . ,ex))))
+       (lambda ()
+         ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+         ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+         (let* ((result (form-thunk)))
+           (when (%test*)
+             (atomic-box-update!
+              (%test-events*)
+              (lambda (value)
+                (cons (if result 'pass 'fail) value))))
+           (%test-reporter
+            `((type . ,(if result 'assert-pass 'assert-fail))
+              (assert/result . ,result)
+              (assert/arguments-thunk . ,args-thunk)
+              (assert/quoted-form . ,quoted-form)))
+           result))
+       #:unwind? #t)))
 
   (define (print-suite suite)
     (%test-reporter
@@ -650,18 +653,14 @@ environment just set it to new instance of test runner.
        (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
       ((run-assert)
-       (let* ((assert (assoc-ref x 'assert))
-              (assert-thunk (assoc-ref assert 'assert/thunk))
-              (assert-arguments-thunk (assoc-ref assert 'assert/arguments-thunk))
-              (assert-quoted-form (assoc-ref assert 'assert/quoted-form)))
+       (let* ((assert (assoc-ref x 'assert)))
          (when (and (not (null? (%suite-path*)))
                     (not (%test*)))
            (chain
                "Assert encountered inside suite, but outside of test"
              (make-exception-with-message _)
              (raise-exception _)))
-         (default-run-assert
-           assert-thunk assert-arguments-thunk assert-quoted-form)))
+         (default-run-assert assert)))
 
       ((run-suite-body-thunk)
        (let* ((try-load-suite (make-try-load-suite
