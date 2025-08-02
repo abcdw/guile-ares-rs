@@ -545,9 +545,7 @@ environment just set it to new instance of test runner.
       result))
 
   (define (default-run-assert assert)
-    (let ((body-thunk (assoc-ref assert 'assert/body-thunk))
-          (args-thunk (assoc-ref assert 'assert/args-thunk))
-          (body (assoc-ref assert 'assert/body)))
+    (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
       (with-exception-handler
        (lambda (ex)
          (when (%test*)
@@ -556,9 +554,10 @@ environment just set it to new instance of test runner.
             (lambda (value)
               (cons 'error value))))
          (%test-reporter
-          `((type . assertion-error)
-            (assert/body . ,body)
-            (assertion/error . ,ex))))
+          (append
+           `((type . assertion-error)
+             (assertion/error . ,ex))
+           assert)))
        (lambda ()
          ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
          ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
@@ -569,10 +568,10 @@ environment just set it to new instance of test runner.
               (lambda (value)
                 (cons (if result 'pass 'fail) value))))
            (%test-reporter
-            `((type . ,(if result 'assertion-pass 'assertion-fail))
-              (assertion/result . ,result)
-              (assert/args-thunk . ,args-thunk)
-              (assert/body . ,body)))
+            (append
+             `((type . ,(if result 'assertion-pass 'assertion-fail))
+               (assertion/result . ,result))
+             assert))
            result))
        #:unwind? #t)))
 
