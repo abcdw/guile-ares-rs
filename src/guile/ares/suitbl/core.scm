@@ -63,7 +63,7 @@ test runner or set it manually."))
 
 (define-syntax test-thunk
   (syntax-rules ()
-    ((test-thunk test-description #:metadata metadata expression expressions ...)
+    ((test-thunk test-description 'metadata metadata expression expressions ...)
      (let ((test `((test/body-thunk . ,(lambda () expression expressions ...))
                    (test/body . (expression expressions ...))
                    (test/description . ,test-description)
@@ -74,7 +74,7 @@ test runner or set it manually."))
             (test . ,test))))))
 
     ((test-thunk test-description expression expressions ...)
-     (test-thunk test-description #:metadata '() expression expressions ...))))
+     (test-thunk test-description 'metadata '() expression expressions ...))))
 
 (define-syntax test
   (syntax-rules ()
@@ -85,7 +85,7 @@ more @code{is} asserts."
 
 (define-syntax suite-thunk
   (syntax-rules ()
-    ((_ suite-description #:metadata metadata expression expressions ...)
+    ((_ suite-description 'metadata metadata expression expressions ...)
      (let* ((suite
              `((suite/body-thunk . ,(lambda () expression expressions ...))
                (suite/description . ,suite-description)
@@ -108,7 +108,7 @@ more @code{is} asserts."
 
     ((suite-thunk suite-description expression expressions ...)
      (suite-thunk
-         suite-description #:metadata '() expression expressions ...))))
+         suite-description 'metadata '() expression expressions ...))))
 
 (define-syntax suite
   (syntax-rules ()
