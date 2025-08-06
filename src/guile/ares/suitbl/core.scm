@@ -34,10 +34,10 @@
 (define (missing-test-runner _)
   (format (current-error-port) "\
 The test-runner* is not set. Probably you imported test defining API
-directly instead of using a wrapping testing library. That's probably
-not what you want, unless you are a developer of a testing
-library. Please, use suitbl or other library, which set an approriate
-test runner or set it manually."))
+directly instead of using a downstream testing library. That's
+probably not what you want, unless you are a developer of a testing
+library and enjoy seeing this message. Please, use suitbl or other
+library, which sets an approriate test runner for you."))
 
 (define test-runner* (make-parameter missing-test-runner))
 
