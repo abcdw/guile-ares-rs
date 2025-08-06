@@ -15,6 +15,16 @@
 
 
 ;;;
+;;; Tasks before SRFI finalization
+;;;
+
+;; TODO: [Andrew Tropin, 2025-08-06] Make all the tests to be disabled
+;; by default. Useful for production code to make no test code leaks
+;; into it.
+
+
+
+;;;
 ;;; Core Test Definition API
 ;;;
 
