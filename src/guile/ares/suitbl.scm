@@ -570,7 +570,7 @@ environment just set it to new instance of test runner.
          (description . ,(car suite))))
       result))
 
-  (define (default-run-assert assert)
+  (define (run-assert assert)
     (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
       (with-exception-handler
        (lambda (ex)
@@ -673,7 +673,7 @@ environment just set it to new instance of test runner.
                "Assert encountered inside suite, but outside of test"
              (make-exception-with-message _)
              (raise-exception _)))
-         (default-run-assert assert)))
+         (run-assert assert)))
 
       ((load-suite)
        (let* ((suite (assoc-ref x 'suite))
