@@ -694,7 +694,8 @@ environment just set it to new instance of test runner.
          ;; test-runner-run-suites sets %schedule-only?*
          ;; and also calls run-scheduled-tests, so to prevent double
          ;; execution of scheduled test suites we add this condition.
-         (when (and (null? (%suite-path*)) (not (%schedule-only?*)))
+         (when (and (null? (%suite-path*)) (not (%schedule-only?*))
+                    (get-run-config-value state 'auto-run?))
            (this `((type . run-scheduled-tests))))))
 
       ((run-scheduled-tests)
@@ -740,7 +741,7 @@ environment just set it to new instance of test runner.
                   `((type . test-scheduled)
                     (suite-path . ,(%suite-path*))
                     (description . ,description))))
-               (begin
+               (when (get-run-config-value state 'auto-run?)
                  (atomic-box-set!
                   last-run-summary
                   (run-test test)))))
