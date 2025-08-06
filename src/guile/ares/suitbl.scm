@@ -8,18 +8,15 @@
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
   #:use-module ((ice-9 ftw) #:select (nftw))
   #:use-module ((ice-9 regex) #:select (string-match))
+  #:use-module (ares suitbl core)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1)
                 #:select (last drop-right any fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
-  #:export (test-runner*
-            make-suitbl-test-runner
+  #:export (make-suitbl-test-runner
             run-test-suites
-
-            suite test is
-            suite-thunk test-thunk
 
             test-reporter-output-port*
             test-reporter-silent
@@ -31,13 +28,13 @@
             test-reporters-use-all
             test-reporters-use-first
 
-            ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
-            ;; introduces ambiguity and doesn't have a private
-            ;; counterpart
-            define-suite
+            throws-exception?)
 
-            throws-exception?))
+  #:re-export (test-runner*
 
+               suite test is
+               suite-thunk test-thunk
+               define-suite))
 
 #|
 
@@ -96,109 +93,11 @@ loaded tests will be executed.  The order and concurrency of execution
 depends on the test runner implementation.
 
 |#
-
 
+
 ;;;
-;;; Primary API
+;;; Auxiliary helpers
 ;;;
-
-(define test-runner* (make-parameter #f))
-
-(define (test? x)
-  (and (list? x)
-       (assoc-ref x 'test/body-thunk)))
-
-(define (suite? x)
-    (and (list? x)
-         (assoc-ref x 'suite/body-thunk)))
-
-(define (suite-thunk? x)
-  (and (procedure? x)
-       (procedure-property x 'suitbl-suite-thunk?)))
-
-;; We use syntax-rules because it save patterns into transformer's
-;; metadata, which allows to generate "signature" of the macro.
-
-(define-syntax is
-  (syntax-rules ()
-    "A flexible assert macro.  The behavior can be customized by test runner."
-    ((_ (pred args ...))
-     ((test-runner*)
-      `((type . run-assert)
-        (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
-                   (assert/args-thunk . ,(lambda () (list args ...)))
-                   (assert/body . (pred args ...)))))))
-    ((_ form)
-     ((test-runner*)
-      `((type . run-assert)
-        (assert . ((assert/body-thunk . ,(lambda () form))
-                   (assert/body . form))))))))
-
-(define (alist-merge l1 l2)
-  (append l1 l2))
-
-(define-syntax test-thunk
-  (syntax-rules ()
-    ((test-thunk test-description #:metadata metadata expression expressions ...)
-     (let ((test `((test/body-thunk . ,(lambda () expression expressions ...))
-                   (test/body . (expression expressions ...))
-                   (test/description . ,test-description)
-                   (test/metadata . ,metadata))))
-       (lambda ()
-         ((test-runner*)
-          `((type . load-test)
-            (test . ,test))))))
-
-    ((test-thunk test-description expression expressions ...)
-     (test-thunk test-description #:metadata '() expression expressions ...))))
-
-(define-syntax test
-  (syntax-rules ()
-    "Test represent a logical unit of testing, usually includes zero or
-more @code{is} asserts."
-    ((test test-description arguments ...)
-     ((test-thunk test-description arguments ...)))))
-
-(define-syntax suite-thunk
-  (syntax-rules ()
-    ((_ suite-description #:metadata metadata expression expressions ...)
-     (let* ((suite
-             `((suite/body-thunk . ,(lambda () expression expressions ...))
-               (suite/description . ,suite-description)
-               (suite/metadata . ,metadata)))
-
-            (suite-thunk
-                ;; Wrapping into identity to prevent setting procedure-name
-                (identity
-                 (lambda ()
-                   ((test-runner*)
-                    `((type . load-suite)
-                      (suite . ,suite)))))))
-
-       (set-procedure-properties!
-        suite-thunk
-        `((documentation . ,suite-description)
-          (suite . ,suite)
-          (suitbl-suite-thunk? . #t)))
-       suite-thunk))
-
-    ((suite-thunk suite-description expression expressions ...)
-     (suite-thunk
-         suite-description #:metadata '() expression expressions ...))))
-
-(define-syntax suite
-  (syntax-rules ()
-    "Test suite is a grouping unit, it allows to combine tests and other
-test suites."
-    ((suite suite-description arguments ...)
-     ((suite-thunk suite-description arguments ...)))))
-
-(define-syntax define-suite
-  (syntax-rules ()
-    "Equivalent of (define-public NAME (suite-thunk ...))."
-    ((_ suite-name expression ...)
-     (define-public suite-name
-       (suite-thunk (symbol->string 'suite-name) expression ...)))))
 
 (define-syntax throws-exception?
   (lambda (x)
@@ -214,6 +113,7 @@ test suites."
           #:unwind? #t)))))
 
 
+
 ;;;
 ;;; Test Reporters
 ;;;
