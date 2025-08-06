@@ -476,8 +476,7 @@ environment just set it to new instance of test runner.
 (define (set-run-config-value! state key value)
   (update-atomic-alist-value!
    state 'run-config
-   (lambda (alist) (update-alist-value alist key value))))
-
+   (lambda (alist) (update-alist-value (or alist '()) key value))))
 
 
 ;;;
