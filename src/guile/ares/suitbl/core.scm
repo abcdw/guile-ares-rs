@@ -25,6 +25,11 @@
 ;; by default. Useful for production code to make no test code leaks
 ;; into it.
 
+;; TODO: [Andrew Tropin, 2025-08-06] Rewrite back to syntax-case?  I
+;; find syntax-case more explicit. The reason why we rewrote it to
+;; syntax-rules was guile's support for the arguments metadata and
+;; thus useful eldoc
+
 
 
 ;;;
