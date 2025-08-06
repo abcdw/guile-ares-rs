@@ -12,7 +12,7 @@
   #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1)
                 #:select (last drop-right any fold alist-delete alist-cons))
-  #:use-module ((srfi srfi-197) #:select (chain))
+  #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
   #:export (test-runner*
             make-suitbl-test-runner
@@ -436,15 +436,18 @@ environment just set it to new instance of test runner.
 (define (copy-procedure-properties! from to)
   (set-procedure-properties! to (procedure-properties from)))
 
+(define (update-alist-value alist key value)
+  (chain alist
+    (alist-delete key _)
+    (alist-cons key value _)))
+
 (define (update-atomic-alist-value! alist-atom key f)
   (atomic-box-update!
    alist-atom
    (lambda (alist)
      (let* ((value (or (assoc-ref alist key) #f))
             (new-value (f value)))
-       (chain alist
-         (alist-delete key _)
-         (alist-cons key new-value _))))))
+       (update-alist-value alist key new-value)))))
   
 ;;;
 ;;; Tests state management
@@ -459,6 +462,21 @@ environment just set it to new instance of test runner.
   (update-atomic-alist-value!
    state 'loaded-tests
    (lambda (l) (cons test (or l '())))))
+
+(define (get-run-config state)
+  (chain (atomic-box-ref state)
+    (assoc-ref _ 'run-config)
+    (or _ '())))
+
+(define (get-run-config-value state key)
+  (chain-and (atomic-box-ref state)
+    (assoc-ref _ 'run-config)
+    (assoc-ref _ key)))
+
+(define (set-run-config-value! state key value)
+  (update-atomic-alist-value!
+   state 'run-config
+   (lambda (alist) (update-alist-value alist key value))))
 
 
 
