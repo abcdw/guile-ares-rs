@@ -597,4 +597,8 @@ X #f
 
 ;; TODO: [Andrew Tropin, 2025-05-25] Add an example of custom test runner
 
+;; TODO: [Andrew Tropin, 2025-08-01] Make is assert usable in
+;; production code and disable it in release builds (make it return
+;; unspecified or something alike)
+
 
