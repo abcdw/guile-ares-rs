@@ -445,6 +445,26 @@ environment just set it to new instance of test runner.
        (chain alist
          (alist-delete key _)
          (alist-cons key new-value _))))))
+  
+;;;
+;;; Tests state management
+;;;
+
+(define (get-loaded-tests state)
+  (chain (atomic-box-ref state)
+    (assoc-ref _ 'loaded-tests)
+    (or _ '())))
+
+(define (add-loaded-test! state test)
+  (update-atomic-alist-value!
+   state 'loaded-tests
+   (lambda (l) (cons test (or l '())))))
+
+
+
+;;;
+;;; Test runner
+;;;
 
 (define* (make-suitbl-test-runner
           #:key
@@ -610,22 +630,6 @@ environment just set it to new instance of test runner.
          #:unwind? #t))
       (suite-leave!)
       result))
-
-  
-  ;;;
-  ;;; Tests state management
-  ;;;
-
-  (define (get-loaded-tests state)
-    (chain (atomic-box-ref state)
-      (assoc-ref _ 'loaded-tests)
-      (or _ '())))
-
-  (define (add-loaded-test! state test)
-    (update-atomic-alist-value!
-     state 'loaded-tests
-     (lambda (l) (cons test (or l '())))))
-
 
   (define (test-runner x)
     "Default test runner"
