@@ -485,7 +485,8 @@ environment just set it to new instance of test runner.
 
 (define* (make-suitbl-test-runner
           #:key
-          (test-reporter test-reporter-base))
+          (test-reporter test-reporter-base)
+          (run-config '((auto-run? . #t))))
   "A flexible test runner factory, which spawns new test runners."
   ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,
   ;; they can cause problems when using with continuations and thus
@@ -498,7 +499,7 @@ environment just set it to new instance of test runner.
 
   ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
   ;; and make it accessible via "class" methods.
-  (define state (make-atomic-box '()))
+  (define state (make-atomic-box `((run-config . ,run-config))))
   (define last-run-summary (make-atomic-box #f))
   (define this #f)
   (define reporter-state (make-atomic-box '()))
