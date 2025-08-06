@@ -75,12 +75,12 @@ library, which sets an approriate test runner for you."))
   (append l1 l2))
 
 (define-syntax test-thunk
-  (syntax-rules ()
-    ((test-thunk test-description 'metadata metadata expression expressions ...)
+  (syntax-rules (metadata)
+    ((test-thunk test-description 'metadata metadata-value expression expressions ...)
      (let ((test `((test/body-thunk . ,(lambda () expression expressions ...))
                    (test/body . (expression expressions ...))
                    (test/description . ,test-description)
-                   (test/metadata . ,metadata))))
+                   (test/metadata . ,metadata-value))))
        (lambda ()
          ((test-runner*)
           `((type . load-test)
@@ -97,12 +97,12 @@ more @code{is} asserts."
      ((test-thunk test-description arguments ...)))))
 
 (define-syntax suite-thunk
-  (syntax-rules ()
-    ((_ suite-description 'metadata metadata expression expressions ...)
+  (syntax-rules (metadata)
+    ((_ suite-description 'metadata metadata-value expression expressions ...)
      (let* ((suite
-             `((suite/body-thunk . ,(lambda () expression expressions ...))
-               (suite/description . ,suite-description)
-               (suite/metadata . ,metadata)))
+                `((suite/body-thunk . ,(lambda () expression expressions ...))
+                  (suite/description . ,suite-description)
+                  (suite/metadata . ,metadata-value)))
 
             (suite-thunk
                 ;; Wrapping into identity to prevent setting procedure-name
