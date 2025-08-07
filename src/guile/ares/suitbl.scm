@@ -367,6 +367,11 @@ environment just set it to new instance of test runner.
    state 'loaded-tests
    (lambda (l) (cons test (or l '())))))
 
+(define (reset-loaded-tests! state)
+  (update-atomic-alist-value!
+   state 'loaded-tests
+   (lambda (l) '())))
+
 (define (get-run-config state)
   (chain (atomic-box-ref state)
     (assoc-ref _ 'run-config)
@@ -390,7 +395,8 @@ environment just set it to new instance of test runner.
 (define* (make-suitbl-test-runner
           #:key
           (test-reporter test-reporter-base)
-          (run-config '((auto-run? . #t))))
+          (run-config '((auto-run? . #t)
+                        (reset-loaded-tests-on-suite-load? . #t))))
   "A flexible test runner factory, which spawns new test runners."
   ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,
   ;; they can cause problems when using with continuations and thus
@@ -580,6 +586,10 @@ environment just set it to new instance of test runner.
          (run-assert assert)))
 
       ((load-suite)
+       (when (and (null? (%suite-path*))
+                  (get-run-config-value
+                   state 'reset-loaded-tests-on-suite-load?))
+         (reset-loaded-tests! state))
        (let* ((suite (assoc-ref x 'suite))
               (try-load-suite (make-try-load-suite suite)))
 
