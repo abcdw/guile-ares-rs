@@ -32,8 +32,12 @@
 
   #:re-export (test-runner*
 
-               suite test is
-               suite-thunk test-thunk
+               is
+               ;; we omit re-exporting -thunk counterparts, as they
+               ;; probably never needed by end-user
+               test test-thunk
+               suite suite-thunk
+
                define-suite))
 
 #|
