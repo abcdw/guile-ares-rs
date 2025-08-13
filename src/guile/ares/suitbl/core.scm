@@ -7,8 +7,8 @@
             is
             test test?
             test-thunk
-            suite test-suite?
-            suite-thunk test-suite-thunk?
+            suite suite?
+            suite-thunk suite-thunk?
 
             ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
             ;; introduces ambiguity and doesn't have a private

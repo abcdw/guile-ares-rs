@@ -184,7 +184,7 @@ to catch unhandled messages."
    (lambda (i)
      (cond
       ((test? i) (string-append "test: " (procedure-documentation i)))
-      ((suite-body-thunk? i)
+      ((suite? i)
        (string-append "suite: " (procedure-documentation i)))
       ((list? i) (tests->pretty-string i))
       (else i)))
