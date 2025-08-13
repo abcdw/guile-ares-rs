@@ -489,6 +489,13 @@ X #f
 ;; TODO: [Andrew Tropin, 2025-08-13] Show information about currently
 ;; loaded tests in UI
 
+;; TODO: [Andrew Tropin, 2025-05-15] Create separate
+;; test-reporter-assert-minimal (showing only ✗ or ✓) and
+;; test-reporter-assert-simple (like current base), which
+;; can be used in base reporter.
+
+
+
 ;; TODO: [Andrew Tropin, 2025-07-31] Make it possible to set test
 ;; reporter for a particular run (we don't actually want to make a
 ;; whole separate runner for changing reporting format)
@@ -505,11 +512,6 @@ X #f
 ;; executed at the end and provide detailed info of
 ;; locations with failed tests
 
-;; TODO: [Andrew Tropin, 2025-05-15] Create separate
-;; test-reporter-assert-minimal (showing only ✗ or ✓) and
-;; test-reporter-assert-simple (like current base), which
-;; can be used in base reporter.
-
 ;; TODO: [Andrew Tropin, 2025-05-19] Add delayed logging reporter
 
 ;; TODO: [Andrew Tropin, 2025-05-19] Add testing started/finished
@@ -520,7 +522,6 @@ X #f
 ;; TODO: [Andrew Tropin, 2025-05-12] Preserve execution information,
 ;; so we can re-run failed tests
 
-
 ;; TODO: [Andrew Tropin, 2025-06-05] Implement testing-test-runner,
 ;; which just saves every message comming to it.  To write tests for
 ;; is/test/suite macros, to set expectation for them in the
