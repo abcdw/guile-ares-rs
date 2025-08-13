@@ -483,7 +483,11 @@ X #f
 
 ;;; Today/Next
 
+;; TODO: [Andrew Tropin, 2025-08-13] Add "test/suite loaded" event and
+;; corresponding test reporter.
 
+;; TODO: [Andrew Tropin, 2025-08-13] Show information about currently
+;; loaded tests in UI
 
 ;; TODO: [Andrew Tropin, 2025-07-31] Make it possible to set test
 ;; reporter for a particular run (we don't actually want to make a
