@@ -109,7 +109,7 @@ more @code{is} asserts."
                   (suite/description . ,suite-description)
                   (suite/metadata . ,metadata-value)))
 
-            (suite-thunk
+            (%suite-thunk
                 ;; Wrapping into identity to prevent setting procedure-name
                 (identity
                  (lambda ()
@@ -118,11 +118,11 @@ more @code{is} asserts."
                       (suite . ,suite)))))))
 
        (set-procedure-properties!
-        suite-thunk
+        %suite-thunk
         `((documentation . ,suite-description)
           (suite . ,suite)
           (suitbl-suite-thunk? . #t)))
-       suite-thunk))
+       %suite-thunk))
 
     ((suite-thunk suite-description expression expressions ...)
      (suite-thunk

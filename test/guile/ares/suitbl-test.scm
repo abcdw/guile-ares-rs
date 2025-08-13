@@ -484,8 +484,6 @@ X #f
 ;;; Today/Next
 
 
-;; TODO: [Andrew Tropin, 2025-08-01] Rename suite-thunk in let to
-;; avoid confusion with macro name
 
 ;; TODO: [Andrew Tropin, 2025-07-31] Make it possible to set test
 ;; reporter for a particular run (we don't actually want to make a
