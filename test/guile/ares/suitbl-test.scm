@@ -483,8 +483,6 @@ X #f
 
 ;;; Today/Next
 
-;; TODO: [Andrew Tropin, 2025-08-01] Use records instead of procedure
-;; properties for test-body-thunk
 
 ;; TODO: [Andrew Tropin, 2025-08-01] Rename suite-thunk in let to
 ;; avoid confusion with macro name
@@ -492,8 +490,6 @@ X #f
 ;; TODO: [Andrew Tropin, 2025-07-31] Make it possible to set test
 ;; reporter for a particular run (we don't actually want to make a
 ;; whole separate runner for changing reporting format)
-
-;; TODO: [Andrew Tropin, 2025-07-29] Create a list of loaded test
 
 ;; TODO: [Andrew Tropin, 2025-07-29] Add composable immutable filters
 ;; and transformers, (failing-first, fast-first,
