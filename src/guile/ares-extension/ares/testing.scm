@@ -9,8 +9,8 @@
 (define (run-tests-eval-request context)
   (append
    `(("op" . "eval")
-     ("code" . "((@ (ares suitbl) rn-tests))")
-     ("ns" . "(ares suitbl)"))
+     ("code" . "((@ (ares suitbl ares) run-tests))")
+     ("ns" . "(ares suitbl ares)"))
    (alist-select-keys
     '("id" "session")
     (assoc-ref context 'nrepl/message))))
@@ -21,17 +21,39 @@
 
 (define (run context handler)
   "Run tests loaded into test runner."
+  ;; TODO: [Andrew Tropin, 2025-08-14] Try to use top-level-handler
+  ;; instead of bencodes one.
+
+  ;; (throw 'error-handled-by-some-other-extension)
   (let ((new-context (context->run-test context)))
     (handler new-context)))
 
+(define (get-stats-eval-request context)
+  (append
+   `(("op" . "eval")
+     ("code" . "((@ (ares suitbl ares) get-current-test-runner-stats))")
+     ("ns" . "(ares suitbl ares)"))
+   (alist-select-keys
+    '("id" "session")
+    (assoc-ref context 'nrepl/message))))
+
+(define (context->get-stats context)
+  (cons `(nrepl/message . ,(get-stats-eval-request context))
+   context))
+
+(define (get-test-runner-stats context handler)
+  "Return test runner stats."
+  (handler (context->get-stats context)))
+
 (define operations
-  `(("ares.testing/run" . ,run)))
+  `(("ares.testing/run" . ,run)
+    ("ares.testing/get-test-runner-stats" . ,get-test-runner-stats)))
 
 (define-with-meta (ares.testing handler)
   "Add integration with suitbl testing library and corresponding
 operations."
   `((provides . (ares.testing))
-    (requires . (ares.core ares.transport))
+    (requires . (ares.core ares.transport ares.logging))
     (handles . ,operations))
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
