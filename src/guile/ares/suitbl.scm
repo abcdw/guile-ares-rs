@@ -747,7 +747,9 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
           (when (eq? flags 'regular)
             (let ((relative-path (string-drop file-path (1+ (string-length path)))))
               (when (string-match test-file-pattern file-path)
-                (load-file file-path relative-path))))
+                (save-module-excursion
+                 (lambda ()
+                   (load-file file-path relative-path))))))
           #t)))
      %load-path)))
 
