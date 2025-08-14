@@ -28,6 +28,8 @@
             test-reporters-use-all
             test-reporters-use-first
 
+            get-stats
+
             throws-exception?)
 
   #:re-export (test-runner*
@@ -386,6 +388,14 @@ environment just set it to new instance of test runner.
   (update-atomic-alist-value!
    state 'run-config
    (lambda (alist) (update-alist-value (or alist '()) key value))))
+
+(define (get-stats state)
+  (let* ((state-val (atomic-box-ref state))
+         (loaded-tests-count (chain state
+                               (get-loaded-tests _)
+                               (length _))))
+    `((loaded-tests-count . ,loaded-tests-count)
+      (selected-tests-count . ,loaded-tests-count))))
 
 
 ;;;
