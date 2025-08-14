@@ -45,9 +45,28 @@
   "Return test runner stats."
   (handler (context->get-stats context)))
 
+(define (load-project-tests-eval-request context)
+  (append
+   `(("op" . "eval")
+     ("code" . "((@ (ares suitbl ares) load-project-tests))")
+     ("ns" . "(ares suitbl ares)"))
+   (alist-select-keys
+    '("id" "session")
+    (assoc-ref context 'nrepl/message))))
+
+(define (context->load-project-tests context)
+  (cons `(nrepl/message . ,(load-project-tests-eval-request context))
+   context))
+
+(define (load-project-tests context handler)
+  "Return test runner stats."
+  (handler (context->load-project-tests context)))
+
 (define operations
   `(("ares.testing/run" . ,run)
-    ("ares.testing/get-test-runner-stats" . ,get-test-runner-stats)))
+    ("ares.testing/get-test-runner-stats" . ,get-test-runner-stats)
+    ("ares.testing/load-project-tests" . ,load-project-tests)))
+
 
 (define-with-meta (ares.testing handler)
   "Add integration with suitbl testing library and corresponding

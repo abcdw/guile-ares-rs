@@ -30,6 +30,10 @@
 
             get-stats
 
+            get-all-test-modules
+            get-module-public-suites
+            set-run-config-value!
+
             throws-exception?)
 
   #:re-export (test-runner*
