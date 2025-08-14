@@ -6,17 +6,14 @@
   #:use-module (ares guile)
   #:export (ares.testing))
 
-(define (run-tests-eval-request context)
-  (append
-   `(("op" . "eval")
-     ("code" . "((@ (ares suitbl ares) run-tests))")
-     ("ns" . "(ares suitbl ares)"))
-   (alist-select-keys
-    '("id" "session")
-    (assoc-ref context 'nrepl/message))))
-
-(define (context->run-test context)
-  (cons `(nrepl/message . ,(run-tests-eval-request context))
+(define (code->eval-request-context context code)
+  (cons `(nrepl/message . ,(append
+                            `(("op" . "eval")
+                              ("code" . ,code)
+                              ("ns" . "(ares suitbl ares)"))
+                            (alist-select-keys
+                             '("id" "session")
+                             (assoc-ref context 'nrepl/message))))
    context))
 
 (define (run context handler)
@@ -25,48 +22,25 @@
   ;; instead of bencodes one.
 
   ;; (throw 'error-handled-by-some-other-extension)
-  (let ((new-context (context->run-test context)))
-    (handler new-context)))
-
-(define (get-stats-eval-request context)
-  (append
-   `(("op" . "eval")
-     ("code" . "((@ (ares suitbl ares) get-current-test-runner-stats))")
-     ("ns" . "(ares suitbl ares)"))
-   (alist-select-keys
-    '("id" "session")
-    (assoc-ref context 'nrepl/message))))
-
-(define (context->get-stats context)
-  (cons `(nrepl/message . ,(get-stats-eval-request context))
-   context))
+  (handler (code->eval-request-context
+            context "((@ (ares suitbl ares) run-tests))")))
 
 (define (get-test-runner-stats context handler)
   "Return test runner stats."
-  (handler (context->get-stats context)))
-
-(define (load-project-tests-eval-request context)
-  (append
-   `(("op" . "eval")
-     ("code" . "((@ (ares suitbl ares) load-project-tests))")
-     ("ns" . "(ares suitbl ares)"))
-   (alist-select-keys
-    '("id" "session")
-    (assoc-ref context 'nrepl/message))))
-
-(define (context->load-project-tests context)
-  (cons `(nrepl/message . ,(load-project-tests-eval-request context))
-   context))
+  (handler (code->eval-request-context
+            context
+            "((@ (ares suitbl ares) get-current-test-runner-stats))")))
 
 (define (load-project-tests context handler)
   "Return test runner stats."
-  (handler (context->load-project-tests context)))
+  (handler (code->eval-request-context
+            context
+            "((@ (ares suitbl ares) load-project-tests))")))
 
 (define operations
   `(("ares.testing/run" . ,run)
     ("ares.testing/get-test-runner-stats" . ,get-test-runner-stats)
     ("ares.testing/load-project-tests" . ,load-project-tests)))
-
 
 (define-with-meta (ares.testing handler)
   "Add integration with suitbl testing library and corresponding
