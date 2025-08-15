@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl ares)
   #:use-module (ares suitbl)
+  #:use-module (ares suitbl discovery)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:export (run-tests
