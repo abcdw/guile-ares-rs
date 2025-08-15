@@ -32,8 +32,8 @@
       (drop-right m-name 1)
       (list test-m-tail)))))
 
-;; (get-test-module '(ares suitbl))
-
+;; TODO: [Andrew Tropin, 2025-08-15] Ensure the module is reloaded and
+;; stale tests are cleaned up
 (define (get-module-suites module)
   (filter
    identity
