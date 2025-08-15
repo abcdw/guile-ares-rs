@@ -16,16 +16,6 @@
   #:export (make-suitbl-test-runner
             run-test-suites
 
-            test-reporter-output-port*
-            test-reporter-silent
-            test-reporter-logging
-            test-reporter-unhandled
-            test-reporter-base
-            test-reporter-dots
-            test-reporter-dots-with-hierarchy
-            test-reporters-use-all
-            test-reporters-use-first
-
             get-stats
 
             set-run-config-value!
@@ -40,7 +30,17 @@
                test test-thunk
                suite suite-thunk
 
-               define-suite))
+               define-suite
+
+               test-reporter-output-port*
+               test-reporter-silent
+               test-reporter-logging
+               test-reporter-unhandled
+               test-reporter-base
+               test-reporter-dots
+               test-reporter-dots-with-hierarchy
+               test-reporters-use-all
+               test-reporters-use-first))
 
 #|
 
@@ -117,192 +117,6 @@ depends on the test runner implementation.
             expression
             #f)
           #:unwind? #t)))))
-
-
-
-;;;
-;;; Test Reporters
-;;;
-
-#|
-
-Test reporters are simple functions which accept a message in format
-of Association List (alist) and produce an output to
-test-reporter-output-port*.
-
-(test-reporter
- `((type . test-scheduled)
-   (suite-path . ("suite1" "nested-suite"))
-   (description . "basic arithmetics")))
-
-
-Test reporters can be comined with test-reporters-use-all or
-test-reporters-use-first to compliment each other or override.
-
-A final test reporter can be attached to test runner.
-
-|#
-
-(define test-reporter-output-port* (make-parameter (current-output-port)))
-
-(define (test-reporters-use-all reporters)
-  "Create a reporter, which combines all reporters."
-  (lambda (message)
-    (for-each (lambda (r) (r message)) reporters)))
-
-(define (test-reporters-use-first reporters)
-  "Create a reporter, which uses the first successful reporter."
-  (lambda (message)
-    (let loop ((reporters reporters))
-      (unless (null? reporters)
-        (let ((reporter-result ((car reporters) message)))
-          (or reporter-result (loop (cdr reporters))))))))
-
-(define (test-reporter-silent message)
-  "Do nothing, return @code{#t}."
-  #t)
-
-(define (test-reporter-logging message)
-  "Just log the @code{message}."
-  (format (test-reporter-output-port*) "message: ~y" message))
-
-(define (test-reporter-unhandled message)
-  "A simple test reporter, which prints incomming message.  It can be
-combined with another reporter using @code{test-reporters-use-first}
-to catch unhandled messages."
-  (format (test-reporter-output-port*)
-          "\nmessage is not handled:\n~y\n" message))
-
-(define (string-repeat s n)
-  "Returns string S repeated N times."
-  (fold
-   (lambda (_ str)
-     (string-append str s))
-   ""
-   (iota n)))
-
-(define (tests->pretty-string l)
-  (map
-   (lambda (i)
-     (cond
-      ((test? i) (string-append "test: " (procedure-documentation i)))
-      ((suite? i)
-       (string-append "suite: " (procedure-documentation i)))
-      ((list? i) (tests->pretty-string i))
-      (else i)))
-   l))
-
-(define (test-reporter-hierarchy message)
-  (case (assoc-ref message 'type)
-    ((test-scheduled)
-     (format (test-reporter-output-port*) "~a"
-             (string-repeat "|" (length (assoc-ref message 'suite-path))))
-     (format (test-reporter-output-port*) " + test ~a\n"
-             (assoc-ref message 'description)))
-    ((suite-enter)
-     (format (test-reporter-output-port*) "~a"
-             (string-append
-              (string-repeat "|" (length (assoc-ref message 'suite-path)))
-              "┌"))
-     (format (test-reporter-output-port*) "> ~a\n"
-             (assoc-ref message 'description)))
-    ((suite-leave)
-     (format (test-reporter-output-port*) "~a"
-             (string-append
-              (string-repeat "|" (length (assoc-ref message 'suite-path)))
-              "└"))
-     (format (test-reporter-output-port*) "> ~a\n"
-             (assoc-ref message 'description)))
-
-    ((print-suite)
-     (format (test-reporter-output-port*) "~y"
-             (tests->pretty-string (assoc-ref message 'suite))))
-    (else #f)))
-
-
-(define (safify-thunk thunk)
-  (lambda ()
-    (with-exception-handler
-     (lambda (ex)
-       `(exception . ,ex))
-     (lambda ()
-       `(value . ,(thunk)))
-     #:unwind? #t)))
-
-(define (test-reporter-verbose message)
-  (define (actual message)
-    (let* ((assert-body (assoc-ref message 'assert/body))
-           (args-thunk (assoc-ref message 'assert/args-thunk))
-           (safe-args-thunk (safify-thunk args-thunk)))
-      ;; TODO: [Andrew Tropin, 2025-05-28] Ensure arguments-thunk
-      ;; exception handled.
-      (if (and (list? assert-body) (= 3 (length assert-body)))
-          (match (safe-args-thunk)
-            ((value . (first second))
-             (format #f "~a and ~a are not ~a" first second (car assert-body)))
-            ((exception . ex)
-             (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
-          (assoc-ref message 'assertion/result))))
-
-  (case (assoc-ref message 'type)
-    ((test-start)
-     (format (test-reporter-output-port*) "\n┌Test ~a\n"
-             (assoc-ref message 'description)))
-    ((test-end)
-     (format (test-reporter-output-port*) "└Test ~a\n"
-             (assoc-ref message 'description)))
-
-    ((assertion-pass)
-     (format (test-reporter-output-port*) "~y✓\n"
-             (assoc-ref message 'assert/body)))
-
-    ((assertion-fail)
-     (format (test-reporter-output-port*) "~y✗ ~a\n"
-             (assoc-ref message 'assert/body) (actual message)))
-
-    ((assertion-error)
-     (format (test-reporter-output-port*) "~y✗ produced error:\n ~s\n"
-             (assoc-ref message 'assert/body)
-             (exception->string
-              (assoc-ref message 'assertion/error))))
-
-    (else #f)))
-
-(define test-reporter-base
-  (chain (list test-reporter-verbose test-reporter-hierarchy)
-    (test-reporters-use-all _)
-    (list _ test-reporter-unhandled)
-    (test-reporters-use-first _)))
-
-(define (test-reporter-dots message)
-  (define msg-type (assoc-ref message 'type))
-  (case msg-type
-    ((suite-start)
-     (format (test-reporter-output-port*) "["))
-    ((suite-end)
-     (format (test-reporter-output-port*) "]"))
-
-    ((test-start)
-     (format (test-reporter-output-port*) "("))
-    ((test-end)
-     (format (test-reporter-output-port*) ")"))
-    ((test-skip)
-     (format (test-reporter-output-port*) "(S)"))
-
-    ((assertion-pass)
-     (format (test-reporter-output-port*) "."))
-    ((assertion-fail)
-     (format (test-reporter-output-port*) "F"))
-    ((assertion-error)
-     (format (test-reporter-output-port*) "E"))
-
-    (else #f)))
-
-(define test-reporter-dots-with-hierarchy
-  (chain (list test-reporter-dots test-reporter-hierarchy)
-    (test-reporters-use-all _)
-    (list _ test-reporter-unhandled)
-    (test-reporters-use-first _)))
 
 (define-syntax simple-profile
   (lambda (stx)
