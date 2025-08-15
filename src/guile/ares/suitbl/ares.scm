@@ -5,9 +5,10 @@
   #:use-module ((ares suitbl core) #:select (suite test-runner*))
   #:use-module ((ares suitbl runners)
                 #:select (get-stats set-run-config-value!))
-  #:use-module (ares suitbl discovery)
-  #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-197)
+  #:use-module ((ares suitbl discovery)
+                #:select (get-all-test-modules get-module-public-suites))
+  #:use-module ((srfi srfi-1) #:select (append-map))
+  #:use-module ((srfi srfi-197) #:select (chain))
   #:export (run-tests
             get-current-test-runner-stats
             load-project-tests))
