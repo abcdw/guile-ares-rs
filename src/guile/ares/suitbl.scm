@@ -354,48 +354,6 @@ environment just set it to new instance of test runner.
      (let* ((value (or (assoc-ref alist key) #f))
             (new-value (f value)))
        (update-alist-value alist key new-value)))))
-  
-;;;
-;;; Tests state management
-;;;
-
-(define (get-loaded-tests state)
-  (chain (atomic-box-ref state)
-    (assoc-ref _ 'loaded-tests)
-    (or _ '())))
-
-(define (add-loaded-test! state test)
-  (update-atomic-alist-value!
-   state 'loaded-tests
-   (lambda (l) (cons test (or l '())))))
-
-(define (reset-loaded-tests! state)
-  (update-atomic-alist-value!
-   state 'loaded-tests
-   (lambda (l) '())))
-
-(define (get-run-config state)
-  (chain (atomic-box-ref state)
-    (assoc-ref _ 'run-config)
-    (or _ '())))
-
-(define (get-run-config-value state key)
-  (chain-and (atomic-box-ref state)
-    (assoc-ref _ 'run-config)
-    (assoc-ref _ key)))
-
-(define (set-run-config-value! state key value)
-  (update-atomic-alist-value!
-   state 'run-config
-   (lambda (alist) (update-alist-value (or alist '()) key value))))
-
-(define (get-stats state)
-  (let* ((state-val (atomic-box-ref state))
-         (loaded-tests-count (chain state
-                               (get-loaded-tests _)
-                               (length _))))
-    `((loaded-tests-count . ,loaded-tests-count)
-      (selected-tests-count . ,loaded-tests-count))))
 
 
 ;;;
@@ -692,6 +650,52 @@ environment just set it to new instance of test runner.
 ;; Set default test runner.
 (test-runner* (make-suitbl-test-runner))
 
+
+;;;
+;;; Tests state management
+;;;
+
+;; It should be after test-runner* is set (which is kinda strange)
+
+(define (get-loaded-tests state)
+  (chain (atomic-box-ref state)
+    (assoc-ref _ 'loaded-tests)
+    (or _ '())))
+
+(define (add-loaded-test! state test)
+  (update-atomic-alist-value!
+   state 'loaded-tests
+   (lambda (l) (cons test (or l '())))))
+
+(define (reset-loaded-tests! state)
+  (update-atomic-alist-value!
+   state 'loaded-tests
+   (lambda (l) '())))
+
+(define (get-run-config state)
+  (chain (atomic-box-ref state)
+    (assoc-ref _ 'run-config)
+    (or _ '())))
+
+(define (get-run-config-value state key)
+  (chain-and (atomic-box-ref state)
+    (assoc-ref _ 'run-config)
+    (assoc-ref _ key)))
+
+(define (set-run-config-value! state key value)
+  (update-atomic-alist-value!
+   state 'run-config
+   (lambda (alist) (update-alist-value (or alist '()) key value))))
+
+(define (get-stats state)
+  (let* ((state-val (atomic-box-ref state))
+         (loaded-tests-count (chain state
+                               (get-loaded-tests _)
+                               (length _))))
+    `((loaded-tests-count . ,loaded-tests-count)
+      (selected-tests-count . ,loaded-tests-count))))
+
+
 
 
 
