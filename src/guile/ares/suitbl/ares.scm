@@ -2,7 +2,9 @@
 ;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl ares)
-  #:use-module (ares suitbl)
+  #:use-module ((ares suitbl core) #:select (suite test-runner*))
+  #:use-module ((ares suitbl runners)
+                #:select (get-stats set-run-config-value!))
   #:use-module (ares suitbl discovery)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
