@@ -26,18 +26,14 @@
   #:use-module (fibers operations)
   #:use-module (ares evaluation io)
   #:use-module (ares evaluation eval)
+  #:use-module (ares evaluation serialization)
   #:use-module (ares ports)
-  #:use-module (ares guile)
-  #:use-module (ares guile exceptions)
-  #:use-module (ares file)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 pretty-print)
   #:use-module (ice-9 exceptions)
   #:use-module (ice-9 match)
   #:use-module (ice-9 control)
   #:use-module (ice-9 and-let-star)
-  #:use-module (system vm frame)
-  #:use-module (system vm program)
   #:use-module (srfi srfi-1)
   #:export (evaluation-thread-manager-thunk))
 
@@ -167,106 +163,3 @@ COMMAND-CHANNEL."
               (repeat-loop))
              (else
               (error "it sholud not get here")))))))))
-
-(define (exception->nrepl-messages result)
-  (let* ((exception (assoc-ref result 'exception-value))
-         (stack (assoc-ref result 'stack))
-         (error (exception->string exception)))
-    `((("err" . ,error)
-       ("ares.evaluation/stack" . ,(stack->nrepl-value stack)))
-      (("ex" . ,(symbol->string (exception-kind exception)))
-       ("status" . #("error" "eval-error" "done")))
-      (("status" . #("done"))))))
-
-(define* (evaluation-result->nrepl-messages
-          result
-          #:key
-          (format-value object->pretty-string))
-  (let ((result-type (assoc-ref result 'result-type)))
-    (case result-type
-      ((value)
-       `((("value" . ,(format-value (assoc-ref result 'eval-value)))
-          ("status" . #("done")))))
-      ((multiple-values)
-       (multiple-values->nrepl-messages result format-value))
-      ((exception)
-       (exception->nrepl-messages result))
-      ((interrupted)
-       `((("status" . #("done" "interrupted")))))
-      (else (error (format #f "unknown result-type: ~a\n" result-type))))))
-
-(define (multiple-values->nrepl-messages result format-value)
-  "Returns a few nrepl messages with additional status multiple-values,
-the last message doesn't contain the value, it contains only
-@code{((\"status\" . (\"done\", \"multiple-values\")))}."
-  (let lp ((vals (assoc-ref result 'eval-value))
-           (msgs '()))
-    (if (null? vals)
-        (reverse (cons `(("status" . #("done" "multiple-values"))) msgs))
-        (lp (cdr vals)
-            (cons `(("value" . ,(format-value (car vals)))
-                    ("status" . #("multiple-values")))
-                  msgs)))))
-
-(define (interrupt-result->nrepl-messages result)
-  (define status (assoc-ref result 'status))
-  (case status
-    ((done)
-     `((("status" . #("done" "interrupted")))))
-    ((idle)
-     `((("status" . #("done" "session-idle")))))))
-
-(define (frame-environment frame)
-  "Like (@ (system vm frame) frame-environment) but with a workaround for
-a bug with bindings."
-  (let* ((frame-num-locals (@@ (system vm frame) frame-num-locals))
-         (nlocals (frame-num-locals frame)))
-    (fold
-     (lambda (binding acc)
-       (let* ((slot (binding-slot binding)))
-         ;; From frame-call-representation source:
-         ;; “HACK: Avoid out-of-range from frame-local-ref.
-         ;; Some frames have bindings beyond nlocals.  That
-         ;; is probably a bug somewhere else, but at least
-         ;; this workaround allows them to be printed.”
-         (if (< slot nlocals)
-	     (cons
-              (cons (binding-name binding) (binding-ref binding))
-              acc)
-             acc)))
-     '()
-     (frame-bindings frame))))
-
-(define (frame->nrepl-value frame)
-  "Serializes FRAME into a value that can be sent in nREPL messages."
-  (define (ensure-list d) (if (list? d) d (list d)))
-
-  (let ((name (symbol->string (or (frame-procedure-name frame) '_)))
-        (arguments
-         (map (lambda (argument)
-                (format #f "~s" argument))
-              (ensure-list (frame-arguments frame))))
-        (environment
-         (map (lambda (binding)
-                (match-let (((name . value) binding))
-                  (cons name (format #f "~s" value))))
-              (frame-environment frame)))
-        (source (and-let* ((source (frame-source frame)))
-                  `((line . ,(source:line source))
-                    (column . ,(source:column source))
-                    (file . ,(or (and (source:file source) (search-in-load-path (source:file source)))
-                                 (source:file source)))))))
-    `((procedure-name . ,name)
-      (arguments . ,(list->vector arguments))
-      (environment . ,(list->vector environment))
-      (source . ,source))))
-
-(define (stack->nrepl-value stack)
-  "Serializes STACK into a value that can be sent in nREPL messages."
-  (list->vector
-   (let loop ((frame (stack-ref stack 0))
-              (result '()))
-     (if frame
-         (loop (frame-previous frame)
-               (cons (frame->nrepl-value frame) result))
-         result))))
