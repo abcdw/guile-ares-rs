@@ -4,6 +4,7 @@
 ;;; Copyright © 2024 Nikita Domnitskii <nikita@domnitskii.me>
 ;;; Copyright © 2025 Libre en Communs <contact@a-lec.org>
 ;;; Copyright © 2025 Noé Lopez <noelopez@free.fr>
+;;; Copyright © 2010, 2016 Free Software Foundation, Inc.
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -66,19 +67,33 @@ exceptions."
             (let ((thunk (load-thunk-from-memory
                           (read-and-compile port #:env module
                                             #:optimization-level 0))))
-              (start-stack "ares-evaluation" (thunk)))))))))
+              (start-stack "ares-evaluation" (begin (thunk))))))))))
+
+  (define (capture-stack)
+    "Captures the current stack without any unwanted frames."
+    ;; Adapted from frame->stack-vector.
+    (match (fluid-ref %stacks)
+      ((stack-tag . prompt-tag)
+       (make-stack
+        #t
+        ;; Cut three frames from the top of the stack:
+        ;; make-stack, this one, and the throw handler.
+        3
+        ;; Narrow the end of the stack to the most recent start-stack.
+        prompt-tag
+        ;; And one more frame, because %start-stack invoking the
+        ;; start-stack thunk has its own frame too.
+        0 (and prompt-tag 1)))
+       (_
+        ;; Otherwise take the whole stack, except the top three frames.
+        (make-stack #t 3))))
 
   (lambda ()
     ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
     (let/ec return
       (with-exception-handler
        (lambda (exception)
-         (let ((stack
-                (make-stack
-                 #t
-                 ;; Cut three frames from the top of the stack:
-                 ;; make-stack, this one, and the throw handler.
-                 3)))
+         (let ((stack (capture-stack)))
            (return `((result-type . exception)
                      (exception-value . ,exception)
                      (stack . ,stack)))))
