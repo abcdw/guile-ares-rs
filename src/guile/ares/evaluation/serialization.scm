@@ -114,22 +114,30 @@ a bug with bindings."
 (define (frame->nrepl-value frame)
   "Serializes FRAME into a value that can be sent in nREPL messages."
   (define (ensure-list d) (if (list? d) d (list d)))
+  (define-syntax fallback
+    (syntax-rules ()
+      ((fallback default exp)
+       (or (false-if-exception exp) default))))
 
-  (let ((name (symbol->string (or (frame-procedure-name frame) '_)))
+  (let ((name (fallback "_" (symbol->string (frame-procedure-name frame))))
         (arguments
-         (map (lambda (argument)
-                (format #f "~s" argument))
-              (ensure-list (frame-arguments frame))))
+         (fallback '()
+          (map (lambda (argument)
+                 (format #f "~s" argument))
+               (ensure-list (frame-arguments frame)))))
         (environment
-         (map (lambda (binding)
-                (match-let (((name . value) binding))
-                  (cons name (format #f "~s" value))))
-              (frame-environment frame)))
-        (source (and-let* ((source (frame-source frame)))
-                  `((line . ,(source:line source))
-                    (column . ,(source:column source))
-                    (file . ,(or (and (source:file source) (search-in-load-path (source:file source)))
-                                 (source:file source)))))))
+         (fallback '()
+          (map (lambda (binding)
+                 (match-let (((name . value) binding))
+                   (cons name (format #f "~s" value))))
+               (frame-environment frame))))
+        (source
+         (fallback #f
+          (and-let* ((source (frame-source frame)))
+            `((line . ,(source:line source))
+              (column . ,(source:column source))
+              (file . ,(or (and (source:file source) (search-in-load-path (source:file source)))
+                           (source:file source))))))))
     `((procedure-name . ,name)
       (arguments . ,(list->vector arguments))
       (environment . ,(list->vector environment))
