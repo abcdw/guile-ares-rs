@@ -145,10 +145,17 @@ a bug with bindings."
 
 (define (stack->nrepl-value stack)
   "Serializes STACK into a value that can be sent in nREPL messages."
-  (list->vector
-   (let loop ((frame (stack-ref stack 0))
-              (result '()))
-     (if frame
-         (loop (frame-previous frame)
-               (cons (frame->nrepl-value frame) result))
-         result))))
+  (let ((length (stack-length stack)))
+    (cond
+     ((< length 0)
+      #())
+     (else
+      (list->vector
+       (let loop ((index 0)
+                  (frame (stack-ref stack 0))
+                  (result '()))
+         (if (and frame (< index length))
+             (loop (1+ index)
+                   (frame-previous frame)
+                   (cons (frame->nrepl-value frame) result))
+             result)))))))
