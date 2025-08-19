@@ -8,6 +8,7 @@
   #:use-module ((srfi srfi-197) #:select (chain))
 
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
+  #:use-module ((ice-9 format) #:select (format))
   #:use-module ((ice-9 match) #:select (match))
   #:export (test-reporter-output-port*
             test-reporter-silent
