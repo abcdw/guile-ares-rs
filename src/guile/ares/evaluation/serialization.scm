@@ -117,9 +117,18 @@ a bug with bindings."
   (define-syntax fallback
     (syntax-rules ()
       ((fallback default exp)
-       (or (false-if-exception exp) default))))
+       (or (with-exception-string-handler
+            (lambda (str)
+              (format #t "Exception in frame serialization:~%~a" str)
+              #f)
+            (lambda () exp))
+           default))))
 
-  (let ((name (fallback "_" (symbol->string (frame-procedure-name frame))))
+  (let ((name (fallback "_"
+               (or
+                (and=> (frame-procedure-name frame)
+                       symbol->string)
+                "_")))
         (arguments
          (fallback '()
           (map (lambda (argument)
