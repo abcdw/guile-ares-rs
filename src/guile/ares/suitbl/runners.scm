@@ -322,9 +322,10 @@ environment just set it to new instance of test runner.
 
       ((load-test)
        (let* ((test (assoc-ref x 'test))
+              (test-with-context (cons `(suite/path . ,%suite-path*) test))
               (description (assoc-ref test 'test/description)))
 
-         (add-loaded-test! state test)
+         (add-loaded-test! state test-with-context)
 
          (%test-reporter
           `((type . test-loaded)
