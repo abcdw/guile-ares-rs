@@ -304,6 +304,19 @@ environment just set it to new instance of test runner.
 
        (atomic-box-ref last-run-summary))
 
+      ((run-tests)
+       (atomic-box-set!
+        last-run-summary
+        (let ((test-execution-results (map run-test (get-loaded-tests state))))
+          (let loop ((summary initial-run-summary)
+                     (remaining-items test-execution-results))
+            (if (null? remaining-items)
+                summary
+                (let ((item (car remaining-items)))
+                  (loop
+                   (merge-run-summaries summary item)
+                   (cdr remaining-items))))))))
+
       ((run-suites)
        (parameterize ((test-runner* this)
                       (%schedule-only?* #t))
@@ -316,9 +329,6 @@ environment just set it to new instance of test runner.
           `((type . run-scheduled-tests)))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
          ))
-
-      ((run-tests)
-       (for-each run-test (get-loaded-tests state)))
 
       ((load-test)
        (let* ((test (assoc-ref x 'test))
