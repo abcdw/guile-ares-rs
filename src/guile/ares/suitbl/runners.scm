@@ -326,17 +326,17 @@ environment just set it to new instance of test runner.
 
          (add-loaded-test! state test)
 
+         (%test-reporter
+          `((type . test-loaded)
+            (suite-path . ,(%suite-path*))
+            (description . ,description)))
+
          (let ((suite-items (%current-suite-items*)))
            ;; (pk (%suite-path*))
            (if suite-items
-               (begin
-                 (atomic-box-update!
-                  suite-items
-                  (lambda (items) (cons test items)))
-                 (%test-reporter
-                  `((type . test-scheduled)
-                    (suite-path . ,(%suite-path*))
-                    (description . ,description))))
+               (atomic-box-update!
+                suite-items
+                (lambda (items) (cons test items)))
                (when (get-run-config-value state 'auto-run?)
                  (atomic-box-set!
                   last-run-summary

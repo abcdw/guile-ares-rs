@@ -33,7 +33,7 @@ of Association List (alist) and produce an output to
 test-reporter-output-port*.
 
 (test-reporter
- `((type . test-scheduled)
+ `((type . test-loaded)
    (suite-path . ("suite1" "nested-suite"))
    (description . "basic arithmetics")))
 
@@ -96,7 +96,7 @@ to catch unhandled messages."
 
 (define (test-reporter-hierarchy message)
   (case (assoc-ref message 'type)
-    ((test-scheduled)
+    ((test-loaded)
      (format (test-reporter-output-port*) "~a"
              (string-repeat "|" (length (assoc-ref message 'suite-path))))
      (format (test-reporter-output-port*) " + test ~a\n"
