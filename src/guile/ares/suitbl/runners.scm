@@ -91,6 +91,12 @@ environment just set it to new instance of test runner.
   (define this #f)
   (define reporter-state (make-atomic-box '()))
 
+  (define initial-run-summary
+    `((errors . 0)
+      (failures . 0)
+      (assertions . 0)
+      (tests . 0)))
+
   (define %test-reporter
     (lambda (message)
       (test-reporter
@@ -133,34 +139,6 @@ environment just set it to new instance of test runner.
         (failures . ,(if (and fail? (not error?)) 1 0))
         (assertions . ,(length result))
         (tests . 1))))
-
-  (define initial-run-summary
-    `((errors . 0)
-      (failures . 0)
-      (assertions . 0)
-      (tests . 0)))
-
-  (define (run-suite suite)
-    (let ((result #f))
-      (%test-reporter
-       `((type . suite-start)
-         (description . ,(car suite))))
-      (set! result
-            (let loop ((summary initial-run-summary)
-                       (remaining-items (cdr suite)))
-              (if (null? remaining-items)
-                  summary
-                  (let ((item (car remaining-items)))
-                    (loop
-                     (merge-run-summaries
-                      summary
-                      ((if (test? item) run-test run-suite)
-                       item))
-                     (cdr remaining-items))))))
-      (%test-reporter
-       `((type . suite-end)
-         (description . ,(car suite))))
-      result))
 
   (define (run-assert assert)
     (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
@@ -293,16 +271,6 @@ environment just set it to new instance of test runner.
          (when (and (null? (%suite-path*)) (not (%schedule-only?*))
                     (get-run-config-value state 'auto-run?))
            (this `((type . run-tests))))))
-
-      ((run-scheduled-tests)
-       ;; (print-suite (assoc-ref (atomic-box-ref state) 'suite))
-       (atomic-box-set!
-        last-run-summary
-        (chain (atomic-box-ref state)
-          (assoc-ref _ 'suite)
-          (run-suite _)))
-
-       (atomic-box-ref last-run-summary))
 
       ((run-tests)
        (atomic-box-set!
