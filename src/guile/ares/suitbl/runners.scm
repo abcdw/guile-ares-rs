@@ -275,7 +275,10 @@ environment just set it to new instance of test runner.
       ((run-tests)
        (atomic-box-set!
         last-run-summary
-        (let ((test-execution-results (map run-test (get-loaded-tests state))))
+        (let* ((run-config (or (assoc-ref x 'run-config)
+                               (get-run-config state)))
+               (test-execution-results
+                (map run-test (get-scheduled-tests state run-config))))
           (let loop ((summary initial-run-summary)
                      (remaining-items test-execution-results))
             (if (null? remaining-items)
@@ -364,6 +367,13 @@ environment just set it to new instance of test runner.
   (update-atomic-alist-value!
    state 'loaded-tests
    (lambda (l) '())))
+
+(define (get-scheduled-tests state run-config)
+  (let ((lot-transformation identity))
+    (chain (atomic-box-ref state)
+      (assoc-ref _ 'loaded-tests)
+      (or _ '())
+      (lot-transformation _))))
 
 (define (get-run-config state)
   (chain (atomic-box-ref state)
