@@ -292,7 +292,7 @@ environment just set it to new instance of test runner.
          ;; execution of scheduled test suites we add this condition.
          (when (and (null? (%suite-path*)) (not (%schedule-only?*))
                     (get-run-config-value state 'auto-run?))
-           (this `((type . run-scheduled-tests))))))
+           (this `((type . run-tests))))))
 
       ((run-scheduled-tests)
        ;; (print-suite (assoc-ref (atomic-box-ref state) 'suite))
@@ -326,7 +326,7 @@ environment just set it to new instance of test runner.
           (assoc-ref x 'suites))
 
          (test-runner
-          `((type . run-scheduled-tests)))
+          `((type . run-tests)))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
          ))
 
