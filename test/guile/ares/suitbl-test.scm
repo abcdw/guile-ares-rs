@@ -412,7 +412,12 @@ run summary is #f by default, but appears after test suite is executed"
                        #:test-reporter test-reporter-dots-with-hierarchy)))
     (run-test-suites
      test-runner
-     (list base-test-runner-tests))
+     (list
+      ;; (suite-thunk "all suitbl tests"
+      ;;   (for-each
+      ;;    (lambda (ts) (ts))
+      ;;    (get-module-public-suites (resolve-module '(ares suitbl-test)))))
+      base-test-runner-tests))
     (define summary (test-runner `((type . get-run-summary))))
     (format #t "\n~a\n" summary)
 
