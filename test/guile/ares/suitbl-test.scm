@@ -395,11 +395,12 @@ run summary is #f by default, but appears after test suite is executed"
        '(errors failures assertions tests)
        run-summary-with-failures-and-errors)))))
 
-(define-suite base-test-runner-tests
-  (is-usage-tests)
-  (test-runner-operations-tests)
-  (test-macro-usage-tests)
-  (suite-usage-tests))
+(define base-test-runner-tests
+  (suite-thunk "base-test-runner-tests"
+    (is-usage-tests)
+    (test-runner-operations-tests)
+    (test-macro-usage-tests)
+    (suite-usage-tests)))
 
 (define-suite execution-timeout-tests
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf
