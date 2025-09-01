@@ -418,10 +418,11 @@ run summary is #f by default, but appears after test suite is executed"
       (assoc-ref summary 'tests))
 
     (unless (= 16 number-of-tests)
-      (chain "Unexpected number of tests, make sure all tests are executed and
+      (chain "Unexpected number of tests (~a), make sure all tests are executed and
 expected number of tests is up-to-date."
-             (make-exception-with-message _)
-             (raise-exception _)))
+        (format #f _ number-of-tests)
+        (make-exception-with-message _)
+        (raise-exception _)))
     (when (> (+ (assoc-ref summary 'failures) (assoc-ref summary 'errors)) 0)
       (exit 1))))
 
