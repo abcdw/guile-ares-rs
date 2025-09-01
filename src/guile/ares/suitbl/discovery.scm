@@ -44,7 +44,11 @@
                module)))
 
 (define (get-module-public-suites module)
-  (get-module-suites (module-public-interface module)))
+  (or
+   (chain-and module
+     (module-public-interface _)
+     (get-module-suites _))
+   '()))
 
 (define* (load-test-modules-thunk
           #:key
