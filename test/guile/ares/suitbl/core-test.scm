@@ -75,9 +75,25 @@
   (test "is emits proper values to the test runner"
     (define events-log
       (with-runner-events-to-list
-       (is "a1")
-       (is "a2")))
-    (is (equal? '("a1" "a2") (simplify-log events-log))))
+       (define str "a1")
+       (is str)
+       (is (= 1 (+ 2 -1)))))
+
+    (is (equal? '(str (= 1 (+ 2 -1))) (simplify-log events-log)))
+
+    (let* ((a1 (chain events-log (car _) (assoc-ref _ 'assert)))
+           (a1-body (assoc-ref a1 'assert/body))
+           (a1-body-value  ((assoc-ref a1 'assert/body-thunk))))
+      (is (equal? 'str a1-body))
+      (is (equal? "a1" a1-body-value)))
+
+    (let* ((a2 (chain events-log (cadr _) (assoc-ref _ 'assert)))
+           (a2-body (assoc-ref a2 'assert/body))
+           (a2-body-value  ((assoc-ref a2 'assert/body-thunk)))
+           (a2-args-value  ((assoc-ref a2 'assert/args-thunk))))
+      (is (equal? '(= 1 (+ 2 -1)) a2-body))
+      (is (equal? #t a2-body-value))
+      (is (equal? '(1 1) a2-args-value))))
 
   (test "test emits proper values to the test runner"
     (define events-log
