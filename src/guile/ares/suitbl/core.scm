@@ -51,11 +51,13 @@ library, which sets an approriate test runner for you."))
 
 (define (test? x)
   (and (list? x)
-       (assoc-ref x 'test/body-thunk)))
+       (assoc-ref x 'test/body-thunk)
+       (assoc-ref x 'test/description)))
 
 (define (suite? x)
     (and (list? x)
-         (assoc-ref x 'suite/body-thunk)))
+         (assoc-ref x 'suite/body-thunk)
+         (assoc-ref x 'suite/description)))
 
 (define (suite-thunk? x)
   (and (procedure? x)
