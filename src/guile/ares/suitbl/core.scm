@@ -30,6 +30,9 @@
 ;; syntax-rules was guile's support for the arguments metadata and
 ;; thus useful eldoc
 
+;; TODO: [Andrew Tropin, 2025-08-27] Write tests to check that test
+;; runner gets all the necessary information from test definitions.
+
 
 
 ;;;
