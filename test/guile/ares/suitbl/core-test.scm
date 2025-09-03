@@ -75,7 +75,18 @@
     (define events-log
       (with-runner-events-to-list
        (is "a1")
-       (test "t1" 'test-body)
-       (suite "s1" 'suite-body)))
-    (is (list? events-log))
-    (format #t "~y" (simplify-log events-log))))
+       (is "a2")))
+    (is (equal? '("a1" "a2") (simplify-log events-log))))
+
+  (test "test emits proper values to the test runner"
+    (define events-log
+      (with-runner-events-to-list
+       (test "t1" 'body)
+       (test "t2" 'metadata '((good? . #t)) 'body)))
+    (define (is-good? test)
+      (chain test
+          (assoc-ref _ 'test)
+          (assoc-ref _ 'test/metadata)
+          (assoc-ref _ 'good?)))
+    (is (equal? '("t1" "t2") (simplify-log events-log)))
+    (is (is-good? (cadr events-log)))))
