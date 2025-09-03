@@ -90,7 +90,26 @@
           (assoc-ref _ 'test/metadata)
           (assoc-ref _ 'good?)))
     (is (equal? '("t1" "t2") (simplify-log events-log)))
-    (is (is-good? (cadr events-log)))))
+    (is (is-good? (cadr events-log))))
+
+  (test "suite emits proper values to the test runner"
+    (define events-log
+      (with-runner-events-to-list
+       (suite "s1" 'body)
+       (suite "s2" 'metadata '((tags . (integration))) 'body)))
+    (define (get-tags suite)
+      (chain suite
+        (assoc-ref _ 'suite)
+        (assoc-ref _ 'suite/metadata)
+        (assoc-ref _ 'tags)))
+    (is (equal? '("s1" "s2") (simplify-log events-log)))
+    (is (equal? '(integration) (get-tags (cadr events-log)))))
+
+  (test "define-suite creates named suite thunk"
+    (define tmp-suite-thunk
+      (suite-thunk "tmp suite thunk" #t))
+    (is (suite-thunk? tmp-suite-thunk))
+    (is (not (suite-thunk? (lambda () #t))))))
 
 (define-suite documentation-tests
   (test "exception, when macro used in place of predicate"
