@@ -6,6 +6,7 @@
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl core)
   #:use-module (srfi srfi-197)
+  #:use-module (ice-9 exceptions)
   #:use-module ((ice-9 atomic)
                 #:select (make-atomic-box atomic-box-ref atomic-box-set!)))
 
@@ -90,3 +91,29 @@
           (assoc-ref _ 'good?)))
     (is (equal? '("t1" "t2") (simplify-log events-log)))
     (is (is-good? (cadr events-log)))))
+
+(define-suite documentation-tests
+  (test "exception, when macro used in place of predicate"
+    ;; Due to the way macros work, if you use `chain' or similiar
+    ;; macro in `is' assert, it will throw a quite unexpected
+    ;; exception.  This happens because `is' macro extracts a list of
+    ;; arguments to a separate thunk for better reporting in case of
+    ;; error.  This thunk is supposed to be evaluated, when the
+    ;; assertion fails to provide more clue to the user, however it
+    ;; means that those arguments will be placed in the context, where
+    ;; "predicate" doesn't exists and doesn't wrap them.
+    (define exception
+      (with-exception-handler
+       (lambda (ex) ex)
+       (lambda ()
+         (with-runner-events-to-list
+          ;; We have to use eval, otherwise this code won't compile
+          (eval
+           '(begin
+              (use-modules (srfi srfi-197) (ares suitbl core))
+              (is (chain 'hi (list _))))
+           (interaction-environment))))
+       #:unwind? #t))
+    (pk exception)
+    (is (equal? "bad use of '_' syntactic keyword"
+                (exception-message exception)))))
