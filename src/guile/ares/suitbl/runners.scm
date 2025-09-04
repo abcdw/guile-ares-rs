@@ -10,7 +10,6 @@
                 #:select (make-atomic-box atomic-box-ref atomic-box-set!))
   #:use-module ((ice-9 match) #:select (match))
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
-  #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
   #:use-module ((ice-9 match) #:select (match))
 
   #:use-module ((srfi srfi-1)
