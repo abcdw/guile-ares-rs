@@ -1,6 +1,8 @@
 (define-module (ares suitbl-test)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl)
+  #:use-module (ares suitbl core)
+  #:use-module (ares suitbl discovery)
   #:use-module (ares alist)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
@@ -408,23 +410,17 @@ run summary is #f by default, but appears after test suite is executed"
     (is #t)))
 
 (define-public (run-tests)
-  (let* ((test-runner (make-suitbl-test-runner
-                       #:test-reporter test-reporter-dots-with-hierarchy)))
-    (run-test-suites
-     test-runner
-     (list
-      ;; (suite-thunk "all suitbl tests"
-      ;;   (for-each
-      ;;    (lambda (ts) (ts))
-      ;;    (get-module-public-suites (resolve-module '(ares suitbl-test)))))
-      base-test-runner-tests))
+  (let* ((test-runner (make-suitbl-test-runner)))
+    (parameterize ((test-runner* test-runner))
+      ((@ (ares suitbl ares) load-project-tests))
+      (test-runner `((type . runner/run-tests))))
     (define summary (test-runner `((type . runner/get-run-summary))))
     (format #t "\n~a\n" summary)
 
     (define number-of-tests
       (assoc-ref summary 'tests))
 
-    (unless (= 16 number-of-tests)
+    (unless (= 30 number-of-tests)
       (chain "Unexpected number of tests (~a), make sure all tests are executed and
 expected number of tests is up-to-date."
         (format #f _ number-of-tests)
