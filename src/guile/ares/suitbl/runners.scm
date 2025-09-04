@@ -286,7 +286,12 @@ environment just set it to new instance of test runner.
                 (let ((item (car remaining-items)))
                   (loop
                    (merge-run-summaries summary item)
-                   (cdr remaining-items))))))))
+                   (cdr remaining-items)))))))
+
+       ;; TODO: [Andrew Tropin, 2025-09-04] Temporary return run
+       ;; summary for easier implementation of test runner integration
+       ;; into IDE, remove it, when proper integration is implemented
+       (atomic-box-ref last-run-summary))
 
       ((run-suites)
        (parameterize ((test-runner* this)
