@@ -20,6 +20,7 @@
             run-test-suites
 
             get-stats
+            get-loaded-tests
 
             set-run-config-value!))
 

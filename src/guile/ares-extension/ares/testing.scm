@@ -46,8 +46,22 @@
             context
             "((@ (ares suitbl ares) load-project-tests))")))
 
+(define (get-filtered-tests context handler)
+  "Takes a regexp and returns a list of strings representing matched
+tests."
+  (let* ((message (assoc-ref context 'nrepl/message))
+         (pattern (assoc-ref message "ares.testing/filter-pattern"))
+         (reply! (assoc-ref context 'reply!)))
+    (handler (code->eval-request-context
+              context
+              (format
+               #f
+               "((@ (ares suitbl ares) get-filtered-tests) ~s)"
+               pattern)))))
+
 (define operations
   `(("ares.testing/run" . ,run)
+    ("ares.testing/get-filtered-tests" . ,get-filtered-tests)
     ("ares.testing/get-test-runner-stats" . ,get-test-runner-stats)
     ("ares.testing/load-module-tests" . ,load-module-tests)
     ("ares.testing/load-project-tests" . ,load-project-tests)))
