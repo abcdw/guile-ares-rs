@@ -87,14 +87,15 @@ library, which sets an approriate test runner for you."))
 (define-syntax test-thunk
   (syntax-rules (metadata)
     ((test-thunk test-description 'metadata metadata-value expression expressions ...)
-     (let ((test `((test/body-thunk . ,(lambda () expression expressions ...))
-                   (test/body . (expression expressions ...))
-                   (test/description . ,test-description)
-                   (test/metadata . ,metadata-value))))
+     (let ((test-entity
+            `((test/body-thunk . ,(lambda () expression expressions ...))
+              (test/body . (expression expressions ...))
+              (test/description . ,test-description)
+              (test/metadata . ,metadata-value))))
        (lambda ()
          ((test-runner*)
           `((type . load-test)
-            (test . ,test))))))
+            (test . ,test-entity))))))
 
     ((test-thunk test-description expression expressions ...)
      (test-thunk test-description 'metadata '() expression expressions ...))))
@@ -109,10 +110,10 @@ more @code{is} asserts."
 (define-syntax suite-thunk
   (syntax-rules (metadata)
     ((_ suite-description 'metadata metadata-value expression expressions ...)
-     (let* ((suite
-                `((suite/body-thunk . ,(lambda () expression expressions ...))
-                  (suite/description . ,suite-description)
-                  (suite/metadata . ,metadata-value)))
+     (let* ((suite-entity
+             `((suite/body-thunk . ,(lambda () expression expressions ...))
+               (suite/description . ,suite-description)
+               (suite/metadata . ,metadata-value)))
 
             (%suite-thunk
                 ;; Wrapping into identity to prevent setting procedure-name
@@ -120,12 +121,12 @@ more @code{is} asserts."
                  (lambda ()
                    ((test-runner*)
                     `((type . load-suite)
-                      (suite . ,suite)))))))
+                      (suite . ,suite-entity)))))))
 
        (set-procedure-properties!
         %suite-thunk
         `((documentation . ,suite-description)
-          (suite . ,suite)
+          (suite . ,suite-entity)
           (suitbl-suite-thunk? . #t)))
        %suite-thunk))
 
