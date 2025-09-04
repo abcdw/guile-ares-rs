@@ -221,7 +221,7 @@ environment just set it to new instance of test runner.
 
   (define (test-runner x)
     "Default test runner"
-    (unless (member (assoc-ref x 'type) '(get-state get-log))
+    (unless (member (assoc-ref x 'type) '(runner/get-state runner/get-log))
       (update-atomic-alist-value!
        state 'events
        (lambda (l)
@@ -230,12 +230,12 @@ environment just set it to new instance of test runner.
     (define msg-type (assoc-ref x 'type))
 
     (case msg-type
-      ((get-state)
+      ((runner/get-state)
        state)
-      ((get-log)
+      ((runner/get-log)
        (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
-      ((run-assert)
+      ((runner/run-assert)
        (let* ((assert (assoc-ref x 'assert)))
          (when (and (not (null? (%suite-path*)))
                     (not (%test*)))
@@ -245,7 +245,7 @@ environment just set it to new instance of test runner.
              (raise-exception _)))
          (run-assert assert)))
 
-      ((load-suite)
+      ((runner/load-suite)
        (when (and (null? (%suite-path*))
                   (get-run-config-value
                    state 'reset-loaded-tests-on-suite-load?))
@@ -270,9 +270,9 @@ environment just set it to new instance of test runner.
          ;; execution of scheduled test suites we add this condition.
          (when (and (null? (%suite-path*)) (not (%schedule-only?*))
                     (get-run-config-value state 'auto-run?))
-           (this `((type . run-tests))))))
+           (this `((type . runner/run-tests))))))
 
-      ((run-tests)
+      ((runner/run-tests)
        (atomic-box-set!
         last-run-summary
         (let* ((run-config (or (assoc-ref x 'run-config)
@@ -293,7 +293,7 @@ environment just set it to new instance of test runner.
        ;; into IDE, remove it, when proper integration is implemented
        (atomic-box-ref last-run-summary))
 
-      ((run-suites)
+      ((runner/run-suites)
        (parameterize ((test-runner* this)
                       (%schedule-only?* #t))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
@@ -304,11 +304,11 @@ environment just set it to new instance of test runner.
          ;; TODO: [Andrew Tropin, 2025-08-28] Notify number of loaded tests
 
          (test-runner
-          `((type . run-tests)))
+          `((type . runner/run-tests)))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
          ))
 
-      ((load-test)
+      ((runner/load-test)
        (let* ((test (assoc-ref x 'test))
               (test-with-context (cons `(suite/path . ,%suite-path*) test))
               (description (assoc-ref test 'test/description)))
@@ -327,16 +327,16 @@ environment just set it to new instance of test runner.
                 suite-items
                 (lambda (items) (cons test items)))
                (when (get-run-config-value state 'auto-run?)
-                 ;; TODO: [Andrew Tropin, 2025-08-27] Use run-tests
-                 ;; and pass a filter function, which selects only
-                 ;; current test.
+                 ;; TODO: [Andrew Tropin, 2025-08-27] Use
+                 ;; runner/run-tests and pass a filter function, which
+                 ;; selects only current test.
                  (atomic-box-set!
                   last-run-summary
                   (run-test test)))))
 
          *unspecified*))
 
-      ((get-run-summary)
+      ((runner/get-run-summary)
        (atomic-box-ref last-run-summary))
 
       (else
@@ -350,7 +350,7 @@ environment just set it to new instance of test runner.
 
 (define (run-test-suites test-runner suites)
   (test-runner
-   `((type . run-suites)
+   `((type . runner/run-suites)
      (suites . ,suites))))
 
 ;; Set default test runner.

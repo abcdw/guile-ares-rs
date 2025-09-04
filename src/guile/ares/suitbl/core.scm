@@ -71,13 +71,13 @@ library, which sets an approriate test runner for you."))
     "A flexible assert macro.  The behavior can be customized by test runner."
     ((_ (pred args ...))
      ((test-runner*)
-      `((type . run-assert)
+      `((type . runner/run-assert)
         (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
                    (assert/args-thunk . ,(lambda () (list args ...)))
                    (assert/body . (pred args ...)))))))
     ((_ form)
      ((test-runner*)
-      `((type . run-assert)
+      `((type . runner/run-assert)
         (assert . ((assert/body-thunk . ,(lambda () form))
                    (assert/body . form))))))))
 
@@ -94,7 +94,7 @@ library, which sets an approriate test runner for you."))
               (test/metadata . ,metadata-value))))
        (lambda ()
          ((test-runner*)
-          `((type . load-test)
+          `((type . runner/load-test)
             (test . ,test-entity))))))
 
     ((test-thunk test-description expression expressions ...)
@@ -120,7 +120,7 @@ more @code{is} asserts."
                 (identity
                  (lambda ()
                    ((test-runner*)
-                    `((type . load-suite)
+                    `((type . runner/load-suite)
                       (suite . ,suite-entity)))))))
 
        (set-procedure-properties!

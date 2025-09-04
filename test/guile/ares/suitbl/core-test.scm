@@ -16,20 +16,20 @@
   (define state (make-atomic-box '()))
   (lambda (message)
     (define msg-type (assoc-ref message 'type))
-    (unless (equal? msg-type 'get-log)
+    (unless (equal? msg-type 'runner/get-log)
       (atomic-box-update! state (lambda (l) (cons message l))))
     (case msg-type
-      ((get-log)
+      ((runner/get-log)
        (reverse (atomic-box-ref state))))))
 
 (define (simplify-log-entry entry)
   (define type (assoc-ref entry 'type))
   (case type
-    ((load-suite)
+    ((runner/load-suite)
      (chain entry
        (assoc-ref _ 'suite)
        (assoc-ref _ 'suite/description)))
-    ((load-test)
+    ((runner/load-test)
      (chain entry
        (assoc-ref _ 'test)
        (assoc-ref _ 'test/description)))
@@ -49,7 +49,7 @@
                          (get-logging-test-runner)))
            body body* ...
            ((test-runner*)
-            `((type . get-log))))))))
+            `((type . runner/get-log))))))))
 
 (define-suite predicates-tests
   (test "test? predicate recognizes test structures"

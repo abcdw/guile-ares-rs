@@ -21,30 +21,38 @@
             load-project-tests))
 
 (define (run-tests)
-  ((test-runner*) `((type . run-tests))))
+  ((test-runner*) `((type . runner/run-tests))))
 
 (define (get-current-test-runner-stats)
-  (chain ((test-runner*) `((type . get-state)))
+  (chain ((test-runner*) `((type . runner/get-state)))
     (get-stats _)))
 
 (define (load-module-tests)
-  (set-run-config-value! ((test-runner*) `((type . get-state))) 'auto-run? #f)
+  (set-run-config-value!
+   ((test-runner*) `((type . runner/get-state)))
+   'auto-run? #f)
   (let ((m (current-module)))
     (suite (format #f "~a module tests" (module-name m))
       (for-each
        (lambda (ts) (ts))
        (get-module-public-suites (get-test-module (module-name m))))))
-  (set-run-config-value! ((test-runner*) `((type . get-state))) 'auto-run? #t)
+  (set-run-config-value!
+   ((test-runner*) `((type . runner/get-state)))
+   'auto-run? #t)
   *unspecified*)
 
 (define (load-project-tests)
-  (set-run-config-value! ((test-runner*) `((type . get-state))) 'auto-run? #f)
+  (set-run-config-value!
+   ((test-runner*) `((type . runner/get-state)))
+   'auto-run? #f)
   (let ((test-modules (get-all-test-modules)))
     (suite "project tests"
       (for-each
        (lambda (ts) (ts))
        (append-map get-module-public-suites test-modules))))
-  (set-run-config-value! ((test-runner*) `((type . get-state))) 'auto-run? #t)
+  (set-run-config-value!
+   ((test-runner*) `((type . runner/get-state)))
+   'auto-run? #t)
   *unspecified*)
 
 (define (add-indicies tests)
@@ -52,7 +60,7 @@
        tests (iota (length tests))))
 
 (define (get-current-test-runner-loaded-test)
-  (chain ((test-runner*) `((type . get-state)))
+  (chain ((test-runner*) `((type . runner/get-state)))
     (get-loaded-tests _)
     (add-indicies _)))
 

@@ -258,7 +258,7 @@ because test macro is not composable and can't be wrapped.
        (test "simple failure"
          (is #f))
        ((test-runner*)
-        `((type . get-run-summary)))))
+        `((type . runner/get-run-summary)))))
 
     (is
      (equal?
@@ -272,7 +272,7 @@ because test macro is not composable and can't be wrapped.
        (test "simple success"
          (is #t))
        ((test-runner*)
-        `((type . get-run-summary)))))
+        `((type . runner/get-run-summary)))))
     (is
      (equal?
       '((errors . 0) (failures . 0) (assertions . 1) (tests . 1))
@@ -364,7 +364,7 @@ run summary is #f by default, but appears after test suite is executed"
          #f
          (with-silent-test-environment
           ((test-runner*)
-           `((type . get-run-summary))))))
+           `((type . runner/get-run-summary))))))
 
     (is (not
          (null?
@@ -373,7 +373,7 @@ run summary is #f by default, but appears after test suite is executed"
              (test "case1"
                (is #t)))
            ((test-runner*)
-            `((type . get-run-summary)))))))
+            `((type . runner/get-run-summary)))))))
 
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
@@ -386,7 +386,7 @@ run summary is #f by default, but appears after test suite is executed"
            (is #f)
            (is (throw 'hi))))
        ((test-runner*)
-        `((type . get-run-summary)))))
+        `((type . runner/get-run-summary)))))
 
     (is
      (equal?
@@ -418,7 +418,7 @@ run summary is #f by default, but appears after test suite is executed"
       ;;    (lambda (ts) (ts))
       ;;    (get-module-public-suites (resolve-module '(ares suitbl-test)))))
       base-test-runner-tests))
-    (define summary (test-runner `((type . get-run-summary))))
+    (define summary (test-runner `((type . runner/get-run-summary))))
     (format #t "\n~a\n" summary)
 
     (define number-of-tests
