@@ -297,9 +297,11 @@ environment just set it to new instance of test runner.
        (parameterize ((test-runner* this)
                       (%schedule-only?* #t))
          ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
+         ;; (reset-loaded-tests! state)
          (for-each
           (lambda (ts) (ts))
           (assoc-ref x 'suites))
+         ;; TODO: [Andrew Tropin, 2025-08-28] Notify number of loaded tests
 
          (test-runner
           `((type . run-tests)))
@@ -325,6 +327,9 @@ environment just set it to new instance of test runner.
                 suite-items
                 (lambda (items) (cons test items)))
                (when (get-run-config-value state 'auto-run?)
+                 ;; TODO: [Andrew Tropin, 2025-08-27] Use run-tests
+                 ;; and pass a filter function, which selects only
+                 ;; current test.
                  (atomic-box-set!
                   last-run-summary
                   (run-test test)))))
