@@ -33,7 +33,7 @@ of Association List (alist) and produce an output to
 test-reporter-output-port*.
 
 (test-reporter
- `((type . test-loaded)
+ `((type . reporter/test-loaded)
    (suite-path . ("suite1" "nested-suite"))
    (description . "basic arithmetics")))
 
@@ -96,19 +96,19 @@ to catch unhandled messages."
 
 (define (test-reporter-hierarchy message)
   (case (assoc-ref message 'type)
-    ((test-loaded)
+    ((reporter/test-loaded)
      (format (test-reporter-output-port*) "~a"
              (string-repeat "|" (length (assoc-ref message 'suite-path))))
      (format (test-reporter-output-port*) " + test ~a\n"
              (assoc-ref message 'description)))
-    ((suite-enter)
+    ((reporter/suite-enter)
      (format (test-reporter-output-port*) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "┌"))
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
-    ((suite-leave)
+    ((reporter/suite-leave)
      (format (test-reporter-output-port*) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
@@ -116,7 +116,7 @@ to catch unhandled messages."
      (format (test-reporter-output-port*) "> ~a\n"
              (assoc-ref message 'description)))
 
-    ((print-suite)
+    ((reporter/print-suite)
      (format (test-reporter-output-port*) "~y"
              (tests->pretty-string (assoc-ref message 'suite))))
     (else #f)))
@@ -162,22 +162,22 @@ to catch unhandled messages."
           (assoc-ref message 'assertion/result))))
 
   (case (assoc-ref message 'type)
-    ((test-start)
+    ((reporter/test-start)
      (format (test-reporter-output-port*) "\n┌Test ~a\n"
              (assoc-ref message 'description)))
-    ((test-end)
+    ((reporter/test-end)
      (format (test-reporter-output-port*) "└Test ~a\n"
              (assoc-ref message 'description)))
 
-    ((assertion-pass)
+    ((reporter/assertion-pass)
      (format (test-reporter-output-port*) "~y✓\n"
              (assoc-ref message 'assert/body)))
 
-    ((assertion-fail)
+    ((reporter/assertion-fail)
      (format (test-reporter-output-port*) "~y✗ ~a\n"
              (assoc-ref message 'assert/body) (actual message)))
 
-    ((assertion-error)
+    ((reporter/assertion-error)
      (format (test-reporter-output-port*) "~y✗ produced error:\n ~s\n"
              (assoc-ref message 'assert/body)
              (exception->string
@@ -189,18 +189,18 @@ to catch unhandled messages."
   (define msg-type (assoc-ref message 'type))
   (case msg-type
 
-    ((test-loaded)
+    ((reporter/test-loaded)
      (format (test-reporter-output-port*) "T"))
-    ((suite-enter)
+    ((reporter/suite-enter)
      (format (test-reporter-output-port*) "["))
-    ((suite-leave)
+    ((reporter/suite-leave)
      (format (test-reporter-output-port*) "]"))
     (else #f)))
 
 (define (test-reporter-minimal message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((test-loaded)
+    ((reporter/test-loaded)
      (format (test-reporter-output-port*) "-> ~a\n"
              (assoc-ref message 'description)))
 
@@ -215,23 +215,23 @@ to catch unhandled messages."
 (define (test-reporter-dots message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((suite-start)
+    ((reporter/suite-start)
      (format (test-reporter-output-port*) "["))
-    ((suite-end)
+    ((reporter/suite-end)
      (format (test-reporter-output-port*) "]"))
 
-    ((test-start)
+    ((reporter/test-start)
      (format (test-reporter-output-port*) "("))
-    ((test-end)
+    ((reporter/test-end)
      (format (test-reporter-output-port*) ")"))
-    ((test-skip)
+    ((reporter/test-skip)
      (format (test-reporter-output-port*) "(S)"))
 
-    ((assertion-pass)
+    ((reporter/assertion-pass)
      (format (test-reporter-output-port*) "."))
-    ((assertion-fail)
+    ((reporter/assertion-fail)
      (format (test-reporter-output-port*) "F"))
-    ((assertion-error)
+    ((reporter/assertion-error)
      (format (test-reporter-output-port*) "E"))
 
     (else #f)))

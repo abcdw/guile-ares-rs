@@ -119,14 +119,14 @@ environment just set it to new instance of test runner.
             (make-exception-with-message _)
             (raise-exception _)))
         (%test-reporter
-         `((type . test-start)
+         `((type . reporter/test-start)
            (description . ,description)))
         ;; TODO: [Andrew Tropin, 2025-08-02] Change %test* to
         ;; %inside-test?*
         (parameterize ((%test* description))
           (test-body-thunk))
         (%test-reporter
-         `((type . test-end)
+         `((type . reporter/test-end)
            (description . ,description))))
 
       (atomic-box-ref (%test-events*))))
@@ -151,7 +151,7 @@ environment just set it to new instance of test runner.
               (cons 'error value))))
          (%test-reporter
           (append
-           `((type . assertion-error)
+           `((type . reporter/assertion-error)
              (assertion/error . ,ex))
            assert)))
        (lambda ()
@@ -165,7 +165,9 @@ environment just set it to new instance of test runner.
                 (cons (if result 'pass 'fail) value))))
            (%test-reporter
             (append
-             `((type . ,(if result 'assertion-pass 'assertion-fail))
+             `((type . ,(if result
+                            'reporter/assertion-pass
+                            'reporter/assertion-fail))
                (assertion/result . ,result))
              assert))
            result))
@@ -173,7 +175,7 @@ environment just set it to new instance of test runner.
 
   (define (print-suite suite)
     (%test-reporter
-     `((type . print-suite)
+     `((type . reporter/print-suite)
        (show-suite-info . ,procedure-documentation)
        (suite . ,suite))))
 
@@ -186,13 +188,13 @@ environment just set it to new instance of test runner.
     (define suite-enter!
       (lambda ()
         (%test-reporter
-         `((type . suite-enter)
+         `((type . reporter/suite-enter)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
     (define suite-leave!
       (lambda ()
         (%test-reporter
-         `((type . suite-leave)
+         `((type . reporter/suite-leave)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
 
@@ -316,7 +318,7 @@ environment just set it to new instance of test runner.
          (add-loaded-test! state test-with-context)
 
          (%test-reporter
-          `((type . test-loaded)
+          `((type . reporter/test-loaded)
             (suite-path . ,(%suite-path*))
             (description . ,description)))
 
