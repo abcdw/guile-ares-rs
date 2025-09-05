@@ -189,9 +189,28 @@ values."
    (topological-sort
     (hash-map->list cons (extensions->dependecy-graph extensions)))))
 
+(define (print-sorted-graph extensions)
+  (let ((graph (extensions->dependecy-graph extensions)))
+    (map
+     (lambda (k)
+       (format #t "~a: ~a\n" k (hash-ref graph k)))
+     (reverse (topological-sort
+               (hash-map->list cons graph))))))
+
+(define (print-sorted-extensions extensions)
+  (for-each
+   (lambda (e) (format #t "name: ~a\nprovides: ~a\nrequires: ~a\nwraps: ~a\n\n"
+                       (procedure-property e 'name)
+                       (procedure-property e 'provides)
+                       (procedure-property e 'requires)
+                       (or (procedure-property e 'wraps) '())))
+   (sort-extensions extensions)))
+
 (define (make-handler extensions)
   "Sorts the extensions using @code{sort-extensions}.  Wraps @code{unknown-op}
  into all the extensions in the reverse order."
+  ;; (print-sorted-extensions extensions)
+  ;; (print-sorted-graph extensions)
   (cons
    (fold (lambda (extension handler)
            (extension handler))
