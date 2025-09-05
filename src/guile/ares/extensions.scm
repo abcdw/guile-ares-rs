@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -135,6 +135,38 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
             (unless (member provider (hash-ref graph name))
               (add-vertex! name provider))))
         (procedure-property x 'requires))))
+   extensions)
+
+  (define (provides? e c)
+    (member c (procedure-property e 'provides)))
+
+  (define (requires? x y)
+    (fold
+     (lambda (a res)
+       (or res (provides? y a)))
+     #f
+     (procedure-property x 'requires)))
+
+  ;; Add edges from wrapped nodes to wrappers
+  (for-each
+   (lambda (x)
+     (let ((name (procedure-property x 'name))
+           (wraps (procedure-property x 'wraps)))
+       (cond
+        ((equal? #:* wraps)
+         (for-each
+          (lambda (y)
+            (let ((y-name (procedure-name y)))
+              (unless (or (equal? x y) (requires? x y)
+                          (member name (hash-ref graph y-name)))
+                (add-vertex! y-name name))))
+          extensions))
+        ((list? wraps)
+         (for-each
+          (lambda (t)
+            (unless (member t (hash-ref graph name))
+              (add-vertex! t name)))
+          wraps)))))
    extensions)
 
   ;; Use fold instead of map to reverse the result.
