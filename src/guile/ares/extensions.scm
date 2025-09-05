@@ -38,7 +38,8 @@
          (or
           (assoc-ref context 'reply!)
           (assoc-ref context 'transport/reply!))))
-    (reply! `(("status" . #("error" "unknown-op" "done"))))
+    (reply! `(("nrepl/message" . ,(assoc-ref context 'nrepl/message))
+              ("status" . #("error" "unknown-op" "done"))))
     context))
 
 (define extension-metadata procedure-properties)
