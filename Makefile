@@ -20,7 +20,7 @@ check: check-suitbl
 
 check-suitbl:
 	${GUILE_DEV} \
-	-c "((@ (ares suitbl-test) run-tests))"
+	-c "((@ (suitbl-test-runner) run-project-tests))"
 
 check-test:
 	${GUILE_DEV} \

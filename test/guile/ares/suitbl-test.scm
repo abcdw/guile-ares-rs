@@ -409,25 +409,7 @@ run summary is #f by default, but appears after test suite is executed"
   (test "test"
     (is #t)))
 
-(define-public (run-tests)
-  (let* ((test-runner (make-suitbl-test-runner)))
-    (parameterize ((test-runner* test-runner))
-      ((@ (ares suitbl ares) load-project-tests))
-      (test-runner `((type . runner/run-tests))))
-    (define summary (test-runner `((type . runner/get-run-summary))))
-    (format #t "\n~a\n" summary)
 
-    (define number-of-tests
-      (assoc-ref summary 'tests))
-
-    (unless (= 30 number-of-tests)
-      (chain "Unexpected number of tests (~a), make sure all tests are executed and
-expected number of tests is up-to-date."
-        (format #f _ number-of-tests)
-        (make-exception-with-message _)
-        (raise-exception _)))
-    (when (> (+ (assoc-ref summary 'failures) (assoc-ref summary 'errors)) 0)
-      (exit 1))))
 
 ;;; Notes from the call with Josep
 
