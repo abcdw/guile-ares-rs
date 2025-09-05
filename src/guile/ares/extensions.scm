@@ -80,21 +80,12 @@ In extensions ~s, key @code{~s} must be of type @code{~s}, but the value is \
   (check-type 'requires list-of-symbols?)
   (check-type 'provides list-of-symbols?))
 
-(define (sort-extensions extensions)
-  "Sorts extensions in topological order based on requires and provides
-values."
-  (for-each extension? extensions)
-
+(define (extensions->providers extensions)
   (define (raise-provided-more-than-once key v1 v2)
     (raise-assert
      (format #f "\
 Key @code{~s} provided more than once, by both @code{~s} and @code{~s}."
-               key v1 v2)))
-
-  (define (raise-nobody-provides x for)
-    (raise-assert
-     (format #f "\
-There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
+             key v1 v2)))
 
   (define provides (make-hash-table)) ; what | who
 
@@ -109,6 +100,19 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
           (hash-create-handle! provides r x))
         (procedure-property x 'provides))))
    extensions)
+  provides)
+
+(define (extensions->dependecy-graph extensions)
+  "Build a directed graph (adjacency list) based on requires, provides
+and wraps values.  If a has b in requires add a->b edge.  If a has b
+in wraps add b->a edge.  If a wraps #:* then for every b not equal to
+a and not required by a add b->a edge."
+  (define provides (extensions->providers extensions))
+
+  (define (raise-nobody-provides x for)
+    (raise-assert
+     (format #f "\
+There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
 
   (define (who-provides x for)
     (unless (hash-get-handle provides x)
@@ -168,13 +172,22 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
               (add-vertex! t name)))
           wraps)))))
    extensions)
+  graph)
+
+(define (sort-extensions extensions)
+  "Sorts extensions in topological order based on requires and provides
+values."
+  (for-each extension? extensions)
+
+  (define provides (extensions->providers extensions))
 
   ;; Use fold instead of map to reverse the result.
   (fold
    (lambda (name result)
      (cons (hash-ref provides name) result))
    '()
-   (topological-sort (hash-map->list cons graph))))
+   (topological-sort
+    (hash-map->list cons (extensions->dependecy-graph extensions)))))
 
 (define (make-handler extensions)
   "Sorts the extensions using @code{sort-extensions}.  Wraps @code{unknown-op}
