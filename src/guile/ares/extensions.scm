@@ -112,11 +112,21 @@ a and not required by a add b->a edge."
   (define (raise-nobody-provides x for)
     (raise-assert
      (format #f "\
-There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
+There are no nodes providing @code{~s}, but @code{~s} requires it." x for)))
+
+    (define (raise-nobody-provides-wrapped-by x by)
+    (raise-assert
+     (format #f "\
+There are no nodes providing @code{~s}, but @code{~s} wraps it." x by)))
 
   (define (who-provides x for)
     (unless (hash-get-handle provides x)
       (raise-nobody-provides x for))
+    (procedure-property (hash-ref provides x) 'name))
+
+  (define (get-wrapped-provider x by)
+    (unless (hash-get-handle provides x)
+      (raise-nobody-provides-wrapped-by x by))
     (procedure-property (hash-ref provides x) 'name))
 
   (define graph (make-hash-table))
@@ -168,8 +178,9 @@ There are no nodes providing @code{~s}, but @code{~s} requires it" x for)))
         ((list? wraps)
          (for-each
           (lambda (t)
-            (unless (member t (hash-ref graph name))
-              (add-vertex! t name)))
+            (let ((provider (get-wrapped-provider t name)))
+              (unless (member name (hash-ref graph provider))
+                (add-vertex! provider name))))
           wraps)))))
    extensions)
   graph)
