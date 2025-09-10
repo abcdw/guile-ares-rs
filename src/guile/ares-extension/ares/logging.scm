@@ -93,7 +93,8 @@ logging and to anything else to disable it."
  outgoing nREPL messages."
   `((provides . (ares.logging))
     (requires . (ares.core ares.transport))
-    (handles . ,operations))
+    (handles . ,operations)
+    (wraps . #:*))
 
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
