@@ -165,6 +165,19 @@ Ortega Ruiz, Nikita Domnitskii, Maxime Devos, Andy Wingo, Bozhidar
 Batsov, Andrey Listopadov, Dmitrii Bogdanov, David Thompson, Dmitry
 Polyakov.
 
+A suitbl library is funded through [[https://nlnet.nl/core][NGI Zero Core]], a fund established
+by [[https://nlnet.nl][NLnet]] with financial support from the European Commission's [[https://ngi.eu][Next
+Generation Internet]] program.
+
+Learn more at the [[https://nlnet.nl/project/SchemeTestingFramework][NLnet project page]].
+
+#+ATTR_HTML: :width 20%
+[[https://nlnet.nl][https://nlnet.nl/logo/banner-bw.svg]]
+
+#+ATTR_HTM: :width 20%
+[[https://nlnet.nl/core][https://nlnet.nl/image/logos/NGI0_tag_black_mono.svg]]
+
+
 * Architecture                                                     :noexport:
 #+begin_src plantuml :file docs/eval-thread-states.svg
 @startuml
