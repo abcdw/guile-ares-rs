@@ -3,6 +3,7 @@
   #:use-module (ares suitbl runners)
   #:use-module (ares suitbl discovery)
   #:use-module (srfi srfi-197)
+  #:use-module (ice-9 exceptions)
   #:export (run-project-tests))
 
 (define-public (run-project-tests)
