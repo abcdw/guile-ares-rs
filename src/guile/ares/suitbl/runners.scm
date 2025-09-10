@@ -280,8 +280,12 @@ environment just set it to new instance of test runner.
         last-run-summary
         (let* ((run-config (or (assoc-ref x 'run-config)
                                (get-run-config state)))
+               (reporter (assoc-ref x 'reporter))
                (test-execution-results
-                (map run-test (get-scheduled-tests state run-config))))
+                (if reporter
+                    (parameterize ((%test-reporter* reporter))
+                      (map run-test (get-scheduled-tests state run-config)))
+                    (map run-test (get-scheduled-tests state run-config)))))
           (let loop ((summary initial-run-summary)
                      (remaining-items test-execution-results))
             (if (null? remaining-items)
