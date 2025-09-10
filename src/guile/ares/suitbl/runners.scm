@@ -71,7 +71,8 @@ environment just set it to new instance of test runner.
 (define* (make-suitbl-test-runner
           #:key
           (test-reporter test-reporter-base)
-          (config '((auto-run? . #t)
+          (config `((auto-run? . #t)
+                    (test-reporter . ,test-reporter)
                     (reset-loaded-tests-on-suite-load? . #t))))
   "A flexible test runner factory, which spawns new test runners."
   ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
@@ -90,7 +91,9 @@ environment just set it to new instance of test runner.
   (define %current-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
   (define %runner-config* (make-parameter #f))
-  (define %test-reporter* (make-parameter test-reporter))
+  (define %test-reporter* (make-parameter
+                           (get-runner-config-value
+                            state 'test-reporter)))
 
   (define initial-run-summary
     `((errors . 0)
