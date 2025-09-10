@@ -77,8 +77,9 @@ environment just set it to new instance of test runner.
   "A flexible test runner factory, which spawns new test runners."
   ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
   ;; and make it accessible via "class" methods.
-  (define state (make-atomic-box `((runner/config . ,config))))
-  (define last-run-summary (make-atomic-box #f))
+  (define state
+    (make-atomic-box `((runner/run-summary . ,(make-atomic-box #f))
+                       (runner/config . ,config))))
   (define this #f)
   (define reporter-state (make-atomic-box '()))
 
@@ -100,6 +101,11 @@ environment just set it to new instance of test runner.
       (failures . 0)
       (assertions . 0)
       (tests . 0)))
+
+  (define (get-run-summary-atom state)
+    (chain state
+      (atomic-box-ref _)
+      (assoc-ref _ 'runner/run-summary)))
 
   (define (get-test-reporter)
     (lambda (message)
@@ -280,7 +286,7 @@ environment just set it to new instance of test runner.
 
       ((runner/run-tests)
        (atomic-box-set!
-        last-run-summary
+        (get-run-summary-atom state)
         (let* ((runner-config (or (assoc-ref x 'runner/config)
                                   (get-runner-config state)))
                (reporter (assoc-ref x 'reporter))
@@ -311,9 +317,7 @@ environment just set it to new instance of test runner.
          ;; TODO: [Andrew Tropin, 2025-08-28] Notify number of loaded tests
 
          (test-runner
-          `((type . runner/run-tests)))
-         ;; TODO: [Andrew Tropin, 2025-05-01] Call get-last-run-summary
-         ))
+          `((type . runner/run-tests)))))
 
       ((runner/load-test)
        (let* ((test (assoc-ref x 'test))
@@ -338,13 +342,13 @@ environment just set it to new instance of test runner.
                  ;; runner/run-tests and pass a filter function, which
                  ;; selects only current test.
                  (atomic-box-set!
-                  last-run-summary
+                  (get-run-summary-atom state)
                   (run-test test)))))
 
          *unspecified*))
 
       ((runner/get-run-summary)
-       (atomic-box-ref last-run-summary))
+       (atomic-box-ref (get-run-summary-atom state)))
 
       (else
        (chain msg-type
