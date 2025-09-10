@@ -21,7 +21,8 @@
             load-project-tests))
 
 (define (run-tests)
-  ((test-runner*) `((type . runner/run-tests))))
+  ((test-runner*) `((type . runner/run-tests)))
+  ((test-runner*) `((type . runner/get-run-summary))))
 
 (define (get-current-test-runner-stats)
   (chain ((test-runner*) `((type . runner/get-state)))

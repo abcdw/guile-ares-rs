@@ -290,10 +290,7 @@ environment just set it to new instance of test runner.
                    (merge-run-summaries summary item)
                    (cdr remaining-items)))))))
 
-       ;; TODO: [Andrew Tropin, 2025-09-04] Temporary return run
-       ;; summary for easier implementation of test runner integration
-       ;; into IDE, remove it, when proper integration is implemented
-       (atomic-box-ref last-run-summary))
+       *unspecified*)
 
       ((runner/run-suites)
        (parameterize ((test-runner* this)
