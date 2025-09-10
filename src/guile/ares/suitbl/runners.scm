@@ -83,6 +83,7 @@ environment just set it to new instance of test runner.
   (define %current-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
   (define %run-config* (make-parameter #f))
+  (define %test-reporter* (make-parameter test-reporter))
 
   ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
   ;; and make it accessible via "class" methods.
@@ -97,9 +98,9 @@ environment just set it to new instance of test runner.
       (assertions . 0)
       (tests . 0)))
 
-  (define %test-reporter
+  (define (get-test-reporter)
     (lambda (message)
-      (test-reporter
+      ((%test-reporter*)
        ;; (chain message
        ;;   (alist-cons 'state reporter-state _)
        ;;   (alist-cons 'test-runner this _))
@@ -118,14 +119,14 @@ environment just set it to new instance of test runner.
           (chain "Test Macros can't be nested"
             (make-exception-with-message _)
             (raise-exception _)))
-        (%test-reporter
+        ((get-test-reporter)
          `((type . reporter/test-start)
            (description . ,description)))
         ;; TODO: [Andrew Tropin, 2025-08-02] Change %test* to
         ;; %inside-test?*
         (parameterize ((%test* description))
           (test-body-thunk))
-        (%test-reporter
+        ((get-test-reporter)
          `((type . reporter/test-end)
            (description . ,description))))
 
@@ -149,7 +150,7 @@ environment just set it to new instance of test runner.
             (%test-events*)
             (lambda (value)
               (cons 'error value))))
-         (%test-reporter
+         ((get-test-reporter)
           (append
            `((type . reporter/assertion-error)
              (assertion/error . ,ex))
@@ -163,7 +164,7 @@ environment just set it to new instance of test runner.
               (%test-events*)
               (lambda (value)
                 (cons (if result 'pass 'fail) value))))
-           (%test-reporter
+           ((get-test-reporter)
             (append
              `((type . ,(if result
                             'reporter/assertion-pass
@@ -174,7 +175,7 @@ environment just set it to new instance of test runner.
        #:unwind? #t)))
 
   (define (print-suite suite)
-    (%test-reporter
+    ((get-test-reporter)
      `((type . reporter/print-suite)
        (show-suite-info . ,procedure-documentation)
        (suite . ,suite))))
@@ -187,13 +188,13 @@ environment just set it to new instance of test runner.
 
     (define suite-enter!
       (lambda ()
-        (%test-reporter
+        ((get-test-reporter)
          `((type . reporter/suite-enter)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
     (define suite-leave!
       (lambda ()
-        (%test-reporter
+        ((get-test-reporter)
          `((type . reporter/suite-leave)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
@@ -314,7 +315,7 @@ environment just set it to new instance of test runner.
 
          (add-loaded-test! state test-with-context)
 
-         (%test-reporter
+         ((get-test-reporter)
           `((type . reporter/test-loaded)
             (suite-path . ,(%suite-path*))
             (description . ,description)))
