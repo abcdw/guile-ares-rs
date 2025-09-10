@@ -4,6 +4,8 @@
 (define-module (ares suitbl ares)
   #:use-module ((ares guile prelude) #:select (comment))
   #:use-module ((ares suitbl core) #:select (suite test-runner*))
+  #:use-module  ((ares suitbl reporters)
+                 #:select (test-reporter-minimal))
   #:use-module ((ares suitbl runners)
                 #:select (get-loaded-tests
                           get-stats
@@ -21,7 +23,8 @@
             load-project-tests))
 
 (define (run-tests)
-  ((test-runner*) `((type . runner/run-tests)))
+  ((test-runner*) `((type . runner/run-tests)
+                    (reporter . ,test-reporter-minimal)))
   ((test-runner*) `((type . runner/get-run-summary))))
 
 (define (get-current-test-runner-stats)
