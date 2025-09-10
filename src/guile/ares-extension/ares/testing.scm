@@ -70,7 +70,8 @@ tests."
   "Add integration with suitbl testing library and corresponding
 operations."
   `((provides . (ares.testing))
-    (requires . (ares.core ares.transport ares.logging))
+    (requires . (nrepl.session))
+    (wraps . (nrepl.evaluation))
     (handles . ,operations))
   (lambda (context)
     (let* ((message (assoc-ref context 'nrepl/message))
