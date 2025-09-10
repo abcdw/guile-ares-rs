@@ -17,6 +17,7 @@
             test-reporter-base
             test-reporter-dots
             test-reporter-dots-with-hierarchy
+            test-reporter-minimal
             test-reporters-use-all
             test-reporters-use-first))
 
@@ -200,9 +201,26 @@ to catch unhandled messages."
 (define (test-reporter-minimal message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((reporter/test-loaded)
-     (format (test-reporter-output-port*) "-> ~a\n"
+
+    ((reporter/test-start)
+     (format (test-reporter-output-port*) "=> [~a]\n"
              (assoc-ref message 'description)))
+    ((reporter/test-end)
+     (format (test-reporter-output-port*) "\n"
+             (assoc-ref message 'description)))
+
+    ((reporter/assertion-pass)
+     (format (test-reporter-output-port*) "✓"))
+
+    ((reporter/assertion-fail)
+     (format (test-reporter-output-port*) "\n ~y✗ ~a\n"
+             (assoc-ref message 'assert/body) (actual message)))
+
+    ((reporter/assertion-error)
+     (format (test-reporter-output-port*) "\n ~y✗ produced error:\n ~s\n"
+             (assoc-ref message 'assert/body)
+             (exception->string
+              (assoc-ref message 'assertion/error))))
 
     (else #f)))
 
