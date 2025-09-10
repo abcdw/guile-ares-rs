@@ -34,7 +34,7 @@
 
                get-stats
 
-               set-run-config-value!))
+               set-runner-config-value!))
 
 #|
 

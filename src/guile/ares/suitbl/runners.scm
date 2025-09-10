@@ -22,7 +22,7 @@
             get-stats
             get-loaded-tests
 
-            set-run-config-value!))
+            set-runner-config-value!))
 
 
 ;;;
@@ -71,8 +71,8 @@ environment just set it to new instance of test runner.
 (define* (make-suitbl-test-runner
           #:key
           (test-reporter test-reporter-base)
-          (run-config '((auto-run? . #t)
-                        (reset-loaded-tests-on-suite-load? . #t))))
+          (config '((auto-run? . #t)
+                    (reset-loaded-tests-on-suite-load? . #t))))
   "A flexible test runner factory, which spawns new test runners."
   ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,
   ;; they can cause problems when using with continuations and thus
@@ -82,12 +82,12 @@ environment just set it to new instance of test runner.
   (define %test-events* (make-parameter #f))
   (define %current-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
-  (define %run-config* (make-parameter #f))
+  (define %runner-config* (make-parameter #f))
   (define %test-reporter* (make-parameter test-reporter))
 
   ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
   ;; and make it accessible via "class" methods.
-  (define state (make-atomic-box `((run-config . ,run-config))))
+  (define state (make-atomic-box `((runner/config . ,config))))
   (define last-run-summary (make-atomic-box #f))
   (define this #f)
   (define reporter-state (make-atomic-box '()))
@@ -250,7 +250,7 @@ environment just set it to new instance of test runner.
 
       ((runner/load-suite)
        (when (and (null? (%suite-path*))
-                  (get-run-config-value
+                  (get-runner-config-value
                    state 'reset-loaded-tests-on-suite-load?))
          (reset-loaded-tests! state))
        (let* ((suite (assoc-ref x 'suite))
@@ -272,20 +272,20 @@ environment just set it to new instance of test runner.
          ;; and also calls run-scheduled-tests, so to prevent double
          ;; execution of scheduled test suites we add this condition.
          (when (and (null? (%suite-path*)) (not (%schedule-only?*))
-                    (get-run-config-value state 'auto-run?))
+                    (get-runner-config-value state 'auto-run?))
            (this `((type . runner/run-tests))))))
 
       ((runner/run-tests)
        (atomic-box-set!
         last-run-summary
-        (let* ((run-config (or (assoc-ref x 'run-config)
-                               (get-run-config state)))
+        (let* ((runner-config (or (assoc-ref x 'runner/config)
+                                  (get-runner-config state)))
                (reporter (assoc-ref x 'reporter))
                (test-execution-results
                 (if reporter
                     (parameterize ((%test-reporter* reporter))
-                      (map run-test (get-scheduled-tests state run-config)))
-                    (map run-test (get-scheduled-tests state run-config)))))
+                      (map run-test (get-scheduled-tests state runner-config)))
+                    (map run-test (get-scheduled-tests state runner-config)))))
           (let loop ((summary initial-run-summary)
                      (remaining-items test-execution-results))
             (if (null? remaining-items)
@@ -330,7 +330,7 @@ environment just set it to new instance of test runner.
                (atomic-box-update!
                 suite-items
                 (lambda (items) (cons test items)))
-               (when (get-run-config-value state 'auto-run?)
+               (when (get-runner-config-value state 'auto-run?)
                  ;; TODO: [Andrew Tropin, 2025-08-27] Use
                  ;; runner/run-tests and pass a filter function, which
                  ;; selects only current test.
@@ -382,26 +382,26 @@ environment just set it to new instance of test runner.
    state 'loaded-tests
    (lambda (l) '())))
 
-(define (get-scheduled-tests state run-config)
+(define (get-scheduled-tests state runner-config)
   (let ((lot-transformation identity))
     (chain (atomic-box-ref state)
       (assoc-ref _ 'loaded-tests)
       (or _ '())
       (lot-transformation _))))
 
-(define (get-run-config state)
+(define (get-runner-config state)
   (chain (atomic-box-ref state)
-    (assoc-ref _ 'run-config)
+    (assoc-ref _ 'runner/config)
     (or _ '())))
 
-(define (get-run-config-value state key)
+(define (get-runner-config-value state key)
   (chain-and (atomic-box-ref state)
-    (assoc-ref _ 'run-config)
+    (assoc-ref _ 'runner/config)
     (assoc-ref _ key)))
 
-(define (set-run-config-value! state key value)
+(define (set-runner-config-value! state key value)
   (update-atomic-alist-value!
-   state 'run-config
+   state 'runner/config
    (lambda (alist) (update-alist-value (or alist '()) key value))))
 
 (define (get-stats state)

@@ -9,7 +9,7 @@
   #:use-module ((ares suitbl runners)
                 #:select (get-loaded-tests
                           get-stats
-                          set-run-config-value!))
+                          set-runner-config-value!))
   #:use-module ((ares suitbl discovery)
                 #:select (get-all-test-modules
                           get-module-public-suites
@@ -32,7 +32,7 @@
     (get-stats _)))
 
 (define (load-module-tests)
-  (set-run-config-value!
+  (set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #f)
   (let ((m (current-module)))
@@ -40,13 +40,13 @@
       (for-each
        (lambda (ts) (ts))
        (get-module-public-suites (get-test-module (module-name m))))))
-  (set-run-config-value!
+  (set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #t)
   *unspecified*)
 
 (define (load-project-tests)
-  (set-run-config-value!
+  (set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #f)
   (let ((test-modules (get-all-test-modules)))
@@ -54,7 +54,7 @@
       (for-each
        (lambda (ts) (ts))
        (append-map get-module-public-suites test-modules))))
-  (set-run-config-value!
+  (set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #t)
   *unspecified*)
