@@ -39,6 +39,12 @@ environment just set it to new instance of test runner.
 
 |#
 
+
+
+;;;
+;;; Helpers
+;;;
+
 (define (merge-run-summaries s1 s2)
   (map
    (lambda (v)
