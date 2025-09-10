@@ -75,13 +75,10 @@ environment just set it to new instance of test runner.
                     (test-reporter . ,test-reporter)
                     (reset-loaded-tests-on-suite-load? . #t))))
   "A flexible test runner factory, which spawns new test runners."
-  ;; TODO: [Andrew Tropin, 2025-06-05] Combine state into one variable
-  ;; and make it accessible via "class" methods.
   (define state
     (make-atomic-box `((runner/run-summary . ,(make-atomic-box #f))
                        (runner/config . ,config))))
   (define this #f)
-  (define reporter-state (make-atomic-box '()))
 
   ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,
   ;; they can cause problems when using with continuations and thus
