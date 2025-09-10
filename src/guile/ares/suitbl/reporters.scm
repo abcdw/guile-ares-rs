@@ -189,13 +189,14 @@ to catch unhandled messages."
 (define (test-reporter-loading-minimal message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-
     ((reporter/test-loaded)
-     (format (test-reporter-output-port*) "T"))
-    ((reporter/suite-enter)
-     (format (test-reporter-output-port*) "["))
-    ((reporter/suite-leave)
-     (format (test-reporter-output-port*) "]"))
+     (format (test-reporter-output-port*) "-> ~a\n"
+             (assoc-ref message 'description)))
+
+    ;; ((reporter/suite-enter)
+    ;;  (format (test-reporter-output-port*) "["))
+    ;; ((reporter/suite-leave)
+    ;;  (format (test-reporter-output-port*) "]"))
     (else #f)))
 
 (define (test-reporter-minimal message)
