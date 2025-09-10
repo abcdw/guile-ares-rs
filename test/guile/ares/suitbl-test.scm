@@ -240,8 +240,8 @@ because test macro is not composable and can't be wrapped.
 
 (define-suite test-macro-usage-tests
   (test "simple test case with metadata marking it as slow"
-    (sleep 1)
     'metadata `((slow? . #t))
+    ;; (sleep 1)
     (is #t))
 
   (test "zero asserts test macro works fine"
