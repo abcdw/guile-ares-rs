@@ -99,11 +99,6 @@ environment just set it to new instance of test runner.
       (assertions . 0)
       (tests . 0)))
 
-  (define (get-run-summary-atom state)
-    (chain state
-      (atomic-box-ref _)
-      (assoc-ref _ 'runner/run-summary)))
-
   (define (get-test-reporter)
     (lambda (message)
       ((%test-reporter*)
@@ -407,6 +402,11 @@ environment just set it to new instance of test runner.
   (update-atomic-alist-value!
    state 'runner/config
    (lambda (alist) (update-alist-value (or alist '()) key value))))
+
+(define (get-run-summary-atom state)
+    (chain state
+      (atomic-box-ref _)
+      (assoc-ref _ 'runner/run-summary)))
 
 (define (get-stats state)
   (let* ((state-val (atomic-box-ref state))
