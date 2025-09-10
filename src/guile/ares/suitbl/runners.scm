@@ -63,6 +63,9 @@ environment just set it to new instance of test runner.
             (new-value (f value)))
        (update-alist-value alist key new-value)))))
 
+(define (merge-runner-config cfg1 cfg2)
+  (append cfg1 cfg2))
+
 
 ;;;
 ;;; Test runner
@@ -70,14 +73,16 @@ environment just set it to new instance of test runner.
 
 (define* (make-suitbl-test-runner
           #:key
-          (test-reporter test-reporter-base)
-          (config `((auto-run? . #t)
-                    (test-reporter . ,test-reporter)
-                    (reset-loaded-tests-on-suite-load? . #t))))
+          (config '())
+          (default-config `((auto-run? . #t)
+                            (test-reporter . ,test-reporter-base)
+                            (reset-loaded-tests-on-suite-load? . #t))))
   "A flexible test runner factory, which spawns new test runners."
   (define state
     (make-atomic-box `((runner/run-summary . ,(make-atomic-box #f))
-                       (runner/config . ,config))))
+                       (runner/config . ,(merge-runner-config
+                                          config
+                                          default-config)))))
   (define this #f)
 
   ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,

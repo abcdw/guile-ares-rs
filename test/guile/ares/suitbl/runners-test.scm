@@ -11,7 +11,8 @@
            body body* ...)))))
 
 (define (silent-runner)
-  (make-suitbl-test-runner #:test-reporter test-reporter-silent))
+  (make-suitbl-test-runner
+   #:config `((test-reporter . ,test-reporter-silent))))
 
 (define-suite assertions-handling-tests
   (test "is assert returns the value of its body"

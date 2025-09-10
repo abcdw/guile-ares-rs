@@ -174,7 +174,7 @@ because test macro is not composable and can't be wrapped.
       ((_ body body* ...)
        #'(parameterize ((test-runner*
                          (make-suitbl-test-runner
-                          #:test-reporter test-reporter-silent)))
+                          #:config `((test-reporter . ,test-reporter-silent)))))
            body body* ...)))))
 
 
