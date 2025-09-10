@@ -149,6 +149,5 @@
               (is (chain 'hi (list _))))
            (interaction-environment))))
        #:unwind? #t))
-    (pk exception)
     (is (equal? "bad use of '_' syntactic keyword"
                 (exception-message exception)))))
