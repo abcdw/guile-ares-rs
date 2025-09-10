@@ -82,7 +82,7 @@
   (test-group "Incomplete extensions stack"
     (test-equal "Core extension missing"
       "There are no nodes providing @code{ares.core}, but \
-@code{ares.bencode} requires it"
+@code{ares.bencode} requires it."
       (get-exception-message
        (lambda () (make-handler incomplete-stack))))))
 

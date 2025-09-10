@@ -80,6 +80,7 @@
        (test-equal "Received unknow-op"
          `(("id" . "2")
            ("session" . "none")
+           ("nrepl/message" ("id" . "2") ("op" . "eval") ("code" . "(+ 1 2)"))
            ("status" . #("error" "unknown-op" "done")))
          (read-when-ready output))
 
