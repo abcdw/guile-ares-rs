@@ -224,7 +224,7 @@ environment just set it to new instance of test runner.
                (make-exception-with-message _)
                (raise-exception _)))
            (parameterize ((%current-suite-items* (make-atomic-box '()))
-                          (%suite-path* (cons suite-body-thunk (%suite-path*))))
+                          (%suite-path* (cons suite (%suite-path*))))
              (suite-body-thunk)
              (chain (%current-suite-items*)
                (atomic-box-ref _)
@@ -329,7 +329,8 @@ environment just set it to new instance of test runner.
 
       ((runner/load-test)
        (let* ((test (assoc-ref x 'test))
-              (test-with-context (cons `(suite/path . ,%suite-path*) test))
+              (test-with-context
+               (cons `(suite/path . ,(reverse (%suite-path*))) test))
               (description (assoc-ref test 'test/description)))
 
          (add-loaded-test! state test-with-context)
