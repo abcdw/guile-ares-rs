@@ -86,6 +86,7 @@ environment just set it to new instance of test runner.
   "A flexible test runner factory, which spawns new test runners."
   (define state
     (make-atomic-box `((runner/run-summary . ,(make-atomic-box #f))
+                       (runner/run-history)
                        (runner/config . ,(merge-runner-config
                                           config
                                           default-config)))))
@@ -298,6 +299,10 @@ environment just set it to new instance of test runner.
                     (parameterize ((%test-reporter* reporter))
                       (map run-test (get-scheduled-tests state runner-config)))
                     (map run-test (get-scheduled-tests state runner-config)))))
+
+          (update-atomic-alist-value! state 'runner/run-history
+                                      (lambda (_) test-execution-results))
+
           (let loop ((summary initial-run-summary)
                      (remaining-items test-execution-results))
             (if (null? remaining-items)
@@ -349,6 +354,11 @@ environment just set it to new instance of test runner.
                   (run-test test)))))
 
          *unspecified*))
+
+      ((runner/get-run-history)
+       (chain state
+         (atomic-box-ref _)
+         (assoc-ref _ 'runner/run-history)))
 
       ((runner/get-run-summary)
        (atomic-box-ref (get-run-summary-atom state)))
