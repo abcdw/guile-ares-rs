@@ -236,15 +236,53 @@ environment just set it to new instance of test runner.
       (suite-leave!)
       result))
 
+  (define (get-runner-cfg ctx)
+    (define message-cfg
+      (or
+       (chain-and ctx
+         (assoc-ref _ 'runner/message)
+         (assoc-ref _ 'runner/config))
+       '()))
+
+    (define state-cfg
+      (or
+       (chain-and ctx
+         (assoc-ref _ 'runner/state)
+         (atomic-box-ref _)
+         (assoc-ref _ 'runner/config))
+       '()))
+
+    (merge-runner-config message-cfg state-cfg))
+
+  (define (get-message ctx)
+    (assoc-ref ctx 'runner/message))
+
+  (define (message-type ctx)
+    (chain ctx
+      (get-message _)
+      (assoc-ref _ 'type)))
+
+  (define (logging? ctx)
+    (assoc-ref
+     (get-runner-cfg ctx)
+     'log-runner-messages?))
+
   (define (test-runner x)
     "Default test runner"
-    (unless (member (assoc-ref x 'type) '(runner/get-state runner/get-log))
+
+    (define ctx
+      `((runner/message . ,x)
+        (runner/state . ,state)))
+
+    (when (and (logging? ctx)
+               (not (member (message-type ctx)
+                            '(runner/get-state runner/get-log))))
       (update-atomic-alist-value!
        state 'events
        (lambda (l)
-         (cons x (or l '())))))
+         (cons (get-message ctx) (or l '())))))
 
-    (define msg-type (assoc-ref x 'type))
+    (define msg-type (message-type ctx))
 
     (case msg-type
       ((runner/get-state)
