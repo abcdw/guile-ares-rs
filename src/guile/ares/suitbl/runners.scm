@@ -82,7 +82,8 @@ environment just set it to new instance of test runner.
           (config '())
           (default-config `((auto-run? . #t)
                             (test-reporter . ,test-reporter-base)
-                            (reset-loaded-tests-on-suite-load? . #t))))
+                            (reset-loaded-tests-on-suite-load? . #t)
+                            (log-runner-messages? . #f))))
   "A flexible test runner factory, which spawns new test runners."
   (define state
     (make-atomic-box `((runner/run-summary . ,(make-atomic-box #f))
