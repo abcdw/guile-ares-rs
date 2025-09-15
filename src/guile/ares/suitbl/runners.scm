@@ -331,9 +331,8 @@ environment just set it to new instance of test runner.
       ((runner/run-tests)
        (atomic-box-set!
         (get-run-summary-atom state)
-        (let* ((runner-config (or (assoc-ref x 'runner/config)
-                                  (get-runner-config state)))
-               (reporter (assoc-ref x 'reporter))
+        (let* ((runner-config (get-runner-cfg ctx))
+               (reporter (assoc-ref runner-config 'test-reporter))
                (test-execution-results
                 (if reporter
                     (parameterize ((%test-reporter* reporter))

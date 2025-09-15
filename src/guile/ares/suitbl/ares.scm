@@ -24,7 +24,9 @@
 
 (define (run-tests)
   ((test-runner*) `((type . runner/run-tests)
-                    (reporter . ,test-reporter-minimal)))
+                    (runner/config
+                     .
+                     ((test-reporter . ,test-reporter-minimal)))))
   ((test-runner*) `((type . runner/get-run-summary))))
 
 (define (get-current-test-runner-stats)
