@@ -151,10 +151,10 @@ environment just set it to new instance of test runner.
            (error? (any (lambda (x) (eq? x 'error)) result))
            (fail? (any (lambda (x) (eq? x 'fail)) result)))
       `((test . ,test)
-        (errors . ,(if error? 1 0))
-        (failures . ,(if (and fail? (not error?)) 1 0))
-        (assertions . ,(length result))
-        (tests . 1))))
+        (test-run/result . ((errors . ,(if error? 1 0))
+                            (failures . ,(if (and fail? (not error?)) 1 0))
+                            (assertions . ,(length result))
+                            (tests . 1))))))
 
   (define (run-assert assert)
     (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
@@ -352,7 +352,8 @@ environment just set it to new instance of test runner.
                 summary
                 (let ((item (car remaining-items)))
                   (loop
-                   (merge-run-summaries summary item)
+                   (merge-run-summaries summary
+                                        (assoc-ref item 'test-run/result))
                    (cdr remaining-items)))))))
 
        *unspecified*)
