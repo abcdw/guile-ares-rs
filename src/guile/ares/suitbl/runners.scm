@@ -231,7 +231,7 @@ environment just set it to new instance of test runner.
              (chain (%current-suite-items*)
                (atomic-box-ref _)
                (reverse _)
-               (cons suite-body-thunk _)
+               (cons suite _)
                (cons 'value _))))
          #:unwind? #t))
       (suite-leave!)
