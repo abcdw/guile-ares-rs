@@ -292,7 +292,9 @@ environment just set it to new instance of test runner.
        (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
 
       ((runner/run-assert)
-       (let* ((assert (assoc-ref x 'assert)))
+       (let* ((assert (chain ctx
+                        (get-message _)
+                        (assoc-ref _ 'assert))))
          (when (and (not (null? (%suite-path*)))
                     (not (%test*)))
            (chain
@@ -306,7 +308,9 @@ environment just set it to new instance of test runner.
                   (get-runner-config-value
                    state 'reset-loaded-tests-on-suite-load?))
          (reset-loaded-tests! state))
-       (let* ((suite (assoc-ref x 'suite))
+       (let* ((suite (chain ctx
+                       (get-message _)
+                       (assoc-ref _ 'suite)))
               (try-load-suite (make-try-load-suite suite)))
 
          (match (try-load-suite)
@@ -360,14 +364,18 @@ environment just set it to new instance of test runner.
          ;; (reset-loaded-tests! state)
          (for-each
           (lambda (ts) (ts))
-          (assoc-ref x 'suites))
+          (chain ctx
+            (get-message _)
+            (assoc-ref _ 'suites)))
          ;; TODO: [Andrew Tropin, 2025-08-28] Notify number of loaded tests
 
          (test-runner
           `((type . runner/run-tests)))))
 
       ((runner/load-test)
-       (let* ((test (assoc-ref x 'test))
+       (let* ((test (chain ctx
+                      (get-message _)
+                      (assoc-ref _ 'test)))
               (test-with-context
                (cons `(suite/path . ,(reverse (%suite-path*))) test))
               (description (assoc-ref test 'test/description)))
