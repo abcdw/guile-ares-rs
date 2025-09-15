@@ -88,9 +88,9 @@ to catch unhandled messages."
   (map
    (lambda (i)
      (cond
-      ((test? i) (string-append "test: " (procedure-documentation i)))
+      ((test? i) (string-append "test: " (assoc-ref i 'test/description)))
       ((suite? i)
-       (string-append "suite: " (procedure-documentation i)))
+       (string-append "suite: " (assoc-ref i 'suite/description)))
       ((list? i) (tests->pretty-string i))
       (else i)))
    l))
