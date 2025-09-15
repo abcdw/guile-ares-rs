@@ -394,12 +394,7 @@ environment just set it to new instance of test runner.
                 suite-items
                 (lambda (items) (cons test items)))
                (when (get-runner-config-value state 'auto-run?)
-                 ;; TODO: [Andrew Tropin, 2025-08-27] Use
-                 ;; runner/run-tests and pass a filter function, which
-                 ;; selects only current test.
-                 (atomic-box-set!
-                  (get-run-summary-atom state)
-                  (run-test test)))))
+                 (this `((type . runner/run-tests))))))
 
          *unspecified*))
 
