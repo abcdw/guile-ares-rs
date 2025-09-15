@@ -147,8 +147,7 @@ to catch unhandled messages."
        `(value . ,(thunk)))
      #:unwind? #t)))
 
-(define (test-reporter-verbose message)
-  (define (actual message)
+(define (actual message)
     (let* ((assert-body (assoc-ref message 'assert/body))
            (args-thunk (assoc-ref message 'assert/args-thunk))
            (safe-args-thunk (safify-thunk args-thunk)))
@@ -162,6 +161,7 @@ to catch unhandled messages."
              (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
           (assoc-ref message 'assertion/result))))
 
+(define (test-reporter-verbose message)
   (case (assoc-ref message 'type)
     ((reporter/test-start)
      (format (test-reporter-output-port*) "\n┌Test ~a\n"
