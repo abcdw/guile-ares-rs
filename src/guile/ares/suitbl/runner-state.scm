@@ -11,6 +11,7 @@
   #:use-module ((ares suitbl reporters) #:select (test-reporter-base))
   #:use-module ((srfi srfi-1)
                 #:select (alist-delete alist-cons))
+  #:use-module ((ice-9 match) #:select (match))
 
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
@@ -23,6 +24,8 @@
             get-scheduled-tests
             add-suite!
             save-run-history!
+            get-run-history
+            get-run-summary
             save-event!
             merge-runner-config))
 
@@ -48,6 +51,39 @@
 (define (save-run-history! state run-history)
   (update-atomic-alist-value!
    state 'runner/run-history (lambda (_) run-history)))
+
+(define (get-run-history state)
+  (chain state
+    (atomic-box-ref _)
+    (assoc-ref _ 'runner/run-history)))
+
+(define (get-run-summary state)
+  (define initial-run-summary
+    `((errors . 0)
+      (failures . 0)
+      (assertions . 0)
+      (tests . 0)))
+
+  (define (merge-run-summaries s1 s2)
+    (map
+     (lambda (v)
+       (match v
+         ((key . value)
+          (cons key (+ (assoc-ref s2 key) value)))))
+     s1))
+  (define run-history (get-run-history state))
+
+  (if run-history
+      (let loop ((summary initial-run-summary)
+                 (remaining-items run-history))
+        (if (null? remaining-items)
+            summary
+            (let ((item (car remaining-items)))
+              (loop
+               (merge-run-summaries summary
+                                    (assoc-ref item 'test-run/result))
+               (cdr remaining-items)))))
+      #f))
 
 (define (save-event! state event)
   (update-atomic-alist-value!

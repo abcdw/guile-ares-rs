@@ -45,14 +45,6 @@ environment just set it to new instance of test runner.
 ;;; Helpers
 ;;;
 
-(define (merge-run-summaries s1 s2)
-  (map
-   (lambda (v)
-     (match v
-       ((key . value)
-        (cons key (+ (assoc-ref s2 key) value)))))
-   s1))
-
 (define (copy-procedure-properties! from to)
   (set-procedure-properties! to (procedure-properties from)))
 
@@ -70,8 +62,7 @@ environment just set it to new instance of test runner.
                             (log-runner-messages? . #f))))
   "A flexible test runner factory, which spawns new test runners."
   (define state
-    (make-atomic-box `((runner/run-summary . ,(make-atomic-box #f))
-                       (runner/run-history)
+    (make-atomic-box `((runner/run-history . #f)
                        (runner/config . ,(state:merge-runner-config
                                           config
                                           default-config)))))
@@ -90,12 +81,6 @@ environment just set it to new instance of test runner.
                            (state:get-runner-config-value
                             state 'test-reporter)))
 
-  (define initial-run-summary
-    `((errors . 0)
-      (failures . 0)
-      (assertions . 0)
-      (tests . 0)))
-
   (define (get-test-reporter)
     (lambda (message)
       ((%test-reporter*)
@@ -104,10 +89,6 @@ environment just set it to new instance of test runner.
        ;;   (alist-cons 'test-runner this _))
        message)))
 
-  (define (get-run-summary-atom state)
-    (chain state
-      (atomic-box-ref _)
-      (assoc-ref _ 'runner/run-summary)))
 
   (define (%run-test test)
     (parameterize ((%test-events* (make-atomic-box '())))
@@ -319,29 +300,17 @@ environment just set it to new instance of test runner.
            (this `((type . runner/run-tests))))))
 
       ((runner/run-tests)
-       (atomic-box-set!
-        (get-run-summary-atom state)
-        (let* ((runner-config (get-runner-cfg ctx))
-               (reporter (assoc-ref runner-config 'test-reporter))
-               (test-execution-results
-                (if reporter
-                    (parameterize ((%test-reporter* reporter))
-                      (map run-test
-                           (state:get-scheduled-tests state runner-config)))
-                    (map run-test
-                         (state:get-scheduled-tests state runner-config)))))
+       (let* ((runner-config (get-runner-cfg ctx))
+              (reporter (assoc-ref runner-config 'test-reporter))
+              (test-execution-results
+               (if reporter
+                   (parameterize ((%test-reporter* reporter))
+                     (map run-test
+                          (state:get-scheduled-tests state runner-config)))
+                   (map run-test
+                        (state:get-scheduled-tests state runner-config)))))
 
-          (state:save-run-history! state test-execution-results)
-
-          (let loop ((summary initial-run-summary)
-                     (remaining-items test-execution-results))
-            (if (null? remaining-items)
-                summary
-                (let ((item (car remaining-items)))
-                  (loop
-                   (merge-run-summaries summary
-                                        (assoc-ref item 'test-run/result))
-                   (cdr remaining-items)))))))
+         (state:save-run-history! state test-execution-results))
 
        *unspecified*)
 
@@ -387,12 +356,10 @@ environment just set it to new instance of test runner.
          *unspecified*))
 
       ((runner/get-run-history)
-       (chain state
-         (atomic-box-ref _)
-         (assoc-ref _ 'runner/run-history)))
+       (state:get-run-history state))
 
       ((runner/get-run-summary)
-       (atomic-box-ref (get-run-summary-atom state)))
+       (state:get-run-summary state))
 
       (else
        (chain msg-type
