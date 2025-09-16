@@ -87,21 +87,26 @@ exceptions."
   (define (capture-stack)
     "Captures the current stack without any unwanted frames."
     ;; Adapted from frame->stack-vector.
-    (match (fluid-ref %stacks)
-      ((stack-tag . prompt-tag)
-       (make-stack
-        #t
-        ;; Cut three frames from the top of the stack:
-        ;; make-stack, this one, and the throw handler.
-        3
-        ;; Narrow the end of the stack to the most recent start-stack.
-        prompt-tag
-        ;; And one more frame, because %start-stack invoking the
-        ;; start-stack thunk has its own frame too.
-        0 (and prompt-tag 1)))
-       (_
-        ;; Otherwise take the whole stack, except the top three frames.
-        (make-stack #t 3))))
+    ;; (match (fluid-ref %stacks)
+    ;;   ((stack-tag . prompt-tag)
+    ;;    (make-stack
+    ;;     #t
+    ;;     ;; Cut three frames from the top of the stack:
+    ;;     ;; make-stack, this one, and the throw handler.
+    ;;     3
+    ;;     ;; Narrow the end of the stack to the most recent start-stack.
+    ;;     prompt-tag
+    ;;     ;; And one more frame, because %start-stack invoking the
+    ;;     ;; start-stack thunk has its own frame too.
+    ;;     0 (and prompt-tag 1)))
+    ;;    (_
+    ;;     ;; Otherwise take the whole stack, except the top three frames.
+    ;;     (make-stack #t 3)))
+
+    ;; XXX: The code above for cutting stack frames sometimes return
+    ;; #f instead of stack, which makes stack->nrepl-value to fail and
+    ;; thus hangs the evaluation session.
+    (make-stack #t 3))
 
   (lambda ()
     ;; file:~/work/gnu/guix/guix/repl.scm::`(exception (arguments ,key ,@(map value->sexp args))
