@@ -30,11 +30,7 @@
                test-reporters-use-first
 
                make-suitbl-test-runner
-               run-test-suites
-
-               get-stats
-
-               set-runner-config-value!))
+               run-test-suites))
 
 #|
 

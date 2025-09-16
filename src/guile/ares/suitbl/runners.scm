@@ -15,6 +15,7 @@
                 #:select (last drop-right any fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
+  #:use-module ((ares suitbl runner-state) #:prefix state:)
   #:export (make-suitbl-test-runner
             run-test-suites
 
@@ -55,22 +56,6 @@ environment just set it to new instance of test runner.
 (define (copy-procedure-properties! from to)
   (set-procedure-properties! to (procedure-properties from)))
 
-(define (update-alist-value alist key value)
-  (chain alist
-    (alist-delete key _)
-    (alist-cons key value _)))
-
-(define (update-atomic-alist-value! alist-atom key f)
-  (atomic-box-update!
-   alist-atom
-   (lambda (alist)
-     (let* ((value (or (assoc-ref alist key) #f))
-            (new-value (f value)))
-       (update-alist-value alist key new-value)))))
-
-(define (merge-runner-config cfg1 cfg2)
-  (append cfg1 cfg2))
-
 
 ;;;
 ;;; Test runner
@@ -87,7 +72,7 @@ environment just set it to new instance of test runner.
   (define state
     (make-atomic-box `((runner/run-summary . ,(make-atomic-box #f))
                        (runner/run-history)
-                       (runner/config . ,(merge-runner-config
+                       (runner/config . ,(state:merge-runner-config
                                           config
                                           default-config)))))
   (define this #f)
@@ -102,7 +87,7 @@ environment just set it to new instance of test runner.
   (define %schedule-only?* (make-parameter #f))
   (define %runner-config* (make-parameter #f))
   (define %test-reporter* (make-parameter
-                           (get-runner-config-value
+                           (state:get-runner-config-value
                             state 'test-reporter)))
 
   (define initial-run-summary
@@ -118,6 +103,11 @@ environment just set it to new instance of test runner.
        ;;   (alist-cons 'state reporter-state _)
        ;;   (alist-cons 'test-runner this _))
        message)))
+
+  (define (get-run-summary-atom state)
+    (chain state
+      (atomic-box-ref _)
+      (assoc-ref _ 'runner/run-summary)))
 
   (define (%run-test test)
     (parameterize ((%test-events* (make-atomic-box '())))
@@ -252,7 +242,7 @@ environment just set it to new instance of test runner.
          (assoc-ref _ 'runner/config))
        '()))
 
-    (merge-runner-config message-cfg state-cfg))
+    (state:merge-runner-config message-cfg state-cfg))
 
   (define (get-message ctx)
     (assoc-ref ctx 'runner/message))
@@ -277,10 +267,7 @@ environment just set it to new instance of test runner.
     (when (and (logging? ctx)
                (not (member (message-type ctx)
                             '(runner/get-state runner/get-log))))
-      (update-atomic-alist-value!
-       state 'events
-       (lambda (l)
-         (cons (get-message ctx) (or l '())))))
+      (state:save-event! state (get-message ctx)))
 
     (define msg-type (message-type ctx))
 
@@ -304,9 +291,9 @@ environment just set it to new instance of test runner.
 
       ((runner/load-suite)
        (when (and (null? (%suite-path*))
-                  (get-runner-config-value
+                  (state:get-runner-config-value
                    state 'reset-loaded-tests-on-suite-load?))
-         (reset-loaded-tests! state))
+         (state:reset-loaded-tests! state))
        (let* ((suite (chain ctx
                        (get-message _)
                        (assoc-ref _ 'suite)))
@@ -322,13 +309,13 @@ environment just set it to new instance of test runner.
                    suite-items
                    (lambda (items) (cons val items)))
 
-                  (update-atomic-alist-value! state 'suite (lambda (l) val))))
+                  (state:add-suite! state val)))
             val))
          ;; test-runner-run-suites sets %schedule-only?*
          ;; and also calls run-scheduled-tests, so to prevent double
          ;; execution of scheduled test suites we add this condition.
          (when (and (null? (%suite-path*)) (not (%schedule-only?*))
-                    (get-runner-config-value state 'auto-run?))
+                    (state:get-runner-config-value state 'auto-run?))
            (this `((type . runner/run-tests))))))
 
       ((runner/run-tests)
@@ -339,11 +326,12 @@ environment just set it to new instance of test runner.
                (test-execution-results
                 (if reporter
                     (parameterize ((%test-reporter* reporter))
-                      (map run-test (get-scheduled-tests state runner-config)))
-                    (map run-test (get-scheduled-tests state runner-config)))))
+                      (map run-test
+                           (state:get-scheduled-tests state runner-config)))
+                    (map run-test
+                         (state:get-scheduled-tests state runner-config)))))
 
-          (update-atomic-alist-value! state 'runner/run-history
-                                      (lambda (_) test-execution-results))
+          (state:save-run-history! state test-execution-results)
 
           (let loop ((summary initial-run-summary)
                      (remaining-items test-execution-results))
@@ -380,7 +368,7 @@ environment just set it to new instance of test runner.
                (cons `(suite/path . ,(reverse (%suite-path*))) test))
               (description (assoc-ref test 'test/description)))
 
-         (add-loaded-test! state test-with-context)
+         (state:add-loaded-test! state test-with-context)
 
          ((get-test-reporter)
           `((type . reporter/test-loaded)
@@ -393,7 +381,7 @@ environment just set it to new instance of test runner.
                (atomic-box-update!
                 suite-items
                 (lambda (items) (cons test items)))
-               (when (get-runner-config-value state 'auto-run?)
+               (when (state:get-runner-config-value state 'auto-run?)
                  (this `((type . runner/run-tests))))))
 
          *unspecified*))
@@ -422,60 +410,3 @@ environment just set it to new instance of test runner.
 
 ;; Set default test runner.
 (test-runner* (make-suitbl-test-runner))
-
-
-;;;
-;;; Tests state management
-;;;
-
-;; It should be after test-runner* is set (which is kinda strange)
-
-(define (get-loaded-tests state)
-  (chain (atomic-box-ref state)
-    (assoc-ref _ 'loaded-tests)
-    (or _ '())))
-
-(define (add-loaded-test! state test)
-  (update-atomic-alist-value!
-   state 'loaded-tests
-   (lambda (l) (cons test (or l '())))))
-
-(define (reset-loaded-tests! state)
-  (update-atomic-alist-value!
-   state 'loaded-tests
-   (lambda (l) '())))
-
-(define (get-scheduled-tests state runner-config)
-  (let ((lot-transformation identity))
-    (chain (atomic-box-ref state)
-      (assoc-ref _ 'loaded-tests)
-      (or _ '())
-      (lot-transformation _))))
-
-(define (get-runner-config state)
-  (chain (atomic-box-ref state)
-    (assoc-ref _ 'runner/config)
-    (or _ '())))
-
-(define (get-runner-config-value state key)
-  (chain-and (atomic-box-ref state)
-    (assoc-ref _ 'runner/config)
-    (assoc-ref _ key)))
-
-(define (set-runner-config-value! state key value)
-  (update-atomic-alist-value!
-   state 'runner/config
-   (lambda (alist) (update-alist-value (or alist '()) key value))))
-
-(define (get-run-summary-atom state)
-    (chain state
-      (atomic-box-ref _)
-      (assoc-ref _ 'runner/run-summary)))
-
-(define (get-stats state)
-  (let* ((state-val (atomic-box-ref state))
-         (loaded-tests-count (chain state
-                               (get-loaded-tests _)
-                               (length _))))
-    `((loaded-tests-count . ,loaded-tests-count)
-      (selected-tests-count . ,loaded-tests-count))))
