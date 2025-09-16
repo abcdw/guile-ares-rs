@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2025 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -19,7 +19,13 @@
 
 (define-module (ares atomic)
   #:use-module (ice-9 atomic)
-  #:export (atomic-box-update!))
+  #:export (atomic-box-update!)
+  #:re-export (make-atomic-box
+               atomic-box?
+               atomic-box-ref
+               atomic-box-set!
+               atomic-box-swap!
+               atomic-box-compare-and-swap!))
 
 (define (atomic-box-update! box proc)
   "Atomically update the value of BOX to (PROC BOX-VALUE) and return the
