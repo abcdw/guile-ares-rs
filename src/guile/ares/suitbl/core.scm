@@ -10,9 +10,6 @@
             suite suite?
             suite-thunk suite-thunk?
 
-            ;; TODO: [Andrew Tropin, 2025-05-15] Remove it?, because it
-            ;; introduces ambiguity and doesn't have a private
-            ;; counterpart
             define-suite))
 
 
