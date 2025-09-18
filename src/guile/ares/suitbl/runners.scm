@@ -75,7 +75,6 @@ environment just set it to new instance of test runner.
   (define %current-suite-items* (make-parameter #f))
   (define %test* (make-parameter #f))
   (define %test-run-events* (make-parameter #f))
-  (define %schedule-only?* (make-parameter #f))
   (define %test-reporter* (make-parameter
                            (state:get-runner-config-value
                             state 'test-reporter)))
@@ -291,10 +290,7 @@ environment just set it to new instance of test runner.
 
                   (state:add-suite! state val)))
             val))
-         ;; test-runner-run-suites sets %schedule-only?*
-         ;; and also calls run-scheduled-tests, so to prevent double
-         ;; execution of scheduled test suites we add this condition.
-         (when (and (null? (%suite-path*)) (not (%schedule-only?*))
+         (when (and (null? (%suite-path*))
                     (state:get-runner-config-value state 'auto-run?))
            (this `((type . runner/run-tests))))))
 
