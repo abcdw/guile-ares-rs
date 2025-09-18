@@ -9,6 +9,7 @@
    (eval . (put 'test 'scheme-indent-function 1))
    (eval . (put 'chain 'scheme-indent-function 1))
    (eval . (put 'chain-and 'scheme-indent-function 1))
+   (eval . (put 'with-test-runner 'scheme-indent-function 1))
    (eval . (put 'let/ec 'scheme-indent-function 1))
    ;; SRFI-64
    (eval . (put 'test-group 'scheme-indent-function 1))
