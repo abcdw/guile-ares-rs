@@ -87,6 +87,50 @@ environment just set it to new instance of test runner.
        ;;   (alist-cons 'test-runner this _))
        message)))
 
+  (define (%run-assert assert)
+    (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
+      (with-exception-handler
+       (lambda (ex)
+         (when (%test*)
+           (atomic-box-update!
+            (%test-run-events*)
+            (lambda (value)
+              (cons 'error value))))
+         ((get-test-reporter)
+          (append
+           `((type . reporter/assertion-error)
+             (assertion/error . ,ex))
+           assert)))
+       (lambda ()
+         ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+         ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
+         (let* ((result (body-thunk)))
+           (when (%test*)
+             (atomic-box-update!
+              (%test-run-events*)
+              (lambda (value)
+                (cons (if result 'pass 'fail) value))))
+           ((get-test-reporter)
+            (append
+             `((type . ,(if result
+                            'reporter/assertion-pass
+                            'reporter/assertion-fail))
+               (assertion/result . ,result))
+             assert))
+           result))
+       #:unwind? #t)))
+
+  (define (run-assert ctx)
+    (let* ((assert (chain ctx
+                     (get-message _)
+                     (assoc-ref _ 'assert))))
+      (when (and (not (null? (%suite-path*)))
+                 (not (%test*)))
+        (chain
+            "Assert encountered inside suite, but outside of test"
+          (make-exception-with-message _)
+          (raise-exception _)))
+      (%run-assert assert)))
 
   (define (%run-test test)
     (parameterize ((%test-run-events* (make-atomic-box '())))
@@ -123,39 +167,6 @@ environment just set it to new instance of test runner.
                             (failures . ,(if (and fail? (not error?)) 1 0))
                             (assertions . ,(length result))
                             (tests . 1))))))
-
-  (define (run-assert assert)
-    (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
-      (with-exception-handler
-       (lambda (ex)
-         (when (%test*)
-           (atomic-box-update!
-            (%test-run-events*)
-            (lambda (value)
-              (cons 'error value))))
-         ((get-test-reporter)
-          (append
-           `((type . reporter/assertion-error)
-             (assertion/error . ,ex))
-           assert)))
-       (lambda ()
-         ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-         ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-         (let* ((result (body-thunk)))
-           (when (%test*)
-             (atomic-box-update!
-              (%test-run-events*)
-              (lambda (value)
-                (cons (if result 'pass 'fail) value))))
-           ((get-test-reporter)
-            (append
-             `((type . ,(if result
-                            'reporter/assertion-pass
-                            'reporter/assertion-fail))
-               (assertion/result . ,result))
-             assert))
-           result))
-       #:unwind? #t)))
 
   (define (print-suite suite)
     ((get-test-reporter)
@@ -258,16 +269,7 @@ environment just set it to new instance of test runner.
        (state:get-log state))
 
       ((runner/run-assert)
-       (let* ((assert (chain ctx
-                        (get-message _)
-                        (assoc-ref _ 'assert))))
-         (when (and (not (null? (%suite-path*)))
-                    (not (%test*)))
-           (chain
-               "Assert encountered inside suite, but outside of test"
-             (make-exception-with-message _)
-             (raise-exception _)))
-         (run-assert assert)))
+       (run-assert ctx))
 
       ((runner/load-suite)
        (when (and (null? (%suite-path*))
