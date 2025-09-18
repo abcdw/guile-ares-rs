@@ -30,6 +30,13 @@
 ;; TODO: [Andrew Tropin, 2025-08-27] Write tests to check that test
 ;; runner gets all the necessary information from test definitions.
 
+;; IDEA: [Andrew Tropin, 2025-09-18] Change API of define-suite to
+;; mimic usual define, so the name of the suite is wrapped with
+;; parentesis and can be immediately called.
+
+;; IDEA: [Andrew Tropin, 2025-09-18] Add support for docstrings for
+;; define-suite
+
 
 
 ;;;
