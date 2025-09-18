@@ -250,11 +250,11 @@ environment just set it to new instance of test runner.
      (not (member (message-type ctx)
                   '(runner/get-state runner/get-log)))))
 
-  (define (test-runner x)
+  (define (test-runner message)
     "Default test runner"
 
     (define ctx
-      `((runner/message . ,x)
+      `((runner/message . ,message)
         (runner/state . ,state)))
 
     (when (logging? ctx)
