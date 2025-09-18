@@ -313,21 +313,6 @@ environment just set it to new instance of test runner.
 
        *unspecified*)
 
-      ((runner/run-suites)
-       (parameterize ((test-runner* this)
-                      (%schedule-only?* #t))
-         ;; TODO: [Andrew Tropin, 2025-05-01] Call reset-runner-state
-         ;; (reset-loaded-tests! state)
-         (for-each
-          (lambda (ts) (ts))
-          (chain ctx
-            (get-message _)
-            (assoc-ref _ 'suites)))
-         ;; TODO: [Andrew Tropin, 2025-08-28] Notify number of loaded tests
-
-         (test-runner
-          `((type . runner/run-tests)))))
-
       ((runner/load-test)
        (let* ((test (chain ctx
                       (get-message _)
@@ -368,11 +353,6 @@ environment just set it to new instance of test runner.
 
   (set! this test-runner)
   this)
-
-(define (run-test-suites test-runner suites)
-  (test-runner
-   `((type . runner/run-suites)
-     (suites . ,suites))))
 
 ;; Set default test runner.
 (test-runner* (make-suitbl-test-runner))

@@ -29,8 +29,7 @@
                test-reporters-use-all
                test-reporters-use-first
 
-               make-suitbl-test-runner
-               run-test-suites))
+               make-suitbl-test-runner))
 
 #|
 
