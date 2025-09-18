@@ -255,7 +255,7 @@ environment just set it to new instance of test runner.
       ((runner/get-state)
        state)
       ((runner/get-log)
-       (reverse (or (assoc-ref (atomic-box-ref state) 'events) '())))
+       (state:get-log state))
 
       ((runner/run-assert)
        (let* ((assert (chain ctx

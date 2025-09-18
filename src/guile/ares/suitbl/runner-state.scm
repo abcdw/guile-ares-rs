@@ -16,6 +16,7 @@
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
   #:export (save-event!
+            get-log
 
             add-loaded-test!
             add-suite!
@@ -61,6 +62,13 @@
    state 'events
    (lambda (l)
      (cons event (or l '())))))
+
+(define (get-log state)
+  (reverse
+   (chain state
+     (atomic-box-ref _)
+     (assoc-ref _ 'events)
+     (or _ '()))))
 
 
 ;;;
