@@ -232,9 +232,12 @@ environment just set it to new instance of test runner.
       (assoc-ref _ 'type)))
 
   (define (logging? ctx)
-    (assoc-ref
-     (get-runner-cfg ctx)
-     'log-runner-messages?))
+    (and
+     (assoc-ref
+      (get-runner-cfg ctx)
+      'log-runner-messages?)
+     (not (member (message-type ctx)
+                  '(runner/get-state runner/get-log)))))
 
   (define (test-runner x)
     "Default test runner"
@@ -243,9 +246,7 @@ environment just set it to new instance of test runner.
       `((runner/message . ,x)
         (runner/state . ,state)))
 
-    (when (and (logging? ctx)
-               (not (member (message-type ctx)
-                            '(runner/get-state runner/get-log))))
+    (when (logging? ctx)
       (state:save-event! state (get-message ctx)))
 
     (define msg-type (message-type ctx))
