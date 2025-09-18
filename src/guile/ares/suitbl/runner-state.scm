@@ -15,20 +15,27 @@
 
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
-  #:export (get-stats
-            get-loaded-tests
-            get-runner-config-value
-            set-runner-config-value!
-            reset-loaded-tests!
+  #:export (save-event!
+
             add-loaded-test!
-            get-scheduled-tests
             add-suite!
+            reset-loaded-tests!
+            get-loaded-tests
+            get-scheduled-tests
+            get-stats
+
             save-run-history!
             get-run-history
             get-run-summary
-            save-event!
+
+            get-runner-config-value
+            set-runner-config-value!
             merge-runner-config))
 
+
+;;;
+;;; Helpers
+;;;
 
 (define (update-alist-value alist key value)
   (chain alist
@@ -43,9 +50,21 @@
             (new-value (f value)))
        (update-alist-value alist key new-value)))))
 
+
 
 ;;;
-;;; Test runner state management
+;;; Logging
+;;;
+
+(define (save-event! state event)
+  (update-atomic-alist-value!
+   state 'events
+   (lambda (l)
+     (cons event (or l '())))))
+
+
+;;;
+;;; Run history and summaries
 ;;;
 
 (define (save-run-history! state run-history)
@@ -85,33 +104,29 @@
                (cdr remaining-items)))))
       #f))
 
-(define (save-event! state event)
-  (update-atomic-alist-value!
-   state 'events
-   (lambda (l)
-     (cons event (or l '())))))
-
-(define (add-suite! state suite)
-  (update-atomic-alist-value!
-   state 'suite (lambda (_) suite)))
-
-(define (merge-runner-config cfg1 cfg2)
-  (append cfg1 cfg2))
-
-(define (get-loaded-tests state)
-  (chain (atomic-box-ref state)
-    (assoc-ref _ 'loaded-tests)
-    (or _ '())))
+
+;;;
+;;; Run history and summaries
+;;;
 
 (define (add-loaded-test! state test)
   (update-atomic-alist-value!
    state 'loaded-tests
    (lambda (l) (cons test (or l '())))))
 
+(define (add-suite! state suite)
+  (update-atomic-alist-value!
+   state 'suite (lambda (_) suite)))
+
 (define (reset-loaded-tests! state)
   (update-atomic-alist-value!
    state 'loaded-tests
    (lambda (l) '())))
+
+(define (get-loaded-tests state)
+  (chain (atomic-box-ref state)
+    (assoc-ref _ 'loaded-tests)
+    (or _ '())))
 
 (define (select-interesting-tests lot)
   (filter (lambda (t)
@@ -127,6 +142,21 @@
       (or _ '())
       (lot-transformation _))))
 
+(define (get-stats state)
+  (let* ((state-val (atomic-box-ref state))
+         (loaded-tests-count (chain state
+                               (get-loaded-tests _)
+                               (length _))))
+    `((loaded-tests-count . ,loaded-tests-count)
+      (selected-tests-count . ,loaded-tests-count))))
+
+;;;
+;;; Test runner config
+;;;
+
+(define (merge-runner-config cfg1 cfg2)
+  (append cfg1 cfg2))
+
 (define (get-runner-config state)
   (chain (atomic-box-ref state)
     (assoc-ref _ 'runner/config)
@@ -141,11 +171,3 @@
   (update-atomic-alist-value!
    state 'runner/config
    (lambda (alist) (update-alist-value (or alist '()) key value))))
-
-(define (get-stats state)
-  (let* ((state-val (atomic-box-ref state))
-         (loaded-tests-count (chain state
-                               (get-loaded-tests _)
-                               (length _))))
-    `((loaded-tests-count . ,loaded-tests-count)
-      (selected-tests-count . ,loaded-tests-count))))
