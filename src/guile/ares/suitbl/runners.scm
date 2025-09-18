@@ -72,11 +72,10 @@ environment just set it to new instance of test runner.
   ;; they can cause problems when using with continuations and thus
   ;; with concurrent test runs implemented on top of fibers
   (define %suite-path* (make-parameter '()))
+  (define %current-suite-items* (make-parameter #f))
   (define %test* (make-parameter #f))
   (define %test-run-events* (make-parameter #f))
-  (define %current-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
-  (define %runner-config* (make-parameter #f))
   (define %test-reporter* (make-parameter
                            (state:get-runner-config-value
                             state 'test-reporter)))
