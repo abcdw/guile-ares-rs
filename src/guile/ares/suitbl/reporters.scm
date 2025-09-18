@@ -207,8 +207,7 @@ to catch unhandled messages."
      (format (test-reporter-output-port*) "=> [~a]\n"
              (assoc-ref message 'description)))
     ((reporter/test-end)
-     (format (test-reporter-output-port*) "\n"
-             (assoc-ref message 'description)))
+     (format (test-reporter-output-port*) "\n"))
 
     ((reporter/assertion-pass)
      (format (test-reporter-output-port*) "✓"))
