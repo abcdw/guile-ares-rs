@@ -73,7 +73,7 @@ environment just set it to new instance of test runner.
   ;; with concurrent test runs implemented on top of fibers
   (define %suite-path* (make-parameter '()))
   (define %test* (make-parameter #f))
-  (define %test-events* (make-parameter #f))
+  (define %test-run-events* (make-parameter #f))
   (define %current-suite-items* (make-parameter #f))
   (define %schedule-only?* (make-parameter #f))
   (define %runner-config* (make-parameter #f))
@@ -91,7 +91,7 @@ environment just set it to new instance of test runner.
 
 
   (define (%run-test test)
-    (parameterize ((%test-events* (make-atomic-box '())))
+    (parameterize ((%test-run-events* (make-atomic-box '())))
       ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
       ;; happen inside test case, but outside of assert
 
@@ -114,7 +114,7 @@ environment just set it to new instance of test runner.
          `((type . reporter/test-end)
            (description . ,description))))
 
-      (atomic-box-ref (%test-events*))))
+      (atomic-box-ref (%test-run-events*))))
 
   (define (run-test test)
     (let* ((result (%run-test test))
@@ -132,7 +132,7 @@ environment just set it to new instance of test runner.
        (lambda (ex)
          (when (%test*)
            (atomic-box-update!
-            (%test-events*)
+            (%test-run-events*)
             (lambda (value)
               (cons 'error value))))
          ((get-test-reporter)
@@ -146,7 +146,7 @@ environment just set it to new instance of test runner.
          (let* ((result (body-thunk)))
            (when (%test*)
              (atomic-box-update!
-              (%test-events*)
+              (%test-run-events*)
               (lambda (value)
                 (cons (if result 'pass 'fail) value))))
            ((get-test-reporter)
