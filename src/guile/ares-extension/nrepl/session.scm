@@ -23,6 +23,7 @@
   #:use-module (ares atomic)
   #:use-module (ares alist)
   #:use-module (ares guile)
+  #:use-module (ares guile exceptions)
   #:use-module (uuid)
   #:use-module (srfi srfi-197)
   #:export (nrepl.session
@@ -127,4 +128,12 @@
           (if (and session-id (not (get-session state session-id)))
               ((assoc-ref new-context 'reply!)
                `(("status" . #("error" "unknown-session" "done"))))
-              (handler new-context))))))
+              (with-exception-handler
+               (lambda (ex)
+                 ((assoc-ref new-context 'reply!)
+                  `(("ares.exception" . ,(exception->string ex))
+                    ("status" . #("error"
+                                  "something-broken-after-nrepl-session"
+                                  "done")))))
+               (lambda () (handler new-context))
+               #:unwind? #t))))))
