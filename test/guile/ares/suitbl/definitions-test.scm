@@ -1,10 +1,10 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
 
-(define-module (ares suitbl core-test)
+(define-module (ares suitbl definitions-test)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl core)
+  #:use-module (ares suitbl definitions)
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 exceptions)
   #:use-module ((ice-9 atomic)

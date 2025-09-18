@@ -7,7 +7,7 @@
                 (atomic-box-update!
                  make-atomic-box
                  atomic-box-ref))
-  #:use-module ((ares suitbl core) #:select (test-runner* test?))
+  #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
   #:use-module ((ares suitbl reporters) #:select (test-reporter-base))
   #:use-module ((srfi srfi-1)
                 #:select (alist-delete alist-cons))

@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl runners)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
-  #:use-module ((ares suitbl core) #:select (test-runner* test?))
+  #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
   #:use-module ((ares suitbl reporters) #:select (test-reporter-base))
 
   #:use-module ((ice-9 atomic)
