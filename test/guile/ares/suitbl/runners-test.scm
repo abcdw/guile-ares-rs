@@ -6,13 +6,6 @@
   #:use-module (ares suitbl runners)
   #:use-module (ares suitbl reporters))
 
-(define-syntax with-test-runner
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ test-runner body body* ...)
-       #'(parameterize ((test-runner* test-runner))
-           body body* ...)))))
-
 (define (silent-runner)
   (make-suitbl-test-runner
    #:config `((test-reporter . ,test-reporter-silent))))

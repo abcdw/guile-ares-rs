@@ -4,6 +4,7 @@
 (define-module (ares suitbl core)
   #:use-module (ares suitbl runners)
   #:use-module (ares suitbl definitions)
+  #:export (with-test-runner)
   #:re-export (test-runner*
 
                is
@@ -13,3 +14,10 @@
                suite-thunk suite-thunk?
 
                define-suite))
+
+(define-syntax with-test-runner
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ test-runner body body* ...)
+       #'(parameterize ((test-runner* test-runner))
+           body body* ...)))))
