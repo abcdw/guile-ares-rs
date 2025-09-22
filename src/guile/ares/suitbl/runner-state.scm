@@ -19,7 +19,8 @@
             get-log
 
             add-loaded-test!
-            add-suite!
+            add-suite-tree!
+            get-suite-forest
             reset-loaded-tests!
             get-loaded-tests
             get-scheduled-tests
@@ -122,14 +123,24 @@
    state 'loaded-tests
    (lambda (l) (cons test (or l '())))))
 
-(define (add-suite! state suite)
+(define (add-suite-tree! state suite-tree)
   (update-atomic-alist-value!
-   state 'suite (lambda (_) suite)))
+   state 'runner/suite-forest
+   (lambda (forest) (cons suite-tree (or forest '())))))
+
+(define (get-suite-forest state)
+  (reverse
+   (chain (atomic-box-ref state)
+     (assoc-ref _ 'runner/suite-forest)
+     (or _ '()))))
 
 (define (reset-loaded-tests! state)
-  (update-atomic-alist-value!
-   state 'loaded-tests
-   (lambda (l) '())))
+  (atomic-box-update!
+   state
+   (lambda (alist)
+     (chain alist
+       (update-alist-value _ 'loaded-tests '())
+       (update-alist-value _ 'runner/suite-forest '())))))
 
 (define (get-loaded-tests state)
   (chain (atomic-box-ref state)
@@ -157,6 +168,7 @@
                                (length _))))
     `((loaded-tests-count . ,loaded-tests-count)
       (selected-tests-count . ,loaded-tests-count))))
+
 
 ;;;
 ;;; Test runner config

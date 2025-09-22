@@ -291,7 +291,7 @@ environment just set it to new instance of test runner.
                    suite-items
                    (lambda (items) (cons val items)))
 
-                  (state:add-suite! state val)))
+                  (state:add-suite-tree! state val)))
             val))
          (when (and (null? (%suite-path*))
                     (state:get-runner-config-value state 'auto-run?))
