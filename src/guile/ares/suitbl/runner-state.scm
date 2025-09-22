@@ -157,9 +157,7 @@
 
 (define (get-scheduled-tests state runner-config)
   (let ((lot-transformation identity))
-    (chain (atomic-box-ref state)
-      (assoc-ref _ 'runner/loaded-tests)
-      (or _ '())
+    (chain (get-loaded-tests state)
       (lot-transformation _))))
 
 (define (get-stats state)
