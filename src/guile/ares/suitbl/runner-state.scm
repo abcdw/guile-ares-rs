@@ -85,20 +85,21 @@
     (atomic-box-ref _)
     (assoc-ref _ 'runner/run-history)))
 
-(define (get-run-summary state)
-  (define initial-run-summary
-    `((errors . 0)
-      (failures . 0)
-      (assertions . 0)
-      (tests . 0)))
+(define initial-run-summary
+  `((errors . 0)
+    (failures . 0)
+    (assertions . 0)
+    (tests . 0)))
 
-  (define (merge-run-summaries s1 s2)
-    (map
-     (lambda (v)
-       (match v
-         ((key . value)
-          (cons key (+ (assoc-ref s2 key) value)))))
-     s1))
+(define (merge-run-summaries s1 s2)
+  (map
+   (lambda (v)
+     (match v
+       ((key . value)
+        (cons key (+ (assoc-ref s2 key) value)))))
+   s1))
+
+(define (get-run-summary state)
   (define run-history (get-run-history state))
 
   (if run-history
