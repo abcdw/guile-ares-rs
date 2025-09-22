@@ -121,7 +121,7 @@
 
 (define (add-loaded-test! state test)
   (update-atomic-alist-value!
-   state 'loaded-tests
+   state 'runner/loaded-tests
    (lambda (l) (cons test (or l '())))))
 
 (define (add-suite-tree! state suite-tree)
@@ -140,12 +140,12 @@
    state
    (lambda (alist)
      (chain alist
-       (update-alist-value _ 'loaded-tests '())
+       (update-alist-value _ 'runner/loaded-tests '())
        (update-alist-value _ 'runner/suite-forest '())))))
 
 (define (get-loaded-tests state)
   (chain (atomic-box-ref state)
-    (assoc-ref _ 'loaded-tests)
+    (assoc-ref _ 'runner/loaded-tests)
     (or _ '())))
 
 (define (select-interesting-tests lot)
@@ -158,7 +158,7 @@
 (define (get-scheduled-tests state runner-config)
   (let ((lot-transformation identity))
     (chain (atomic-box-ref state)
-      (assoc-ref _ 'loaded-tests)
+      (assoc-ref _ 'runner/loaded-tests)
       (or _ '())
       (lot-transformation _))))
 
