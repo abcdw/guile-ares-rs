@@ -86,10 +86,11 @@
     (assoc-ref _ 'runner/run-history)))
 
 (define initial-run-summary
-  `((errors . 0)
+  `((tests . 0)
     (failures . 0)
-    (assertions . 0)
-    (tests . 0)))
+    (errors . 0)
+    (skipped . 0)
+    (assertions . 0)))
 
 (define (merge-run-summaries s1 s2)
   (map
