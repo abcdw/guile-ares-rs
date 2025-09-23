@@ -73,49 +73,6 @@
 
 
 ;;;
-;;; Run history and summaries
-;;;
-
-(define (save-run-history! state run-history)
-  (update-atomic-alist-value!
-   state 'runner/run-history (lambda (_) run-history)))
-
-(define (get-run-history state)
-  (chain state
-    (atomic-box-ref _)
-    (assoc-ref _ 'runner/run-history)))
-
-(define initial-run-summary
-  `((tests . 0)
-    (failures . 0)
-    (errors . 0)
-    (skipped . 0)
-    (assertions . 0)))
-
-(define (merge-run-summaries s1 s2)
-  (map
-   (lambda (v)
-     (match v
-       ((key . value)
-        (cons key (+ (assoc-ref s2 key) value)))))
-   s1))
-
-(define (get-run-summary state)
-  (define run-history (get-run-history state))
-
-  (if run-history
-      (let loop ((summary initial-run-summary)
-                 (remaining-items run-history))
-        (if (null? remaining-items)
-            summary
-            (let ((item (car remaining-items)))
-              (loop
-               (merge-run-summaries summary (assoc-ref item 'test-run/result))
-               (cdr remaining-items)))))
-      #f))
-
-
-;;;
 ;;; Loaded and scheduled tests and suites
 ;;;
 
@@ -167,6 +124,49 @@
                                (length _))))
     `((loaded-tests-count . ,loaded-tests-count)
       (selected-tests-count . ,loaded-tests-count))))
+
+
+;;;
+;;; Run history and summaries
+;;;
+
+(define (save-run-history! state run-history)
+  (update-atomic-alist-value!
+   state 'runner/run-history (lambda (_) run-history)))
+
+(define (get-run-history state)
+  (chain state
+    (atomic-box-ref _)
+    (assoc-ref _ 'runner/run-history)))
+
+(define initial-run-summary
+  `((tests . 0)
+    (failures . 0)
+    (errors . 0)
+    (skipped . 0)
+    (assertions . 0)))
+
+(define (merge-run-summaries s1 s2)
+  (map
+   (lambda (v)
+     (match v
+       ((key . value)
+        (cons key (+ (assoc-ref s2 key) value)))))
+   s1))
+
+(define (get-run-summary state)
+  (define run-history (get-run-history state))
+
+  (if run-history
+      (let loop ((summary initial-run-summary)
+                 (remaining-items run-history))
+        (if (null? remaining-items)
+            summary
+            (let ((item (car remaining-items)))
+              (loop
+               (merge-run-summaries summary (assoc-ref item 'test-run/result))
+               (cdr remaining-items)))))
+      #f))
 
 
 ;;;
