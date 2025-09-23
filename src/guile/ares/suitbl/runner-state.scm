@@ -110,14 +110,13 @@
             summary
             (let ((item (car remaining-items)))
               (loop
-               (merge-run-summaries summary
-                                    (assoc-ref item 'test-run/result))
+               (merge-run-summaries summary (assoc-ref item 'test-run/result))
                (cdr remaining-items)))))
       #f))
 
 
 ;;;
-;;; Run history and summaries
+;;; Loaded and scheduled tests and suites
 ;;;
 
 (define (add-loaded-test! state test)
