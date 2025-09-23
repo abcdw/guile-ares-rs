@@ -133,30 +133,33 @@ environment just set it to new instance of test runner.
       (%run-assert assert)))
 
   (define (%run-test test)
-    (parameterize ((%test-run-events* (make-atomic-box '())))
-      ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
-      ;; happen inside test case, but outside of assert
+    ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
+    ;; happen inside test case, but outside of assert
 
-      ;; What to do with exception outside of assert?
+    ;; What to do with exception outside of assert?
 
-      (let ((description (assoc-ref test 'test/description))
-            (test-body-thunk (assoc-ref test 'test/body-thunk)))
-        (when (%test*)
-          (chain "Test Macros can't be nested"
-            (make-exception-with-message _)
-            (raise-exception _)))
-        ((get-test-reporter)
-         `((type . reporter/test-start)
-           (description . ,description)))
-        ;; TODO: [Andrew Tropin, 2025-08-02] Change %test* to
-        ;; %inside-test?*
-        (parameterize ((%test* description))
-          (test-body-thunk))
-        ((get-test-reporter)
-         `((type . reporter/test-end)
-           (description . ,description))))
+    (let ((description (assoc-ref test 'test/description))
+          (test-body-thunk (assoc-ref test 'test/body-thunk)))
+      (when (%test*)
+        (chain "Test Macros can't be nested"
+          (make-exception-with-message _)
+          (raise-exception _)))
+      ((get-test-reporter)
+       `((type . reporter/test-start)
+         (description . ,description)))
+      ;; TODO: [Andrew Tropin, 2025-08-02] Change %test* to
+      ;; %inside-test?*
+      (define result
+        (parameterize ((%test* description)
+                       (%test-run-events* (make-atomic-box '())))
+          (test-body-thunk)
+          (atomic-box-ref (%test-run-events*))))
 
-      (atomic-box-ref (%test-run-events*))))
+      ((get-test-reporter)
+       `((type . reporter/test-end)
+         (description . ,description)))
+
+      result))
 
   (define (run-test test)
     (let* ((result (%run-test test))
