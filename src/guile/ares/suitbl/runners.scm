@@ -198,9 +198,6 @@ environment just set it to new instance of test runner.
            (description . ,description)))))
 
     (lambda ()
-      (define (make-suite-node suite children)
-        `((suite . ,suite)
-          (suite/children . ,children)))
       (suite-enter!)
       (define result
         (with-exception-handler
@@ -217,7 +214,7 @@ environment just set it to new instance of test runner.
              (chain (%current-suite-node-items*)
                (atomic-box-ref _)
                (reverse _)
-               (make-suite-node suite _)
+               (state:make-suite-node suite _)
                (cons 'value _))))
          #:unwind? #t))
       (suite-leave!)

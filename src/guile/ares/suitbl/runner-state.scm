@@ -19,6 +19,7 @@
             get-log
 
             add-loaded-test!
+            make-suite-node
             add-suite-tree!
             get-suite-forest
             reset-loaded-tests!
@@ -80,6 +81,10 @@
   (update-atomic-alist-value!
    state 'runner/loaded-tests
    (lambda (l) (cons test (or l '())))))
+
+(define (make-suite-node suite children)
+  `((suite . ,suite)
+    (suite/children . ,children)))
 
 (define (add-suite-tree! state suite-tree)
   (update-atomic-alist-value!
