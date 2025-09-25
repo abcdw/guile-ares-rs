@@ -72,7 +72,7 @@ environment just set it to new instance of test runner.
   ;; they can cause problems when using with continuations and thus
   ;; with concurrent test runs implemented on top of fibers
   (define %suite-path* (make-parameter '()))
-  (define %current-suite-tree-items* (make-parameter #f))
+  (define %current-suite-node-items* (make-parameter #f))
   (define %test* (make-parameter #f))
   (define %test-run-events* (make-parameter #f))
   (define %test-reporter* (make-parameter
@@ -198,9 +198,9 @@ environment just set it to new instance of test runner.
            (description . ,description)))))
 
     (lambda ()
-      (define (make-suite-node suite items)
+      (define (make-suite-node suite children)
         `((suite . ,suite)
-          (suite/children . ,items)))
+          (suite/children . ,children)))
       (suite-enter!)
       (define result
         (with-exception-handler
@@ -211,10 +211,10 @@ environment just set it to new instance of test runner.
              (chain "Test Suite can't be nested into Test Macro"
                (make-exception-with-message _)
                (raise-exception _)))
-           (parameterize ((%current-suite-tree-items* (make-atomic-box '()))
+           (parameterize ((%current-suite-node-items* (make-atomic-box '()))
                           (%suite-path* (cons suite (%suite-path*))))
              (suite-body-thunk)
-             (chain (%current-suite-tree-items*)
+             (chain (%current-suite-node-items*)
                (atomic-box-ref _)
                (reverse _)
                (make-suite-node suite _)
@@ -292,10 +292,10 @@ environment just set it to new instance of test runner.
            (('exception . ex)
             (raise-exception ex))
            (('value . val)
-            (let ((suite-tree-items (%current-suite-tree-items*)))
-              (if suite-tree-items
+            (let ((suite-node-items (%current-suite-node-items*)))
+              (if suite-node-items
                   (atomic-box-update!
-                   suite-tree-items
+                   suite-node-items
                    (lambda (items) (cons val items)))
 
                   (state:add-suite-tree! state val)))
@@ -334,11 +334,11 @@ environment just set it to new instance of test runner.
             (suite-path . ,(%suite-path*))
             (description . ,description)))
 
-         (let ((suite-tree-items (%current-suite-tree-items*)))
+         (let ((suite-node-items (%current-suite-node-items*)))
            ;; (pk (%suite-path*))
-           (if suite-tree-items
+           (if suite-node-items
                (atomic-box-update!
-                suite-tree-items
+                suite-node-items
                 (lambda (items) (cons test-with-context items)))
                (when (state:get-runner-config-value state 'auto-run?)
                  (this `((type . runner/run-tests))))))
