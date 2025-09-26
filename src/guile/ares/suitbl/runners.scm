@@ -17,7 +17,6 @@
 
   #:use-module ((ares suitbl runner-state) #:prefix state:)
   #:export (make-suitbl-test-runner
-            run-test-suites
 
             get-stats
             get-loaded-tests
