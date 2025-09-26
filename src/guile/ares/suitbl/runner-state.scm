@@ -53,7 +53,6 @@
             (new-value (f value)))
        (update-alist-value alist key new-value)))))
 
-
 
 ;;;
 ;;; Logging
@@ -74,13 +73,8 @@
 
 
 ;;;
-;;; Loaded and scheduled tests and suites
+;;; Suite tree
 ;;;
-
-(define (add-loaded-test! state test)
-  (update-atomic-alist-value!
-   state 'runner/loaded-tests
-   (lambda (l) (cons test (or l '())))))
 
 (define (suite-node? x)
   (and (list? x)
@@ -90,6 +84,16 @@
 (define (make-suite-node suite children)
   `((suite . ,suite)
     (suite-node/children . ,children)))
+
+
+;;;
+;;; Loaded and scheduled tests and suites
+;;;
+
+(define (add-loaded-test! state test)
+  (update-atomic-alist-value!
+   state 'runner/loaded-tests
+   (lambda (l) (cons test (or l '())))))
 
 (define (add-suite-tree! state suite-tree)
   (update-atomic-alist-value!
