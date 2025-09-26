@@ -20,6 +20,7 @@
 
             add-loaded-test!
             make-suite-node
+            make-test-node
             add-suite-tree!
             get-suite-forest
             reset-loaded-tests!
@@ -84,6 +85,13 @@
 (define (make-suite-node suite children)
   `((suite . ,suite)
     (suite-node/children . ,children)))
+
+(define (test-node? x)
+  (and (list? x)
+       (assoc-ref x 'test)))
+
+(define (make-test-node test)
+  `((test . ,test)))
 
 
 ;;;

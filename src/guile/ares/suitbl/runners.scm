@@ -337,7 +337,9 @@ environment just set it to new instance of test runner.
            (if suite-node-items
                (atomic-box-update!
                 suite-node-items
-                (lambda (items) (cons test-with-context items)))
+                (lambda (items) (cons
+                                 (state:make-test-node test-with-context)
+                                 items)))
                (when (state:get-runner-config-value state 'auto-run?)
                  (this `((type . runner/run-tests))))))
 
