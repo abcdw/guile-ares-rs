@@ -18,9 +18,13 @@
   #:export (save-event!
             get-log
 
-            add-loaded-test!
             make-suite-node
             make-test-node
+            simplify-suite-tree
+            simplify-suite-forest
+            simplify-run-history
+
+            add-loaded-test!
             add-suite-tree!
             get-suite-forest
             reset-loaded-tests!
@@ -92,6 +96,42 @@
 
 (define (make-test-node test)
   `((test . ,test)))
+
+(define (suite->string suite)
+  (assoc-ref suite 'suite/description))
+
+(define (test->string test)
+  (assoc-ref test 'test/description))
+
+(define (alist-update alist key f)
+  (let ((v (assoc-ref alist key)))
+    (chain alist
+      (alist-delete key _)
+      (alist-cons key (f v) _))))
+
+(define (simplify-suite-node node)
+  (chain node
+    (alist-update _ 'suite-node/children
+                  (lambda (l) (map simplify-suite-tree l)))
+    (alist-update _ 'suite suite->string)))
+
+(define (simplify-test-node node)
+  (alist-update node 'test test->string))
+
+(define (simplify-suite-tree node)
+  (cond
+   ((suite-node? node) (simplify-suite-node node))
+   ((test-node? node) (simplify-test-node node))
+   (else node)))
+
+(define (simplify-suite-forest forest)
+  (map simplify-suite-tree forest))
+
+(define (simplify-run-history run-history)
+  (map (lambda (entry)
+         `((test . ,(test->string (assoc-ref entry 'test)))
+           (test-run/result . ,(assoc-ref entry 'test-run/result))))
+       run-history))
 
 
 ;;;
