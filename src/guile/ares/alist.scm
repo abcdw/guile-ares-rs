@@ -19,23 +19,11 @@
 
 (define-module (ares alist)
   #:use-module (srfi srfi-1)
-  #:export (alist-get-in alist-select-keys)
+  #:use-module (ares guile alist)
   #:re-export (alist-cons
-               alist-delete))
+               alist-delete
+               alist-get-in
+               alist-select-keys))
 
-(define (alist-get-in path alist)
-  (if (null? path)
-      alist
-      (alist-get-in (cdr path) (assoc-ref alist (car path)))))
-
-(define (alist-select-keys keys alist)
-  "Select entries with keys equal to @code{keys} and return a new alist
-with those entries. The order of entries corresponds to order of @code{keys}."
-  (fold-right
-   (lambda (key acc)
-     (let ((entry (assoc key alist)))
-       (if entry
-           (cons entry acc)
-           acc)))
-   '()
-   keys))
+;; TODO: [Andrew Tropin, 2025-09-26] Remove this module and migrate
+;; everything to (ares guile alist).
