@@ -82,9 +82,14 @@
    state 'runner/loaded-tests
    (lambda (l) (cons test (or l '())))))
 
+(define (suite-node? x)
+  (and (list? x)
+       (assoc-ref x 'suite)
+       (assoc-ref x 'suite-node/children)))
+
 (define (make-suite-node suite children)
   `((suite . ,suite)
-    (suite/children . ,children)))
+    (suite-node/children . ,children)))
 
 (define (add-suite-tree! state suite-tree)
   (update-atomic-alist-value!
