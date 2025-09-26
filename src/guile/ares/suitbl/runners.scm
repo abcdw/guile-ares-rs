@@ -4,7 +4,8 @@
 (define-module (ares suitbl runners)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
-  #:use-module ((ares suitbl reporters) #:select (test-reporter-base))
+  #:use-module ((ares suitbl reporters) #:select (test-reporter-base
+                                                  test-reporter-silent))
 
   #:use-module ((ice-9 atomic)
                 #:select (make-atomic-box atomic-box-ref atomic-box-set!))
@@ -17,6 +18,7 @@
 
   #:use-module ((ares suitbl runner-state) #:prefix state:)
   #:export (make-suitbl-test-runner
+            make-silent-test-runner
 
             get-stats
             get-loaded-tests
@@ -358,3 +360,7 @@ environment just set it to new instance of test runner.
 
 ;; Set default test runner.
 (test-runner* (make-suitbl-test-runner))
+
+(define (make-silent-test-runner)
+  (make-suitbl-test-runner
+   #:config `((test-reporter . ,test-reporter-silent))))
