@@ -10,7 +10,7 @@
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
   #:use-module ((ares suitbl reporters) #:select (test-reporter-base))
   #:use-module ((srfi srfi-1)
-                #:select (alist-delete alist-cons))
+                #:select (alist-delete alist-cons fold filter-map))
   #:use-module ((ice-9 match) #:select (match))
 
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
@@ -27,6 +27,7 @@
             add-loaded-test!
             add-suite-tree!
             get-suite-forest
+            get-suite-forest-with-summary
             reset-loaded-tests!
             get-loaded-tests
             get-scheduled-tests
@@ -153,6 +154,55 @@
    (chain (atomic-box-ref state)
      (assoc-ref _ 'runner/suite-forest)
      (or _ '()))))
+
+(define (get-suite-forest-with-summary state)
+  (define run-history (get-run-history state))
+  (define suite-forest (get-suite-forest state))
+
+  ;; TODO: [Andrew Tropin, 2025-10-02] Make lookup O(1)
+  (define (find-test-result test suite-path)
+    (and
+     run-history
+     (let loop ((history run-history))
+       (if (null? history)
+           #f
+           (let ((entry (car history)))
+             (if (and (equal? (assoc-ref entry 'test) test)
+                      (equal? (assoc-ref (assoc-ref entry 'test) 'suite/path)
+                              suite-path))
+                 (assoc-ref entry 'test-run/result)
+                 (loop (cdr history))))))))
+
+  (define (annotate-node node suite-path)
+    (cond
+     ((test-node? node)
+      (let* ((test (assoc-ref node 'test))
+             (result (find-test-result test suite-path)))
+        (if result
+            (alist-cons 'test-run/result result node)
+            node)))
+
+     ((suite-node? node)
+      (let* ((suite (assoc-ref node 'suite))
+             (new-suite-path (append suite-path (list suite)))
+             (children (assoc-ref node 'suite-node/children))
+             (annotated-children (map (lambda (child)
+                                        (annotate-node child new-suite-path))
+                                      children))
+             (suite-summary
+              (fold merge-run-summaries
+                    initial-run-summary
+                    (filter-map (lambda (child)
+                                  (or (assoc-ref child 'test-run/result)
+                                      (assoc-ref child 'suite-run/result)))
+                                annotated-children)))
+             (updated-node (alist-update node 'suite-node/children
+                                       (lambda (_) annotated-children))))
+        (alist-cons 'suite-run/result suite-summary updated-node)))
+
+     (else node)))
+
+  (map (lambda (node) (annotate-node node '())) suite-forest))
 
 (define (reset-loaded-tests! state)
   (atomic-box-update!
