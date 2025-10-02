@@ -51,28 +51,31 @@
     (define run-history
       (state:get-run-history state))
 
+    (define expected-simplified-history
+      '(((test . "another good one")
+         (test-run/result
+          (tests . 1)
+          (failures . 0)
+          (errors . 0)
+          (skipped . 0)
+          (assertions . 1)))
+        ((test . "failing test")
+         (test-run/result
+          (tests . 1)
+          (failures . 0)
+          (errors . 1)
+          (skipped . 0)
+          (assertions . 2)))
+        ((test . "good one")
+         (test-run/result
+          (tests . 1)
+          (failures . 0)
+          (errors . 0)
+          (skipped . 0)
+          (assertions . 2)))))
+
     (is (equal?
-         '(((test . "another good one")
-            (test-run/result
-              (tests . 1)
-              (failures . 0)
-              (errors . 0)
-              (skipped . 0)
-              (assertions . 1)))
-           ((test . "failing test")
-            (test-run/result
-              (tests . 1)
-              (failures . 0)
-              (errors . 1)
-              (skipped . 0)
-              (assertions . 2)))
-           ((test . "good one")
-            (test-run/result
-              (tests . 1)
-              (failures . 0)
-              (errors . 0)
-              (skipped . 0)
-              (assertions . 2))))
+         expected-simplified-history
          (state:simplify-run-history run-history)))))
 
 (define-suite run-summarization-tests
@@ -85,43 +88,45 @@
     (define run-forest-with-summary
       (state:get-suite-forest-with-summary state))
 
-    (is (equal?
-         '(((suite . "first suite")
-            (suite-node/children
-             ((test . "good one")
-              (test-run/result
-                (tests . 1)
-                (failures . 0)
-                (errors . 0)
-                (skipped . 0)
-                (assertions . 2)))
-             ((suite . "nested-suite")
-              (suite-node/children
-               ((test . "failing test")
-                (test-run/result
-                  (tests . 1)
-                  (failures . 0)
-                  (errors . 1)
-                  (skipped . 0)
-                  (assertions . 2))))
-              (suite-run/result
-                (tests . 1)
-                (failures . 0)
-                (errors . 1)
-                (skipped . 0)
-                (assertions . 2)))
-             ((test . "another good one")
-              (test-run/result
-                (tests . 1)
-                (failures . 0)
-                (errors . 0)
-                (skipped . 0)
-                (assertions . 1))))
-            (suite-run/result
-              (tests . 3)
+    (define expected-simplified-forest
+      '(((suite . "first suite")
+         (suite-node/children
+          ((test . "good one")
+           (test-run/result
+            (tests . 1)
+            (failures . 0)
+            (errors . 0)
+            (skipped . 0)
+            (assertions . 2)))
+          ((suite . "nested-suite")
+           (suite-node/children
+            ((test . "failing test")
+             (test-run/result
+              (tests . 1)
               (failures . 0)
               (errors . 1)
               (skipped . 0)
-              (assertions . 5))))
+              (assertions . 2))))
+           (suite-run/result
+            (tests . 1)
+            (failures . 0)
+            (errors . 1)
+            (skipped . 0)
+            (assertions . 2)))
+          ((test . "another good one")
+           (test-run/result
+            (tests . 1)
+            (failures . 0)
+            (errors . 0)
+            (skipped . 0)
+            (assertions . 1))))
+         (suite-run/result
+          (tests . 3)
+          (failures . 0)
+          (errors . 1)
+          (skipped . 0)
+          (assertions . 5)))))
 
+    (is (equal?
+         expected-simplified-forest
          (state:simplify-suite-forest run-forest-with-summary)))))
