@@ -10,6 +10,8 @@
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
   #:use-module ((ice-9 format) #:select (format))
   #:use-module ((ice-9 match) #:select (match))
+  #:use-module ((sxml simple) #:select (sxml->xml))
+
   #:export (test-reporter-output-port*
             test-reporter-silent
             test-reporter-logging
@@ -19,7 +21,10 @@
             test-reporter-dots-with-hierarchy
             test-reporter-minimal
             test-reporters-use-all
-            test-reporters-use-first))
+            test-reporters-use-first
+
+            forest->junit-sxml
+            forest->junit-xml))
 
 
 
@@ -147,6 +152,9 @@ to catch unhandled messages."
        `(value . ,(thunk)))
      #:unwind? #t)))
 
+(define (pretty-string obj)
+  (format #f "~y" obj))
+
 (define (actual message)
     (let* ((assert-body (assoc-ref message 'assert/body))
            (args-thunk (assoc-ref message 'assert/args-thunk))
@@ -156,7 +164,10 @@ to catch unhandled messages."
       (if (and (list? assert-body) (= 3 (length assert-body)))
           (match (safe-args-thunk)
             ((value . (first second))
-             (format #f "~a and ~a are not ~a" first second (car assert-body)))
+             (format #f "\n~a and\n~a are not ~a"
+                     (pretty-string first)
+                     (pretty-string second)
+                     (car assert-body)))
             ((exception . ex)
              (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
           (assoc-ref message 'assertion/result))))
@@ -267,3 +278,104 @@ to catch unhandled messages."
     (test-reporters-use-all _)
     (list _ test-reporter-unhandled)
     (test-reporters-use-first _)))
+
+
+;;;
+;;; JUnit XML
+;;;
+
+(define (suite-result->attributes result)
+  "Convert suite-run/result alist to JUnit testsuite attributes"
+  `((tests ,(number->string (assoc-ref result 'tests)))
+    (failures ,(number->string (assoc-ref result 'failures)))
+    (errors ,(number->string (assoc-ref result 'errors)))
+    (skipped ,(number->string (assoc-ref result 'skipped)))
+    (assertions ,(number->string (assoc-ref result 'assertions)))))
+
+(define (test-result->attributes result)
+  "Convert test-run/result alist to JUnit testcase attributes"
+  `((assertions ,(number->string (assoc-ref result 'assertions)))))
+
+(define (node->junit-sxml node classname-path)
+  "Convert a single node (suite or test) to JUnit SXML"
+  (cond
+   ;; Suite node
+   ((and (assoc-ref node 'suite)
+         (assoc-ref node 'suite-node/children))
+    (let* ((suite (assoc-ref node 'suite))
+           (suite-name (assoc-ref suite 'suite/description))
+           (children (assoc-ref node 'suite-node/children))
+           (suite-result (assoc-ref node 'suite-run/result))
+           (new-classname-path
+            (if (null? classname-path)
+                suite-name
+                (string-append classname-path "." suite-name)))
+           (attributes (if suite-result
+                           (cons `(name ,suite-name)
+                                 (suite-result->attributes suite-result))
+                           `((name ,suite-name)))))
+      `(testsuite (@ ,@attributes)
+                  ,@(map (lambda (child)
+                           (node->junit-sxml child new-classname-path))
+                         children))))
+
+   ;; Test node
+   ((assoc-ref node 'test)
+    (let* ((test (assoc-ref node 'test))
+           (test-name (assoc-ref test 'test/description))
+           (test-result (assoc-ref node 'test-run/result))
+           (errors (and test-result (assoc-ref test-result 'errors)))
+           (failures (and test-result (assoc-ref test-result 'failures)))
+           (attributes (append
+                        `((name ,test-name)
+                          (classname ,classname-path))
+                        (if test-result
+                            (test-result->attributes test-result)
+                            '())))
+           (status-element (cond
+                            ((and errors (> errors 0))
+                             '((error (@ (message "Test had errors")
+                                         (type "TestError")))))
+                            ((and failures (> failures 0))
+                             '((failure (@ (message "Test failed")
+                                           (type "AssertionError")))))
+                            (else '()))))
+      `(testcase (@ ,@attributes)
+                 ,@status-element)))
+
+   (else '())))
+
+(define (calculate-totals forest)
+  "Calculate total statistics from all top-level suites"
+  (fold (lambda (node acc)
+          (let ((result (assoc-ref node 'suite-run/result)))
+            (if result
+                (map (lambda (key-val)
+                       (match key-val
+                         ((key val)
+                          (cons key (+ val (assoc-ref result key))))))
+                     acc)
+                acc)))
+        '((tests 0)
+          (failures 0)
+          (errors 0)
+          (skipped 0)
+          (assertions 0))
+        forest))
+
+(define* (forest->junit-sxml forest #:key (name "Test run"))
+  "Convert a forest-with-summary to JUnit SXML format"
+  (let* ((totals (calculate-totals forest))
+         (root-attributes (cons `(name ,name)
+                                (suite-result->attributes totals))))
+    `(*TOP*
+      (*PI* xml "version=\"1.0\" encoding=\"UTF-8\"")
+      (testsuites (@ ,@root-attributes)
+                  ,@(map (lambda (node)
+                          (node->junit-sxml node ""))
+                        forest)))))
+
+(define* (forest->junit-xml forest #:key (name "Test run"))
+  (with-output-to-string
+    (lambda ()
+      (sxml->xml (forest->junit-sxml forest #:name name)))))
