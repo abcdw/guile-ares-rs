@@ -18,6 +18,10 @@ check: check-suitbl
 	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-project-tests-cli))"
 
+check-project-junit-output:
+	${GUILE_DEV} \
+	-c "((@ (suitbl-test-runner) run-project-tests-junit-output))"
+
 check-suitbl:
 	${GUILE_DEV} \
 	-c "((@ (suitbl-test-runner) run-project-tests))"
