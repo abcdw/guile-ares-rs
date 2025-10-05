@@ -107,6 +107,7 @@ connection.  By default it runs thunk inside a new fiber."
        ;; perfomance and thus user experience.  Provide operations and
        ;; client-side UI/configuration options for controlling log
        ;; verbosness.
+       (@ (ares-extension ares testing) ares.testing)
        (@ (ares-extension ares logging) ares.logging)
        ;; Can be loaded on-demand (we can do it in the future if it
        ;; make sense perfomance wise)
