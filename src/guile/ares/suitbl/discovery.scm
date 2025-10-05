@@ -50,11 +50,15 @@
      (get-module-suites _))
    '()))
 
+;; TODO: [Andrew Tropin, 2025-10-06] Integrate with test runner and
+;; test reporter, so we can control the debug output using test
+;; reporters.
 (define* (load-test-modules-thunk
           #:key
           (test-file-pattern ".*-test(\\.scm|\\.ss)")
           (load-file (lambda (p rp)
-                       (format #t "loading test module: ~a\n" p)
+                       (format (current-error-port)
+                               "loading test module: ~a\n" p)
                        (primitive-load-path rp))))
   "Return a thunk, which loads all the modules matching TEST-FILE-PATTERN
 using LOAD-FILE procedure, which accepts path and relative to %load-path path."
