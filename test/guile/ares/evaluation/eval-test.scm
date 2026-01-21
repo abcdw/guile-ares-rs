@@ -43,6 +43,12 @@
         (test-eq 'result (car reply))
         (test-eq "value" 'value (assq-ref (cadr reply) 'result-type))
         (test-equal "evaluation value" expected (assq-ref (cadr reply) 'eval-value)))))
+  (define (check-multivalue name expected)
+    (test-group name
+      (let ((reply (quickly (get-operation reply-channel))))
+        (test-eq 'result (car reply))
+        (test-eq "mulitple-values" 'multiple-values (assq-ref (cadr reply) 'result-type))
+        (test-equal "evaluation value" expected (assq-ref (cadr reply) 'eval-value)))))
   (define (check-exception name kind)
     (test-group name
       (let ((reply (quickly (get-operation reply-channel))))
@@ -76,6 +82,9 @@
       (check-value "define" *unspecified*)
       (send channel '(evaluate (("code" . "a"))))
       (check-value "defined variable" 9)
+
+      (send channel '(evaluate (("code" . "(values 1 2 3)"))))
+      (check-multivalue "simple multiple values" '(1 2 3))
 
       (send channel '(evaluate (("code" . "(define kont #f)"))))
       (check-value "define" *unspecified*)
