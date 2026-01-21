@@ -75,7 +75,10 @@ exceptions."
               (call-with-prompt evaluation-tag
                 (lambda ()
                   (fluid-set! evaluation-state 'evaluation)
-                  (let ((result (start-stack "ares-evaluation" (thunk))))
+                  (let ((result (start-stack
+                                 "ares-evaluation"
+                                 (call-with-values thunk
+                                   (lambda vals vals)))))
                     (fluid-set! evaluation-state 'idle)
                     result))
                 (lambda (_ reply)
@@ -118,17 +121,15 @@ exceptions."
                      (exception-value . ,exception)
                      (stack . ,stack)))))
        (lambda ()
-         (call-with-values eval-code
-           (lambda vals
-             (match vals
-               (('interrupted)
-                `((result-type . interrupted)))
-               ((val)
-                `((result-type . value)
-                  (eval-value . ,val)))
-               (vals
-                `((result-type . multiple-values)
-                  (eval-value . ,vals)))))))
+         (match (eval-code)
+           ('interrupted
+            `((result-type . interrupted)))
+           ((val)
+            `((result-type . value)
+              (eval-value . ,val)))
+           (vals
+            `((result-type . multiple-values)
+              (eval-value . ,vals)))))
        #:unwind? #f))))
 
 (define (apply-evaluation message
