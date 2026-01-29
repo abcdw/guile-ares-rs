@@ -25,7 +25,6 @@
     (usleep 100000)
     (define suffix (call/cc (lambda (k) (set! kont k) previous-suffix)))
     (format #t "~s: ~s\n" i suffix)
-    %load-path
     (when (equal? 'read-number suffix)
       (set! i (string->number (read-line)))
       (set! suffix 'after-we-finished-reading-from-stdin))
