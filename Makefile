@@ -4,7 +4,7 @@ GUILE=$(GUIXTM) -- shell guile guile-fibers \
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
-GUILE_DEV=${GUILE} -L ./src/guile -L ./test/guile -L ./dev/guile
+GUILE_DEV=${GUILE} -L ./src/guile -L ./tests/guile -L ./dev/guile
 
 repl: server
 

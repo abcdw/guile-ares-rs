@@ -359,6 +359,7 @@ because test macro is not composable and can't be wrapped.
 
 
 
+;; (test-runner-operations-tests)
 (define-suite test-runner-operations-tests
   (test "\
 run summary is #f by default, but appears after test suite is executed"
