@@ -5,7 +5,7 @@
 Asynchronous Reliable Extensible Sleek RPC Server for Guile.  First of
 all it's a library providing a lot of tools for evaluating and
 exploring the code, from simple reflection API to interruptible
-asyncronous evaluation.  In addition to that it provides an async RPC
+asynchronous evaluation.  In addition to that it provides an async RPC
 server implementation based on [[https://nrepl.org/nrepl/index.html][nREPL]] protocol and can be used for
 programmable interactions with a running guile processes, for
 implementing REPLs, IDEs, test runners or other tools. It also can be
@@ -34,7 +34,7 @@ It's intended for use with [[https://git.sr.ht/~abcdw/emacs-arei][Arei]] IDE, bu
 generic nREPL [[https://nrepl.org/nrepl/usage/clients.html][clients]].
 
 * Usage
-The are multiple ways to utilize Ares RS, but most straightforward is
+There are multiple ways to utilize Ares RS, but most straightforward is
 to spawn a standalone server and connect to it from a client ([[https://git.sr.ht/~abcdw/emacs-arei][Emacs
 Arei]] for example):
 
