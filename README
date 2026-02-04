@@ -66,8 +66,9 @@ of Guix and channels available in the load path, take a look at
 [[https://git.sr.ht/~abcdw/sample-guile-project/tree/master/item/Makefile][sample-guile-project]].
 
 * Development
-It depends, on [[https://github.com/wingo/fibers][fibers]], and on guile-next (custom textual ports), tests
-are executed with [[https://git.sr.ht/~abcdw/rde/tree/de17241d97ff6b186eda750d76b9ddbde7c836e0/src/rde/packages/emacs-xyz.scm#L147][gider]].
+Ares depends on [[https://github.com/wingo/fibers][fibers]], and on guile-custom-ports (is a part of guile
+since 3.0.10).  Tests are executed with ~make check~ or within Arei
+using UI for ~ares.testing~ extension.
 
 [[https://git-send-email.io/][Send]] patches to [[https://lists.sr.ht/~abcdw/rde-devel][rde-devel]] mailing list in format:
 ~[PATCH guile-ares-rs 0/3] SUBJECT-HERE~.
