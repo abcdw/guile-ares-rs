@@ -20,9 +20,6 @@ potentially used as a backend or library for LSP server.
 </a></p>
 #+END_EXPORT
 
-*WARNING:* It's in early stage of development, the API is a subject to
-change.
-
 ~guile-ares-rs~ was previously known as ~guile-nrepl~ (because it started
 as just nREPL implementation in Guile Scheme).  It was renamed to
 avoid any confusion with network/socket REPL, ~guile-ares-rs~ is not a
