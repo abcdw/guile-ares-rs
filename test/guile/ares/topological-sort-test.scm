@@ -36,6 +36,6 @@
    (test-equal '(apple pear banana mandarin raspberry) (topological-sort test-graph))
    (test-equal '(apple pear banana mandarin raspberry) (topological-sort (reverse test-graph)))
    (test-equal '() (topological-sort '()))
-   (test-equal #f (topological-sort '(bazanga)))
-   (test-equal #f (topological-sort '(a b c)))
+   (test-equal #f (false-if-exception (topological-sort '(bazanga))))
+   (test-equal #f (false-if-exception (topological-sort '(a b c))))
    (test-equal '(a b c) (topological-sort '((a b) (b c) (c))))))

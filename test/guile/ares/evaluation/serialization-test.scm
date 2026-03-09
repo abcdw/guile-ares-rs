@@ -19,11 +19,11 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares evaluation serialization-test)
-  #:use-module (test-utils)
   #:use-module (ice-9 control)
   #:use-module ((srfi srfi-1) #:select (alist-delete))
   #:use-module (srfi srfi-64)
-  #:use-module (ares evaluation serialization))
+  #:use-module (ares evaluation serialization)
+  #:use-module (test-utils))
 
 (define-test test-stack->nrepl-value
   (define basic-stack #f)

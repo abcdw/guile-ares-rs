@@ -245,10 +245,10 @@
                        (wait-operation finished)
                        (const #t))))
 
-           (test-end "Saved continuation evaluation"))
+           (test-end "Saved continuation with stdout"))
 
          (let ((finished (make-condition)))
-           (test-begin "Get Input")
+           (test-begin "Get input")
 
            (run-eval `((@ (ice-9 rdelim) read-line)) finished)
            (test-equal "Input requested"

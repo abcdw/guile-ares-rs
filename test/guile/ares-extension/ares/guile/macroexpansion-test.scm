@@ -56,7 +56,7 @@
      `(("op" . "ares.guile.macroexpansion/macroexpand")
        ("code" . "(match '(a . b) ((k . v) k))")
        ("module" . "(ares empty)"))
-     `(("error" . "ice-9/psyntax.scm:2824:12: In procedure syntax-violation:\nSyntax error:\nunknown location: source expression failed to match any pattern in form (k . v)\n")
+     `(("error" . "ice-9/psyntax.scm:2663:4: In procedure syntax-violation:\nSyntax error:\nunknown location: source expression failed to match any pattern in form (k . v)\n")
        ("status" . #("error" "macroexpand-error" "done"))))
 
     (check-response
@@ -65,15 +65,13 @@
        ("code" . "(match '(a . b) ((k . v) k))")
        ("module" . "(ares-extension ares guile macroexpansion-test)"))
      `(("status" . #("done"))
-       ("expansion" . ,(if (string<= (version) "3.0.9") ;different indentation rules
-                           "(let* ((v '(a . b))\n       (failure\n         (lambda ()\n           ((@@ (ice-9 match) throw)\n            'match-error\n            \"match\"\n            \"no matching pattern\"\n            v)\n           #f)))\n  (if ((@@ (ice-9 match) pair?) v)\n    (let ((w ((@@ (ice-9 match) car) v))\n          (x ((@@ (ice-9 match) cdr) v)))\n      (let* ((k w) (v x)) k))\n    (failure)))"
-                           "(let* ((v '(a . b))\n       (failure\n        (lambda ()\n          ((@@ (ice-9 match) throw)\n           'match-error\n           \"match\"\n           \"no matching pattern\"\n           v)\n          #f)))\n  (if ((@@ (ice-9 match) pair?) v)\n      (let ((w ((@@ (ice-9 match) car) v)) (x ((@@ (ice-9 match) cdr) v)))\n        (let* ((k w) (v x)) k))\n      (failure)))"))))
+       ("expansion" . "(let* ((v '(a . b))\n       (failure\n        (lambda ()\n          ((@@ (ice-9 match) throw)\n           'match-error\n           \"match\"\n           \"no matching pattern\"\n           v)\n          #f)))\n  (if ((@@ (ice-9 match) pair?) v)\n      (let ((w ((@@ (ice-9 match) car) v)) (x ((@@ (ice-9 match) cdr) v)))\n        (let* ((k w) (v x)) k))\n      (failure)))")))
 
     (check-response
      "Unparsable code"
      `(("op" . "ares.guile.macroexpansion/macroexpand")
        ("code" . "]()"))
-     `(("error" . "ice-9/read.scm:126:4: In procedure read-expr*:\n#<unknown port>:1:2: unexpected \"]\"\n")
+     `(("error" . "ice-9/read.scm:129:4: In procedure read-expr*:\n#<unknown port>:1:2: unexpected \"]\"\n")
        ("status" . #("error" "macroexpand-error" "done"))))
 
     (check-response
