@@ -24,7 +24,8 @@
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 atomic)
   #:use-module (ice-9 format)
-  #:export (ares.logging))
+  #:export (ares.logging
+            set-verbosity-level!))
 
 (define (ppk prefix x)
   (format #t "~a~y\n" prefix x)

@@ -3,7 +3,10 @@
   #:use-module ((ares nrepl bootstrap) #:prefix nrepl.bootstrap:)
   #:use-module (fibers)
   #:use-module (fibers conditions)
+  #:use-module (ares extensions)
+  #:use-module (ares-extension ares logging)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 atomic)
   #:export (run-nrepl-server))
 
 
@@ -63,6 +66,7 @@ registered for any specific applications"
           (nrepl-port-file? #t)
           (nrepl-port-path ".nrepl-port")
 	  (standalone? #t)
+	  (dev? #f)
 	  (on-connection make-client))
   "Runs nREPL server to listen on @code{host}:@code{port}, prints a
 greeting and signals @code{started?}, when socket it starts to listen
@@ -113,6 +117,16 @@ connection.  By default it runs thunk inside a new fiber."
        ;; make sense perfomance wise)
        (@ (ares-extension ares guile macroexpansion) ares.guile.macroexpansion))
       nrepl.bootstrap:bootstrap-extensions)))
+
+  (when dev?
+    (format #t "\n=== nREPL Server Dev Mode ===\n\n")
+    (format #t "Loaded extensions (sorted by dependency order):\n")
+    (let* ((state (assoc-ref initial-context 'ares/state))
+           (extensions-box (assoc-ref (atomic-box-ref state) 'extensions))
+           (extensions (atomic-box-ref extensions-box)))
+      (print-sorted-extensions extensions))
+    (format #t "\nEnabling verbose logging...\n\n")
+    (set-verbosity-level! (assoc-ref initial-context 'ares/state) 'normal))
 
   (if standalone?
       (begin

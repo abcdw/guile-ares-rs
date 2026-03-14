@@ -22,6 +22,7 @@
   -p, --port=PORT listen on PORT
   --no-port-file  do not create port file
   --port-file-name=NAME write port number to a file at NAME
+  --dev           enable dev mode (verbose logging, print extensions)
 
   -h, --help      display this help and exit
   -v, --version   display version information and exit
@@ -48,7 +49,10 @@
                   (acons 'no-port-file? #t loads)))
         (option '("port-file-name") #t #f
                 (lambda (opt name arg loads)
-                  (acons 'port-file-name arg loads)))))
+                  (acons 'port-file-name arg loads)))
+        (option '("dev") #f #f
+                (lambda (opt name arg loads)
+                  (acons 'dev? #t loads)))))
 
 (define (main args)
   (define options
@@ -70,7 +74,8 @@
       ,@(if (assoc-ref options 'port) (list #:port (assoc-ref options 'port)) '())
       ,@(if (assoc-ref options 'port-file-name)
             (list #:nrepl-port-path (assoc-ref options 'port-file-name))
-            '())))
+            '())
+      ,@(if (assoc-ref options 'dev?) (list #:dev? #t) '())))
 
   (define guile-args
     (fold

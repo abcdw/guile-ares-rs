@@ -26,6 +26,7 @@
   #:export (make-handler
             extension?
             sort-extensions
+            print-sorted-extensions
             get-operations-directory))
 
 ;;;
@@ -220,8 +221,6 @@ values."
 (define (make-handler extensions)
   "Sorts the extensions using @code{sort-extensions}.  Wraps @code{unknown-op}
  into all the extensions in the reverse order."
-  ;; (print-sorted-extensions extensions)
-  ;; (print-sorted-graph extensions)
   (cons
    (fold (lambda (extension handler)
            (extension handler))
