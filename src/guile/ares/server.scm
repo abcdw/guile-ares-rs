@@ -105,16 +105,10 @@ connection.  By default it runs thunk inside a new fiber."
     (ares.loop:make-initial-context
      (append
       (list
-       ;; TODO: [Andrew Tropin, 2025-05-10] Make it less verbose or
-       ;; even silent out of the box, printing completions or other
-       ;; long lists to the terminal have negative impact on
-       ;; perfomance and thus user experience.  Provide operations and
-       ;; client-side UI/configuration options for controlling log
-       ;; verbosness.
+       ;; Can be loaded on-demand (we can do it in the future if it
+       ;; make sense perfomance wise or bootstrap/infect-wise)
        (@ (ares-extension ares testing) ares.testing)
        (@ (ares-extension ares logging) ares.logging)
-       ;; Can be loaded on-demand (we can do it in the future if it
-       ;; make sense perfomance wise)
        (@ (ares-extension ares guile macroexpansion) ares.guile.macroexpansion))
       nrepl.bootstrap:bootstrap-extensions)))
 
