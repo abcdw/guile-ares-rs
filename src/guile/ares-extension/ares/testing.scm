@@ -60,6 +60,8 @@ tests."
                pattern)))))
 
 (define operations
+  ;; TODO: [Andrew Tropin, 2025-09-01] Make sure that filtering
+  ;; pattern is escaped (one \ in the pattern breaks the operation)
   `(("ares.testing/run" . ,run)
     ("ares.testing/get-filtered-tests" . ,get-filtered-tests)
     ("ares.testing/get-test-runner-stats" . ,get-test-runner-stats)
