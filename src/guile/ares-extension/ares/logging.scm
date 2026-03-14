@@ -60,7 +60,9 @@
 ;; (set-verbosity-level! context-accessor 'quite)
 
 (define (get-verbosity state)
-  (assoc-ref (atomic-box-ref state) 'ares.logging/verbosity))
+  (or
+   (assoc-ref (atomic-box-ref state) 'ares.logging/verbosity)
+   'quite))
 
 (define (wrap-reply-with-logging state original-reply!)
   (lambda (reply-message)
