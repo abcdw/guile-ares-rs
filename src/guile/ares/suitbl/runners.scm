@@ -318,6 +318,10 @@ environment just set it to new instance of test runner.
        *unspecified*)
 
       ((runner/load-test)
+       (when (and (null? (%suite-path*))
+                  (state:get-runner-config-value
+                   state 'reset-loaded-tests-on-suite-load?))
+         (state:reset-loaded-tests! state))
        (let* ((test (chain ctx
                       (get-message _)
                       (assoc-ref _ 'test)))
