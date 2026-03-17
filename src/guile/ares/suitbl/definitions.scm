@@ -64,12 +64,35 @@ library, which sets an approriate test runner for you."))
   (and (procedure? x)
        (procedure-property x 'suitbl-suite-thunk?)))
 
+(define (make-source-absolute source)
+  "Make the filename in a syntax SOURCE alist absolute.  If the
+filename is relative, it is resolved by searching in @code{%load-path}
+at macro-expansion time."
+  ;; Guile-specific implementation
+  (if (not source)
+      source
+      (let ((filename (assoc-ref source 'filename)))
+        (cond
+         ((not filename) source)
+         ((absolute-file-name? filename) source)
+         (else
+          (let ((found (%search-load-path filename)))
+            (if found
+                (assoc-set! (list-copy source)
+                            'filename
+                            (if (absolute-file-name? found)
+                                found
+                                (string-append (getcwd) "/" found)))
+                source)))))))
+
 (define-syntax is
   (lambda (stx)
     "A flexible assert macro.  The behavior can be customized by test runner."
     (syntax-case stx ()
       ((_ (pred args ...))
-       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
          #'((test-runner*)
             `((type . runner/run-assert)
               (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
@@ -77,7 +100,9 @@ library, which sets an approriate test runner for you."))
                          (assert/body . (pred args ...))
                          (assert/location . location)))))))
       ((_ form)
-       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
          #'((test-runner*)
             `((type . runner/run-assert)
               (assert . ((assert/body-thunk . ,(lambda () form))
@@ -91,7 +116,9 @@ library, which sets an approriate test runner for you."))
   (lambda (stx)
     (syntax-case stx (metadata)
       ((_ test-description (quote metadata) metadata-value expression expressions ...)
-       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
          #'(let ((test-entity
                   `((test/body-thunk . ,(lambda () expression expressions ...))
                     (test/body . (expression expressions ...))
@@ -119,7 +146,9 @@ more @code{is} asserts."
     (syntax-case stx (metadata)
       ((_ suite-description (quote metadata) metadata-value
           expression expressions ...)
-       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
          #'(let* ((suite-entity
                    `((suite/body-thunk . ,(lambda () expression expressions ...))
                      (suite/description . ,suite-description)
