@@ -144,6 +144,21 @@ to catch unhandled messages."
 
 ;; (is 78)
 
+(define (format-location message)
+  "Extract assert/location from MESSAGE and format it as a human-readable
+string like \"file:line:column\".  Line numbers are converted to 1-indexed.
+Returns an empty string if no location is available."
+  (let ((location (assoc-ref message 'assert/location)))
+    (if (and location (list? location))
+        (let ((filename (assoc-ref location 'filename))
+              (line (assoc-ref location 'line))
+              (column (assoc-ref location 'column)))
+          (format #f "~a:~a:~a"
+                  (or filename "<unknown>")
+                  (if line (1+ line) "?")
+                  (or column "?")))
+        "")))
+
 (define (safify-thunk thunk)
   (lambda ()
     (with-exception-handler
@@ -187,11 +202,13 @@ to catch unhandled messages."
              (assoc-ref message 'assert/body)))
 
     ((reporter/assertion-fail)
-     (format (test-reporter-output-port*) "~y✗ ~a\n"
+     (format (test-reporter-output-port*) "~a\n~y✗ ~a\n"
+             (format-location message)
              (assoc-ref message 'assert/body) (actual message)))
 
     ((reporter/assertion-error)
-     (format (test-reporter-output-port*) "~y✗ produced error:\n ~s\n"
+     (format (test-reporter-output-port*) "~a\n~y✗ produced error:\n ~s\n"
+             (format-location message)
              (assoc-ref message 'assert/body)
              (exception->string
               (assoc-ref message 'assertion/error))))
@@ -225,11 +242,13 @@ to catch unhandled messages."
      (format (test-reporter-output-port*) "✓"))
 
     ((reporter/assertion-fail)
-     (format (test-reporter-output-port*) "\n ~y✗ ~a\n"
+     (format (test-reporter-output-port*) "\n ~a\n ~y✗ ~a\n"
+             (format-location message)
              (assoc-ref message 'assert/body) (actual message)))
 
     ((reporter/assertion-error)
-     (format (test-reporter-output-port*) "\n ~y✗ produced error:\n ~s\n"
+     (format (test-reporter-output-port*) "\n ~a\n ~y✗ produced error:\n ~s\n"
+             (format-location message)
              (assoc-ref message 'assert/body)
              (exception->string
               (assoc-ref message 'assertion/error))))
@@ -275,7 +294,8 @@ to catch unhandled messages."
              (assoc-ref message 'assertion/result)))
 
     ((reporter/assertion-error)
-     (format (test-reporter-output-port*) "\n ~y✗ produced error:\n ~s\n"
+     (format (test-reporter-output-port*) "\n ~a\n ~y✗ produced error:\n ~s\n"
+             (format-location message)
              (assoc-ref message 'assert/body)
              (exception->string
               (assoc-ref message 'assertion/error))))
