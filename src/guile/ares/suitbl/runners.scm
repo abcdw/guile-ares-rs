@@ -1,11 +1,12 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl runners)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
   #:use-module ((ares suitbl reporters) #:select (test-reporter-base
-                                                  test-reporter-silent))
+                                                  test-reporter-silent
+                                                  test-reporter-spying))
 
   #:use-module ((ice-9 atomic)
                 #:select (make-atomic-box atomic-box-ref atomic-box-set!))
@@ -88,11 +89,13 @@ environment just set it to new instance of test runner.
        ;;   (alist-cons 'test-runner this _))
        message)))
 
+  (define re-raise? #f)
   (define (%run-assert assert)
     (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
       (with-exception-handler
        (lambda (ex)
          (when (%test*)
+
            (atomic-box-update!
             (%test-run-events*)
             (lambda (value)
@@ -101,7 +104,9 @@ environment just set it to new instance of test runner.
           (append
            `((type . reporter/assertion-error)
              (assertion/error . ,ex))
-           assert)))
+           assert))
+         (if re-raise?
+             (raise-exception ex)))
        (lambda ()
          ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
          ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
@@ -119,7 +124,7 @@ environment just set it to new instance of test runner.
                (assertion/result . ,result))
              assert))
            result))
-       #:unwind? #t)))
+       #:unwind? (if re-raise? #f #t))))
 
   (define (run-assert ctx)
     (let* ((assert (chain ctx
@@ -153,7 +158,14 @@ environment just set it to new instance of test runner.
       (define result
         (parameterize ((%test* description)
                        (%test-run-events* (make-atomic-box '())))
-          (test-body-thunk)
+          (with-exception-handler
+           (lambda (ex)
+             ((get-test-reporter)
+              `((type . reporter/test-end)
+                (description . ,description)))
+             (raise-exception ex))
+           test-body-thunk
+           #:unwind? (if re-raise? #f #t))
           (atomic-box-ref (%test-run-events*))))
 
       ((get-test-reporter)
