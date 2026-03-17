@@ -22,11 +22,6 @@
 ;; by default. Useful for production code to make no test code leaks
 ;; into it.
 
-;; TODO: [Andrew Tropin, 2025-08-06] Rewrite back to syntax-case?  I
-;; find syntax-case more explicit. The reason why we rewrote it to
-;; syntax-rules was guile's support for the arguments metadata and
-;; thus useful eldoc
-
 ;; TODO: [Andrew Tropin, 2025-08-27] Write tests to check that test
 ;; runner gets all the necessary information from test definitions.
 
@@ -69,87 +64,91 @@ library, which sets an approriate test runner for you."))
   (and (procedure? x)
        (procedure-property x 'suitbl-suite-thunk?)))
 
-;; We use syntax-rules because it save patterns into transformer's
-;; metadata, which allows to generate "signature" of the macro.
-
 (define-syntax is
-  (syntax-rules ()
+  (lambda (stx)
     "A flexible assert macro.  The behavior can be customized by test runner."
-    ((_ (pred args ...))
-     ((test-runner*)
-      `((type . runner/run-assert)
-        (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
-                   (assert/args-thunk . ,(lambda () (list args ...)))
-                   (assert/body . (pred args ...)))))))
-    ((_ form)
-     ((test-runner*)
-      `((type . runner/run-assert)
-        (assert . ((assert/body-thunk . ,(lambda () form))
-                   (assert/body . form))))))))
+    (syntax-case stx ()
+      ((_ (pred args ...))
+       #'((test-runner*)
+          `((type . runner/run-assert)
+            (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
+                       (assert/args-thunk . ,(lambda () (list args ...)))
+                       (assert/body . (pred args ...)))))))
+      ((_ form)
+       #'((test-runner*)
+          `((type . runner/run-assert)
+            (assert . ((assert/body-thunk . ,(lambda () form))
+                       (assert/body . form)))))))))
 
 (define (alist-merge l1 l2)
   (append l1 l2))
 
 (define-syntax test-thunk
-  (syntax-rules (metadata)
-    ((test-thunk test-description 'metadata metadata-value expression expressions ...)
-     (let ((test-entity
-            `((test/body-thunk . ,(lambda () expression expressions ...))
-              (test/body . (expression expressions ...))
-              (test/description . ,test-description)
-              (test/metadata . ,metadata-value))))
-       (lambda ()
-         ((test-runner*)
-          `((type . runner/load-test)
-            (test . ,test-entity))))))
+  (lambda (stx)
+    (syntax-case stx (metadata)
+      ((_ test-description (quote metadata) metadata-value expression expressions ...)
+       #'(let ((test-entity
+                `((test/body-thunk . ,(lambda () expression expressions ...))
+                  (test/body . (expression expressions ...))
+                  (test/description . ,test-description)
+                  (test/metadata . ,metadata-value))))
+           (lambda ()
+             ((test-runner*)
+              `((type . runner/load-test)
+                (test . ,test-entity))))))
 
-    ((test-thunk test-description expression expressions ...)
-     (test-thunk test-description 'metadata '() expression expressions ...))))
+      ((_ test-description expression expressions ...)
+       #'(test-thunk test-description 'metadata '() expression expressions ...)))))
 
 (define-syntax test
-  (syntax-rules ()
+  (lambda (stx)
     "Test represent a logical unit of testing, usually includes zero or
 more @code{is} asserts."
-    ((test test-description arguments ...)
-     ((test-thunk test-description arguments ...)))))
+    (syntax-case stx ()
+      ((_ test-description arguments ...)
+       #'((test-thunk test-description arguments ...))))))
 
 (define-syntax suite-thunk
-  (syntax-rules (metadata)
-    ((_ suite-description 'metadata metadata-value expression expressions ...)
-     (let* ((suite-entity
-             `((suite/body-thunk . ,(lambda () expression expressions ...))
-               (suite/description . ,suite-description)
-               (suite/metadata . ,metadata-value)))
+  (lambda (stx)
+    (syntax-case stx (metadata)
+      ((_ suite-description (quote metadata) metadata-value
+          expression expressions ...)
+       #'(let* ((suite-entity
+                 `((suite/body-thunk . ,(lambda () expression expressions ...))
+                   (suite/description . ,suite-description)
+                   (suite/metadata . ,metadata-value)))
 
-            (%suite-thunk
-                ;; Wrapping into identity to prevent setting procedure-name
-                (identity
-                 (lambda ()
-                   ((test-runner*)
-                    `((type . runner/load-suite)
-                      (suite . ,suite-entity)))))))
+                (%suite-thunk
+                 ;; Wrapping into identity to prevent setting procedure-name
+                 (identity
+                  (lambda ()
+                    ((test-runner*)
+                     `((type . runner/load-suite)
+                       (suite . ,suite-entity)))))))
 
-       (set-procedure-properties!
-        %suite-thunk
-        `((documentation . ,suite-description)
-          (suite . ,suite-entity)
-          (suitbl-suite-thunk? . #t)))
-       %suite-thunk))
+           (set-procedure-properties!
+            %suite-thunk
+            `((documentation . ,suite-description)
+              (suite . ,suite-entity)
+              (suitbl-suite-thunk? . #t)))
+           %suite-thunk))
 
-    ((suite-thunk suite-description expression expressions ...)
-     (suite-thunk
-         suite-description 'metadata '() expression expressions ...))))
+      ((_ suite-description expression expressions ...)
+       #'(suite-thunk
+          suite-description 'metadata '() expression expressions ...)))))
 
 (define-syntax suite
-  (syntax-rules ()
+  (lambda (stx)
     "Test suite is a grouping unit, it allows to combine tests and other
 test suites."
-    ((suite suite-description arguments ...)
-     ((suite-thunk suite-description arguments ...)))))
+    (syntax-case stx ()
+      ((_ suite-description arguments ...)
+       #'((suite-thunk suite-description arguments ...))))))
 
 (define-syntax define-suite
-  (syntax-rules ()
+  (lambda (stx)
     "Equivalent of (define-public NAME (suite-thunk ...))."
-    ((_ suite-name expression ...)
-     (define-public suite-name
-       (suite-thunk (symbol->string 'suite-name) expression ...)))))
+    (syntax-case stx ()
+      ((_ suite-name expression ...)
+       #'(define-public suite-name
+           (suite-thunk (symbol->string 'suite-name) expression ...))))))
