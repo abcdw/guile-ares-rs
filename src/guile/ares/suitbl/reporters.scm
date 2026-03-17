@@ -20,6 +20,7 @@
             test-reporter-dots
             test-reporter-dots-with-hierarchy
             test-reporter-minimal
+            test-reporter-spying
             test-reporters-use-all
             test-reporters-use-first
 
@@ -215,7 +216,7 @@ to catch unhandled messages."
   (case msg-type
 
     ((reporter/test-start)
-     (format (test-reporter-output-port*) "=> [~a]\n"
+     (format (test-reporter-output-port*) "--- [~a] ---\n"
              (assoc-ref message 'description)))
     ((reporter/test-end)
      (format (test-reporter-output-port*) "\n"))
@@ -238,6 +239,52 @@ to catch unhandled messages."
 (define test-reporter-minimal
   (chain (list
           test-reporter-execution-minimal
+          test-reporter-loading-minimal)
+    (test-reporters-use-all _)
+    (list _ test-reporter-unhandled)
+    (test-reporters-use-first _)))
+
+(define (pre-evaled-expression message)
+    (let* ((assert-body (assoc-ref message 'assert/body))
+           (args-thunk (assoc-ref message 'assert/args-thunk))
+           (safe-args-thunk (safify-thunk args-thunk)))
+      ;; TODO: [Andrew Tropin, 2025-05-28] Ensure arguments-thunk
+      ;; exception handled.
+      (if (list? assert-body)
+          (match (safe-args-thunk)
+            ((value . evaluated-args)
+             (cons (car assert-body) evaluated-args))
+            ((exception . ex)
+             (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
+          (assoc-ref message 'assertion/result))))
+
+(define (test-reporter-execution-spying message)
+  (define msg-type (assoc-ref message 'type))
+  (case msg-type
+
+    ((reporter/test-start)
+     (format (test-reporter-output-port*) "--- [~a] ---\n"
+             (assoc-ref message 'description)))
+    ((reporter/test-end)
+     (format (test-reporter-output-port*) "\n"))
+
+    ((reporter/assertion-pass reporter/assertion-fail)
+     (format (test-reporter-output-port*) "~y~y => ~y"
+             (assoc-ref message 'assert/body)
+             (pre-evaled-expression message)
+             (assoc-ref message 'assertion/result)))
+
+    ((reporter/assertion-error)
+     (format (test-reporter-output-port*) "\n ~y✗ produced error:\n ~s\n"
+             (assoc-ref message 'assert/body)
+             (exception->string
+              (assoc-ref message 'assertion/error))))
+
+    (else #f)))
+
+(define test-reporter-spying
+  (chain (list
+          test-reporter-execution-spying
           test-reporter-loading-minimal)
     (test-reporters-use-all _)
     (list _ test-reporter-unhandled)
