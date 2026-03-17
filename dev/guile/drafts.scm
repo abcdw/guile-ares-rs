@@ -10,7 +10,7 @@
 ;; ;;; Module containing experimental code not intended for public use
 ;; ;;;
 
-(display "hi")
+;; (display "hi")
 ;; (scm->bencode-string `(("op" . "ls-sessions")))
 ;; (begin
 ;;   (use-modules (bencode) (nrepl client))
@@ -303,14 +303,4 @@
 
 
 
-;; (define a
-;;   (+ 2 3))
 
-;; (+ a 3)
-
-;; (let loop ((i 0))
-;;   (display i)
-;;   (newline)
-;;   (sleep 1)
-;;   (when (< i 5)
-;;     (loop (1+ i))))
