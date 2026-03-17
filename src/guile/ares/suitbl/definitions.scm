@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl definitions)
   #:export (test-runner*
@@ -37,6 +37,8 @@
 ;; IDEA: [Andrew Tropin, 2025-09-18] Add support for docstrings for
 ;; define-suite
 
+;; TODO: [Andrew Tropin, 2026-03-17] Decide default recommended
+;; semantics for evaluation of is, test, suite.
 
 
 ;;;
