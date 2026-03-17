@@ -69,16 +69,20 @@ library, which sets an approriate test runner for you."))
     "A flexible assert macro.  The behavior can be customized by test runner."
     (syntax-case stx ()
       ((_ (pred args ...))
-       #'((test-runner*)
-          `((type . runner/run-assert)
-            (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
-                       (assert/args-thunk . ,(lambda () (list args ...)))
-                       (assert/body . (pred args ...)))))))
+       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+         #'((test-runner*)
+            `((type . runner/run-assert)
+              (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
+                         (assert/args-thunk . ,(lambda () (list args ...)))
+                         (assert/body . (pred args ...))
+                         (assert/location . location)))))))
       ((_ form)
-       #'((test-runner*)
-          `((type . runner/run-assert)
-            (assert . ((assert/body-thunk . ,(lambda () form))
-                       (assert/body . form)))))))))
+       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+         #'((test-runner*)
+            `((type . runner/run-assert)
+              (assert . ((assert/body-thunk . ,(lambda () form))
+                         (assert/body . form)
+                         (assert/location . location))))))))))
 
 (define (alist-merge l1 l2)
   (append l1 l2))
@@ -87,15 +91,17 @@ library, which sets an approriate test runner for you."))
   (lambda (stx)
     (syntax-case stx (metadata)
       ((_ test-description (quote metadata) metadata-value expression expressions ...)
-       #'(let ((test-entity
-                `((test/body-thunk . ,(lambda () expression expressions ...))
-                  (test/body . (expression expressions ...))
-                  (test/description . ,test-description)
-                  (test/metadata . ,metadata-value))))
+       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+         #'(let ((test-entity
+                  `((test/body-thunk . ,(lambda () expression expressions ...))
+                    (test/body . (expression expressions ...))
+                    (test/description . ,test-description)
+                    (test/metadata . ,metadata-value)
+                    (test/location . location))))
            (lambda ()
              ((test-runner*)
               `((type . runner/load-test)
-                (test . ,test-entity))))))
+                (test . ,test-entity)))))))
 
       ((_ test-description expression expressions ...)
        #'(test-thunk test-description 'metadata '() expression expressions ...)))))
@@ -113,25 +119,27 @@ more @code{is} asserts."
     (syntax-case stx (metadata)
       ((_ suite-description (quote metadata) metadata-value
           expression expressions ...)
-       #'(let* ((suite-entity
-                 `((suite/body-thunk . ,(lambda () expression expressions ...))
-                   (suite/description . ,suite-description)
-                   (suite/metadata . ,metadata-value)))
+       (with-syntax ((location (datum->syntax stx (syntax-source stx))))
+         #'(let* ((suite-entity
+                   `((suite/body-thunk . ,(lambda () expression expressions ...))
+                     (suite/description . ,suite-description)
+                     (suite/metadata . ,metadata-value)
+                     (suite/location . location)))
 
-                (%suite-thunk
-                 ;; Wrapping into identity to prevent setting procedure-name
-                 (identity
-                  (lambda ()
-                    ((test-runner*)
-                     `((type . runner/load-suite)
-                       (suite . ,suite-entity)))))))
+                  (%suite-thunk
+                   ;; Wrapping into identity to prevent setting procedure-name
+                   (identity
+                    (lambda ()
+                      ((test-runner*)
+                       `((type . runner/load-suite)
+                         (suite . ,suite-entity)))))))
 
-           (set-procedure-properties!
-            %suite-thunk
-            `((documentation . ,suite-description)
-              (suite . ,suite-entity)
-              (suitbl-suite-thunk? . #t)))
-           %suite-thunk))
+             (set-procedure-properties!
+              %suite-thunk
+              `((documentation . ,suite-description)
+                (suite . ,suite-entity)
+                (suitbl-suite-thunk? . #t)))
+             %suite-thunk)))
 
       ((_ suite-description expression expressions ...)
        #'(suite-thunk
