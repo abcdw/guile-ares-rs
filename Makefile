@@ -10,7 +10,7 @@ repl: server
 
 server:
 	${GUILE_DEV} -c \
-	"((@ (ares server) run-nrepl-server))"
+	"((@ (ares server) run-nrepl-server) #:dev? #t)"
 
 ares: server
 
