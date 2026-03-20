@@ -175,8 +175,6 @@ Returns an empty string if no location is available."
     (let* ((assert-body (assoc-ref message 'assert/body))
            (args-thunk (assoc-ref message 'assert/args-thunk))
            (safe-args-thunk (safify-thunk args-thunk)))
-      ;; TODO: [Andrew Tropin, 2025-05-28] Ensure arguments-thunk
-      ;; exception handled.
       (if (and (list? assert-body) (= 3 (length assert-body)))
           (match (safe-args-thunk)
             ((value . (first second))
@@ -267,8 +265,6 @@ Returns an empty string if no location is available."
     (let* ((assert-body (assoc-ref message 'assert/body))
            (args-thunk (assoc-ref message 'assert/args-thunk))
            (safe-args-thunk (safify-thunk args-thunk)))
-      ;; TODO: [Andrew Tropin, 2025-05-28] Ensure arguments-thunk
-      ;; exception handled.
       (if (list? assert-body)
           (match (safe-args-thunk)
             ((value . evaluated-args)

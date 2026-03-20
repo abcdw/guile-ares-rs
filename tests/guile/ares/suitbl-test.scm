@@ -469,23 +469,7 @@ X #f
 
 
 ;;; Today/Next
-
-;; TODO: [Andrew Tropin, 2025-08-13] Add "test/suite loaded" event and
-;; corresponding test reporter.
-
-;; TODO: [Andrew Tropin, 2025-08-13] Show information about currently
-;; loaded tests in UI
-
-;; TODO: [Andrew Tropin, 2025-05-15] Create separate
-;; test-reporter-assert-minimal (showing only ✗ or ✓) and
-;; test-reporter-assert-simple (like current base), which
-;; can be used in base reporter.
-
 
-
-;; TODO: [Andrew Tropin, 2025-07-31] Make it possible to set test
-;; reporter for a particular run (we don't actually want to make a
-;; whole separate runner for changing reporting format)
 
 ;; TODO: [Andrew Tropin, 2025-07-29] Add composable immutable filters
 ;; and transformers, (failing-first, fast-first,
@@ -505,39 +489,6 @@ X #f
 ;; message (make sure all test runners get this message) (maybe not,
 ;; because it's necessary only for reporters to reset state) (the
 ;; previous message related only to the message in parentheses before)
-
-;; TODO: [Andrew Tropin, 2025-05-12] Preserve execution information,
-;; so we can re-run failed tests
-
-;; TODO: [Andrew Tropin, 2025-06-05] Implement testing-test-runner,
-;; which just saves every message comming to it.  To write tests for
-;; is/test/suite macros, to set expectation for them in the
-;; stone (tests) (:
-
-;; TODO: [Andrew Tropin, 2025-05-09] Revisit test-path* usage on test
-;; loading, we preserve test suite hierarchy now and it maybe redundant
-
-;; TODO: [Andrew Tropin, 2025-05-09] Describe private/public test
-;; suite logic, if you don't want suite to be executed by
-;; run-project-tests, just don't export it, right?
-
-;; TODO: [Andrew Tropin, 2025-05-09] Make it possible to specify
-;; multiple composable reporters
-
-;; TODO: [Andrew Tropin, 2025-05-09] ?Rename test to check as this
-;; name suites better the purpose
-
-;; TODO: [Andrew Tropin, 2025-05-01] Add variable
-;; test-runner-under-test* and make-clean-test-runner-environment
-;; macro, which will reset the environment and use
-;; test-runner-under-test* as a test runner for it, to make it easier
-;; to define tests for test runner and sometimes customize test
-;; runner (for example make it more verbose for debugging purpose).
-
-;; TODO: [Andrew Tropin, 2025-05-05] Revisit test suite thunk logic,
-;; who setups the environment via parameterize, who run scheduled
-;; tests and do we schedule tests or build test hierarchy (naming
-;; kinda important for understanding here) ?
 
 ;; TODO: [Andrew Tropin, 2025-04-11] Specify test timeouts to 10 by
 ;; default, so the test evaluation never hangs.
