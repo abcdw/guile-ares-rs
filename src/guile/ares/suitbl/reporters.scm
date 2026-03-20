@@ -242,12 +242,12 @@ Returns an empty string if no location is available."
      (format (test-reporter-output-port*) "✓"))
 
     ((reporter/assertion-fail)
-     (format (test-reporter-output-port*) "\n ~a\n ~y✗ ~a\n"
+     (format (test-reporter-output-port*) "~a\n~y✗ ~a\n"
              (format-location message)
              (assoc-ref message 'assert/body) (actual message)))
 
     ((reporter/assertion-error)
-     (format (test-reporter-output-port*) "\n ~a\n ~y✗ produced error:\n ~s\n"
+     (format (test-reporter-output-port*) "~a\n~y✗ produced error:\n ~s\n"
              (format-location message)
              (assoc-ref message 'assert/body)
              (exception->string
