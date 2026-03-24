@@ -71,27 +71,121 @@ improvement.</p>
 
 <h2 id="specification">Specification</h2>
 
-<p>??? detailed specification.  This should be detailed enough that a
-conforming implementation could be completely created from this
-description.</p>
+<h3 id="overview">Overview</h3>
 
-<p>Please include examples.  They make it much easier for readers to
-understand your proposal.</p>
+<p>The API specified by this SRFI is organized into two layers:</p>
 
-<p>Please follow the linguistic conventions described in the <a
-href="/srfi-faq.html#conventions">FAQ</a>.  In particular, please
-follow the conventions about the use of the terms <dfn>must,</dfn> <dfn>must not,</dfn>
-<dfn>required,</dfn> <dfn>shall,</dfn> <dfn>shall not,</dfn> <dfn>should,</dfn> <dfn>should not,</dfn>
-<dfn>recommended,</dfn> <dfn>may,</dfn> and <dfn>optional</dfn> defined by <a
-href="https://www.ietf.org/rfc/rfc2119.html">RFC 2119</a>.  This
-convention has been adopted by R7RS Small, too, in section 1.3.2
-(<a href="https://small.r7rs.org/attachment/r7rs.pdf">PDF</a>).</p>
+<ol>
+  <li><strong>Test definition primitives</strong> (normative).  Three
+  syntactic forms: <code>is</code>, <code>test</code>,
+  and <code>suite</code>, and a <code>test-runner*</code> parameter, a
+  small set of predicates, and deferred
+  variants <code>test-thunk</code> and <code>suite-thunk</code>.</li>
 
-<p>Also by convention, the phrase <dfn>it is an error to <em>X</em></dfn> is used in
-Scheme documents to mean that <em>X</em> is not allowed, but to leave
-it up to the implementer to decide what to do in response.
-Implementations may signal an error, assign some new meaning to
-<em>X</em>, or fail catastrophically.</p>
+  <li><strong>Test runner interface</strong> (normative message
+  protocol with informative execution-semantics recommendations).  A
+  message-passing protocol that bridges test definitions and test
+  runners, plus guidance for test runner implementers on loading,
+  scheduling, and reporting.</li>
+</ol>
+
+<p>The definition primitives do not execute tests themselves.
+  Instead, each form constructs a first-class <em>entity</em>, an
+  association list (alist) that captures the test's body as a thunk,
+  its source form, source location, description string, and optional
+  metadata and delivers it to the current test runner via
+  a <em>message</em>.  The test runner is a procedure stored in
+  the <code>test-runner*</code> parameter; it receives messages as
+  alists and is free to execute tests immediately, collect them for
+  later, or take any other action.</p>
+
+<p>This separation is the central design principle: code that
+<em>defines</em> tests is portable across all conforming
+implementations, while code that <em>runs</em> tests may vary to suit
+different environments: CI pipelines, interactive REPLs and IDE,
+specific testing/reporting tools.</p>
+
+<h3 id="terminology">Terminology</h3>
+
+<dl>
+  <dt id="term-assertion">Assertion</dt>
+  <dd>A single check produced by the <code>is</code> macro.  An
+  assertion captures an expression (the <em>body</em>), a thunk that
+  evaluates it, and its source location.  When the body is a predicate
+  application <code>(pred arg&nbsp;&hellip;)</code>, the assertion also
+  captures a separate thunk that evaluates the arguments, enabling
+  richer failure messages.</dd>
+
+  <dt id="term-test">Test</dt>
+  <dd>A named, independently executable unit of testing produced by
+  the <code>test</code> or <code>test-thunk</code> form.  A test
+  groups zero or more assertions together under a human-readable
+  description string.  Tests are the smallest unit that a test runner
+  schedules and reports on.</dd>
+
+  <dt id="term-test-suite">Test suite</dt>
+  <dd>A named grouping of tests and nested test suites produced by
+  the <code>suite</code> or <code>suite-thunk</code> form.  Suites
+  impose hierarchical structure and may carry metadata that influences
+  the test runner&rsquo;s behavior for the entire group.</dd>
+
+  <dt id="term-entity">Entity</dt>
+  <dd>An association list that represents an assertion, test, or
+  suite.  Entities are the first-class runtime objects that flow from
+  definition code to the test runner.  Keys are symbols; their
+  prefixes (<code>assert/</code>, <code>test/</code>,
+  <code>suite/</code>) indicate which kind of entity they belong
+  to.</dd>
+
+  <dt id="term-message">Message</dt>
+  <dd>An association list sent to the test runner via
+  the <code>test-runner*</code> parameter.  Every message contains at
+  least a <code>type</code> key whose value is a symbol identifying
+  the kind of message (e.g.&nbsp;<code>runner/run-assert</code>,
+  <code>runner/load-test</code>, <code>runner/load-suite</code>).
+  The remaining keys carry the entity and any additional context.</dd>
+
+  <dt id="term-test-runner">Test runner</dt>
+  <dd>A procedure of one argument (a message alist) stored in
+  the <code>test-runner*</code> parameter.  The test runner receives
+  every message produced by the definition primitives and decides how
+  to handle it &mdash; for example, by executing an assertion
+  immediately, by collecting a test for deferred execution, or by
+  building a suite hierarchy.  This SRFI specifies the messages a test
+  runner <em>must</em> accept; it does not prescribe execution
+  order, concurrency, or reporting strategy.</dd>
+
+  <dt id="term-test-reporter">Test reporter</dt>
+  <dd>A procedure that consumes events from a test runner and produces
+  human- or machine-readable output (terminal text, JUnit&nbsp;XML,
+  TAP, etc.).  Test reporters are outside the scope of this SRFI; they
+  are mentioned here because the test runner interface is designed to
+  make them easy to implement.</dd>
+
+  <dt id="term-metadata">Metadata</dt>
+  <dd>An association list of user-provided key&ndash;value pairs
+  attached to a test or suite.  Metadata is opaque to the definition
+  API; its interpretation is entirely up to the test runner.  Typical
+  uses include tagging tests
+  (e.g.&nbsp;<code>((tags&nbsp;.&nbsp;(integration)))</code>),
+  marking them as slow, or specifying a timeout.</dd>
+
+  <dt id="term-source-location">Source location</dt>
+  <dd>An association list with
+  keys <code>filename</code>, <code>line</code>,
+  and <code>column</code> that records where a definition form appears
+  in the source code.  Captured at macro-expansion time.  Line and
+  column values are zero-indexed.  If the filename is relative, an
+  implementation <em>should</em> attempt to resolve it to an absolute
+  path.</dd>
+
+  <dt id="term-suite-path">Suite path</dt>
+  <dd>An ordered list of suite entities representing the chain of
+  enclosing suites from the outermost to the innermost.  The suite
+  path provides context for each test, enabling runners to reconstruct
+  the full hierarchy.</dd>
+
+</dl>
 
 <h2 id="implementation">Implementation</h2>
 
