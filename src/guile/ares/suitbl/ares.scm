@@ -34,40 +34,34 @@
   (let ((state ((test-runner*) `((type . runner/get-state)))))
     (get-stats state (get-runner-config state))))
 
-(define (load-module-tests)
+(define (load-module-suite m)
+  (suite (format #f "~a module tests" (module-name m))
+    'metadata
+    `((module . ,m))
+    (for-each (lambda (ts) (ts))
+              (get-module-public-suites m))))
+
+(define (with-auto-run-disabled thunk)
   (set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #f)
-  (let ((m (current-module)))
-    (suite (format #f "~a module tests" (module-name m))
-      'metadata
-      `((module . ,m))
-      (for-each
-       (lambda (ts) (ts))
-       (get-module-public-suites (get-test-module (module-name m))))))
+  (thunk)
   (set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #t)
   *unspecified*)
 
+(define (load-module-tests)
+  (with-auto-run-disabled
+   (lambda ()
+     (load-module-suite (get-test-module (module-name (current-module)))))))
+
 (define (load-project-tests)
-  (set-runner-config-value!
-   ((test-runner*) `((type . runner/get-state)))
-   'auto-run? #f)
-  (let ((test-modules (get-all-test-modules)))
-    (suite "project tests"
-      (for-each
-       (lambda (m)
-         (suite (format #f "~a module tests" (module-name m))
-           'metadata
-           `((module . ,m))
-           (for-each (lambda (ts) (ts))
-                     (get-module-public-suites m))))
-       test-modules)))
-  (set-runner-config-value!
-   ((test-runner*) `((type . runner/get-state)))
-   'auto-run? #t)
-  *unspecified*)
+  (with-auto-run-disabled
+   (lambda ()
+     (let ((test-modules (get-all-test-modules)))
+       (suite "project tests"
+         (for-each load-module-suite test-modules))))))
 
 (define (add-indicies tests)
   (map (lambda (t i) (cons `(test/index . ,i) t))
