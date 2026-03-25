@@ -442,3 +442,61 @@ Returns an empty string if no location is available."
   (with-output-to-string
     (lambda ()
       (sxml->xml (forest->junit-sxml forest #:name name)))))
+
+
+;;;
+;;; Tree-style formatting (like the `tree` CLI command)
+;;;
+
+(define (tree-node-description node)
+  "Get the description string from a tree NODE.
+Works with both raw nodes (suite/test are alists) and simplified
+nodes (suite/test are strings)."
+  (let ((s (assoc-ref node 'suite))
+        (t (assoc-ref node 'test)))
+    (cond
+     ((and s (string? s)) s)
+     ((and s (list? s)) (assoc-ref s 'suite/description))
+     ((and t (string? t)) t)
+     ((and t (list? t)) (assoc-ref t 'test/description))
+     (else "<unknown>"))))
+
+(define (tree-node-children node)
+  "Get the children list of a tree NODE, or @code{'()} for test nodes."
+  (or (assoc-ref node 'suite-node/children) '()))
+
+(define (format-tree-children children prefix port)
+  "Write CHILDREN nodes to PORT with tree connectors under PREFIX."
+  (let loop ((remaining children))
+    (unless (null? remaining)
+      (let* ((child (car remaining))
+             (last? (null? (cdr remaining)))
+             (connector (if last? "└── " "├── "))
+             (extension (if last? "    " "│   "))
+             (desc (tree-node-description child))
+             (grandchildren (tree-node-children child)))
+        (format port "~a~a~a\n" prefix connector desc)
+        (format-tree-children
+         grandchildren (string-append prefix extension) port)
+        (loop (cdr remaining))))))
+
+(define (suite-forest->tree-string forest)
+  "Format a suite FOREST as a tree string, similar to the @code{tree}
+CLI command output.  Works with both raw and simplified forests.
+
+@example
+first suite
+├── good one
+├── nested-suite
+│   └── failing test
+└── another good one
+@end example"
+  (with-output-to-string
+    (lambda ()
+      (for-each
+       (lambda (root)
+         (let ((desc (tree-node-description root))
+               (children (tree-node-children root)))
+           (format #t "~a\n" desc)
+           (format-tree-children children "" (current-output-port))))
+       forest))))
