@@ -225,17 +225,16 @@
           lot))
 
 (define (get-scheduled-tests state runner-config)
-  (let ((lot-transformation identity))
+  (let ((schedule-tests (or (assoc-ref runner-config 'schedule-tests)
+                            identity)))
     (chain (get-loaded-tests state)
-      (lot-transformation _))))
+      (schedule-tests _))))
 
-(define (get-stats state)
-  (let* ((state-val (atomic-box-ref state))
-         (loaded-tests-count (chain state
-                               (get-loaded-tests _)
-                               (length _))))
+(define* (get-stats state #:optional (runner-config '()))
+  (let* ((loaded-tests-count (length (get-loaded-tests state)))
+         (selected-tests-count (length (get-scheduled-tests state runner-config))))
     `((loaded-tests-count . ,loaded-tests-count)
-      (selected-tests-count . ,loaded-tests-count))))
+      (selected-tests-count . ,selected-tests-count))))
 
 
 ;;;
