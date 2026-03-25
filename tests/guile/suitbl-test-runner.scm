@@ -4,15 +4,34 @@
   #:use-module ((ares suitbl reporters) #:prefix reporters:)
   #:use-module ((ares suitbl runner-state) #:prefix state:)
   #:use-module (ares suitbl discovery)
+  #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 exceptions)
   #:export (run-project-tests))
+
+(define (suitbl-module? m)
+  (let ((name (module-name m)))
+    (and (>= (length name) 2)
+         (eq? (first name) 'ares)
+         (string-prefix? "suitbl" (symbol->string (second name))))))
+
+(define (only-suitbl-tests tests)
+  (filter (lambda (t)
+            (any (lambda (s)
+                   (chain-and s
+                     (assoc-ref _ 'suite/metadata)
+                     (assoc-ref _ 'module)
+                     (suitbl-module? _)))
+                 (or (assoc-ref t 'suite/path) '())))
+          tests))
 
 (define-public (run-project-tests)
   (let* ((test-runner (make-suitbl-test-runner)))
     (parameterize ((test-runner* test-runner))
       ((@ (ares suitbl ares) load-project-tests))
-      (test-runner `((type . runner/run-tests))))
+      (test-runner `((type . runner/run-tests)
+                     (runner/config
+                      . ((schedule-tests . ,only-suitbl-tests))))))
     (define summary (test-runner `((type . runner/get-run-summary))))
     (format #t "\n~a\n" summary)
 
