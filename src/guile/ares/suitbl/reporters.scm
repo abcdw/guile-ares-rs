@@ -306,8 +306,20 @@ Returns an empty string if no location is available."
     (list _ test-reporter-unhandled)
     (test-reporters-use-first _)))
 
+(define (test-reporter-tree message)
+  "A reporter that prints the complete suite tree (like the @code{tree}
+CLI command) when a top-level suite finishes loading."
+  (case (assoc-ref message 'type)
+    ((reporter/suite-tree-loaded)
+     (let ((suite-node (assoc-ref message 'suite-node)))
+       (format (test-reporter-output-port*) "\n~a"
+               (suite-forest->tree-string (list suite-node)))))
+    (else #f)))
+
 (define test-reporter-base
-  (chain (list test-reporter-verbose test-reporter-hierarchy)
+  (chain (list test-reporter-verbose
+               test-reporter-hierarchy
+               test-reporter-tree)
     (test-reporters-use-all _)
     (list _ test-reporter-unhandled)
     (test-reporters-use-first _)))

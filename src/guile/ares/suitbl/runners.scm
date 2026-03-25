@@ -305,7 +305,11 @@ environment just set it to new instance of test runner.
                    suite-node-items
                    (lambda (items) (cons val items)))
 
-                  (state:add-suite-tree! state val)))
+                  (begin
+                    (state:add-suite-tree! state val)
+                    ((get-test-reporter)
+                     `((type . reporter/suite-tree-loaded)
+                       (suite-node . ,val))))))
             val))
          (when (and (null? (%suite-path*))
                     (state:get-runner-config-value state 'auto-run?))
