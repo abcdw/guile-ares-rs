@@ -35,9 +35,10 @@
     (get-stats state (get-runner-config state))))
 
 (define (load-module-suite m)
-  (suite (format #f "~a module tests" (module-name m))
+  (suite (format #f "~a" (module-name m))
     'metadata
-    `((module . ,m))
+    `((module-suite? . #t)
+      (module . ,m))
     (for-each (lambda (ts) (ts))
               (get-module-public-suites m))))
 
@@ -61,6 +62,8 @@
    (lambda ()
      (let ((test-modules (get-all-test-modules)))
        (suite "project tests"
+         'metadata
+         '((project-suite? . #t))
          (for-each load-module-suite test-modules))))))
 
 (define (add-indicies tests)
