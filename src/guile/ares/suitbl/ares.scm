@@ -8,6 +8,7 @@
                  #:select (test-reporter-minimal))
   #:use-module ((ares suitbl runner-state)
                 #:select (get-loaded-tests
+                          get-runner-config
                           get-stats
                           set-runner-config-value!))
   #:use-module ((ares suitbl discovery)
@@ -30,8 +31,8 @@
   ((test-runner*) `((type . runner/get-run-summary))))
 
 (define (get-current-test-runner-stats)
-  (chain ((test-runner*) `((type . runner/get-state)))
-    (get-stats _)))
+  (let ((state ((test-runner*) `((type . runner/get-state)))))
+    (get-stats state (get-runner-config state))))
 
 (define (load-module-tests)
   (set-runner-config-value!

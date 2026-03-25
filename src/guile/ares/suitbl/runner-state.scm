@@ -37,6 +37,7 @@
             get-run-history
             get-run-summary
 
+            get-runner-config
             get-runner-config-value
             set-runner-config-value!
             merge-runner-config))
@@ -230,7 +231,7 @@
     (chain (get-loaded-tests state)
       (schedule-tests _))))
 
-(define* (get-stats state #:optional (runner-config '()))
+(define (get-stats state runner-config)
   (let* ((loaded-tests-count (length (get-loaded-tests state)))
          (selected-tests-count (length (get-scheduled-tests state runner-config))))
     `((loaded-tests-count . ,loaded-tests-count)
