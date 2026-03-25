@@ -25,7 +25,10 @@
             test-reporters-use-first
 
             forest->junit-sxml
-            forest->junit-xml))
+            forest->junit-xml
+
+            suite-forest->tree-string
+            test-reporter-tree))
 
 
 
@@ -460,17 +463,35 @@ CLI command) when a top-level suite finishes loading."
 ;;; Tree-style formatting (like the `tree` CLI command)
 ;;;
 
-(define (tree-node-description node)
-  "Get the description string from a tree NODE.
-Works with both raw nodes (suite/test are alists) and simplified
-nodes (suite/test are strings)."
+(define (tree-node-emoji node)
+  "Return an emoji prefix for a tree NODE based on its type and metadata."
   (let ((s (assoc-ref node 'suite))
         (t (assoc-ref node 'test)))
     (cond
+     ((and t) "📄 ")
+     ((and s (list? s))
+      (let ((metadata (or (assoc-ref s 'suite/metadata) '())))
+        (cond
+         ((assoc-ref metadata 'project-suite?) "🗄️ ")
+         ((assoc-ref metadata 'module-suite?) "🗂️ ")
+         (else "📂 "))))
+     (else ""))))
+
+(define (tree-node-description node)
+  "Get the description string from a tree NODE.
+Works with both raw nodes (suite/test are alists) and simplified
+nodes (suite/test are strings).  Raw nodes get an emoji prefix based
+on their type and metadata."
+  (let ((s (assoc-ref node 'suite))
+        (t (assoc-ref node 'test))
+        (emoji (tree-node-emoji node)))
+    (cond
      ((and s (string? s)) s)
-     ((and s (list? s)) (assoc-ref s 'suite/description))
+     ((and s (list? s))
+      (string-append emoji (assoc-ref s 'suite/description)))
      ((and t (string? t)) t)
-     ((and t (list? t)) (assoc-ref t 'test/description))
+     ((and t (list? t))
+      (string-append emoji (assoc-ref t 'test/description)))
      (else "<unknown>"))))
 
 (define (tree-node-children node)
@@ -483,8 +504,8 @@ nodes (suite/test are strings)."
     (unless (null? remaining)
       (let* ((child (car remaining))
              (last? (null? (cdr remaining)))
-             (connector (if last? "└── " "├── "))
-             (extension (if last? "    " "│   "))
+             (connector (if last? "└─ " "├─ "))
+             (extension (if last? "   " "│  "))
              (desc (tree-node-description child))
              (grandchildren (tree-node-children child)))
         (format port "~a~a~a\n" prefix connector desc)
