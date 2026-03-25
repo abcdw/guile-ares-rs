@@ -57,8 +57,13 @@
   (let ((test-modules (get-all-test-modules)))
     (suite "project tests"
       (for-each
-       (lambda (ts) (ts))
-       (append-map get-module-public-suites test-modules))))
+       (lambda (m)
+         (suite (format #f "~a module tests" (module-name m))
+           'metadata
+           `((module . ,m))
+           (for-each (lambda (ts) (ts))
+                     (get-module-public-suites m))))
+       test-modules)))
   (set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #t)
