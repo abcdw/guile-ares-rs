@@ -39,6 +39,8 @@
    'auto-run? #f)
   (let ((m (current-module)))
     (suite (format #f "~a module tests" (module-name m))
+      'metadata
+      `((module . ,m))
       (for-each
        (lambda (ts) (ts))
        (get-module-public-suites (get-test-module (module-name m))))))
