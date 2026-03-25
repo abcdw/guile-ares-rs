@@ -21,9 +21,6 @@
   #:export (make-suitbl-test-runner
             make-silent-test-runner
 
-            get-stats
-            get-loaded-tests
-
             set-runner-config-value!))
 
 
