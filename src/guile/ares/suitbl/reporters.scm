@@ -28,7 +28,9 @@
             forest->junit-xml
 
             suite-forest->tree-string
-            test-reporter-tree))
+            count-suites-and-tests
+            test-reporter-tree
+            test-reporter-loaded-summary))
 
 
 
@@ -317,6 +319,55 @@ CLI command) when a top-level suite finishes loading."
      (let ((suite-node (assoc-ref message 'suite-node)))
        (format (test-reporter-output-port*) "\n~a"
                (suite-forest->tree-string (list suite-node)))))
+    (else #f)))
+
+(define (count-suites-and-tests node)
+  "Count suites, tests, module suites, and empty suites in a tree NODE.
+Returns an alist with keys: suites, tests, module-suites, empty-suites."
+  (define zero-counts
+    '((suites . 0) (tests . 0) (module-suites . 0) (empty-suites . 0)))
+
+  (define (merge-counts c1 c2)
+    "Sum corresponding values of two count alists."
+    (map (lambda (entry)
+           (cons (car entry) (+ (cdr entry) (assoc-ref c2 (car entry)))))
+         c1))
+
+  (cond
+   ((assoc-ref node 'test)
+    (acons 'tests 1 zero-counts))
+   ((assoc-ref node 'suite)
+    (let* ((suite (assoc-ref node 'suite))
+           (children (tree-node-children node))
+           (metadata (or (and (list? suite)
+                              (assoc-ref suite 'suite/metadata))
+                         '()))
+           (module? (assoc-ref metadata 'module-suite?))
+           (empty? (null? children))
+           (child-counts (fold merge-counts zero-counts
+                               (map count-suites-and-tests children))))
+      (merge-counts
+       `((suites . 1)
+         (tests . 0)
+         (module-suites . ,(if module? 1 0))
+         (empty-suites . ,(if empty? 1 0)))
+       child-counts)))
+   (else zero-counts)))
+
+(define (test-reporter-loaded-summary message)
+  "A reporter that prints the number of loaded suites and tests
+when a top-level suite finishes loading."
+  (case (assoc-ref message 'type)
+    ((reporter/suite-tree-loaded)
+     (let* ((suite-node (assoc-ref message 'suite-node))
+            (counts (count-suites-and-tests suite-node))
+            (suites (assoc-ref counts 'suites))
+            (tests (assoc-ref counts 'tests))
+            (modules (assoc-ref counts 'module-suites))
+            (empty (assoc-ref counts 'empty-suites)))
+       (format (test-reporter-output-port*)
+               "Loaded ~a test~p and ~a suite~p (~a module~p, ~a empty).\n"
+               tests tests suites suites modules modules empty)))
     (else #f)))
 
 (define test-reporter-base
