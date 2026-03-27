@@ -80,7 +80,7 @@ improvement.</p>
   syntactic forms: <code>is</code>, <code>test</code>,
   and <code>suite</code>, and a <code>test-runner*</code> parameter, a
   small set of predicates, and deferred
-  variants <code>test-thunk</code> and <code>suite-thunk</code>.</li>
+  variant <code>suite-thunk</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
   protocol with informative execution-semantics recommendations).  A
@@ -428,36 +428,6 @@ Scheme expressions (e.g.&nbsp;local definitions, setup code).</p>
 (test "list reversal"
   (define xs '(1 2 3))
   (is (equal? '(3 2 1) (reverse xs))))</code></pre>
-
-
-<h3 id="test-thunk-form"><code>test-thunk</code> &mdash; deferred test definition</h3>
-
-<h4>Syntax</h4>
-
-<dl>
-  <dt><code>(test-thunk <var>description</var> <var>body</var> &hellip;)</code></dt>
-  <dd>Returns a thunk that, when called, loads the test.</dd>
-
-  <dt><code>(test-thunk <var>description</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
-  <dd>Same, with metadata.</dd>
-</dl>
-
-<h4>Description</h4>
-
-<p><code>test-thunk</code> is the deferred counterpart
-of <code>test</code>.  It constructs the same test entity
-but <em>does not</em> immediately send it to the test runner.
-Instead, it returns a thunk (a zero-argument procedure) that, when
-invoked, sends the <code>runner/load-test</code> message.  This is
-useful for building test registries or for conditionally loading
-tests.</p>
-
-<p>The relationship between the two forms is:</p>
-
-<pre><code>(test <var>desc</var> <var>body</var> &hellip;)
-&equiv;
-((test-thunk <var>desc</var> <var>body</var> &hellip;))</code></pre>
-
 
 <h3 id="suite-macro"><code>suite</code> &mdash; test suite definition macro</h3>
 
