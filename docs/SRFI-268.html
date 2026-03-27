@@ -454,9 +454,10 @@ possibly associated with the context of this suite.</p>
 
 <p><var>description</var> is a string that serves as a human-readable
 label for the suite.  The <var>body</var> forms typically contain
-<code>test</code> forms, nested <code>suite</code> forms, and
-invocations of suite thunks, but may include arbitrary Scheme
-expressions for setup or shared definitions.</p>
+<code>test</code> forms, and nested <code>suite</code> forms.  It
+should not contain any other code, especially test setup code, as
+tests should be self-contained as they can be executed in arbitrary
+orders and multiple times.</p>
 
 <p>The suite entity contains the following keys:</p>
 
@@ -554,9 +555,10 @@ expressions for setup or shared definitions.</p>
 of <code>suite</code>.  It constructs the same suite entity
 but <em>does not</em> immediately send it to the test runner.
 Instead, it returns a thunk that, when invoked, sends
-the <code>runner/load-suite</code> message.  The returned thunk
-carries the suite entity as a procedure property and satisfies
-the <code>suite-thunk?</code> predicate.</p>
+the <code>runner/load-suite</code> message.  The returned thunk should
+carry the information or be registered in some registery to make
+the <code>suite-thunk?</code> predicate return <code>#t</code> on
+it.</p>
 
 <p>The relationship between the two forms is:</p>
 
@@ -578,11 +580,12 @@ other suites to include their tests:</p>
   (suite-thunk "integration tests"
     (test "round-trip" (is (equal? x (decode (encode x)))))))
 
-;; Compose into a top-level suite
-(suite "all tests"
-  (my-unit-tests)
-  (my-integration-tests))</code></pre>
-
+;; Compose into a top-level public suite
+(define-public all-tests
+  (suite-thunk "all tests"
+    (my-unit-tests)
+    (my-integration-tests)))
+</code></pre>
 
 <h3 id="define-suite-form"><code>define-suite</code> &mdash; named suite definition</h3>
 
@@ -637,8 +640,8 @@ top-level suite definitions in test modules.</p>
   <dt><code>(suite-thunk? <var>obj</var>)</code> &rarr; <var>boolean</var></dt>
   <dd>Returns <code>#t</code> if <var>obj</var> is a suite thunk
   produced by <code>suite-thunk</code> or <code>define-suite</code>.
-  Implementations mark suite thunks with a procedure property;
-  ordinary lambdas do not satisfy this predicate.</dd>
+  Implementations can mark suite thunks with a procedure property or
+  somehow else; ordinary lambdas do not satisfy this predicate.</dd>
 </dl>
 <h2 id="implementation">Implementation</h2>
 
