@@ -217,7 +217,7 @@ for a dynamic extent, which is useful for testing the test framework
 itself or for running tests with alternative reporters.</p>
 
 
-<h3 id="is-macro">Assertion macro</h3>
+<h3 id="is-macro">is &mdash; assertion macro</h3>
 
 <h4>Syntax</h4>
 
@@ -330,7 +330,7 @@ to reuse the value returned by <code>is</code> forms:</p>
 (is (lset= = '(1 2 3) '(3 2 1)))</code></pre>
 
 
-<h3 id="test-macro">Test definition macro</h3>
+<h3 id="test-macro">test &mdash; test definition macro</h3>
 
 <h4>Syntax</h4>
 
@@ -474,14 +474,13 @@ tests.</p>
 
 <h4>Description</h4>
 
-<p>The <code>suite</code> macro defines a grouping unit that
-organizes tests and nested suites into a hierarchy.  It constructs
-a <em>suite entity</em> (an alist), then immediately delivers it to
-the current test runner by sending
-a <code>runner/load-suite</code> message.  The test runner evaluates
-the suite body, during which any enclosed <code>test</code>
-and <code>suite</code> forms are loaded in the context of this
-suite.</p>
+<p>The <code>suite</code> macro defines a grouping unit that organizes
+tests and nested suites into a hierarchy.  It constructs a <em>suite
+entity</em> (an alist), then immediately delivers it to the current
+test runner by sending a <code>runner/load-suite</code> message.  The
+test runner evaluates the suite body, during which any
+enclosed <code>test</code> and <code>suite</code> forms are loaded and
+possibly associated with the context of this suite.</p>
 
 <p><var>description</var> is a string that serves as a human-readable
 label for the suite.  The <var>body</var> forms typically contain
