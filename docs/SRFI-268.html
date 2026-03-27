@@ -59,6 +59,20 @@ execution semantics recommendations for test runner implementers.</p>
 <p>??? Optional section that may point out things to be resolved.  This
 will not appear in the final SRFI.</p>
 
+<ul>
+  <li>define-suite actually has to be called define-suite-thunk or have
+  parenthesis similar to usual define (define-suite (site-name) ...).</li>
+
+  <li>assert used as a noun and means a thunked entity, that can be run.
+  assertion on the other hand is used inside runners and reporters as "a
+  result of assert execution".  AFAIK, assert is not a real noun in
+  english, it's a jargon/slang.</li>
+
+  <li>Suite thunk must be discoverable, it can be implemented as a lambda,
+  which when called with extra argument 'suite-thunk? returns #t. or
+  global registry</li>
+</ul>
+
 <h2 id="rationale">Rationale</h2>
 
 <p>??? detailed rationale.  This should be 200-500 words long.  Please
