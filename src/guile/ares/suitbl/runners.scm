@@ -58,7 +58,8 @@ environment just set it to new instance of test runner.
           (default-config `((auto-run? . #t)
                             (test-reporter . ,test-reporter-base)
                             (reset-loaded-tests-on-suite-load? . #t)
-                            (log-runner-messages? . #f))))
+                            (log-runner-messages? . #f)
+                            (re-raise? . #f))))
   "A flexible test runner factory, which spawns new test runners."
   (define state
     (make-atomic-box `((runner/run-history . #f)
@@ -86,7 +87,8 @@ environment just set it to new instance of test runner.
        ;;   (alist-cons 'test-runner this _))
        message)))
 
-  (define re-raise? #f)
+  (define (re-raise?)
+    (state:get-runner-config-value state 're-raise?))
   (define (%run-assert assert)
     (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
       (with-exception-handler
@@ -102,7 +104,7 @@ environment just set it to new instance of test runner.
            `((type . reporter/assertion-error)
              (assertion/error . ,ex))
            assert))
-         (if re-raise?
+         (if (re-raise?)
              (raise-exception ex)))
        (lambda ()
          ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
@@ -121,7 +123,7 @@ environment just set it to new instance of test runner.
                (assertion/result . ,result))
              assert))
            result))
-       #:unwind? (if re-raise? #f #t))))
+       #:unwind? (if (re-raise?) #f #t))))
 
   (define (run-assert ctx)
     (let* ((assert (chain ctx
@@ -162,7 +164,7 @@ environment just set it to new instance of test runner.
                 (description . ,description)))
              (raise-exception ex))
            test-body-thunk
-           #:unwind? (if re-raise? #f #t))
+           #:unwind? (if (re-raise?) #f #t))
           (atomic-box-ref (%test-run-events*))))
 
       ((get-test-reporter)

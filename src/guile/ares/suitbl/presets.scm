@@ -19,6 +19,7 @@
             preset:only-fast!
             preset:matching!
             preset:rerun-failed!
+            preset:raise-on-error!
             preset:reset!))
 
 
@@ -118,13 +119,22 @@ in the previous run."
   (set-runner-config-value!
    (runner->state runner) 'schedule-tests scheduler:failed-or-all))
 
+(define* (preset:raise-on-error! #:optional (runner (test-runner*)))
+  "Configure RUNNER to re-raise exceptions on assertion failures and
+errors without unwinding the stack, so the IDE can bring up a stack
+trace viewer."
+  (set-runner-config-value!
+   (runner->state runner) 're-raise? #t))
+
 (define* (preset:reset! #:optional (runner (test-runner*)))
   "Remove the schedule-tests filter from RUNNER, restoring default
 behavior of running all loaded tests."
-  (set-runner-config-value!
-   (runner->state runner) 'schedule-tests scheduler:all))
+  (let ((state (runner->state runner)))
+    (set-runner-config-value! state 'schedule-tests scheduler:all)
+    (set-runner-config-value! state 're-raise? #f)))
 
 (define (comment)
   (preset:reset!)
   (preset:rerun-failed!)
- )
+  (preset:raise-on-error!)
+  )
