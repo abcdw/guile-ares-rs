@@ -372,8 +372,9 @@ when a top-level suite finishes loading."
 
 (define test-reporter-base
   (chain (list test-reporter-verbose
-               test-reporter-hierarchy
-               test-reporter-tree)
+               ;; test-reporter-hierarchy
+               test-reporter-tree
+               test-reporter-loaded-summary)
     (test-reporters-use-all _)
     (list _ test-reporter-unhandled)
     (test-reporters-use-first _)))
