@@ -11,7 +11,7 @@
   #:export (scheduler:all
             scheduler:slow
             scheduler:fast
-            scheduler:matching
+            make-scheduler:matching
             scheduler:failed-or-all
             compose-schedulers
 
@@ -56,7 +56,7 @@
               (not (assoc-ref metadata 'slow?))))
           tests))
 
-(define (scheduler:matching pattern)
+(define (make-scheduler:matching pattern)
   "Return a scheduler that keeps tests whose description matches
 a regexp PATTERN."
   (define rx (make-regexp pattern))
@@ -110,7 +110,7 @@ are no failures, return all tests unfiltered."
 (define* (preset:matching! pattern #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests matching regexp PATTERN."
   (set-runner-config-value!
-   (runner->state runner) 'schedule-tests (scheduler:matching pattern)))
+   (runner->state runner) 'schedule-tests (make-scheduler:matching pattern)))
 
 (define* (preset:rerun-failed! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests that failed or errored

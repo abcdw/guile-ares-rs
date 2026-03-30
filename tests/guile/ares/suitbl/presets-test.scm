@@ -12,7 +12,7 @@
   #:use-module ((ares suitbl presets)
                 #:select (scheduler:slow
                           scheduler:fast
-                          scheduler:matching
+                          make-scheduler:matching
                           scheduler:failed-or-all
                           compose-schedulers
 
@@ -74,21 +74,21 @@
                '("fast addition" "fast string check")
                (test-descriptions fast))))
 
-  (test "scheduler:matching filters by description pattern"
+  (test "make-scheduler:matching filters by description pattern"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
     (define matched
-      ((scheduler:matching "slow") (get-scheduled-tests state '()) state))
+      ((make-scheduler:matching "slow") (get-scheduled-tests state '()) state))
     (is (= 2 (length matched)))
     (is (lset= equal?
                '("slow network call" "slow database query")
                (test-descriptions matched))))
 
-  (test "scheduler:matching with specific pattern"
+  (test "make-scheduler:matching with specific pattern"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
     (define matched
-      ((scheduler:matching "addition") (get-scheduled-tests state '()) state))
+      ((make-scheduler:matching "addition") (get-scheduled-tests state '()) state))
     (is (= 1 (length matched)))
     (is (equal? "fast addition"
                 (assoc-ref (car matched) 'test/description))))
@@ -124,7 +124,7 @@
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
     (define composed
-      (compose-schedulers scheduler:slow (scheduler:matching "network")))
+      (compose-schedulers scheduler:slow (make-scheduler:matching "network")))
     (define result (composed (get-scheduled-tests state '()) state))
     (is (= 1 (length result)))
     (is (equal? "slow network call"
