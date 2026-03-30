@@ -227,9 +227,8 @@
 
 (define (get-scheduled-tests state runner-config)
   (let ((schedule-tests (or (assoc-ref runner-config 'schedule-tests)
-                            identity)))
-    (chain (get-loaded-tests state)
-      (schedule-tests _))))
+                            (lambda (tests state) tests))))
+    (schedule-tests (get-loaded-tests state) state)))
 
 (define (get-stats state runner-config)
   (let* ((loaded-tests-count (length (get-loaded-tests state)))

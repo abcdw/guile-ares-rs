@@ -145,7 +145,7 @@
     (define state (tr `((type . runner/get-state))))
     (define config
       `((schedule-tests
-         . ,(lambda (tests)
+         . ,(lambda (tests state)
                (filter (lambda (t)
                          (equal? "good one"
                                  (assoc-ref t 'test/description)))
@@ -159,7 +159,7 @@
     (define tr (get-test-runner-with-sample-suite-loaded))
     (define state (tr `((type . runner/get-state))))
     (define config
-      `((schedule-tests . ,(lambda (tests) '()))))
+      `((schedule-tests . ,(lambda (tests state) '()))))
     (define scheduled (state:get-scheduled-tests state config))
     (is (null? scheduled)))
 
@@ -168,7 +168,7 @@
     (define state (tr `((type . runner/get-state))))
     (define config
       `((schedule-tests
-         . ,(lambda (tests)
+         . ,(lambda (tests state)
                (filter (lambda (t)
                          (equal? "good one"
                                  (assoc-ref t 'test/description)))

@@ -59,7 +59,7 @@
   (test "scheduler:slow keeps only slow tests"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
-    (define slow (scheduler:slow (get-scheduled-tests state '())))
+    (define slow (scheduler:slow (get-scheduled-tests state '()) state))
     (is (= 2 (length slow)))
     (is (lset= equal?
                '("slow network call" "slow database query")
@@ -68,7 +68,7 @@
   (test "scheduler:fast keeps only fast tests"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
-    (define fast (scheduler:fast (get-scheduled-tests state '())))
+    (define fast (scheduler:fast (get-scheduled-tests state '()) state))
     (is (= 2 (length fast)))
     (is (lset= equal?
                '("fast addition" "fast string check")
@@ -78,7 +78,7 @@
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
     (define matched
-      ((scheduler:matching "slow") (get-scheduled-tests state '())))
+      ((scheduler:matching "slow") (get-scheduled-tests state '()) state))
     (is (= 2 (length matched)))
     (is (lset= equal?
                '("slow network call" "slow database query")
@@ -88,7 +88,7 @@
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
     (define matched
-      ((scheduler:matching "addition") (get-scheduled-tests state '())))
+      ((scheduler:matching "addition") (get-scheduled-tests state '()) state))
     (is (= 1 (length matched)))
     (is (equal? "fast addition"
                 (assoc-ref (car matched) 'test/description))))
@@ -96,10 +96,9 @@
   (test "scheduler:failed keeps only failed tests"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
-    (define run-history (get-run-history state))
     ;; All tests pass, so scheduler:failed should return nothing
     (define failed
-      ((scheduler:failed run-history) (get-scheduled-tests state '())))
+      (scheduler:failed (get-scheduled-tests state '()) state))
     (is (null? failed)))
 
   (test "scheduler:failed keeps tests that errored"
@@ -113,9 +112,8 @@
         (test "erroring test"
           (is (throw 'boom)))))
     (define state (runner->state tr))
-    (define run-history (get-run-history state))
     (define failed
-      ((scheduler:failed run-history) (get-scheduled-tests state '())))
+      (scheduler:failed (get-scheduled-tests state '()) state))
     (is (= 2 (length failed)))
     (is (lset= equal?
                '("failing test" "erroring test")
@@ -126,7 +124,7 @@
     (define state (runner->state tr))
     (define composed
       (compose-schedulers scheduler:slow (scheduler:matching "network")))
-    (define result (composed (get-scheduled-tests state '())))
+    (define result (composed (get-scheduled-tests state '()) state))
     (is (= 1 (length result)))
     (is (equal? "slow network call"
                 (assoc-ref (car result) 'test/description))))
@@ -136,7 +134,7 @@
     (define state (runner->state tr))
     (define composed (compose-schedulers))
     (define all-tests (get-scheduled-tests state '()))
-    (define result (composed all-tests))
+    (define result (composed all-tests state))
     (is (= (length all-tests) (length result)))))
 
 

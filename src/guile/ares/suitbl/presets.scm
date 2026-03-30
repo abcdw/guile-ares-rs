@@ -8,7 +8,8 @@
                           get-run-history))
   #:use-module ((srfi srfi-1) #:select (filter any))
 
-  #:export (scheduler:slow
+  #:export (scheduler:all
+            scheduler:slow
             scheduler:fast
             scheduler:matching
             scheduler:failed
@@ -32,15 +33,23 @@
 ;;;
 ;;; Schedulers
 ;;;
+;;; A scheduler is a procedure with the signature (tests state) -> tests,
+;;; where STATE is the runner's atomic-box state.  This allows schedulers
+;;; to query the runner (e.g. run history) at scheduling time.
+;;;
 
-(define (scheduler:slow tests)
+(define (scheduler:all tests state)
+  "Default scheduler that keeps all tests."
+  tests)
+
+(define (scheduler:slow tests state)
   "Keep only tests with @code{(slow? . #t)} in metadata."
   (filter (lambda (t)
             (let ((metadata (or (assoc-ref t 'test/metadata) '())))
               (assoc-ref metadata 'slow?)))
           tests))
 
-(define (scheduler:fast tests)
+(define (scheduler:fast tests state)
   "Keep only tests without @code{slow?} metadata."
   (filter (lambda (t)
             (let ((metadata (or (assoc-ref t 'test/metadata) '())))
@@ -51,16 +60,16 @@
   "Return a scheduler that keeps tests whose description matches
 a regexp PATTERN."
   (define rx (make-regexp pattern))
-  (lambda (tests)
+  (lambda (tests state)
     (filter (lambda (t)
               (let ((description (or (assoc-ref t 'test/description) "")))
                 (regexp-exec rx description)))
             tests)))
 
-(define (scheduler:failed run-history)
-  "Return a scheduler that keeps only tests that failed or errored
-in the given RUN-HISTORY."
-  (lambda (tests)
+(define (scheduler:failed tests state)
+  "Keep only tests that failed or errored in the previous run.
+Reads the current run history from STATE at scheduling time."
+  (let ((run-history (or (get-run-history state) '())))
     (filter (lambda (t)
               (any (lambda (entry)
                      (and (equal? (assoc-ref entry 'test) t)
@@ -72,13 +81,13 @@ in the given RUN-HISTORY."
 
 (define (compose-schedulers . schedulers)
   "Compose SCHEDULERS sequentially, applying each filter in order."
-  (lambda (tests)
+  (lambda (tests state)
     (let loop ((remaining schedulers)
                (result tests))
       (if (null? remaining)
           result
           (loop (cdr remaining)
-                ((car remaining) result))))))
+                ((car remaining) result state))))))
 
 
 ;;;
@@ -103,16 +112,14 @@ in the given RUN-HISTORY."
 (define* (preset:rerun-failed! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests that failed or errored
 in the previous run."
-  (let* ((state (runner->state runner))
-         (run-history (or (get-run-history state) '())))
-    (set-runner-config-value!
-     state 'schedule-tests (scheduler:failed run-history))))
+  (set-runner-config-value!
+   (runner->state runner) 'schedule-tests scheduler:failed))
 
 (define* (preset:reset! #:optional (runner (test-runner*)))
   "Remove the schedule-tests filter from RUNNER, restoring default
 behavior of running all loaded tests."
   (set-runner-config-value!
-   (runner->state runner) 'schedule-tests identity))
+   (runner->state runner) 'schedule-tests scheduler:all))
 
 (define (comment)
   (preset:reset!)

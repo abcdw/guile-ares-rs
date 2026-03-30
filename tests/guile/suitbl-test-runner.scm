@@ -15,7 +15,7 @@
          (eq? (first name) 'ares)
          (string-prefix? "suitbl" (symbol->string (second name))))))
 
-(define (only-suitbl-tests tests)
+(define (only-suitbl-tests tests state)
   (filter (lambda (t)
             (any (lambda (s)
                    (chain-and s
