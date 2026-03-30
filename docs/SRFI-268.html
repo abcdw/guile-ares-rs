@@ -225,18 +225,18 @@ specific testing/reporting tools.</p>
   the <code>test-runner*</code> parameter.  Every message contains at
   least a <code>type</code> key whose value is a symbol identifying
   the kind of message (e.g.&nbsp;<code>runner/run-assert</code>,
-  <code>runner/load-test</code>, <code>runner/load-suite</code>).
-  The remaining keys carry the entity and any additional context.</dd>
+  <code>runner/load-test</code>, <code>runner/load-suite</code>).  The
+  remaining keys carry the entities and any additional context.</dd>
 
   <dt id="term-test-runner">Test runner</dt>
-  <dd>A procedure of one argument (a message alist) stored in
-  the <code>test-runner*</code> parameter.  The test runner receives
+  <dd>A procedure of one argument (a message), which can be used as
+  a <code>test-runner*</code> parameter.  The test runner receives
   every message produced by the definition primitives and decides how
-  to handle it &mdash; for example, by executing an assertion
-  immediately, by collecting a test for deferred execution, or by
-  building a suite hierarchy.  This SRFI specifies the messages a test
-  runner <em>must</em> accept; it does not prescribe execution
-  order, concurrency, or reporting strategy.</dd>
+  to handle it: for example, by executing an assertion immediately, by
+  collecting a test for deferred execution, or by building a suite
+  hierarchy.  This SRFI specifies the messages a test
+  runner <em>must</em> accept; it does not prescribe execution order,
+  concurrency, or reporting strategy.</dd>
 
   <dt id="term-test-reporter">Test reporter</dt>
   <dd>A procedure that consumes events from a test runner and produces
@@ -250,8 +250,8 @@ specific testing/reporting tools.</p>
   attached to a test or suite.  Metadata is opaque to the definition
   API; its interpretation is entirely up to the test runner.  Typical
   uses include tagging tests
-  (e.g.&nbsp;<code>((tags&nbsp;.&nbsp;(integration)))</code>),
-  marking them as slow, or specifying a timeout.</dd>
+  (e.g.&nbsp;<code>((tags&nbsp;.&nbsp;(integration)))</code>), marking
+  them as slow, or specifying a timeout.</dd>
 
   <dt id="term-source-location">Source location</dt>
   <dd>An association list with
@@ -284,9 +284,9 @@ specific testing/reporting tools.</p>
 <a href="https://www.r7rs.org/">parameter object</a> (as defined
 by <code>make-parameter</code>) that holds the current test runner
 procedure.  All definition primitives&mdash;<code>is</code>,
-<code>test</code>, and <code>suite</code>&mdash;deliver their
-messages by calling <code>(test-runner*)</code> to obtain the runner
-and then applying it to a message alist.</p>
+<code>test</code>, and <code>suite</code>&mdash;deliver their messages
+by calling <code>(test-runner*)</code> to obtain the runner and then
+applying it to a message.</p>
 
 <p>If <code>test-runner*</code> is never set, invoking any definition
 primitive <em>should</em> produce a diagnostic indicating that no
