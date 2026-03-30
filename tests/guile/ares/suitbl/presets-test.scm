@@ -13,7 +13,7 @@
                 #:select (scheduler:slow
                           scheduler:fast
                           scheduler:matching
-                          scheduler:failed
+                          scheduler:failed-or-all
                           compose-schedulers
 
                           preset:only-slow!
@@ -93,15 +93,16 @@
     (is (equal? "fast addition"
                 (assoc-ref (car matched) 'test/description))))
 
-  (test "scheduler:failed keeps only failed tests"
+  (test "scheduler:failed-or-all returns all tests when none failed"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
-    ;; All tests pass, so scheduler:failed should return nothing
-    (define failed
-      (scheduler:failed (get-scheduled-tests state '()) state))
-    (is (null? failed)))
+    (define all-tests (get-scheduled-tests state '()))
+    ;; All tests pass, so scheduler:failed-or-all should return all of them
+    (define scheduled
+      (scheduler:failed-or-all all-tests state))
+    (is (= (length all-tests) (length scheduled))))
 
-  (test "scheduler:failed keeps tests that errored"
+  (test "scheduler:failed-or-all keeps tests that errored"
     (define tr (make-silent-test-runner))
     (with-test-runner tr
       (suite "suite with failures"
@@ -112,12 +113,12 @@
         (test "erroring test"
           (is (throw 'boom)))))
     (define state (runner->state tr))
-    (define failed
-      (scheduler:failed (get-scheduled-tests state '()) state))
-    (is (= 2 (length failed)))
+    (define scheduled
+      (scheduler:failed-or-all (get-scheduled-tests state '()) state))
+    (is (= 2 (length scheduled)))
     (is (lset= equal?
                '("failing test" "erroring test")
-               (test-descriptions failed))))
+               (test-descriptions scheduled))))
 
   (test "compose-schedulers chains filters"
     (define tr (make-test-runner-with-mixed-tests))
