@@ -75,27 +75,82 @@ will not appear in the final SRFI.</p>
 
 <h2 id="rationale">Rationale</h2>
 
-<p>??? detailed rationale.  This should be 200-500 words long.  Please
-explain why the proposal should be incorporated as a standard feature
-in Scheme implementations.  List related standards and SRFIs,
-including dependencies, conflicts, and replacements.  If there are
-other standards which this proposal will replace or with which it will
-compete, please explain why the present proposal is a substantial
-improvement.</p>
+<p>Most of the Scheme libraries and applications benefit from tests,
+and most of test suites benefit from portability.
+<a href="https://srfi.schemers.org/srfi-64/srfi-64.html">SRFI-64</a>
+(2005) was a valuable first step toward a common testing API, and its
+widespread adoption demonstrates the need.  Yet the Scheme ecosystem
+remains fragmented: implementations maintain their own incompatible
+testing libraries
+(<a href="https://docs.racket-lang.org/rackunit/">RackUnit</a>,
+Chicken's <a href="https://wiki.call-cc.org/eggref/5/test"><code>test</code>
+egg</a>,
+Chibi's <a href="https://synthcode.com/scheme/chibi/lib/chibi/test.html"><code>(chibi
+test)</code></a>, numerous ad-hoc solutions), each with its own
+terminology and conventions.  There is no shared vocabulary for what
+"assertion," "test," and "test suite" mean, making it difficult to
+write portable tests and nearly impossible to build portable testing
+tools.</p>
 
-The context: TODO why testing is so important
+<p>SRFI-64's design couples three distinct concerns: defining tests,
+executing them, and reporting results.  Writing
+a <code>test-assert</code> form <em>is</em> running it: the assertion
+fires as a side effect at load time and it leads to multiple
+consequences.  Tests cannot be defined in one place and run in
+another; the execution strategy cannot be changed without rewriting
+test code; the <code>test-begin</code>/<code>test-end</code> model is
+fragile and provides no first-class grouping.  SRFI-64's own rationale
+acknowledges this trade-off, noting that the API "may be a little less
+elegant and 'compositional' than using explicit test objects."</p>
 
-The problems:
+<p>Because SRFI-64 tests are imperative side effects rather than
+first-class values, they cannot be filtered by tag, reordered, re-run
+as a subset, or inspected programmatically.  The test runner relies on
+global mutable state, making tests non-reentrant and difficult to
+compose.  These limitations are especially painful in interactive
+workflows: at a REPL or inside an IDE. A programmer wants to pick one
+failing test, re-run it, examine the failure/use a debugger, fix the
+code, and iterate: a tight feedback loop that is impossible when tests
+are ephemeral side effects that vanish after execution.</p>
 
-- There is no common vocabulary and well-defined terms to talk about tests.
-- Existing SRFI is coupling definition, execution and reporting.
-- Existing SRFI doesn't define well what is assertion, tests and tests group.
-- Existing SRFI has imperative side-effectful unsafe tests runner
+<p>This SRFI addresses these problems through three design
+decisions:</p>
 
-The solutions:
-- Build common vocabulary.
-- Define definition API.
-- Ensure the API is runtime friendly, so it matches well with REPL driven workflow.
+<ol>
+  <li><strong>Common vocabulary.</strong> The terms
+  <em>assertion</em>, <em>test</em>, <em>suite</em>, <em>entity</em>,
+  <em>message</em>, <em>test runner</em>, and <em>metadata</em> are
+  defined precisely, giving the community a shared language for
+  definitions, tooling, and communication.</li>
+
+  <li><strong>Separation of definition from execution and
+  reporting.</strong> Three small
+  primitives: <code>is</code>, <code>test</code>,
+  <code>suite</code>. They construct first-class entities (runtime
+  objects) and deliver them to a pluggable test runner via a
+  message-passing protocol.  Definition code is fully portable;
+  execution and reporting strategy varies by environment.</li>
+
+  <li><strong>First-class test entities.</strong> Because tests
+  are data, runners can filter by metadata, reorder, wrap each test in
+  exception guards or continuation barriers, enforce timeouts, and
+  re-run arbitrary subsets without changing a single line of test
+  definition code.  Suite thunks are composable procedures that can be
+  stored, exported, and combined.  The <code>is</code> macro captures
+  both the unevaluated source form and a separate argument thunk,
+  enabling rich failure diagnostics.  The result is an API that is
+  equally at home in CI pipelines and in live REPL sessions.</li>
+</ol>
+
+<p>The API surface is deliberately minimal: three definition forms,
+one parameter, three predicates, and one deferred variant.  Yet it
+covers assertions with rich diagnostics, named tests, nested suites,
+user-provided metadata, and deferred composable suite thunks.  This
+SRFI is intended to supersede SRFI-64 for the purpose of test
+definition.  By standardizing what a test <em>is</em> and leaving how
+it is <em>run</em> to test runners, this SRFI provides a stable
+foundation on which future standards for runners, reporters, and
+discovery mechanisms can be built.</p>
 
 <h2 id="specification">Specification</h2>
 
