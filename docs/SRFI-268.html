@@ -83,6 +83,20 @@ other standards which this proposal will replace or with which it will
 compete, please explain why the present proposal is a substantial
 improvement.</p>
 
+The context: TODO why testing is so important
+
+The problems:
+
+- There is no common vocabulary and well-defined terms to talk about tests.
+- Existing SRFI is coupling definition, execution and reporting.
+- Existing SRFI doesn't define well what is assertion, tests and tests group.
+- Existing SRFI has imperative side-effectful unsafe tests runner
+
+The solutions:
+- Build common vocabulary.
+- Define definition API.
+- Ensure the API is runtime friendly, so it matches well with REPL driven workflow.
+
 <h2 id="specification">Specification</h2>
 
 <h3 id="overview">Overview</h3>
