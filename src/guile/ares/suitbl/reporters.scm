@@ -520,7 +520,12 @@ when a top-level suite finishes loading."
   (let ((s (assoc-ref node 'suite))
         (t (assoc-ref node 'test)))
     (cond
-     ((and t) "📄 ")
+     ((and t)
+      (let ((metadata (and (list? t)
+                           (or (assoc-ref t 'test/metadata) '()))))
+        (if (and metadata (assoc-ref metadata 'slow?))
+            "🐌 "
+            "📄 ")))
      ((and s (list? s))
       (let ((metadata (or (assoc-ref s 'suite/metadata) '())))
         (cond
