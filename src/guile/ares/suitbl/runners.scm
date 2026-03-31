@@ -320,15 +320,19 @@ environment just set it to new instance of test runner.
       ((runner/run-tests)
        (let* ((runner-config (get-runner-cfg ctx))
               (reporter (assoc-ref runner-config 'test-reporter))
-              (test-execution-results
-               (if reporter
-                   (parameterize ((%test-reporter* reporter))
-                     (map run-test
-                          (state:get-scheduled-tests state runner-config)))
-                   (map run-test
-                        (state:get-scheduled-tests state runner-config)))))
-
-         (state:save-run-history! state test-execution-results))
+              (run-tests!
+               (lambda ()
+                 (let ((test-execution-results
+                        (map run-test
+                             (state:get-scheduled-tests state runner-config))))
+                   (state:save-run-history! state test-execution-results)
+                   ((get-test-reporter)
+                    `((type . reporter/run-summary)
+                      (run-summary . ,(state:get-run-summary state))))))))
+         (if reporter
+             (parameterize ((%test-reporter* reporter))
+               (run-tests!))
+             (run-tests!)))
 
        *unspecified*)
 
