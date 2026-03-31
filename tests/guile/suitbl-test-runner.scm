@@ -33,7 +33,6 @@
                      (runner/config
                       . ((schedule-tests . ,only-suitbl-tests))))))
     (define summary (test-runner `((type . runner/get-run-summary))))
-    (format #t "\n~a\n" summary)
 
     (define number-of-tests
       (assoc-ref summary 'tests))
