@@ -172,15 +172,14 @@ discovery mechanisms can be built.</p>
   scheduling, and reporting.</li>
 </ol>
 
-<p>The definition primitives do not execute tests themselves.
-  Instead, each form constructs a first-class <em>entity</em>, an
-  association list (alist) that captures the test's body as a thunk,
-  its source form, source location, description string, and optional
-  metadata and delivers it to the current test runner via
-  a <em>message</em>.  The test runner is a procedure stored in
-  the <code>test-runner*</code> parameter; it receives messages as
-  alists and is free to execute tests immediately, collect them for
-  later, or take any other action.</p>
+<p>The definition primitives do not execute tests themselves. Instead,
+each form constructs a first-class <em>entity</em>, an association
+list (alist) that captures the test's body as a thunk, its source
+form, source location, description string, and optional metadata and
+delivers it to the current test runner via a <em>message</em>.  The
+test runner is a procedure stored in the <code>test-runner*</code>
+parameter; it receives messages as alists and is free to execute tests
+immediately, collect them for later, or take any other action.</p>
 
 <p>This separation is the central design principle: code that
 <em>defines</em> tests is portable across all conforming
@@ -189,6 +188,9 @@ different environments: CI pipelines, interactive REPLs and IDE,
 specific testing/reporting tools.</p>
 
 <h3 id="terminology">Terminology</h3>
+
+The common vocabulary important for both communication and for
+implementation.  In this section we set up this common glossary.
 
 <dl>
   <dt id="term-assertion">Assertion</dt>
@@ -201,16 +203,15 @@ specific testing/reporting tools.</p>
 
   <dt id="term-test">Test</dt>
   <dd>A named, independently executable unit of testing produced by
-  the <code>test</code> or <code>test-thunk</code> form.  A test
-  groups zero or more assertions together under a human-readable
-  description string.  Tests are the smallest unit that a test runner
-  schedules and reports on.</dd>
+  the <code>test</code> form.  A test groups zero or more assertions
+  together under a human-readable description string.  Tests are the
+  smallest unit that a test runner schedules and reports on.</dd>
 
   <dt id="term-test-suite">Test suite</dt>
   <dd>A named grouping of tests and nested test suites produced by
   the <code>suite</code> or <code>suite-thunk</code> form.  Suites
   impose hierarchical structure and may carry metadata that influences
-  the test runner&rsquo;s behavior for the entire group.</dd>
+  the test runner's behavior for the entire group.</dd>
 
   <dt id="term-entity">Entity</dt>
   <dd>An association list that represents an assertion, test, or
@@ -254,19 +255,16 @@ specific testing/reporting tools.</p>
   them as slow, or specifying a timeout.</dd>
 
   <dt id="term-source-location">Source location</dt>
-  <dd>An association list with
+  <dd>An entity, which allows to identify location of the source code,
+  can be an association list with
   keys <code>filename</code>, <code>line</code>,
-  and <code>column</code> that records where a definition form appears
-  in the source code.  Captured at macro-expansion time.  Line and
-  column values are zero-indexed.  If the filename is relative, an
-  implementation <em>should</em> attempt to resolve it to an absolute
-  path.</dd>
+  and <code>column</code>.</dd>
 
   <dt id="term-suite-path">Suite path</dt>
   <dd>An ordered list of suite entities representing the chain of
   enclosing suites from the outermost to the innermost.  The suite
-  path provides context for each test, enabling runners to reconstruct
-  the full hierarchy.</dd>
+  path provides context for each test, enabling runners and reporters
+  to reconstruct the full hierarchy.</dd>
 
 </dl>
 
@@ -343,9 +341,8 @@ how to execute the assertion and what to do with the result.</p>
     </tr>
     <tr>
       <td><code>assert/location</code></td>
-      <td>A <a href="#term-source-location">source location</a>
-      alist with keys <code>filename</code>, <code>line</code>,
-      and <code>column</code>.  Captured at macro-expansion time.</td>
+      <td>An assertion <a href="#term-source-location">source code
+      location</a> </td>
     </tr>
   </tbody>
 </table>
@@ -434,6 +431,12 @@ alist) that captures the test body, description, metadata, and source
 location, then immediately delivers it to the current test runner by
 sending a <code>runner/load-test</code> message.</p>
 
+<p>A test should be self-contained: its body should not
+depend on side effects produced by surrounding expressions or by other
+tests.  Because a test runner may execute tests in any order, at any
+point in time, or skip them entirely, relying on external state makes
+test results unpredictable.</p>
+
 <p><var>description</var> is a string that serves as a human-readable
 label for the test.  The <var>body</var> forms typically contain zero
 or more <code>is</code> assertions, but may contain arbitrary
@@ -450,11 +453,6 @@ Scheme expressions (e.g.&nbsp;local definitions, setup code).</p>
       <td><code>test/body-thunk</code></td>
       <td>A thunk that, when called, evaluates
       the <var>body</var> forms in order.</td>
-    </tr>
-    <tr>
-      <td><code>test/body</code></td>
-      <td>The source forms of the body as a datum list
-      (unevaluated).</td>
     </tr>
     <tr>
       <td><code>test/description</code></td>
@@ -481,13 +479,22 @@ Scheme expressions (e.g.&nbsp;local definitions, setup code).</p>
 <h4>Constraints</h4>
 
 <ul>
-  <li>Tests <em>must not</em> be nested.  Invoking <code>test</code>
+  <li>Tests <em>should not</em> be nested.  Invoking <code>test</code>
   inside the body of another <code>test</code> is an error; the test
-  runner <em>should</em> signal it.</li>
+  runner <em>should</em> signal it.  However, in some cases, it can be
+  useful to have a test or suite inside the test, it can be achieved,
+  if the test-runner* is parameterized (temporary redefined).</li>
   <li>Tests <em>may</em> appear at the top level or inside
   a <code>suite</code>.  When inside a suite, the test runner
   associates the test with the enclosing suite path.</li>
 </ul>
+
+<h4>Return value</h4>
+
+<p>The return value of <code>test</code> is unspecified.  Because
+<code>test</code> is a <em>loading</em> form that registers a test
+with the runner rather than executing it, no meaningful value is
+produced.  Code <em>must not</em> rely on the return value.</p>
 
 <h4>Examples</h4>
 
@@ -592,6 +599,13 @@ orders and multiple times.</p>
   signal it.  Assertions belong inside tests.</li>
 </ul>
 
+<h4>Return value</h4>
+
+<p>The return value of <code>suite</code> is unspecified.  Because
+<code>suite</code> is a <em>loading</em> form that registers a suite
+with the runner rather than executing its tests, no meaningful value
+is produced.  Code <em>must not</em> rely on the return value.</p>
+
 <h4>Examples</h4>
 
 <pre><code>;; Flat suite
@@ -649,6 +663,14 @@ it.</p>
 &equiv;
 ((suite-thunk <var>desc</var> <var>body</var> &hellip;))</code></pre>
 
+<p>Although <code>is</code> and <code>test</code> forms can appear at
+the top level, test modules <em>should</em> wrap all tests in
+a <code>suite-thunk</code> (or <code>define-suite</code>) so that
+test runners can discover and load them as a unit.  A bare top-level
+<code>test</code> form is loaded as soon as the module is evaluated,
+with no way for a runner to discover it independently or defer its
+execution.</p>
+
 <p>Suite thunks are the primary building block for composable,
 reusable test suites.  Because they are first-class procedures, they
 can be stored in variables, passed as arguments, and invoked inside
@@ -678,6 +700,10 @@ other suites to include their tests:</p>
   <dt><code>(define-suite <var>name</var> <var>body</var> &hellip;)</code></dt>
   <dd>Defines and exports a suite thunk bound
   to <var>name</var>.</dd>
+
+  <dt><code>(define-suite <var>name</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dd>Same, with user-provided <a href="#term-metadata">metadata</a>
+  attached to the underlying suite entity.</dd>
 </dl>
 
 <h4>Description</h4>
@@ -688,6 +714,11 @@ to:</p>
 
 <pre><code>(define-public <var>name</var>
   (suite-thunk (symbol->string '<var>name</var>) <var>body</var> &hellip;))</code></pre>
+
+<p>Or, with metadata:</p>
+
+<pre><code>(define-public <var>name</var>
+  (suite-thunk (symbol->string '<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;))</code></pre>
 
 <p>The suite description string is derived from <var>name</var> by
 converting the symbol to a string.  This form is intended for
@@ -706,6 +737,9 @@ top-level suite definitions in test modules.</p>
 
 
 <h3 id="predicates">Predicates</h3>
+
+Those predicates have no use for defining test and test suites, but
+they are really handy for test runners implementers.
 
 <dl>
   <dt><code>(test? <var>obj</var>)</code> &rarr; <var>boolean</var></dt>
@@ -726,24 +760,21 @@ top-level suite definitions in test modules.</p>
   Implementations can mark suite thunks with a procedure property or
   somehow else; ordinary lambdas do not satisfy this predicate.</dd>
 </dl>
+
 <h2 id="implementation">Implementation</h2>
 
-<p>??? explanation of how it meets the sample implementation
-requirement (see <a href="srfi-process.html">process</a>), and the
-code, if possible, or a link to it</p>
 
-<p>We use the phrase <dfn>sample implementation</dfn> instead of
-<dfn>reference implementation</dfn> because the latter implies that
-the implementation itself is the source of truth, whereas for SRFIs,
-the document is normative.</p>
-
-<a href="srfi-minus-???-sample.scm">Source for the sample implementation.</a>
+<a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/src/guile/ares/suitbl">Source
+for the sample implementation.</a>
 
 <h2 id="acknowledgements">Acknowledgements</h2>
 
-<p>??? credit where it is due.  For example, please consider
-acknowledging people on the SRFI mailing list who have contributed to
-the discussion.</p>
+<p>The design of this SRFI was influenced
+by <code>clojure.test</code>'s use of first-class test vars and
+its <code>is</code> macro, and by JUnit's test primitives.  SRFI-64
+provided the foundation and demonstrated the need for a portable and
+runtime-friendly testing API; this SRFI builds on the lessons learned
+from its adoption.</p>
 
 <h2 id="copyright">Copyright</h2>
 <p>&copy; 202? ???author(s)???.</p>
