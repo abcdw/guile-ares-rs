@@ -5,6 +5,7 @@
   #:use-module ((ares suitbl definitions) #:select (test-runner*))
   #:use-module ((ares suitbl runner-state)
                 #:select (set-runner-config-value!
+                          get-runner-config
                           get-run-history))
   #:use-module ((srfi srfi-1) #:select (filter filter-map))
 
@@ -100,38 +101,44 @@ are no failures, return all tests unfiltered."
 
 (define* (preset:only-slow! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only slow tests."
-  (set-runner-config-value!
-   (runner->state runner) 'schedule-tests scheduler:slow))
+  (let ((state (runner->state runner)))
+    (set-runner-config-value! state 'schedule-tests scheduler:slow)
+    (get-runner-config state)))
 
 (define* (preset:only-fast! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only fast tests."
-  (set-runner-config-value!
-   (runner->state runner) 'schedule-tests scheduler:fast))
+  (let ((state (runner->state runner)))
+    (set-runner-config-value! state 'schedule-tests scheduler:fast)
+    (get-runner-config state)))
 
 (define* (preset:matching! pattern #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests matching regexp PATTERN."
-  (set-runner-config-value!
-   (runner->state runner) 'schedule-tests (make-scheduler:matching pattern)))
+  (let ((state (runner->state runner)))
+    (set-runner-config-value! state 'schedule-tests (make-scheduler:matching pattern))
+    (get-runner-config state)))
 
 (define* (preset:rerun-failed! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests that failed or errored
 in the previous run."
-  (set-runner-config-value!
-   (runner->state runner) 'schedule-tests scheduler:failed-or-all))
+  (let ((state (runner->state runner)))
+    (set-runner-config-value! state 'schedule-tests scheduler:failed-or-all)
+    (get-runner-config state)))
 
 (define* (preset:raise-on-error! #:optional (runner (test-runner*)))
   "Configure RUNNER to re-raise exceptions on assertion failures and
 errors without unwinding the stack, so the IDE can bring up a stack
 trace viewer."
-  (set-runner-config-value!
-   (runner->state runner) 're-raise? #t))
+  (let ((state (runner->state runner)))
+    (set-runner-config-value! state 're-raise? #t)
+    (get-runner-config state)))
 
 (define* (preset:reset! #:optional (runner (test-runner*)))
   "Remove the schedule-tests filter from RUNNER, restoring default
 behavior of running all loaded tests."
   (let ((state (runner->state runner)))
     (set-runner-config-value! state 'schedule-tests scheduler:all)
-    (set-runner-config-value! state 're-raise? #f)))
+    (set-runner-config-value! state 're-raise? #f)
+    (get-runner-config state)))
 
 (define (comment)
   (preset:reset!)
