@@ -30,7 +30,8 @@
             suite-forest->tree-string
             count-suites-and-tests
             test-reporter-tree
-            test-reporter-loaded-summary))
+            test-reporter-loaded-summary
+            test-reporter-run-summary))
 
 
 
@@ -370,11 +371,32 @@ when a top-level suite finishes loading."
                tests tests suites suites modules modules empty)))
     (else #f)))
 
+(define (test-reporter-run-summary message)
+  "A reporter that prints a summary line after all tests have been executed."
+  (case (assoc-ref message 'type)
+    ((reporter/run-summary)
+     (let ((summary (assoc-ref message 'run-summary)))
+       (if summary
+           (let ((tests (assoc-ref summary 'tests))
+                 (assertions (assoc-ref summary 'assertions))
+                 (failures (assoc-ref summary 'failures))
+                 (errors (assoc-ref summary 'errors)))
+             (format (test-reporter-output-port*)
+                     "Ran ~a test~p, ~a assertion~p: ~a failure~p, ~a error~p.\n"
+                     tests tests
+                     assertions assertions
+                     failures failures
+                     errors errors))
+           (format (test-reporter-output-port*)
+                   "No test results available.\n"))))
+    (else #f)))
+
 (define test-reporter-base
   (chain (list test-reporter-verbose
                ;; test-reporter-hierarchy
                test-reporter-tree
-               test-reporter-loaded-summary)
+               test-reporter-loaded-summary
+               test-reporter-run-summary)
     (test-reporters-use-all _)
     (list _ test-reporter-unhandled)
     (test-reporters-use-first _)))
