@@ -166,11 +166,14 @@ discovery mechanisms can be built.</p>
   variant <code>suite-thunk</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
-  protocol with informative execution-semantics recommendations).  A
-  message-passing protocol that bridges test definitions and test
-  runners, plus guidance for test runner implementers on loading,
-  scheduling, and reporting.</li>
+  protocol).  A message-passing protocol that bridges test definitions
+  and test runners.  Each message type is defined alongside its
+  corresponding definition primitive above.</li>
 </ol>
+
+<p>The sample implementation section provides informative guidance and
+materials for test runner implementers on loading, scheduling, and
+reporting.</p>
 
 <p>The definition primitives do not execute tests themselves. Instead,
 each form constructs a first-class <em>entity</em>, an association
