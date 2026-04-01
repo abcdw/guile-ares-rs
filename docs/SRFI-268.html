@@ -763,9 +763,112 @@ they are really handy for test runners implementers.
 
 <h2 id="implementation">Implementation</h2>
 
+<p>A sample implementation is a part of suitbl testing library and
+provided as part of
+the <a href="https://git.sr.ht/~abcdw/guile-ares-rs">guile-ares-rs</a>
+project.  The definitions API is contained in a single module:</p>
 
-<a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/src/guile/ares/suitbl">Source
-for the sample implementation.</a>
+<ul>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
+  &mdash; the complete test definition primitives
+  (<code>is</code>, <code>test</code>, <code>suite</code>,
+  <code>suite-thunk</code>, <code>define-suite</code>,
+  <code>test-runner*</code>, and predicates).</li>
+</ul>
+
+<p>The implementation depends on <code>syntax-case</code>,
+<code>make-parameter</code>, and association lists.  Entities are
+represented as plain alists rather than records or opaque types, which
+keeps the representation transparent, inspectable, and maximally
+portable across Scheme implementations.</p>
+
+<h3>Design notes</h3>
+
+<p>The <code>is</code> macro uses two <code>syntax-case</code>
+clauses: one matches the predicate-application
+shape <code>(<var>pred</var> <var>arg</var>&nbsp;&hellip;)</code> and
+produces both a body thunk and a separate arguments thunk; the other
+matches an arbitrary expression and produces only a body thunk.  Both
+clauses capture the unevaluated source form as a datum.</p>
+
+<p>The immediate forms <code>test</code> and <code>suite</code> are
+defined in terms of their deferred counterparts: <code>test</code>
+expands to <code>((test-thunk&nbsp;&hellip;))</code>
+and <code>suite</code> expands
+to <code>((suite-thunk&nbsp;&hellip;))</code>.  The deferred form is
+the primitive; the immediate form simply invokes it.  This factoring
+keeps the macro logic in one place and makes suite thunks the natural
+unit of composition.</p>
+
+<p>The <code>suite-thunk</code> form returns a procedure that, when
+called, sends a <code>runner/load-suite</code> message to the current
+test runner.  The returned procedure carries metadata that allows
+the <code>suite-thunk?</code> predicate to identify it (see
+portability notes below).</p>
+
+<h3>Portability considerations</h3>
+
+<p>A small number of Guile-specific features are used in the sample
+implementation.  Each has a straightforward equivalent in other Scheme
+systems:</p>
+
+<dl>
+  <dt>Source locations
+  (<code>syntax-source</code>, <code>%search-load-path</code>)</dt>
+  <dd>The sample implementation calls Guile's <code>syntax-source</code>
+  at macro-expansion time to obtain a filename/line/column alist, and
+  resolves relative paths via <code>%search-load-path</code>.  Other
+  implementations can use their own source-location API (e.g.
+  <code>syntax-line</code>/<code>syntax-column</code> in Racket, or
+  the <code>source-info</code> facility of the host system).  When no
+  source-location API is available, the <code>assert/location</code>,
+  <code>test/location</code>, and <code>suite/location</code> keys
+  may be set to <code>#f</code>.</dd>
+
+  <dt>Procedure properties
+  (<code>set-procedure-properties!</code>,
+  <code>procedure-property</code>)</dt>
+  <dd>Suite thunks are tagged using Guile's procedure properties so
+  that <code>suite-thunk?</code> can distinguish them from ordinary
+  lambdas.  Implementations without procedure properties can use
+  alternative strategies: placing suite-thunk in a hash table that
+  serves as a global registry, or any other mechanism that allows a
+  reliable predicate.</dd>
+
+  <dt><code>define-public</code></dt>
+  <dd>The <code>define-suite</code> convenience macro expands
+  to <code>define-public</code>, a Guile shorthand for defining and
+  exporting a binding.  Other implementations should expand to their
+  own define-and-export form, or simply expand
+  to <code>define</code> and leave exporting to the module
+  declaration.</dd>
+</dl>
+
+<h3>Test suite</h3>
+
+<p>A test suite for the definitions API is provided:</p>
+
+<ul>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/tests/guile/ares/suitbl/definitions-test.scm">definitions-test.scm</a>
+  &mdash; tests that verify the predicates, the entities and messages
+  produced by <code>is</code>, <code>test</code>,
+  and <code>suite</code>, and the behavior
+  of <code>define-suite</code>.  The tests intercept messages via a
+  logging test runner to inspect the entities without executing
+  them.</li>
+</ul>
+
+<h3>Supplementary material</h3>
+
+<ul>
+  <li><a href="https://youtu.be/JI7Z6-tndaw">Portable Test
+  Definitions API for Scheme in 2 minutes 30 seconds</a> &mdash; a
+  short introduction with a live demo.</li>
+  <li><a href="https://youtu.be/_NjwHP0r5tM">Portable Test
+  Definitions API for Scheme: Deep Dive</a> &mdash; a detailed
+  walkthrough of the design, the message protocol, and the
+  implementation.</li>
+</ul>
 
 <h2 id="acknowledgements">Acknowledgements</h2>
 
