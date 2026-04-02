@@ -17,30 +17,12 @@
   (format #f "Usage: ~a [OPTION]... [-- GUILE_OPTION]...
 
   -r, --reporter=EXPR  use EXPR as test reporter
-                       (default: base; or dots, dots-with-hierarchy,
-                       minimal, silent, or any Scheme expression)
+                       (short names match test-reporter-* bindings
+                       in (ares suitbl reporters); or any Scheme expression)
   -v, --version        display version information and exit
   -h, --help           display this help and exit
 "
           (car (command-line))))
-
-(define %builtin-reporters
-  '((base . (@ (ares suitbl reporters) test-reporter-base))
-    (dots . (@ (ares suitbl reporters) test-reporter-dots))
-    (dots-with-hierarchy . (@ (ares suitbl reporters)
-                              test-reporter-dots-with-hierarchy))
-    (minimal . (@ (ares suitbl reporters) test-reporter-minimal))
-    (silent . (@ (ares suitbl reporters) test-reporter-silent))))
-
-(define (get-reporter-expr reporter-name)
-  "Return reporter expression for REPORTER-NAME.
-If REPORTER-NAME matches a built-in, return the module reference.
-Otherwise, read it as an arbitrary Scheme expression."
-  (define builtin
-    (assoc (string->symbol reporter-name) %builtin-reporters))
-  (if builtin
-      (cdr builtin)
-      (with-input-from-string reporter-name read)))
 
 (define %options
   (list (option '(#\v "version") #f #f
@@ -71,21 +53,50 @@ Otherwise, read it as an arbitrary Scheme expression."
                '()))
 
   (define reporter-name (or (assoc-ref options 'reporter) "base"))
-  (define reporter-expr (get-reporter-expr reporter-name))
 
   (define run-code
     `(begin
        (use-modules (ares suitbl core)
                     (ares suitbl runners)
                     (ares suitbl reporters)
-                    (ares suitbl ares))
+                    (ares suitbl ares)
+                    (srfi srfi-1))
+
+       ;; Build list of builtin reporters from module reflection
+       (define (get-builtin-reporters)
+         (let ((module (resolve-module '(ares suitbl reporters)))
+               (prefix-len (string-length "test-reporter-")))
+           (filter-map
+            (lambda (sym)
+              (let ((str (symbol->string sym)))
+                (and (> (string-length str) prefix-len)
+                     (string-prefix? "test-reporter-" str)
+                     (let ((short-name (string-drop str prefix-len)))
+                       (cons (string->symbol short-name)
+                             (module-ref module sym))))))
+            (module-map (lambda (sym var) sym) module))))
+
+       (define (get-reporter name)
+         "Resolve reporter by NAME.
+Try to find test-reporter-NAME in the reporters module,
+otherwise read NAME as an arbitrary Scheme expression."
+         (define builtin-reporters (get-builtin-reporters))
+         (define short-name (string->symbol name))
+         (define builtin (assoc short-name builtin-reporters))
+         (if builtin
+             (cdr builtin)
+             (with-input-from-string name read)))
+
        (define runner
          (make-suitbl-test-runner
-          #:config (list (cons 'test-reporter ,reporter-expr))))
+          #:config (list (cons 'test-reporter (get-reporter ,reporter-name)))))
+
        (parameterize ((test-runner* runner))
          (load-project-tests)
          (runner '((type . runner/run-tests))))
+
        (define summary (runner '((type . runner/get-run-summary))))
+
        (if (and summary
                 (zero? (+ (or (assoc-ref summary 'failures) 0)
                           (or (assoc-ref summary 'errors) 0))))
