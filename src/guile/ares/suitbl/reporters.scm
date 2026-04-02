@@ -546,7 +546,7 @@ when a top-level suite finishes loading."
       (let ((metadata (and (list? t)
                            (or (assoc-ref t 'test/metadata) '()))))
         (if (and metadata (assoc-ref metadata 'slow?))
-            "🐌 "
+            "📄🐌 "
             "📄 ")))
      ((and s (list? s))
       (let ((metadata (or (assoc-ref s 'suite/metadata) '())))
