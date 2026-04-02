@@ -374,7 +374,7 @@ when a top-level suite finishes loading."
 (define (test-reporter-run-summary message)
   "A reporter that prints a summary line after all tests have been executed."
   (case (assoc-ref message 'type)
-    ((reporter/run-summary)
+    ((reporter/run-end)
      (let ((summary (assoc-ref message 'run-summary)))
        (if summary
            (let ((tests (assoc-ref summary 'tests))
