@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl reporters)
   #:use-module ((ares suitbl definitions) #:select (test? suite?))
@@ -382,9 +382,9 @@ when a top-level suite finishes loading."
                  (failures (assoc-ref summary 'failures))
                  (errors (assoc-ref summary 'errors)))
              (format (test-reporter-output-port*)
-                     "Ran ~a test~p, ~a assertion~p: ~a failure~p, ~a error~p.\n"
-                     tests tests
+                     "Ran ~a assertion~p in ~a test~p: ~a failure~p, ~a error~p.\n"
                      assertions assertions
+                     tests tests
                      failures failures
                      errors errors))
            (format (test-reporter-output-port*)
