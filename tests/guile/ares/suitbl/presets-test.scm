@@ -60,9 +60,10 @@
   (test "presets default to current test-runner*"
     (define tr (make-test-runner-with-mixed-tests))
     (with-test-runner tr
-      (preset:only-slow!)
-      (is (lset= equal?
-                 '("slow network call" "slow database query")
-                 (scheduled-descriptions tr)))
-      (preset:reset!)
-      (is (= 4 (length (scheduled-descriptions tr)))))))
+      (preset:only-slow!))
+    (is (lset= equal?
+               '("slow network call" "slow database query")
+               (scheduled-descriptions tr)))
+    (with-test-runner tr
+      (preset:reset!))
+    (is (= 4 (length (scheduled-descriptions tr))))))
