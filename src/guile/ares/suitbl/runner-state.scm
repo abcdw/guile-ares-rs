@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl runner-state)
   #:use-module ((ares atomic)
@@ -211,7 +211,8 @@
    (lambda (alist)
      (chain alist
        (update-alist-value _ 'runner/loaded-tests '())
-       (update-alist-value _ 'runner/suite-forest '())))))
+       (update-alist-value _ 'runner/suite-forest '())
+       (update-alist-value _ 'runner/run-history '())))))
 
 (define (get-loaded-tests state)
   (chain (atomic-box-ref state)
