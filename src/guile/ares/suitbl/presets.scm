@@ -7,11 +7,7 @@
                 #:select (set-runner-config-value!
                           get-runner-config))
   #:use-module ((ares suitbl schedulers)
-                #:select (scheduler:all
-                          scheduler:slow
-                          scheduler:fast
-                          make-scheduler:matching
-                          scheduler:failed-or-all))
+                #:prefix scheduler:)
 
   #:export (preset:only-slow!
             preset:only-fast!
@@ -49,7 +45,7 @@
 (define* (preset:matching! pattern #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests matching regexp PATTERN."
   (let ((state (runner->state runner)))
-    (set-runner-config-value! state 'schedule-tests (make-scheduler:matching pattern))
+    (set-runner-config-value! state 'schedule-tests (scheduler:make-matching pattern))
     (get-runner-config state)))
 
 (define* (preset:rerun-failed-or-all! #:optional (runner (test-runner*)))

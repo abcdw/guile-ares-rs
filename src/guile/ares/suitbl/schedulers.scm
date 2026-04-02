@@ -6,12 +6,12 @@
                 #:select (get-run-history))
   #:use-module ((srfi srfi-1) #:select (filter filter-map))
 
-  #:export (scheduler:all
-            scheduler:slow
-            scheduler:fast
-            make-scheduler:matching
-            scheduler:failed-or-all
-            compose-schedulers))
+  #:export (all
+            slow
+            fast
+            make-matching
+            failed-or-all
+            compose))
 
 ;;;
 ;;; Schedulers
@@ -21,25 +21,25 @@
 ;;; to query the runner (e.g. run history) at scheduling time.
 ;;;
 
-(define (scheduler:all tests state)
+(define (all tests state)
   "Default scheduler that keeps all tests."
   tests)
 
-(define (scheduler:slow tests state)
+(define (slow tests state)
   "Keep only tests with @code{(slow? . #t)} in metadata."
   (filter (lambda (t)
             (let ((metadata (or (assoc-ref t 'test/metadata) '())))
               (assoc-ref metadata 'slow?)))
           tests))
 
-(define (scheduler:fast tests state)
+(define (fast tests state)
   "Keep only tests without @code{slow?} metadata."
   (filter (lambda (t)
             (let ((metadata (or (assoc-ref t 'test/metadata) '())))
               (not (assoc-ref metadata 'slow?))))
           tests))
 
-(define (make-scheduler:matching pattern)
+(define (make-matching pattern)
   "Return a scheduler that keeps tests whose description matches
 a regexp PATTERN."
   (define rx (make-regexp pattern))
@@ -49,7 +49,7 @@ a regexp PATTERN."
                 (regexp-exec rx description)))
             tests)))
 
-(define (scheduler:failed-or-all tests state)
+(define (failed-or-all tests state)
   "Keep only tests that failed or errored in the previous run.
 Reads the current run history from STATE at scheduling time.  If there
 are no failures, return all tests unfiltered."
@@ -65,7 +65,7 @@ are no failures, return all tests unfiltered."
         tests
         (filter (lambda (t) (memq t failed-set)) tests))))
 
-(define (compose-schedulers . schedulers)
+(define (compose . schedulers)
   "Compose SCHEDULERS sequentially, applying each filter in order."
   (lambda (tests state)
     (let loop ((remaining schedulers)
