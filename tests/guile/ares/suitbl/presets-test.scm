@@ -9,11 +9,7 @@
                           scheduled-descriptions))
   #:use-module ((srfi srfi-1) #:select (lset=))
   #:use-module ((ares suitbl presets)
-                #:select (preset:only-slow!
-                          preset:only-fast!
-                          preset:matching!
-                          preset:rerun-failed-or-all!
-                          preset:reset!)))
+                #:prefix preset:))
 
 
 

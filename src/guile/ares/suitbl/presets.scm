@@ -9,12 +9,12 @@
   #:use-module ((ares suitbl schedulers)
                 #:prefix scheduler:)
 
-  #:export (preset:only-slow!
-            preset:only-fast!
-            preset:matching!
-            preset:rerun-failed-or-all!
-            preset:raise-on-error!
-            preset:reset!))
+  #:export (only-slow!
+            only-fast!
+            matching!
+            rerun-failed-or-all!
+            raise-on-error!
+            reset!))
 
 
 ;;;
@@ -30,32 +30,32 @@
 ;;; Presets
 ;;;
 
-(define* (preset:only-slow! #:optional (runner (test-runner*)))
+(define* (only-slow! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only slow tests."
   (let ((state (runner->state runner)))
     (set-runner-config-value! state 'schedule-tests scheduler:slow)
     (get-runner-config state)))
 
-(define* (preset:only-fast! #:optional (runner (test-runner*)))
+(define* (only-fast! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only fast tests."
   (let ((state (runner->state runner)))
     (set-runner-config-value! state 'schedule-tests scheduler:fast)
     (get-runner-config state)))
 
-(define* (preset:matching! pattern #:optional (runner (test-runner*)))
+(define* (matching! pattern #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests matching regexp PATTERN."
   (let ((state (runner->state runner)))
     (set-runner-config-value! state 'schedule-tests (scheduler:make-matching pattern))
     (get-runner-config state)))
 
-(define* (preset:rerun-failed-or-all! #:optional (runner (test-runner*)))
+(define* (rerun-failed-or-all! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests that failed or errored
 in the previous run."
   (let ((state (runner->state runner)))
     (set-runner-config-value! state 'schedule-tests scheduler:failed-or-all)
     (get-runner-config state)))
 
-(define* (preset:raise-on-error! #:optional (runner (test-runner*)))
+(define* (raise-on-error! #:optional (runner (test-runner*)))
   "Configure RUNNER to re-raise exceptions on assertion failures and
 errors without unwinding the stack, so the IDE can bring up a stack
 trace viewer."
@@ -63,7 +63,7 @@ trace viewer."
     (set-runner-config-value! state 're-raise? #t)
     (get-runner-config state)))
 
-(define* (preset:reset! #:optional (runner (test-runner*)))
+(define* (reset! #:optional (runner (test-runner*)))
   "Remove the schedule-tests filter from RUNNER, restoring default
 behavior of running all loaded tests."
   (let ((state (runner->state runner)))
@@ -72,7 +72,7 @@ behavior of running all loaded tests."
     (get-runner-config state)))
 
 (define (comment)
-  (preset:reset!)
-  (preset:rerun-failed-or-all!)
-  (preset:raise-on-error!)
+  (reset!)
+  (rerun-failed-or-all!)
+  (raise-on-error!)
   )
