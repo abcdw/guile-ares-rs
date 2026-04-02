@@ -19,7 +19,7 @@
                           preset:only-slow!
                           preset:only-fast!
                           preset:matching!
-                          preset:rerun-failed!
+                          preset:rerun-failed-or-all!
                           preset:reset!)))
 
 (define (make-test-runner-with-mixed-tests)
@@ -164,7 +164,7 @@
     (is (equal? '("slow database query")
                 (scheduled-descriptions tr))))
 
-  (test "preset:rerun-failed! configures runner for failed tests"
+  (test "preset:rerunfa-iled! configures runner for failed tests"
     (define tr (make-silent-test-runner))
     (with-test-runner tr
       (suite "suite with a failure"
@@ -172,7 +172,7 @@
           (is #t))
         (test "bad test"
           (is #f))))
-    (preset:rerun-failed! tr)
+    (preset:rerun-failed-or-all! tr)
     (is (equal? '("bad test")
                 (scheduled-descriptions tr))))
 

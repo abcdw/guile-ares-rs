@@ -19,7 +19,7 @@
             preset:only-slow!
             preset:only-fast!
             preset:matching!
-            preset:rerun-failed!
+            preset:rerun-failed-or-all!
             preset:raise-on-error!
             preset:reset!))
 
@@ -117,7 +117,7 @@ are no failures, return all tests unfiltered."
     (set-runner-config-value! state 'schedule-tests (make-scheduler:matching pattern))
     (get-runner-config state)))
 
-(define* (preset:rerun-failed! #:optional (runner (test-runner*)))
+(define* (preset:rerun-failed-or-all! #:optional (runner (test-runner*)))
   "Configure RUNNER to schedule only tests that failed or errored
 in the previous run."
   (let ((state (runner->state runner)))
@@ -142,6 +142,6 @@ behavior of running all loaded tests."
 
 (define (comment)
   (preset:reset!)
-  (preset:rerun-failed!)
+  (preset:rerun-failed-or-all!)
   (preset:raise-on-error!)
   )
