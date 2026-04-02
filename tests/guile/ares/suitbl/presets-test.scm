@@ -42,7 +42,7 @@
     (is (equal? '("slow database query")
                 (scheduled-descriptions tr))))
 
-  (test "preset:rerunfa-iled! configures runner for failed tests"
+  (test "preset:rerun-failed-or-all! configures runner for failed tests"
     (define tr (make-silent-test-runner))
     (with-test-runner tr
       (suite "suite with a failure"
