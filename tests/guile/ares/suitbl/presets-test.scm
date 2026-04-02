@@ -8,6 +8,11 @@
                 #:select (get-scheduled-tests
                           get-runner-config
                           get-run-history))
+  #:use-module ((ares suitbl test-utils)
+                #:select (make-test-runner-with-mixed-tests
+                          runner->state
+                          test-descriptions
+                          scheduled-descriptions))
   #:use-module ((srfi srfi-1) #:select (lset=))
   #:use-module ((ares suitbl presets)
                 #:select (scheduler:slow
@@ -21,34 +26,6 @@
                           preset:matching!
                           preset:rerun-failed-or-all!
                           preset:reset!)))
-
-(define (make-test-runner-with-mixed-tests)
-  "Create a runner with a mix of slow and fast tests loaded."
-  (define tr (make-silent-test-runner))
-  (with-test-runner tr
-    (suite "mixed tests"
-      (test "fast addition"
-        (is (= 4 (+ 2 2))))
-      (test "slow network call" 'metadata '((slow? . #t))
-        (is #t))
-      (test "fast string check"
-        (is (string? "hello")))
-      (test "slow database query" 'metadata '((slow? . #t))
-        (is #t))))
-  tr)
-
-(define (runner->state runner)
-  (runner `((type . runner/get-state))))
-
-(define (test-descriptions tests)
-  "Extract descriptions from a list of test alists."
-  (map (lambda (t) (assoc-ref t 'test/description)) tests))
-
-(define (scheduled-descriptions runner)
-  "Get the descriptions of all scheduled tests for RUNNER."
-  (let ((state (runner->state runner)))
-    (test-descriptions
-     (get-scheduled-tests state (get-runner-config state)))))
 
 
 ;;;
