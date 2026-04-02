@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl reporters)
   #:use-module ((ares suitbl definitions) #:select (test? suite?))
+  #:use-module ((ares suitbl runner-state) #:prefix state:)
   #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1) #:select (fold))
   #:use-module ((srfi srfi-197) #:select (chain))
@@ -375,7 +376,7 @@ when a top-level suite finishes loading."
   "A reporter that prints a summary line after all tests have been executed."
   (case (assoc-ref message 'type)
     ((reporter/run-end)
-     (let ((summary (assoc-ref message 'run-summary)))
+     (let ((summary (state:get-run-summary (assoc-ref message 'state))))
        (if summary
            (let ((tests (assoc-ref summary 'tests))
                  (assertions (assoc-ref summary 'assertions))

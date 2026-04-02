@@ -328,7 +328,7 @@ environment just set it to new instance of test runner.
                    (state:save-run-history! state test-execution-results)
                    ((get-test-reporter)
                     `((type . reporter/run-end)
-                      (run-summary . ,(state:get-run-summary state))))))))
+                      (state . ,state)))))))
          (if reporter
              (parameterize ((%test-reporter* reporter))
                (run-tests!))
