@@ -27,6 +27,7 @@
 
             forest->junit-sxml
             forest->junit-xml
+            test-reporter-junit
 
             suite-forest->tree-string
             count-suites-and-tests
@@ -533,6 +534,16 @@ when a top-level suite finishes loading."
     (lambda ()
       (sxml->xml (forest->junit-sxml forest #:name name)))))
 
+(define (test-reporter-junit message)
+  "A test reporter that emits JUnit XML to @code{test-reporter-output-port*}
+after all tests have finished running.  Silent for all other message types."
+  (case (assoc-ref message 'type)
+    ((reporter/run-end)
+     (let* ((state (assoc-ref message 'state))
+            (forest (state:get-suite-forest-with-summary state))
+            (xml (forest->junit-xml forest)))
+       (format (test-reporter-output-port*) "~a\n" xml)))
+    (else #f)))
 
 ;;;
 ;;; Tree-style formatting (like the `tree` CLI command)

@@ -3,10 +3,15 @@
 
 (define-module (ares suitbl reporters-test)
   #:use-module (ares suitbl core)
+  #:use-module ((ares suitbl runners)
+                #:select (make-suitbl-test-runner))
   #:use-module ((ares suitbl reporters)
                 #:select (count-suites-and-tests
+                          test-reporter-junit
                           test-reporter-loaded-summary
-                          test-reporter-output-port*)))
+                          test-reporter-output-port*
+                          test-reporter-silent))
+  #:use-module ((ares suitbl runner-state) #:prefix state:))
 
 (define (make-test-node description)
   `((test . ((test/description . ,description)))))
@@ -118,3 +123,74 @@
     (is (equal?
          "Loaded 3 tests and 3 suites (1 module, 1 empty).\n"
          (get-output-string port)))))
+
+(define-suite junit-reporter-tests
+  (test "returns #f for unrelated message types"
+    (is (not (test-reporter-junit
+              `((type . reporter/test-start)
+                (description . "some test")))))
+    (is (not (test-reporter-junit
+              `((type . reporter/assertion-pass)
+                (assert/body . (= 1 1)))))))
+
+  (test "emits JUnit XML on run-end"
+    (define port (open-output-string))
+    (define test-runner
+      (make-suitbl-test-runner
+       #:config `((test-reporter . ,test-reporter-silent))))
+    (parameterize ((test-runner* test-runner))
+      (suite "sample"
+        (test "passing test"
+          (is #t)))
+      (test-runner `((type . runner/run-tests))))
+    (define runner-state
+      (test-runner `((type . runner/get-state))))
+    (parameterize ((test-reporter-output-port* port))
+      (test-reporter-junit
+       `((type . reporter/run-end)
+         (state . ,runner-state))))
+    (define xml-output (get-output-string port))
+    (is (string-contains xml-output "<testsuites"))
+    (is (string-contains xml-output "<testsuite"))
+    (is (string-contains xml-output "<testcase"))
+    (is (string-contains xml-output "passing test")))
+
+  (test "reports failures in JUnit XML"
+    (define port (open-output-string))
+    (define test-runner
+      (make-suitbl-test-runner
+       #:config `((test-reporter . ,test-reporter-silent))))
+    (parameterize ((test-runner* test-runner))
+      (suite "fail-suite"
+        (test "failing test"
+          (is #f)))
+      (test-runner `((type . runner/run-tests))))
+    (define runner-state
+      (test-runner `((type . runner/get-state))))
+    (parameterize ((test-reporter-output-port* port))
+      (test-reporter-junit
+       `((type . reporter/run-end)
+         (state . ,runner-state))))
+    (define xml-output (get-output-string port))
+    (is (string-contains xml-output "failures=\"1\""))
+    (is (string-contains xml-output "<failure")))
+
+  (test "reports errors in JUnit XML"
+    (define port (open-output-string))
+    (define test-runner
+      (make-suitbl-test-runner
+       #:config `((test-reporter . ,test-reporter-silent))))
+    (parameterize ((test-runner* test-runner))
+      (suite "error-suite"
+        (test "erroring test"
+          (is (throw 'boom))))
+      (test-runner `((type . runner/run-tests))))
+    (define runner-state
+      (test-runner `((type . runner/get-state))))
+    (parameterize ((test-reporter-output-port* port))
+      (test-reporter-junit
+       `((type . reporter/run-end)
+         (state . ,runner-state))))
+    (define xml-output (get-output-string port))
+    (is (string-contains xml-output "errors=\"1\""))
+    (is (string-contains xml-output "<error"))))
