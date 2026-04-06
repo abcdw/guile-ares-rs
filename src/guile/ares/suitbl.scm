@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl)
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl reporters)
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module (ares suitbl runners)
   #:use-module ((ares guile prelude) #:select (comment))
 
@@ -18,13 +18,6 @@
                suite suite-thunk
 
                define-suite
-
-               test-reporter-output-port*
-               test-reporter-silent
-               test-reporter-logging
-               test-reporter-unhandled
-               test-reporter-base
-               test-reporter-dots
 
                make-suitbl-test-runner))
 
@@ -110,7 +103,7 @@ depends on the test runner implementation.
       ((_ expressions ...)
        #'(let ((start-time (get-internal-real-time))
                (return-value expressions ...))
-           (format (test-reporter-output-port*) "run time: ~f\n"
+           (format (reporter:output-port*) "run time: ~f\n"
                    (exact->inexact
                     (/ (- (get-internal-real-time) start-time)
                        internal-time-units-per-second)))
