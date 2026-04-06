@@ -19,6 +19,9 @@
   -r, --reporter=EXPR  use EXPR as test reporter
                        (short names match test-reporter-* bindings
                        in (ares suitbl reporters); or any Scheme expression)
+  -s, --scheduler=EXPR evaluate EXPR in the context of (ares suitbl schedulers)
+                       e.g. -s fast, -s failed-or-all,
+                            -s '(make-matching \"macro\")'
   -v, --version        display version information and exit
   -h, --help           display this help and exit
 "
@@ -36,7 +39,10 @@
                   (exit 0)))
         (option '(#\r "reporter") #t #f
                 (lambda (opt name arg loads)
-                  (acons 'reporter arg loads)))))
+                  (acons 'reporter arg loads)))
+        (option '(#\s "scheduler") #t #f
+                (lambda (opt name arg loads)
+                  (acons 'scheduler arg loads)))))
 
 (define (main args)
   (define options
@@ -53,6 +59,7 @@
                '()))
 
   (define reporter-name (or (assoc-ref options 'reporter) "base"))
+  (define scheduler-expr (assoc-ref options 'scheduler))
 
   (define run-code
     `(begin
@@ -89,7 +96,15 @@ otherwise read NAME as an arbitrary Scheme expression."
 
        (define runner
          (make-suitbl-test-runner
-          #:config (list (cons 'test-reporter (get-reporter ,reporter-name)))))
+          #:config (append
+                    (list (cons 'test-reporter (get-reporter ,reporter-name)))
+                    ,(if scheduler-expr
+                         `(list (cons 'schedule-tests
+                                     (eval ',(with-input-from-string
+                                              scheduler-expr read)
+                                           (resolve-module
+                                            '(ares suitbl schedulers)))))
+                         ''()))))
 
        (parameterize ((test-runner* runner))
          (load-project-tests)
