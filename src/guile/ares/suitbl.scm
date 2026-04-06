@@ -25,9 +25,6 @@
                test-reporter-unhandled
                test-reporter-base
                test-reporter-dots
-               test-reporter-dots-with-hierarchy
-               test-reporters-use-all
-               test-reporters-use-first
 
                make-suitbl-test-runner))
 
