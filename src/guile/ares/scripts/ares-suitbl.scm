@@ -16,9 +16,10 @@
 (define %usage
   (format #f "Usage: ~a [OPTION]... [-- GUILE_OPTION]...
 
-  -r, --reporter=EXPR  use EXPR as test reporter
-                       (short names match test-reporter-* bindings
-                       in (ares suitbl reporters); or any Scheme expression)
+  -r, --reporter=EXPR  evaluate EXPR in the context of (ares suitbl reporters)
+                       e.g. -r test-reporter-base, -r test-reporter-dots,
+                            -r '(test-reporters-use-all
+                            test-reporter-dots test-reporter-run-summary)'
   -s, --scheduler=EXPR evaluate EXPR in the context of (ares suitbl schedulers)
                        e.g. -s fast, -s failed-or-all,
                             -s '(make-matching \"macro\")'
@@ -58,7 +59,7 @@
                  (acons 'guile-arg op loads))
                '()))
 
-  (define reporter-name (or (assoc-ref options 'reporter) "base"))
+  (define reporter-expr (or (assoc-ref options 'reporter) "test-reporter-base"))
   (define scheduler-expr (assoc-ref options 'scheduler))
 
   (define run-code
@@ -66,38 +67,14 @@
        (use-modules (ares suitbl core)
                     (ares suitbl runners)
                     (ares suitbl reporters)
-                    (ares suitbl ares)
-                    (srfi srfi-1))
-
-       ;; Build list of builtin reporters from module reflection
-       (define (get-builtin-reporters)
-         (let ((module (resolve-module '(ares suitbl reporters)))
-               (prefix-len (string-length "test-reporter-")))
-           (filter-map
-            (lambda (sym)
-              (let ((str (symbol->string sym)))
-                (and (> (string-length str) prefix-len)
-                     (string-prefix? "test-reporter-" str)
-                     (let ((short-name (string-drop str prefix-len)))
-                       (cons (string->symbol short-name)
-                             (module-ref module sym))))))
-            (module-map (lambda (sym var) sym) module))))
-
-       (define (get-reporter name)
-         "Resolve reporter by NAME.
-Try to find test-reporter-NAME in the reporters module,
-otherwise read NAME as an arbitrary Scheme expression."
-         (define builtin-reporters (get-builtin-reporters))
-         (define short-name (string->symbol name))
-         (define builtin (assoc short-name builtin-reporters))
-         (if builtin
-             (cdr builtin)
-             (with-input-from-string name read)))
+                    (ares suitbl ares))
 
        (define runner
          (make-suitbl-test-runner
           #:config (append
-                    (list (cons 'test-reporter (get-reporter ,reporter-name)))
+                    (list (cons 'test-reporter
+                               (eval ',(with-input-from-string reporter-expr read)
+                                     (resolve-module '(ares suitbl reporters)))))
                     ,(if scheduler-expr
                          `(list (cons 'schedule-tests
                                      (eval ',(with-input-from-string
