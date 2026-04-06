@@ -27,6 +27,13 @@ check-suitbl:
 	${GUILE_DEV} \
 	-c "((@ (suitbl-test-runner) run-project-tests))"
 
+suitbl:
+	${GUILE_DEV} \
+	-e '(ares scripts ares-suitbl)' \
+	-s ./src/guile/ares/scripts/ares-suitbl.scm \
+	$(if $(SCHEDULER),-s '$(SCHEDULER)') \
+	-- $(LOAD_PATHS)
+
 check-test:
 	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-test) \
