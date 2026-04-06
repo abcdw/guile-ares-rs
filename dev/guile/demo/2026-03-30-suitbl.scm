@@ -11,7 +11,8 @@
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
   #:use-module ((ares suitbl state) #:prefix state:)
-  #:use-module (ares suitbl reporters)
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
+  #:use-module ((ares suitbl reporting) #:select (test-reporters-use-all))
   #:use-module ((ares suitbl presets) #:prefix preset:))
 
 
@@ -331,7 +332,7 @@ API-first, can be easily integrated in your IDE and other tools.
  ;; Dots reporter — compact output
  (with-test-runner
   (make-suitbl-test-runner
-   #:config `((test-reporter . ,test-reporter-dots)))
+   #:config `((test-reporter . ,reporter:dots)))
   (suite "dots demo"
     (test "all pass" (is #t) (is #t) (is #t))
     (test "one fails" (is #t) (is #f))))
@@ -339,7 +340,7 @@ API-first, can be easily integrated in your IDE and other tools.
  ;; Minimal reporter — test names + pass/fail marks
  (with-test-runner
   (make-suitbl-test-runner
-   #:config `((test-reporter . ,test-reporter-minimal)))
+   #:config `((test-reporter . ,reporter:minimal)))
   (suite "hehe"
     (test "minimal demo"
       (is (= 1 1))
@@ -355,8 +356,8 @@ API-first, can be easily integrated in your IDE and other tools.
   (make-suitbl-test-runner
    #:config `((test-reporter
                . ,(test-reporters-use-all
-                   (list test-reporter-tree
-                         test-reporter-dots)))))
+                   (list reporter:tree
+                         reporter:dots)))))
   (suite "composed reporters"
     (test "a" (is #t))
     (test "b" (is #t)))))
@@ -369,7 +370,7 @@ API-first, can be easily integrated in your IDE and other tools.
 (comment
  (with-test-runner
   (make-suitbl-test-runner
-   #:config `((test-reporter . ,test-reporter-silent)))
+   #:config `((test-reporter . ,reporter:silent)))
   (suite "quiet suite"
     (test "no output" (is #t) (is #t)))
 

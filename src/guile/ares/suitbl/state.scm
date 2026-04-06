@@ -8,7 +8,7 @@
                  make-atomic-box
                  atomic-box-ref))
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
-  #:use-module ((ares suitbl reporters) #:select (test-reporter-base))
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((srfi srfi-1)
                 #:select (alist-delete alist-cons fold filter-map))
   #:use-module ((ice-9 match) #:select (match))

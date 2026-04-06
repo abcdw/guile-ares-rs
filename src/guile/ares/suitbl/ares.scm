@@ -4,8 +4,7 @@
 (define-module (ares suitbl ares)
   #:use-module ((ares guile prelude) #:select (comment))
   #:use-module ((ares suitbl core) #:select (suite test-runner*))
-  #:use-module  ((ares suitbl reporters)
-                 #:select (test-reporter-minimal))
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl state)
                 #:select (get-loaded-tests
                           get-runner-config
@@ -27,7 +26,7 @@
   ((test-runner*) `((type . runner/run-tests)
                     (runner/config
                      .
-                     ((test-reporter . ,test-reporter-minimal)))))
+                     ((test-reporter . ,reporter:minimal)))))
   ((test-runner*) `((type . runner/get-run-summary))))
 
 (define (get-current-test-runner-stats)

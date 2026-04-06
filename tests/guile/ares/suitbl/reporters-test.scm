@@ -5,11 +5,7 @@
   #:use-module (ares suitbl core)
   #:use-module ((ares suitbl runners)
                 #:select (make-suitbl-test-runner))
-  #:use-module ((ares suitbl reporters)
-                #:select (test-reporter-junit
-                          test-reporter-loaded-summary
-                          test-reporter-output-port*
-                          test-reporter-silent))
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl state) #:prefix state:))
 
 (define (make-test-node description)
@@ -26,14 +22,14 @@
 
 (define-suite loaded-summary-reporter-tests
   (test "returns #f for unrelated message types"
-    (is (not (test-reporter-loaded-summary
+    (is (not (reporter:loaded-summary
               `((type . reporter/test-start)
                 (description . "some test"))))))
 
   (test "formats the summary output correctly"
     (define port (open-output-string))
-    (parameterize ((test-reporter-output-port* port))
-      (test-reporter-loaded-summary
+    (parameterize ((reporter:output-port* port))
+      (reporter:loaded-summary
        `((type . reporter/suite-tree-loaded)
          (suite-node
           . ,(make-module-suite-node "root"
@@ -49,10 +45,10 @@
 
 (define-suite junit-reporter-tests
   (test "returns #f for unrelated message types"
-    (is (not (test-reporter-junit
+    (is (not (reporter:junit
               `((type . reporter/test-start)
                 (description . "some test")))))
-    (is (not (test-reporter-junit
+    (is (not (reporter:junit
               `((type . reporter/assertion-pass)
                 (assert/body . (= 1 1)))))))
 
@@ -60,7 +56,7 @@
     (define port (open-output-string))
     (define test-runner
       (make-suitbl-test-runner
-       #:config `((test-reporter . ,test-reporter-silent))))
+       #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "sample"
         (test "passing test"
@@ -68,8 +64,8 @@
       (test-runner `((type . runner/run-tests))))
     (define runner-state
       (test-runner `((type . runner/get-state))))
-    (parameterize ((test-reporter-output-port* port))
-      (test-reporter-junit
+    (parameterize ((reporter:output-port* port))
+      (reporter:junit
        `((type . reporter/run-end)
          (state . ,runner-state))))
     (define xml-output (get-output-string port))
@@ -82,7 +78,7 @@
     (define port (open-output-string))
     (define test-runner
       (make-suitbl-test-runner
-       #:config `((test-reporter . ,test-reporter-silent))))
+       #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "fail-suite"
         (test "failing test"
@@ -90,8 +86,8 @@
       (test-runner `((type . runner/run-tests))))
     (define runner-state
       (test-runner `((type . runner/get-state))))
-    (parameterize ((test-reporter-output-port* port))
-      (test-reporter-junit
+    (parameterize ((reporter:output-port* port))
+      (reporter:junit
        `((type . reporter/run-end)
          (state . ,runner-state))))
     (define xml-output (get-output-string port))
@@ -102,7 +98,7 @@
     (define port (open-output-string))
     (define test-runner
       (make-suitbl-test-runner
-       #:config `((test-reporter . ,test-reporter-silent))))
+       #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "error-suite"
         (test "erroring test"
@@ -110,8 +106,8 @@
       (test-runner `((type . runner/run-tests))))
     (define runner-state
       (test-runner `((type . runner/get-state))))
-    (parameterize ((test-reporter-output-port* port))
-      (test-reporter-junit
+    (parameterize ((reporter:output-port* port))
+      (reporter:junit
        `((type . reporter/run-end)
          (state . ,runner-state))))
     (define xml-output (get-output-string port))

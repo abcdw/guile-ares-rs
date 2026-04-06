@@ -4,11 +4,11 @@
 (define-module (ares suitbl runners-test)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
-  #:use-module (ares suitbl reporters))
+  #:use-module ((ares suitbl reporters) #:prefix reporter:))
 
 (define (silent-runner)
   (make-suitbl-test-runner
-   #:config `((test-reporter . ,test-reporter-silent))))
+   #:config `((test-reporter . ,reporter:silent))))
 
 (define-suite assertions-handling-tests
   (test "is assert returns the value of its body"

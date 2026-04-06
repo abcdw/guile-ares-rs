@@ -3,6 +3,7 @@
   #:use-module (ares suitbl)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl discovery)
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module (ares alist)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
@@ -172,7 +173,7 @@ because test macro is not composable and can't be wrapped.
       ((_ body body* ...)
        #'(parameterize ((test-runner*
                          (make-suitbl-test-runner
-                          #:config `((test-reporter . ,test-reporter-silent)))))
+                          #:config `((test-reporter . ,reporter:silent)))))
            body body* ...)))))
 
 

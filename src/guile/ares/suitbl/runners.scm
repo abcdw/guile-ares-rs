@@ -4,9 +4,7 @@
 (define-module (ares suitbl runners)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
-  #:use-module ((ares suitbl reporters) #:select (test-reporter-base
-                                                  test-reporter-silent
-                                                  test-reporter-spying))
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
 
   #:use-module ((ice-9 atomic)
                 #:select (make-atomic-box atomic-box-ref atomic-box-set!))
@@ -56,7 +54,7 @@ environment just set it to new instance of test runner.
           #:key
           (config '())
           (default-config `((auto-run? . #t)
-                            (test-reporter . ,test-reporter-base)
+                            (test-reporter . ,reporter:base)
                             (reset-loaded-tests-on-suite-load? . #t)
                             (log-runner-messages? . #f)
                             (re-raise? . #f))))
@@ -388,4 +386,4 @@ environment just set it to new instance of test runner.
 
 (define (make-silent-test-runner)
   (make-suitbl-test-runner
-   #:config `((test-reporter . ,test-reporter-silent))))
+   #:config `((test-reporter . ,reporter:silent))))
