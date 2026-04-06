@@ -18,7 +18,7 @@
 
   -r, --reporter=EXPR  evaluate EXPR in the context of (ares suitbl reporters)
                        e.g. -r base, -r dots,
-                            -r '(test-reporters-use-all dots run-summary)'
+                            -r '(reporter-every (list dots run-summary))'
   -s, --scheduler=EXPR evaluate EXPR in the context of (ares suitbl schedulers)
                        e.g. -s fast, -s failed-or-all,
                             -s '(make-matching \"macro\")'
