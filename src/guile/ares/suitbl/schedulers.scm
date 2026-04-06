@@ -2,7 +2,7 @@
 ;; Copyright © 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl schedulers)
-  #:use-module ((ares suitbl runner-state)
+  #:use-module ((ares suitbl state)
                 #:select (get-run-history))
   #:use-module ((srfi srfi-1) #:select (filter filter-map))
 

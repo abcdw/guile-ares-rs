@@ -11,7 +11,7 @@
                           test-reporter-loaded-summary
                           test-reporter-output-port*
                           test-reporter-silent))
-  #:use-module ((ares suitbl runner-state) #:prefix state:))
+  #:use-module ((ares suitbl state) #:prefix state:))
 
 (define (make-test-node description)
   `((test . ((test/description . ,description)))))

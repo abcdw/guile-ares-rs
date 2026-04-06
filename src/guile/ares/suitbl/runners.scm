@@ -17,7 +17,7 @@
                 #:select (last drop-right any fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
-  #:use-module ((ares suitbl runner-state) #:prefix state:)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:export (make-suitbl-test-runner
             make-silent-test-runner
 

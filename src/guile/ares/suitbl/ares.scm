@@ -6,7 +6,7 @@
   #:use-module ((ares suitbl core) #:select (suite test-runner*))
   #:use-module  ((ares suitbl reporters)
                  #:select (test-reporter-minimal))
-  #:use-module ((ares suitbl runner-state)
+  #:use-module ((ares suitbl state)
                 #:select (get-loaded-tests
                           get-runner-config
                           get-stats

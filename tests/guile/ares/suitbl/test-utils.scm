@@ -4,7 +4,7 @@
 (define-module (ares suitbl test-utils)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
-  #:use-module ((ares suitbl runner-state)
+  #:use-module ((ares suitbl state)
                 #:select (get-scheduled-tests
                           get-runner-config))
   #:export (make-test-runner-with-mixed-tests

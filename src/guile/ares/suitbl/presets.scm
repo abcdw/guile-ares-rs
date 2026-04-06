@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl presets)
   #:use-module ((ares suitbl definitions) #:select (test-runner*))
-  #:use-module ((ares suitbl runner-state)
+  #:use-module ((ares suitbl state)
                 #:select (set-runner-config-value!
                           get-runner-config))
   #:use-module ((ares suitbl schedulers)

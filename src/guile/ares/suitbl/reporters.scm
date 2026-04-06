@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl reporters)
   #:use-module ((ares suitbl definitions) #:select (test? suite?))
-  #:use-module ((ares suitbl runner-state) #:prefix state:)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1) #:select (fold))
   #:use-module ((srfi srfi-197) #:select (chain))

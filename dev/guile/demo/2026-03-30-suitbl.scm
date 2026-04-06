@@ -10,7 +10,7 @@
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
-  #:use-module ((ares suitbl runner-state) #:prefix state:)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module (ares suitbl reporters)
   #:use-module ((ares suitbl presets) #:prefix preset:))
 

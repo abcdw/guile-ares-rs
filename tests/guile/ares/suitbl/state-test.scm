@@ -1,11 +1,11 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; Copyright © 2025 Andrew Tropin <andrew@trop.in>
 
-(define-module (ares suitbl runner-state-test)
+(define-module (ares suitbl state-test)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
-  #:use-module ((ares suitbl runner-state) #:prefix state:)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((srfi srfi-1) #:select (filter)))
 
 (define (get-test-runner-with-sample-suite-loaded)

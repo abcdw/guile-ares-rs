@@ -1,7 +1,7 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
-(define-module (ares suitbl runner-state)
+(define-module (ares suitbl state)
   #:use-module ((ares atomic)
                 #:select
                 (atomic-box-update!

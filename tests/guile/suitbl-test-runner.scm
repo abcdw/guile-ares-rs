@@ -2,7 +2,7 @@
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
   #:use-module ((ares suitbl reporters) #:prefix reporters:)
-  #:use-module ((ares suitbl runner-state) #:prefix state:)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module (ares suitbl discovery)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)

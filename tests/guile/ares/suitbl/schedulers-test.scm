@@ -4,7 +4,7 @@
 (define-module (ares suitbl schedulers-test)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
-  #:use-module ((ares suitbl runner-state)
+  #:use-module ((ares suitbl state)
                 #:select (get-scheduled-tests))
   #:use-module ((ares suitbl test-utils)
                 #:select (make-test-runner-with-mixed-tests
