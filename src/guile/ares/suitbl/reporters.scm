@@ -21,8 +21,8 @@
   #:use-module ((ice-9 format) #:select (format))
   #:use-module ((ice-9 match) #:select (match))
 
-  #:export (test-reporters-use-all
-            test-reporters-use-first
+  #:export (reporter-every
+            reporter-first
             output-port*
             silent
             logging
@@ -42,12 +42,12 @@
 ;;; Reporter Combinators
 ;;;
 
-(define (test-reporters-use-all reporters)
+(define (reporter-every reporters)
   "Create a reporter, which combines all reporters."
   (lambda (message)
     (for-each (lambda (r) (r message)) reporters)))
 
-(define (test-reporters-use-first reporters)
+(define (reporter-first reporters)
   "Create a reporter, which uses the first successful reporter."
   (lambda (message)
     (let loop ((reporters reporters))
@@ -72,8 +72,8 @@ output-port*.
    (description . "basic arithmetics")))
 
 
-Test reporters can be comined with test-reporters-use-all or
-test-reporters-use-first to compliment each other or override.
+Test reporters can be combined with reporter-every or
+reporter-first to complement each other or override.
 
 A final test reporter can be attached to test runner.
 
@@ -91,7 +91,7 @@ A final test reporter can be attached to test runner.
 
 (define (unhandled message)
   "A simple test reporter, which prints incomming message.  It can be
-combined with another reporter using @code{test-reporters-use-first}
+combined with another reporter using @code{reporter-first}
 to catch unhandled messages."
   (format (output-port*)
           "\nmessage is not handled:\n~y\n" message))
@@ -194,9 +194,9 @@ to catch unhandled messages."
   (chain (list
           execution-minimal
           loading-minimal)
-    (test-reporters-use-all _)
+    (reporter-every _)
     (list _ unhandled)
-    (test-reporters-use-first _)))
+    (reporter-first _)))
 
 (define (execution-spying message)
   (define msg-type (assoc-ref message 'type))
@@ -227,9 +227,9 @@ to catch unhandled messages."
   (chain (list
           execution-spying
           loading-minimal)
-    (test-reporters-use-all _)
+    (reporter-every _)
     (list _ unhandled)
-    (test-reporters-use-first _)))
+    (reporter-first _)))
 
 (define (tree message)
   "A reporter that prints the complete suite tree (like the @code{tree}
@@ -283,9 +283,9 @@ when a top-level suite finishes loading."
                tree
                loaded-summary
                run-summary)
-    (test-reporters-use-all _)
+    (reporter-every _)
     (list _ unhandled)
-    (test-reporters-use-first _)))
+    (reporter-first _)))
 
 (define (dots message)
   (define msg-type (assoc-ref message 'type))
@@ -313,9 +313,9 @@ when a top-level suite finishes loading."
 
 (define dots-with-hierarchy
   (chain (list dots hierarchy)
-    (test-reporters-use-all _)
+    (reporter-every _)
     (list _ unhandled)
-    (test-reporters-use-first _)))
+    (reporter-first _)))
 
 (define (junit message)
   "A test reporter that emits JUnit XML to @code{output-port*}

@@ -12,7 +12,7 @@
   #:use-module (ares suitbl runners)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
-  #:use-module ((ares suitbl reporting) #:select (test-reporters-use-all))
+  #:use-module ((ares suitbl reporters) #:select (reporter-every))
   #:use-module ((ares suitbl presets) #:prefix preset:))
 
 
@@ -355,7 +355,7 @@ API-first, can be easily integrated in your IDE and other tools.
  (with-test-runner
   (make-suitbl-test-runner
    #:config `((test-reporter
-               . ,(test-reporters-use-all
+               . ,(reporter-every
                    (list reporter:tree
                          reporter:dots)))))
   (suite "composed reporters"
