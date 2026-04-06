@@ -31,20 +31,18 @@
 
 
 ;;; Expected to pass/fail AKA xpass xfail
-;; xpass and xfail is similiar to skipping tests, we can mark some
-;; test suites as expected to fail for now and skip them.  Not exactly
-;; as xpass/xfail, because we don't see the number of such tests in
-;; the result.
 
-;; Other option is to do `(is (not not-yet-trueish-value))' and write
-;; a comment that `not' should be removed, when test starts to pass.
+;; The primary use cases: documenting/tracking known issues and
+;; testing planned features/changes without breaking CI.
 
-;; xfail can be a great way to report a bug and provide a reproducer
-;; at the same time
+;; Can be implemented with metadata and customization on test-runner side:
+;; for example mark test with (known-issue . https://repo/issue/14325)
+;; filter out all tests with known-issue metadata from primary run.
+;; Make a special runner which runs only known-issues tests and exit
+;; with 1 if any of them are passing
 
-;; this type of workflow can be implemented by extending test runner and
-;; adding meta information to test
-
+;; This approach is simpler, cleaner and much more explicit in
+;; comparison to xfail/xpass with its obscure semantics
 
 ;;; Basic test run results
 ;; test results: pass, fail, error, skip
@@ -65,7 +63,7 @@ timestamp   Date and time of when the test run was executed (in ISO 8601 format)
 
 
 ;;; Naming test suites
-;; Test suit should contain suffix, which will distinguish it from
+;; Test suite should contain suffix, which will distinguish it from
 ;; subject under test.  Even if we export module as sut:, the prefix
 ;; will make it clearer that it's a test suite, not the function of
 ;; original module.
