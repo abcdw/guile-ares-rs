@@ -20,7 +20,6 @@
   #:use-module ((srfi srfi-1) #:select (fold))
   #:use-module ((srfi srfi-197) #:select (chain))
 
-  #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
   #:use-module ((ice-9 format) #:select (format))
   #:use-module ((ice-9 match) #:select (match))
 
@@ -119,22 +118,6 @@ to catch unhandled messages."
      (format (test-reporter-output-port*) "~y"
              (tests->pretty-string (assoc-ref message 'suite))))
     (else #f)))
-
-(define flaky-throw
-  (let ((throw? #f))
-    (lambda ()
-      (if throw?
-          (begin (set! throw? #f)
-                 (raise-exception
-                  (make-exception-with-message
-                   "flaky exception")))
-          (begin (set! throw? #t) 'ho)))))
-
-;; (is (eq? 'hi (flaky-throw)))
-
-;; (is (eq? 'hey 'ho))
-
-;; (is 78)
 
 (define (test-reporter-verbose message)
   (case (assoc-ref message 'type)
