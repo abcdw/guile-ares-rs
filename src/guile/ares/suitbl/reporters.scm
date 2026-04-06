@@ -9,8 +9,6 @@
                           actual pre-evaled-expression
                           string-repeat
                           tests->pretty-string
-                          test-reporters-use-all
-                          test-reporters-use-first
                           tree-node-children
                           tree-node-description
                           suite-forest->tree-string
@@ -23,7 +21,9 @@
   #:use-module ((ice-9 format) #:select (format))
   #:use-module ((ice-9 match) #:select (match))
 
-  #:export (output-port*
+  #:export (test-reporters-use-all
+            test-reporters-use-first
+            output-port*
             silent
             logging
             unhandled
@@ -38,7 +38,24 @@
             run-summary))
 
 
+;;;
+;;; Reporter Combinators
+;;;
 
+(define (test-reporters-use-all reporters)
+  "Create a reporter, which combines all reporters."
+  (lambda (message)
+    (for-each (lambda (r) (r message)) reporters)))
+
+(define (test-reporters-use-first reporters)
+  "Create a reporter, which uses the first successful reporter."
+  (lambda (message)
+    (let loop ((reporters reporters))
+      (unless (null? reporters)
+        (let ((reporter-result ((car reporters) message)))
+          (or reporter-result (loop (cdr reporters))))))))
+
+
 ;;;
 ;;; Test Reporters
 ;;;
@@ -63,19 +80,6 @@ A final test reporter can be attached to test runner.
 |#
 
 (define output-port* (make-parameter (current-output-port)))
-
-(define (test-reporters-use-all reporters)
-  "Create a reporter, which combines all reporters."
-  (lambda (message)
-    (for-each (lambda (r) (r message)) reporters)))
-
-(define (test-reporters-use-first reporters)
-  "Create a reporter, which uses the first successful reporter."
-  (lambda (message)
-    (let loop ((reporters reporters))
-      (unless (null? reporters)
-        (let ((reporter-result ((car reporters) message)))
-          (or reporter-result (loop (cdr reporters))))))))
 
 (define (silent message)
   "Do nothing, return @code{#t}."
