@@ -387,3 +387,16 @@ environment just set it to new instance of test runner.
 (define (make-silent-test-runner)
   (make-suitbl-test-runner
    #:config `((test-reporter . ,reporter:silent))))
+
+
+(define-syntax simple-profile
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ expressions ...)
+       #'(let ((start-time (get-internal-real-time))
+               (return-value expressions ...))
+           (format (current-error-port) "run time: ~f\n"
+                   (exact->inexact
+                    (/ (- (get-internal-real-time) start-time)
+                       internal-time-units-per-second)))
+           return-value)))))

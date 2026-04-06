@@ -97,18 +97,6 @@ depends on the test runner implementation.
             #f)
           #:unwind? #t)))))
 
-(define-syntax simple-profile
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ expressions ...)
-       #'(let ((start-time (get-internal-real-time))
-               (return-value expressions ...))
-           (format (reporter:output-port*) "run time: ~f\n"
-                   (exact->inexact
-                    (/ (- (get-internal-real-time) start-time)
-                       internal-time-units-per-second)))
-           return-value)))))
-
 
 
 #|
