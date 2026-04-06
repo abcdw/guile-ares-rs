@@ -59,7 +59,7 @@
                  (acons 'guile-arg op loads))
                '()))
 
-  (define reporter-expr (or (assoc-ref options 'reporter) "test-reporter-base"))
+  (define reporter-expr (assoc-ref options 'reporter))
   (define scheduler-expr (assoc-ref options 'scheduler))
 
   (define run-code
@@ -69,19 +69,23 @@
                     (ares suitbl reporters)
                     (ares suitbl ares))
 
+       (define reporter-config
+         ,(if reporter-expr
+              `(list (cons 'test-reporter
+                          (eval ',(with-input-from-string reporter-expr read)
+                                (resolve-module '(ares suitbl reporters)))))
+              ''()))
+
+       (define scheduler-config
+         ,(if scheduler-expr
+              `(list (cons 'schedule-tests
+                          (eval ',(with-input-from-string scheduler-expr read)
+                                (resolve-module '(ares suitbl schedulers)))))
+              ''()))
+
        (define runner
          (make-suitbl-test-runner
-          #:config (append
-                    (list (cons 'test-reporter
-                               (eval ',(with-input-from-string reporter-expr read)
-                                     (resolve-module '(ares suitbl reporters)))))
-                    ,(if scheduler-expr
-                         `(list (cons 'schedule-tests
-                                     (eval ',(with-input-from-string
-                                              scheduler-expr read)
-                                           (resolve-module
-                                            '(ares suitbl schedulers)))))
-                         ''()))))
+          #:config (append reporter-config scheduler-config)))
 
        (parameterize ((test-runner* runner))
          (load-project-tests)
