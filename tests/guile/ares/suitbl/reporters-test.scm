@@ -30,7 +30,7 @@
     (define port (open-output-string))
     (reporter:loaded-summary
      `((type . reporter/suite-tree-loaded)
-       (reporter/port . ,port)
+       (reporting/port . ,port)
        (suite-node
         . ,(make-module-suite-node "root"
              (list
@@ -66,7 +66,7 @@
       (test-runner `((type . runner/get-state))))
     (reporter:junit
      `((type . reporter/run-end)
-       (reporter/port . ,port)
+       (reporting/port . ,port)
        (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "<testsuites"))
@@ -88,7 +88,7 @@
       (test-runner `((type . runner/get-state))))
     (reporter:junit
      `((type . reporter/run-end)
-       (reporter/port . ,port)
+       (reporting/port . ,port)
        (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "failures=\"1\""))
@@ -108,7 +108,7 @@
       (test-runner `((type . runner/get-state))))
     (reporter:junit
      `((type . reporter/run-end)
-       (reporter/port . ,port)
+       (reporting/port . ,port)
        (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "errors=\"1\""))

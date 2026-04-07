@@ -63,7 +63,7 @@
 
 Test reporters are simple functions which accept a message in format
 of Association List (alist) and produce an output to the port
-specified via @code{reporter/port} key in the message, falling back
+specified via @code{reporting/port} key in the message, falling back
 to @code{(current-output-port)}.
 
 (test-reporter
@@ -80,7 +80,7 @@ A final test reporter can be attached to test runner.
 |#
 
 (define (get-port message)
-  (or (assoc-ref message 'reporter/port) (current-output-port)))
+  (or (assoc-ref message 'reporting/port) (current-output-port)))
 
 (define (silent message)
   "Do nothing, return @code{#t}."
@@ -320,7 +320,7 @@ when a top-level suite finishes loading."
 
 (define (junit message)
   "A test reporter that emits JUnit XML to the port specified via
-@code{reporter/port} in the message after all tests have finished
+@code{reporting/port} in the message after all tests have finished
 running.  Silent for all other message types."
   (case (assoc-ref message 'type)
     ((reporter/run-end)
