@@ -242,7 +242,7 @@ environment just set it to new instance of test runner.
     (define state-cfg
       (or
        (chain-and ctx
-         (assoc-ref _ 'runner/state)
+         (assoc-ref _ 'suitbl/state)
          (atomic-box-ref _)
          (assoc-ref _ 'runner/config))
        '()))
@@ -270,7 +270,7 @@ environment just set it to new instance of test runner.
 
     (define ctx
       `((runner/message . ,message)
-        (runner/state . ,state)))
+        (suitbl/state . ,state)))
 
     (when (logging? ctx)
       (state:save-event! state (get-message ctx)))
