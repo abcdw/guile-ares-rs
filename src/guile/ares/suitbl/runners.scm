@@ -17,9 +17,7 @@
 
   #:use-module ((ares suitbl state) #:prefix state:)
   #:export (make-suitbl-test-runner
-            make-silent-test-runner
-
-            set-runner-config-value!))
+            make-silent-test-runner))
 
 
 ;;;
