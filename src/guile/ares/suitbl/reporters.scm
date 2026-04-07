@@ -287,17 +287,10 @@ when a top-level suite finishes loading."
 (define (dots message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((reporter/suite-start)
-     (format (get-port message) "["))
-    ((reporter/suite-end)
-     (format (get-port message) "]"))
-
     ((reporter/test-start)
      (format (get-port message) "("))
     ((reporter/test-end)
      (format (get-port message) ")"))
-    ((reporter/test-skip)
-     (format (get-port message) "(S)"))
 
     ((reporter/assertion-pass)
      (format (get-port message) "."))
