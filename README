@@ -156,12 +156,6 @@ A: Theoretically it's possible to upgrade existing REPL to
 guile-ares-rs, see bootstrap and infect modules (they can be not
 implemented yet).
 
-
-
-* Architecture
-This is the original Ares architecture documentation (may be outdated):
-[[file:docs/ares-architecture-original.org][docs/ares-architecture-original.org]]
-
 * Acknowledgements
 Thanks for inspiration, help, support and motivation to Jos´e Antonio
 Ortega Ruiz, Nikita Domnitskii, Maxime Devos, Andy Wingo, Bozhidar
@@ -179,5 +173,4 @@ Learn more at the [[https://nlnet.nl/project/SchemeTestingFramework][NLnet proje
 
 #+ATTR_HTML: :width 20%
 [[https://nlnet.nl/core][https://nlnet.nl/image/logos/NGI0_tag_black_mono.svg]]
-
 
