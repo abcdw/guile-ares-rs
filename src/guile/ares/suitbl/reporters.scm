@@ -23,7 +23,6 @@
 
   #:export (reporter-every
             reporter-first
-            output-port*
             silent
             logging
             unhandled
@@ -63,8 +62,9 @@
 #|
 
 Test reporters are simple functions which accept a message in format
-of Association List (alist) and produce an output to
-output-port*.
+of Association List (alist) and produce an output to the port
+specified via @code{reporter/port} key in the message, falling back
+to @code{(current-output-port)}.
 
 (test-reporter
  `((type . reporter/test-loaded)
@@ -79,7 +79,8 @@ A final test reporter can be attached to test runner.
 
 |#
 
-(define output-port* (make-parameter (current-output-port)))
+(define (get-port message)
+  (or (assoc-ref message 'reporter/port) (current-output-port)))
 
 (define (silent message)
   "Do nothing, return @code{#t}."
@@ -87,62 +88,62 @@ A final test reporter can be attached to test runner.
 
 (define (logging message)
   "Just log the @code{message}."
-  (format (output-port*) "message: ~y" message))
+  (format (get-port message) "message: ~y" message))
 
 (define (unhandled message)
   "A simple test reporter, which prints incomming message.  It can be
 combined with another reporter using @code{reporter-first}
 to catch unhandled messages."
-  (format (output-port*)
+  (format (get-port message)
           "\nmessage is not handled:\n~y\n" message))
 
 (define (hierarchy message)
   (case (assoc-ref message 'type)
     ((reporter/test-loaded)
-     (format (output-port*) "~a"
+     (format (get-port message) "~a"
              (string-repeat "|" (length (assoc-ref message 'suite-path))))
-     (format (output-port*) " + test ~a\n"
+     (format (get-port message) " + test ~a\n"
              (assoc-ref message 'description)))
     ((reporter/suite-enter)
-     (format (output-port*) "~a"
+     (format (get-port message) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "┌"))
-     (format (output-port*) "> ~a\n"
+     (format (get-port message) "> ~a\n"
              (assoc-ref message 'description)))
     ((reporter/suite-leave)
-     (format (output-port*) "~a"
+     (format (get-port message) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "└"))
-     (format (output-port*) "> ~a\n"
+     (format (get-port message) "> ~a\n"
              (assoc-ref message 'description)))
 
     ((reporter/print-suite)
-     (format (output-port*) "~y"
+     (format (get-port message) "~y"
              (tests->pretty-string (assoc-ref message 'suite))))
     (else #f)))
 
 (define (verbose message)
   (case (assoc-ref message 'type)
     ((reporter/test-start)
-     (format (output-port*) "\n┌Test ~a\n"
+     (format (get-port message) "\n┌Test ~a\n"
              (assoc-ref message 'description)))
     ((reporter/test-end)
-     (format (output-port*) "└Test ~a\n"
+     (format (get-port message) "└Test ~a\n"
              (assoc-ref message 'description)))
 
     ((reporter/assertion-pass)
-     (format (output-port*) "~y✓\n"
+     (format (get-port message) "~y✓\n"
              (assoc-ref message 'assert/body)))
 
     ((reporter/assertion-fail)
-     (format (output-port*) "~a\n~y✗ ~a\n"
+     (format (get-port message) "~a\n~y✗ ~a\n"
              (format-location message)
              (assoc-ref message 'assert/body) (actual message)))
 
     ((reporter/assertion-error)
-     (format (output-port*) "~a\n~y✗ produced error:\n ~s\n"
+     (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
              (format-location message)
              (assoc-ref message 'assert/body)
              (exception->string
@@ -154,7 +155,7 @@ to catch unhandled messages."
   (define msg-type (assoc-ref message 'type))
   (case msg-type
     ((reporter/test-loaded)
-     (format (output-port*) "-> ~a\n"
+     (format (get-port message) "-> ~a\n"
              (assoc-ref message 'description)))
 
     ;; ((reporter/suite-enter)
@@ -168,21 +169,21 @@ to catch unhandled messages."
   (case msg-type
 
     ((reporter/test-start)
-     (format (output-port*) "--- [~a] ---\n"
+     (format (get-port message) "--- [~a] ---\n"
              (assoc-ref message 'description)))
     ((reporter/test-end)
-     (format (output-port*) "\n"))
+     (format (get-port message) "\n"))
 
     ((reporter/assertion-pass)
-     (format (output-port*) "✓"))
+     (format (get-port message) "✓"))
 
     ((reporter/assertion-fail)
-     (format (output-port*) "~a\n~y✗ ~a\n"
+     (format (get-port message) "~a\n~y✗ ~a\n"
              (format-location message)
              (assoc-ref message 'assert/body) (actual message)))
 
     ((reporter/assertion-error)
-     (format (output-port*) "~a\n~y✗ produced error:\n ~s\n"
+     (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
              (format-location message)
              (assoc-ref message 'assert/body)
              (exception->string
@@ -203,19 +204,19 @@ to catch unhandled messages."
   (case msg-type
 
     ((reporter/test-start)
-     (format (output-port*) "--- [~a] ---\n"
+     (format (get-port message) "--- [~a] ---\n"
              (assoc-ref message 'description)))
     ((reporter/test-end)
-     (format (output-port*) "\n"))
+     (format (get-port message) "\n"))
 
     ((reporter/assertion-pass reporter/assertion-fail)
-     (format (output-port*) "~y~y => ~y"
+     (format (get-port message) "~y~y => ~y"
              (assoc-ref message 'assert/body)
              (pre-evaled-expression message)
              (assoc-ref message 'assertion/result)))
 
     ((reporter/assertion-error)
-     (format (output-port*) "\n ~a\n ~y✗ produced error:\n ~s\n"
+     (format (get-port message) "\n ~a\n ~y✗ produced error:\n ~s\n"
              (format-location message)
              (assoc-ref message 'assert/body)
              (exception->string
@@ -237,7 +238,7 @@ CLI command) when a top-level suite finishes loading."
   (case (assoc-ref message 'type)
     ((reporter/suite-tree-loaded)
      (let ((suite-node (assoc-ref message 'suite-node)))
-       (format (output-port*) "\n~a"
+       (format (get-port message) "\n~a"
                (suite-forest->tree-string (list suite-node)))))
     (else #f)))
 
@@ -252,7 +253,7 @@ when a top-level suite finishes loading."
             (tests (assoc-ref counts 'tests))
             (modules (assoc-ref counts 'module-suites))
             (empty (assoc-ref counts 'empty-suites)))
-       (format (output-port*)
+       (format (get-port message)
                "Loaded ~a test~p and ~a suite~p (~a module~p, ~a empty).\n"
                tests tests suites suites modules modules empty)))
     (else #f)))
@@ -267,13 +268,13 @@ when a top-level suite finishes loading."
                  (assertions (assoc-ref summary 'assertions))
                  (failures (assoc-ref summary 'failures))
                  (errors (assoc-ref summary 'errors)))
-             (format (output-port*)
+             (format (get-port message)
                      "Ran ~a assertion~p in ~a test~p: ~a failure~p, ~a error~p.\n"
                      assertions assertions
                      tests tests
                      failures failures
                      errors errors))
-           (format (output-port*)
+           (format (get-port message)
                    "No test results available.\n"))))
     (else #f)))
 
@@ -291,23 +292,23 @@ when a top-level suite finishes loading."
   (define msg-type (assoc-ref message 'type))
   (case msg-type
     ((reporter/suite-start)
-     (format (output-port*) "["))
+     (format (get-port message) "["))
     ((reporter/suite-end)
-     (format (output-port*) "]"))
+     (format (get-port message) "]"))
 
     ((reporter/test-start)
-     (format (output-port*) "("))
+     (format (get-port message) "("))
     ((reporter/test-end)
-     (format (output-port*) ")"))
+     (format (get-port message) ")"))
     ((reporter/test-skip)
-     (format (output-port*) "(S)"))
+     (format (get-port message) "(S)"))
 
     ((reporter/assertion-pass)
-     (format (output-port*) "."))
+     (format (get-port message) "."))
     ((reporter/assertion-fail)
-     (format (output-port*) "F"))
+     (format (get-port message) "F"))
     ((reporter/assertion-error)
-     (format (output-port*) "E"))
+     (format (get-port message) "E"))
 
     (else #f)))
 
@@ -318,12 +319,13 @@ when a top-level suite finishes loading."
     (reporter-first _)))
 
 (define (junit message)
-  "A test reporter that emits JUnit XML to @code{output-port*}
-after all tests have finished running.  Silent for all other message types."
+  "A test reporter that emits JUnit XML to the port specified via
+@code{reporter/port} in the message after all tests have finished
+running.  Silent for all other message types."
   (case (assoc-ref message 'type)
     ((reporter/run-end)
      (let* ((state (assoc-ref message 'state))
             (forest (state:get-suite-forest-with-summary state))
             (xml (forest->junit-xml forest)))
-       (format (output-port*) "~a\n" xml)))
+       (format (get-port message) "~a\n" xml)))
     (else #f)))

@@ -55,6 +55,7 @@ environment just set it to new instance of test runner.
           (config '())
           (default-config `((auto-run? . #t)
                             (test-reporter . ,reporter:base)
+                            (reporter/port . ,(current-output-port))
                             (reset-loaded-tests-on-suite-load? . #t)
                             (log-runner-messages? . #f)
                             (re-raise? . #f))))
@@ -79,11 +80,11 @@ environment just set it to new instance of test runner.
 
   (define (get-test-reporter)
     (lambda (message)
-      ((%test-reporter*)
-       ;; (chain message
-       ;;   (alist-cons 'state reporter-state _)
-       ;;   (alist-cons 'test-runner this _))
-       message)))
+      (let ((port (state:get-runner-config-value state 'reporter/port)))
+        ((%test-reporter*)
+         (if port
+             (acons 'reporter/port port message)
+             message)))))
 
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))

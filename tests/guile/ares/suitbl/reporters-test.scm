@@ -28,17 +28,17 @@
 
   (test "formats the summary output correctly"
     (define port (open-output-string))
-    (parameterize ((reporter:output-port* port))
-      (reporter:loaded-summary
-       `((type . reporter/suite-tree-loaded)
-         (suite-node
-          . ,(make-module-suite-node "root"
-               (list
-                (make-test-node "test-a")
-                (make-suite-node "inner"
-                  (list (make-test-node "test-b")
-                        (make-test-node "test-c")))
-                (make-suite-node "empty" '())))))))
+    (reporter:loaded-summary
+     `((type . reporter/suite-tree-loaded)
+       (reporter/port . ,port)
+       (suite-node
+        . ,(make-module-suite-node "root"
+             (list
+              (make-test-node "test-a")
+              (make-suite-node "inner"
+                (list (make-test-node "test-b")
+                      (make-test-node "test-c")))
+              (make-suite-node "empty" '()))))))
     (is (equal?
          "Loaded 3 tests and 3 suites (1 module, 1 empty).\n"
          (get-output-string port)))))
@@ -64,10 +64,10 @@
       (test-runner `((type . runner/run-tests))))
     (define runner-state
       (test-runner `((type . runner/get-state))))
-    (parameterize ((reporter:output-port* port))
-      (reporter:junit
-       `((type . reporter/run-end)
-         (state . ,runner-state))))
+    (reporter:junit
+     `((type . reporter/run-end)
+       (reporter/port . ,port)
+       (state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "<testsuites"))
     (is (string-contains xml-output "<testsuite"))
@@ -86,10 +86,10 @@
       (test-runner `((type . runner/run-tests))))
     (define runner-state
       (test-runner `((type . runner/get-state))))
-    (parameterize ((reporter:output-port* port))
-      (reporter:junit
-       `((type . reporter/run-end)
-         (state . ,runner-state))))
+    (reporter:junit
+     `((type . reporter/run-end)
+       (reporter/port . ,port)
+       (state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "failures=\"1\""))
     (is (string-contains xml-output "<failure")))
@@ -106,10 +106,10 @@
       (test-runner `((type . runner/run-tests))))
     (define runner-state
       (test-runner `((type . runner/get-state))))
-    (parameterize ((reporter:output-port* port))
-      (reporter:junit
-       `((type . reporter/run-end)
-         (state . ,runner-state))))
+    (reporter:junit
+     `((type . reporter/run-end)
+       (reporter/port . ,port)
+       (state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "errors=\"1\""))
     (is (string-contains xml-output "<error"))))
