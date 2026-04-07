@@ -100,7 +100,7 @@ environment just set it to new instance of test runner.
               (cons 'error value))))
          ((get-test-reporter)
           (append
-           `((type . reporter/assertion-error)
+           `((type . run/assertion-error)
              (assertion/error . ,ex))
            assert))
          (if (re-raise?)
@@ -117,8 +117,8 @@ environment just set it to new instance of test runner.
            ((get-test-reporter)
             (append
              `((type . ,(if result
-                            'reporter/assertion-pass
-                            'reporter/assertion-fail))
+                            'run/assertion-pass
+                            'run/assertion-fail))
                (assertion/result . ,result))
              assert))
            result))
@@ -149,7 +149,7 @@ environment just set it to new instance of test runner.
           (make-exception-with-message _)
           (raise-exception _)))
       ((get-test-reporter)
-       `((type . reporter/test-start)
+       `((type . run/test-start)
          (description . ,description)))
       ;; TODO: [Andrew Tropin, 2025-08-02] Change %test* to
       ;; %inside-test?*
@@ -159,7 +159,7 @@ environment just set it to new instance of test runner.
           (with-exception-handler
            (lambda (ex)
              ((get-test-reporter)
-              `((type . reporter/test-end)
+              `((type . run/test-end)
                 (description . ,description)))
              (raise-exception ex))
            test-body-thunk
@@ -167,7 +167,7 @@ environment just set it to new instance of test runner.
           (atomic-box-ref (%test-run-events*))))
 
       ((get-test-reporter)
-       `((type . reporter/test-end)
+       `((type . run/test-end)
          (description . ,description)))
 
       result))
@@ -320,7 +320,7 @@ environment just set it to new instance of test runner.
                              (state:get-scheduled-tests state runner-config))))
                    (state:save-run-history! state test-execution-results)
                    ((get-test-reporter)
-                    `((type . reporter/run-end)))))))
+                    `((type . run/end)))))))
          (if reporter
              (parameterize ((%test-reporter* reporter))
                (run-tests!))

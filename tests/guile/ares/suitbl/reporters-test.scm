@@ -23,7 +23,7 @@
 (define-suite loaded-summary-reporter-tests
   (test "returns #f for unrelated message types"
     (is (not (reporter:loaded-summary
-              `((type . reporter/test-start)
+              `((type . run/test-start)
                 (description . "some test"))))))
 
   (test "formats the summary output correctly"
@@ -46,10 +46,10 @@
 (define-suite junit-reporter-tests
   (test "returns #f for unrelated message types"
     (is (not (reporter:junit
-              `((type . reporter/test-start)
+              `((type . run/test-start)
                 (description . "some test")))))
     (is (not (reporter:junit
-              `((type . reporter/assertion-pass)
+              `((type . run/assertion-pass)
                 (assert/body . (= 1 1)))))))
 
   (test "emits JUnit XML on run-end"
@@ -65,7 +65,7 @@
     (define runner-state
       (test-runner `((type . runner/get-state))))
     (reporter:junit
-     `((type . reporter/run-end)
+     `((type . run/end)
        (reporting/port . ,port)
        (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
@@ -87,7 +87,7 @@
     (define runner-state
       (test-runner `((type . runner/get-state))))
     (reporter:junit
-     `((type . reporter/run-end)
+     `((type . run/end)
        (reporting/port . ,port)
        (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
@@ -107,7 +107,7 @@
     (define runner-state
       (test-runner `((type . runner/get-state))))
     (reporter:junit
-     `((type . reporter/run-end)
+     `((type . run/end)
        (reporting/port . ,port)
        (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))

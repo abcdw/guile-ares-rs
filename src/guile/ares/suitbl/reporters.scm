@@ -122,23 +122,23 @@ to catch unhandled messages."
 
 (define (verbose message)
   (case (assoc-ref message 'type)
-    ((reporter/test-start)
+    ((run/test-start)
      (format (get-port message) "\n┌Test ~a\n"
              (assoc-ref message 'description)))
-    ((reporter/test-end)
+    ((run/test-end)
      (format (get-port message) "└Test ~a\n"
              (assoc-ref message 'description)))
 
-    ((reporter/assertion-pass)
+    ((run/assertion-pass)
      (format (get-port message) "~y✓\n"
              (assoc-ref message 'assert/body)))
 
-    ((reporter/assertion-fail)
+    ((run/assertion-fail)
      (format (get-port message) "~a\n~y✗ ~a\n"
              (format-location message)
              (assoc-ref message 'assert/body) (actual message)))
 
-    ((reporter/assertion-error)
+    ((run/assertion-error)
      (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
              (format-location message)
              (assoc-ref message 'assert/body)
@@ -164,21 +164,21 @@ to catch unhandled messages."
   (define msg-type (assoc-ref message 'type))
   (case msg-type
 
-    ((reporter/test-start)
+    ((run/test-start)
      (format (get-port message) "--- [~a] ---\n"
              (assoc-ref message 'description)))
-    ((reporter/test-end)
+    ((run/test-end)
      (format (get-port message) "\n"))
 
-    ((reporter/assertion-pass)
+    ((run/assertion-pass)
      (format (get-port message) "✓"))
 
-    ((reporter/assertion-fail)
+    ((run/assertion-fail)
      (format (get-port message) "~a\n~y✗ ~a\n"
              (format-location message)
              (assoc-ref message 'assert/body) (actual message)))
 
-    ((reporter/assertion-error)
+    ((run/assertion-error)
      (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
              (format-location message)
              (assoc-ref message 'assert/body)
@@ -199,19 +199,19 @@ to catch unhandled messages."
   (define msg-type (assoc-ref message 'type))
   (case msg-type
 
-    ((reporter/test-start)
+    ((run/test-start)
      (format (get-port message) "--- [~a] ---\n"
              (assoc-ref message 'description)))
-    ((reporter/test-end)
+    ((run/test-end)
      (format (get-port message) "\n"))
 
-    ((reporter/assertion-pass reporter/assertion-fail)
+    ((run/assertion-pass run/assertion-fail)
      (format (get-port message) "~y~y => ~y"
              (assoc-ref message 'assert/body)
              (pre-evaled-expression message)
              (assoc-ref message 'assertion/result)))
 
-    ((reporter/assertion-error)
+    ((run/assertion-error)
      (format (get-port message) "\n ~a\n ~y✗ produced error:\n ~s\n"
              (format-location message)
              (assoc-ref message 'assert/body)
@@ -257,7 +257,7 @@ when a top-level suite finishes loading."
 (define (run-summary message)
   "A reporter that prints a summary line after all tests have been executed."
   (case (assoc-ref message 'type)
-    ((reporter/run-end)
+    ((run/end)
      (let ((summary (state:get-run-summary (assoc-ref message 'suitbl/state))))
        (if summary
            (let ((tests (assoc-ref summary 'tests))
@@ -287,16 +287,16 @@ when a top-level suite finishes loading."
 (define (dots message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((reporter/test-start)
+    ((run/test-start)
      (format (get-port message) "("))
-    ((reporter/test-end)
+    ((run/test-end)
      (format (get-port message) ")"))
 
-    ((reporter/assertion-pass)
+    ((run/assertion-pass)
      (format (get-port message) "."))
-    ((reporter/assertion-fail)
+    ((run/assertion-fail)
      (format (get-port message) "F"))
-    ((reporter/assertion-error)
+    ((run/assertion-error)
      (format (get-port message) "E"))
 
     (else #f)))
@@ -312,7 +312,7 @@ when a top-level suite finishes loading."
 @code{reporting/port} in the message after all tests have finished
 running.  Silent for all other message types."
   (case (assoc-ref message 'type)
-    ((reporter/run-end)
+    ((run/end)
      (let* ((state (assoc-ref message 'suitbl/state))
             (forest (state:get-suite-forest-with-summary state))
             (xml (forest->junit-xml forest)))
