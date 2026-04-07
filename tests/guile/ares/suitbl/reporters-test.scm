@@ -29,7 +29,7 @@
   (test "formats the summary output correctly"
     (define port (open-output-string))
     (reporter:loaded-summary
-     `((type . reporter/suite-tree-loaded)
+     `((type . load/end)
        (reporting/port . ,port)
        (suite-node
         . ,(make-module-suite-node "root"

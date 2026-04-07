@@ -66,7 +66,7 @@ specified via @code{reporting/port} key in the message, falling back
 to @code{(current-output-port)}.
 
 (test-reporter
- `((type . reporter/test-loaded)
+ `((type . load/test)
    (suite-path . ("suite1" "nested-suite"))
    (description . "basic arithmetics")))
 
@@ -98,19 +98,19 @@ to catch unhandled messages."
 
 (define (hierarchy message)
   (case (assoc-ref message 'type)
-    ((reporter/test-loaded)
+    ((load/test)
      (format (get-port message) "~a"
              (string-repeat "|" (length (assoc-ref message 'suite-path))))
      (format (get-port message) " + test ~a\n"
              (assoc-ref message 'description)))
-    ((reporter/suite-enter)
+    ((load/suite-enter)
      (format (get-port message) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "┌"))
      (format (get-port message) "> ~a\n"
              (assoc-ref message 'description)))
-    ((reporter/suite-leave)
+    ((load/suite-leave)
      (format (get-port message) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
@@ -150,7 +150,7 @@ to catch unhandled messages."
 (define (loading-minimal message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
-    ((reporter/test-loaded)
+    ((load/test)
      (format (get-port message) "-> ~a\n"
              (assoc-ref message 'description)))
 
@@ -232,7 +232,7 @@ to catch unhandled messages."
   "A reporter that prints the complete suite tree (like the @code{tree}
 CLI command) when a top-level suite finishes loading."
   (case (assoc-ref message 'type)
-    ((reporter/suite-tree-loaded)
+    ((load/end)
      (let ((suite-node (assoc-ref message 'suite-node)))
        (format (get-port message) "\n~a"
                (suite-forest->tree-string (list suite-node)))))
@@ -242,7 +242,7 @@ CLI command) when a top-level suite finishes loading."
   "A reporter that prints the number of loaded suites and tests
 when a top-level suite finishes loading."
   (case (assoc-ref message 'type)
-    ((reporter/suite-tree-loaded)
+    ((load/end)
      (let* ((suite-node (assoc-ref message 'suite-node))
             (counts (count-suites-and-tests suite-node))
             (suites (assoc-ref counts 'suites))

@@ -192,13 +192,13 @@ environment just set it to new instance of test runner.
     (define suite-enter!
       (lambda ()
         ((get-test-reporter)
-         `((type . reporter/suite-enter)
+         `((type . load/suite-enter)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
     (define suite-leave!
       (lambda ()
         ((get-test-reporter)
-         `((type . reporter/suite-leave)
+         `((type . load/suite-leave)
            (suite-path . ,(%suite-path*))
            (description . ,description)))))
 
@@ -303,7 +303,7 @@ environment just set it to new instance of test runner.
                   (begin
                     (state:add-suite-tree! state val)
                     ((get-test-reporter)
-                     `((type . reporter/suite-tree-loaded)
+                     `((type . load/end)
                        (suite-node . ,val))))))
             val))
          (when (and (null? (%suite-path*))
@@ -343,7 +343,7 @@ environment just set it to new instance of test runner.
          (state:add-loaded-test! state test-with-context)
 
          ((get-test-reporter)
-          `((type . reporter/test-loaded)
+          `((type . load/test)
             (suite-path . ,(%suite-path*))
             (description . ,description)))
 
