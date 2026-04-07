@@ -183,12 +183,6 @@ environment just set it to new instance of test runner.
                             (skipped . 0)
                             (assertions . ,(length result)))))))
 
-  (define (print-suite suite)
-    ((get-test-reporter)
-     `((type . reporter/print-suite)
-       (show-suite-info . ,procedure-documentation)
-       (suite . ,suite))))
-
   (define (make-try-load-suite suite)
     (define suite-body-thunk
       (assoc-ref suite 'suite/body-thunk))

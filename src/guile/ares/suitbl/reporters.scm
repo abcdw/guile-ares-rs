@@ -8,7 +8,6 @@
                 #:select (format-location
                           actual pre-evaled-expression
                           string-repeat
-                          tests->pretty-string
                           tree-node-children
                           tree-node-description
                           suite-forest->tree-string
@@ -119,9 +118,6 @@ to catch unhandled messages."
      (format (get-port message) "> ~a\n"
              (assoc-ref message 'description)))
 
-    ((reporter/print-suite)
-     (format (get-port message) "~y"
-             (tests->pretty-string (assoc-ref message 'suite))))
     (else #f)))
 
 (define (verbose message)
