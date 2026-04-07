@@ -315,6 +315,8 @@ environment just set it to new instance of test runner.
               (reporter (assoc-ref runner-config 'test-reporter))
               (run-tests!
                (lambda ()
+                 ((get-test-reporter)
+                  `((type . run/start)))
                  (let ((test-execution-results
                         (map run-test
                              (state:get-scheduled-tests state runner-config))))
