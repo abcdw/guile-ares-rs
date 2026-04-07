@@ -13,7 +13,7 @@
 
   #:use-module ((srfi srfi-1)
                 #:select (last drop-right any fold alist-delete alist-cons))
-  #:use-module ((srfi srfi-197) #:select (chain chain-and))
+  #:use-module ((srfi srfi-197) #:select (chain chain-and chain-when))
 
   #:use-module ((ares suitbl state) #:prefix state:)
   #:export (make-suitbl-test-runner
@@ -81,10 +81,10 @@ environment just set it to new instance of test runner.
   (define (get-test-reporter)
     (lambda (message)
       (let ((port (state:get-runner-config-value state 'reporter/port)))
-        ((%test-reporter*)
-         (if port
-             (acons 'reporter/port port message)
-             message)))))
+        (chain-when message
+          (port (acons 'reporter/port port _))
+          (#t   (acons 'suitbl/state state _))
+          (#t   ((%test-reporter*) _))))))
 
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))
@@ -326,8 +326,7 @@ environment just set it to new instance of test runner.
                              (state:get-scheduled-tests state runner-config))))
                    (state:save-run-history! state test-execution-results)
                    ((get-test-reporter)
-                    `((type . reporter/run-end)
-                      (state . ,state)))))))
+                    `((type . reporter/run-end)))))))
          (if reporter
              (parameterize ((%test-reporter* reporter))
                (run-tests!))

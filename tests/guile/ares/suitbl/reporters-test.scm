@@ -67,7 +67,7 @@
     (reporter:junit
      `((type . reporter/run-end)
        (reporter/port . ,port)
-       (state . ,runner-state)))
+       (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "<testsuites"))
     (is (string-contains xml-output "<testsuite"))
@@ -89,7 +89,7 @@
     (reporter:junit
      `((type . reporter/run-end)
        (reporter/port . ,port)
-       (state . ,runner-state)))
+       (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "failures=\"1\""))
     (is (string-contains xml-output "<failure")))
@@ -109,7 +109,7 @@
     (reporter:junit
      `((type . reporter/run-end)
        (reporter/port . ,port)
-       (state . ,runner-state)))
+       (suitbl/state . ,runner-state)))
     (define xml-output (get-output-string port))
     (is (string-contains xml-output "errors=\"1\""))
     (is (string-contains xml-output "<error"))))

@@ -262,7 +262,7 @@ when a top-level suite finishes loading."
   "A reporter that prints a summary line after all tests have been executed."
   (case (assoc-ref message 'type)
     ((reporter/run-end)
-     (let ((summary (state:get-run-summary (assoc-ref message 'state))))
+     (let ((summary (state:get-run-summary (assoc-ref message 'suitbl/state))))
        (if summary
            (let ((tests (assoc-ref summary 'tests))
                  (assertions (assoc-ref summary 'assertions))
@@ -324,7 +324,7 @@ when a top-level suite finishes loading."
 running.  Silent for all other message types."
   (case (assoc-ref message 'type)
     ((reporter/run-end)
-     (let* ((state (assoc-ref message 'state))
+     (let* ((state (assoc-ref message 'suitbl/state))
             (forest (state:get-suite-forest-with-summary state))
             (xml (forest->junit-xml forest)))
        (format (get-port message) "~a\n" xml)))
