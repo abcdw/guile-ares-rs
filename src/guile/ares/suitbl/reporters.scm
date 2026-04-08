@@ -33,7 +33,7 @@
             spying
             junit
             load-tree
-            loaded-summary
+            load-summary
             run-summary))
 
 
@@ -253,7 +253,7 @@ CLI command) when a top-level suite finishes loading."
                (suite-forest->tree-string (list suite-node)))))
     (else #f)))
 
-(define (loaded-summary message)
+(define (load-summary message)
   "A reporter that prints the number of loaded suites and tests
 when a top-level suite finishes loading."
   (case (assoc-ref message 'type)
@@ -294,7 +294,7 @@ when a top-level suite finishes loading."
                ignore-load-messages
                ;; hierarchy
                load-tree
-               loaded-summary
+               load-summary
                run-summary)
     (reporter-every _)
     (list _ unhandled)

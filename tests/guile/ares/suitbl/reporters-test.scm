@@ -69,15 +69,15 @@
     (is (not (reporter:ignore-load-messages
               `((type . run/start)))))))
 
-(define-suite loaded-summary-reporter-tests
+(define-suite load-summary-reporter-tests
   (test "returns #f for unrelated message types"
-    (is (not (reporter:loaded-summary
+    (is (not (reporter:load-summary
               `((type . run/test-start)
                 (description . "some test"))))))
 
   (test "formats the summary output correctly"
     (define port (open-output-string))
-    (reporter:loaded-summary
+    (reporter:load-summary
      `((type . load/end)
        (reporting/port . ,port)
        (suite-node
