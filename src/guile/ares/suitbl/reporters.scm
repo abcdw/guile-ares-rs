@@ -25,7 +25,7 @@
             silent
             logging
             unhandled
-            ignore-load-messages
+            load-ignore-messages
             base
             dots
             dots-with-hierarchy
@@ -104,7 +104,7 @@ to catch unhandled messages."
   ;; (force-output (current-error-port))
   )
 
-(define (ignore-load-messages message)
+(define (load-ignore-messages message)
   "Silently handle load-phase messages to avoid noisy unhandled output."
   (case (assoc-ref message 'type)
     ((load/test load/suite-enter load/suite-leave) #t)
@@ -200,7 +200,7 @@ to catch unhandled messages."
 (define minimal
   (chain (list
           run-minimal
-          ignore-load-messages
+          load-ignore-messages
           loading-minimal)
     (reporter-every _)
     (list _ unhandled)
@@ -287,7 +287,7 @@ when a top-level suite finishes loading."
 
 (define base
   (chain (list verbose
-               ignore-load-messages
+               load-ignore-messages
                ;; hierarchy
                load-tree
                load-summary
