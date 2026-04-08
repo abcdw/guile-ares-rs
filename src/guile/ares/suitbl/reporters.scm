@@ -204,6 +204,7 @@ to catch unhandled messages."
 (define minimal
   (chain (list
           execution-minimal
+          ignore-load-messages
           loading-minimal)
     (reporter-every _)
     (list _ unhandled)
@@ -290,6 +291,7 @@ when a top-level suite finishes loading."
 
 (define base
   (chain (list verbose
+               ignore-load-messages
                ;; hierarchy
                tree
                loaded-summary
