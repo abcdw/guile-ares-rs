@@ -66,3 +66,8 @@ deploy-README.html: README.html
 
 clean:
 	rm README.html
+
+clean-cache:
+	find $${XDG_CACHE_HOME:-$$HOME/.cache}/guile/ccache \
+	  -mindepth 1 -maxdepth 1 -type d \
+	  -exec rm -rf {}$(CURDIR) \;
