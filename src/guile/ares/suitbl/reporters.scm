@@ -168,10 +168,6 @@ to catch unhandled messages."
      (format (get-port message) "-> ~a\n"
              (assoc-ref message 'description)))
 
-    ((load/suite-entor)
-     #t)
-    ((load/suite-leave)
-     #t)
     (else #f)))
 
 (define (execution-minimal message)
