@@ -170,7 +170,7 @@ to catch unhandled messages."
 
     (else #f)))
 
-(define (execution-minimal message)
+(define (run-minimal message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
 
@@ -199,7 +199,7 @@ to catch unhandled messages."
 
 (define minimal
   (chain (list
-          execution-minimal
+          run-minimal
           ignore-load-messages
           loading-minimal)
     (reporter-every _)
