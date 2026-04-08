@@ -161,7 +161,7 @@ to catch unhandled messages."
 
     (else #f)))
 
-(define (loading-minimal message)
+(define (load-minimal message)
   (define msg-type (assoc-ref message 'type))
   (case msg-type
     ((load/test)
@@ -201,7 +201,7 @@ to catch unhandled messages."
   (chain (list
           run-minimal
           load-ignore-messages
-          loading-minimal)
+          load-minimal)
     (reporter-every _)
     (list _ unhandled)
     (reporter-first _)))
@@ -234,7 +234,7 @@ to catch unhandled messages."
 (define spying
   (chain (list
           execution-spying
-          loading-minimal)
+          load-minimal)
     (reporter-every _)
     (list _ unhandled)
     (reporter-first _)))
