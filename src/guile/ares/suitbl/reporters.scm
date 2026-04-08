@@ -200,6 +200,7 @@ to catch unhandled messages."
 (define minimal
   (chain (list
           run-minimal
+          run-summary
           load-ignore-messages
           load-minimal)
     (reporter-every _)

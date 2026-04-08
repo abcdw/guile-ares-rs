@@ -86,6 +86,7 @@ environment just set it to new instance of test runner.
 
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))
+
   (define (%run-assert assert)
     (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
       (with-exception-handler
