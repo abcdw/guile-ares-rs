@@ -32,7 +32,7 @@
             minimal
             spying
             junit
-            tree
+            load-tree
             loaded-summary
             run-summary))
 
@@ -243,7 +243,7 @@ to catch unhandled messages."
     (list _ unhandled)
     (reporter-first _)))
 
-(define (tree message)
+(define (load-tree message)
   "A reporter that prints the complete suite tree (like the @code{tree}
 CLI command) when a top-level suite finishes loading."
   (case (assoc-ref message 'type)
@@ -293,7 +293,7 @@ when a top-level suite finishes loading."
   (chain (list verbose
                ignore-load-messages
                ;; hierarchy
-               tree
+               load-tree
                loaded-summary
                run-summary)
     (reporter-every _)

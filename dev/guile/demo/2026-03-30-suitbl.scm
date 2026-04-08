@@ -356,7 +356,7 @@ API-first, can be easily integrated in your IDE and other tools.
   (make-suitbl-test-runner
    #:config `((test-reporter
                . ,(reporter-every
-                   (list reporter:tree
+                   (list reporter:load-tree
                          reporter:dots)))))
   (suite "composed reporters"
     (test "a" (is #t))
