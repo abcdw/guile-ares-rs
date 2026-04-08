@@ -41,9 +41,13 @@
 ;;;
 
 (define (reporter-every reporters)
-  "Create a reporter, which combines all reporters."
+  "Create a reporter, which combines all reporters.  Returns @code{#t}
+if any reporter returns a truthy value."
   (lambda (message)
-    (for-each (lambda (r) (r message)) reporters)))
+    (fold (lambda (r acc)
+            (if (r message) #t acc))
+          #f
+          reporters)))
 
 (define (reporter-first reporters)
   "Create a reporter, which uses the first successful reporter."
@@ -94,7 +98,10 @@ A final test reporter can be attached to test runner.
 combined with another reporter using @code{reporter-first}
 to catch unhandled messages."
   (format (get-port message)
-          "\nmessage is not handled:\n~y\n" message))
+          "\nmessage is not handled: ~y\n"
+          (assoc-ref message 'type))
+  ;; (force-output (current-error-port))
+  )
 
 (define (hierarchy message)
   (case (assoc-ref message 'type)
@@ -154,10 +161,10 @@ to catch unhandled messages."
      (format (get-port message) "-> ~a\n"
              (assoc-ref message 'description)))
 
-    ;; ((reporter/suite-enter)
-    ;;  (format (output-port*) "["))
-    ;; ((reporter/suite-leave)
-    ;;  (format (output-port*) "]"))
+    ((load/suite-entor)
+     #t)
+    ((load/suite-leave)
+     #t)
     (else #f)))
 
 (define (execution-minimal message)

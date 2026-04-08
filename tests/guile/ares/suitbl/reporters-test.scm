@@ -20,6 +20,32 @@
               (suite/metadata . ((module-suite? . #t)))))
     (suite-node/children . ,children)))
 
+(define-suite reporter-every-tests
+  (test "returns #t when at least one reporter succeeds"
+    (define combined
+      (reporter:reporter-every
+       (list (lambda (msg) #f)
+             (lambda (msg) #t)
+             (lambda (msg) #f))))
+    (is (eq? #t (combined '((type . test))))))
+
+  (test "returns #f when all reporters return #f"
+    (define combined
+      (reporter:reporter-every
+       (list (lambda (msg) #f)
+             (lambda (msg) #f))))
+    (is (not (combined '((type . test))))))
+
+  (test "calls every reporter even if one succeeds early"
+    (define call-log '())
+    (define combined
+      (reporter:reporter-every
+       (list (lambda (msg) (set! call-log (cons 'a call-log)) #t)
+             (lambda (msg) (set! call-log (cons 'b call-log)) #f)
+             (lambda (msg) (set! call-log (cons 'c call-log)) #t))))
+    (combined '((type . test)))
+    (is (equal? '(c b a) call-log))))
+
 (define-suite loaded-summary-reporter-tests
   (test "returns #f for unrelated message types"
     (is (not (reporter:loaded-summary
