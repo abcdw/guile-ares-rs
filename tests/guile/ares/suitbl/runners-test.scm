@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2025 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl runners-test)
   #:use-module (ares suitbl core)
