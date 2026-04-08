@@ -46,6 +46,29 @@
     (combined '((type . test)))
     (is (equal? '(c b a) call-log))))
 
+(define-suite ignore-load-messages-tests
+  (test "returns #t for load/test"
+    (is (eq? #t
+             (reporter:ignore-load-messages
+              `((type . load/test)
+                (description . "some test"))))))
+
+  (test "returns #t for load/suite-enter"
+    (is (eq? #t
+             (reporter:ignore-load-messages
+              `((type . load/suite-enter)
+                (description . "suite"))))))
+
+  (test "returns #t for load/suite-leave"
+    (is (eq? #t
+             (reporter:ignore-load-messages
+              `((type . load/suite-leave)
+                (description . "suite"))))))
+
+  (test "returns #f for unrelated message types"
+    (is (not (reporter:ignore-load-messages
+              `((type . run/start)))))))
+
 (define-suite loaded-summary-reporter-tests
   (test "returns #f for unrelated message types"
     (is (not (reporter:loaded-summary

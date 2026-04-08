@@ -25,6 +25,7 @@
             silent
             logging
             unhandled
+            ignore-load-messages
             base
             dots
             dots-with-hierarchy
@@ -102,6 +103,12 @@ to catch unhandled messages."
           (assoc-ref message 'type))
   ;; (force-output (current-error-port))
   )
+
+(define (ignore-load-messages message)
+  "Silently handle load-phase messages to avoid noisy unhandled output."
+  (case (assoc-ref message 'type)
+    ((load/test load/suite-enter load/suite-leave) #t)
+    (else #f)))
 
 (define (hierarchy message)
   (case (assoc-ref message 'type)
