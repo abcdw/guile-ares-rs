@@ -79,7 +79,7 @@
             (assertions . 2)))))))
 
 (define-suite assertion-events->test-run-summary-tests
-  (test "summarize pass-only events"
+  (test "returns pass summary for pass-only events"
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -88,7 +88,7 @@
            (assertions . 2))
          (running:assertion-events->test-run-summary '(pass pass)))))
 
-  (test "summarize fail-only events"
+  (test "returns fail summary for fail-only events"
     (is (equal?
          '((tests . 1)
            (failures . 1)
@@ -97,7 +97,7 @@
            (assertions . 1))
          (running:assertion-events->test-run-summary '(fail)))))
 
-  (test "summarize error-only events"
+  (test "returns error summary for error-only events"
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -106,7 +106,7 @@
            (assertions . 1))
          (running:assertion-events->test-run-summary '(error)))))
 
-  (test "summarize mixed fail and error events"
+  (test "returns error summary for mixed fail and error events"
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -115,7 +115,7 @@
            (assertions . 3))
          (running:assertion-events->test-run-summary '(pass fail error)))))
 
-  (test "summarize empty events"
+  (test "returns pass summary for empty events"
     (is (equal?
          '((tests . 1)
            (failures . 0)
