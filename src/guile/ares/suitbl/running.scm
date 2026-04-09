@@ -19,6 +19,12 @@
     (assertions . ,(length events))))
 
 (define (assertion-summary->test-run-status assertion-summary)
+  "Convert ASSERTION-SUMMARY alist into a test run status symbol.
+
+Returns one of: 'pass, 'fail, or 'error.  If both failures and errors
+are present, test run status is considered 'error.
+
+Zero assertion means pass."
   (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
         (fail? (> (assoc-ref assertion-summary 'failures) 0)))
     (cond
