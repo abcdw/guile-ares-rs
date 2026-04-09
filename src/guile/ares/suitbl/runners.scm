@@ -279,36 +279,6 @@ environment just set it to new instance of test runner.
       ((runner/run-assert)
        (run-assert ctx))
 
-      ((runner/load-suite)
-       (when (and (null? (%suite-path*))
-                  (state:get-runner-config-value
-                   state 'reset-loaded-tests-on-suite-load?))
-         (state:reset-loaded-tests! state))
-       (let* ((suite (chain ctx
-                       (get-message _)
-                       (assoc-ref _ 'suite)))
-              (try-load-suite (make-try-load-suite suite)))
-
-         (match (try-load-suite)
-           (('exception . ex)
-            (raise-exception ex))
-           (('value . val)
-            (let ((suite-node-items (%current-suite-node-items*)))
-              (if suite-node-items
-                  (atomic-box-update!
-                   suite-node-items
-                   (lambda (items) (cons val items)))
-
-                  (begin
-                    (state:add-suite-tree! state val)
-                    ((get-test-reporter)
-                     `((type . load/end)
-                       (suite-node . ,val))))))
-            val))
-         (when (and (null? (%suite-path*))
-                    (state:get-runner-config-value state 'auto-run?))
-           (this `((type . runner/run-tests))))))
-
       ((runner/run-tests)
        (let* ((runner-config (get-runner-cfg ctx))
               (reporter (assoc-ref runner-config 'test-reporter))
@@ -360,6 +330,36 @@ environment just set it to new instance of test runner.
                  (this `((type . runner/run-tests))))))
 
          *unspecified*))
+
+      ((runner/load-suite)
+       (when (and (null? (%suite-path*))
+                  (state:get-runner-config-value
+                   state 'reset-loaded-tests-on-suite-load?))
+         (state:reset-loaded-tests! state))
+       (let* ((suite (chain ctx
+                       (get-message _)
+                       (assoc-ref _ 'suite)))
+              (try-load-suite (make-try-load-suite suite)))
+
+         (match (try-load-suite)
+           (('exception . ex)
+            (raise-exception ex))
+           (('value . val)
+            (let ((suite-node-items (%current-suite-node-items*)))
+              (if suite-node-items
+                  (atomic-box-update!
+                   suite-node-items
+                   (lambda (items) (cons val items)))
+
+                  (begin
+                    (state:add-suite-tree! state val)
+                    ((get-test-reporter)
+                     `((type . load/end)
+                       (suite-node . ,val))))))
+            val))
+         (when (and (null? (%suite-path*))
+                    (state:get-runner-config-value state 'auto-run?))
+           (this `((type . runner/run-tests))))))
 
       ((runner/get-run-history)
        (state:get-run-history state))
