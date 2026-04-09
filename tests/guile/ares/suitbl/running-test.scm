@@ -33,6 +33,15 @@
          (running:assertion-events->assertion-summary '())))))
 
 (define-suite assertion-summary->test-run-status-tests
+  (test "returns pass for zero-assertion summary"
+    (is (eq?
+         'pass
+         (running:assertion-summary->test-run-status
+          '((passes . 0)
+            (failures . 0)
+            (errors . 0)
+            (assertions . 0))))))
+
   (test "returns pass for pass-only summary"
     (is (eq?
          'pass
