@@ -178,7 +178,7 @@ environment just set it to new instance of test runner.
 
 test-run/result can carry information about number of asserts."
     (let ((run-result
-           (running:summarize-test-run-events (%run-test test))))
+           (running:assertion-events->test-run-summary (%run-test test))))
       `((test . ,test)
         (test-run/result . ,run-result))))
 
