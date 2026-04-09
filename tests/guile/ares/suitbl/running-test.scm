@@ -7,14 +7,14 @@
 
 
 
-(define-suite assertion-events->summary-tests
+(define-suite assertion-events->assertion-summary-tests
   (test "summarize assertion events with pass-only data"
     (is (equal?
          '((passes . 2)
            (failures . 0)
            (errors . 0)
            (assertions . 2))
-         (running:assertion-events->summary '(pass pass)))))
+         (running:assertion-events->assertion-summary '(pass pass)))))
 
   (test "summarize assertion events with mixed data"
     (is (equal?
@@ -22,7 +22,7 @@
            (failures . 1)
            (errors . 1)
            (assertions . 3))
-         (running:assertion-events->summary '(pass fail error)))))
+         (running:assertion-events->assertion-summary '(pass fail error)))))
 
   (test "summarize assertion events with empty data"
     (is (equal?
@@ -30,7 +30,7 @@
            (failures . 0)
            (errors . 0)
            (assertions . 0))
-         (running:assertion-events->summary '())))))
+         (running:assertion-events->assertion-summary '())))))
 
 (define-suite assertion-summary->test-run-status-tests
   (test "returns pass for pass-only summary"

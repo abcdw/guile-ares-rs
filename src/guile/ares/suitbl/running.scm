@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl running)
   #:use-module ((srfi srfi-1) #:select (count))
-  #:export (assertion-events->summary
+  #:export (assertion-events->assertion-summary
             assertion-summary->test-run-status
             assertion-events->test-run-summary))
 
@@ -12,7 +12,7 @@
 ;;; Running helpers
 ;;;
 
-(define (assertion-events->summary events)
+(define (assertion-events->assertion-summary events)
   `((passes . ,(count (lambda (x) (eq? x 'pass)) events))
     (failures . ,(count (lambda (x) (eq? x 'fail)) events))
     (errors . ,(count (lambda (x) (eq? x 'error)) events))
@@ -27,7 +27,7 @@
      (else 'pass))))
 
 (define (assertion-events->test-run-summary events)
-  (let* ((assertion-summary (assertion-events->summary events))
+  (let* ((assertion-summary (assertion-events->assertion-summary events))
          (result (assertion-summary->test-run-status assertion-summary)))
     `((tests . 1)
       (failures . ,(if (eq? result 'fail) 1 0))
