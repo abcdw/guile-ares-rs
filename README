@@ -40,7 +40,7 @@ guix shell guile guile-ares-rs -- ares-nrepl
 #+end_src
 
 Don't forget to add your project source code and other dependencies to
-[[https://www.gnu.org/software/guile/manual/html_node/Load-Paths.html][load path]]. For example:
+[[https://trop.in/blog/how-to-set-up-guile-load-path][load path]]. For example:
 
 #+begin_src sh
 ares-nrepl -- -L src/guile
