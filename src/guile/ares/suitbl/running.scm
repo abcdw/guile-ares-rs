@@ -4,6 +4,7 @@
 (define-module (ares suitbl running)
   #:use-module ((srfi srfi-1) #:select (count))
   #:export (summarize-assertion-events
+            assertion-summary->test-run-status
             summarize-test-run-events))
 
 
@@ -17,12 +18,19 @@
     (errors . ,(count (lambda (x) (eq? x 'error)) events))
     (assertions . ,(length events))))
 
+(define (assertion-summary->test-run-status assertion-summary)
+  (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
+        (fail? (> (assoc-ref assertion-summary 'failures) 0)))
+    (cond
+     (error? 'error)
+     (fail? 'fail)
+     (else 'pass))))
+
 (define (summarize-test-run-events events)
   (let* ((assertion-summary (summarize-assertion-events events))
-         (error? (> (assoc-ref assertion-summary 'errors) 0))
-         (fail? (> (assoc-ref assertion-summary 'failures) 0)))
+         (result (assertion-summary->test-run-status assertion-summary)))
     `((tests . 1)
-      (failures . ,(if (and fail? (not error?)) 1 0))
-      (errors . ,(if error? 1 0))
+      (failures . ,(if (eq? result 'fail) 1 0))
+      (errors . ,(if (eq? result 'error) 1 0))
       (skipped . 0)
       (assertions . ,(assoc-ref assertion-summary 'assertions)))))
