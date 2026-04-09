@@ -4,6 +4,7 @@
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl discovery)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module (ares alist)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
@@ -258,8 +259,9 @@ because test macro is not composable and can't be wrapped.
       (with-silent-test-environment
        (test "simple failure"
          (is #f))
-       ((test-runner*)
-        `((type . runner/get-run-summary)))))
+       (state:get-run-summary
+        ((test-runner*)
+         `((type . runner/get-state))))))
 
     (is
      (equal?
@@ -272,8 +274,9 @@ because test macro is not composable and can't be wrapped.
       (with-silent-test-environment
        (test "simple success"
          (is #t))
-       ((test-runner*)
-        `((type . runner/get-run-summary)))))
+       (state:get-run-summary
+        ((test-runner*)
+         `((type . runner/get-state))))))
     (is
      (equal?
       '((errors . 0) (failures . 0) (assertions . 1) (tests . 1))
@@ -365,8 +368,9 @@ run summary is #f by default, but appears after test suite is executed"
     (is (equal?
          #f
          (with-silent-test-environment
-          ((test-runner*)
-           `((type . runner/get-run-summary))))))
+          (state:get-run-summary
+           ((test-runner*)
+            `((type . runner/get-state)))))))
 
     (is (not
          (null?
@@ -374,8 +378,9 @@ run summary is #f by default, but appears after test suite is executed"
            (suite "suite1"
              (test "case1"
                (is #t)))
-           ((test-runner*)
-            `((type . runner/get-run-summary)))))))
+           (state:get-run-summary
+            ((test-runner*)
+             `((type . runner/get-state))))))))
 
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
@@ -387,8 +392,9 @@ run summary is #f by default, but appears after test suite is executed"
          (test "error > failure"
            (is #f)
            (is (throw 'hi))))
-       ((test-runner*)
-        `((type . runner/get-run-summary)))))
+       (state:get-run-summary
+        ((test-runner*)
+         `((type . runner/get-state))))))
 
     (is
      (equal?

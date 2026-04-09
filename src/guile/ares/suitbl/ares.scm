@@ -5,11 +5,7 @@
   #:use-module ((ares guile prelude) #:select (comment))
   #:use-module ((ares suitbl core) #:select (suite test-runner*))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
-  #:use-module ((ares suitbl state)
-                #:select (get-loaded-tests
-                          get-runner-config
-                          get-stats
-                          set-runner-config-value!))
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl discovery)
                 #:select (get-all-test-modules
                           get-module-public-suites
@@ -27,11 +23,12 @@
                     (runner/config
                      .
                      ((test-reporter . ,reporter:minimal)))))
-  ((test-runner*) `((type . runner/get-run-summary))))
+  (state:get-run-summary
+   ((test-runner*) `((type . runner/get-state)))))
 
 (define (get-current-test-runner-stats)
   (let ((state ((test-runner*) `((type . runner/get-state)))))
-    (get-stats state (get-runner-config state))))
+    (state:get-stats state (state:get-runner-config state))))
 
 (define (load-module-suite m)
   (suite (format #f "~a" (module-name m))
@@ -42,11 +39,11 @@
               (get-module-public-suites m))))
 
 (define (with-auto-run-disabled thunk)
-  (set-runner-config-value!
+  (state:set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #f)
   (thunk)
-  (set-runner-config-value!
+  (state:set-runner-config-value!
    ((test-runner*) `((type . runner/get-state)))
    'auto-run? #t)
   *unspecified*)
@@ -71,7 +68,7 @@
 
 (define (get-current-test-runner-loaded-test)
   (chain ((test-runner*) `((type . runner/get-state)))
-    (get-loaded-tests _)
+    (state:get-loaded-tests _)
     (add-indicies _)))
 
 (define (test->string t)

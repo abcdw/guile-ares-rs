@@ -361,12 +361,6 @@ environment just set it to new instance of test runner.
                     (state:get-runner-config-value state 'auto-run?))
            (this `((type . runner/run-tests))))))
 
-      ((runner/get-run-history)
-       (state:get-run-history state))
-
-      ((runner/get-run-summary)
-       (state:get-run-summary state))
-
       (else
        (chain msg-type
          (format #f "no handler for message type ~a" _)

@@ -66,6 +66,7 @@
        (use-modules (ares suitbl core)
                     (ares suitbl runners)
                     (ares suitbl reporters)
+                    ((ares suitbl state) #:prefix state:)
                     (ares suitbl ares))
 
        (define reporter-config
@@ -90,7 +91,9 @@
          (load-project-tests)
          (runner '((type . runner/run-tests))))
 
-       (define summary (runner '((type . runner/get-run-summary))))
+       (define summary
+         (state:get-run-summary
+          (runner '((type . runner/get-state)))))
 
        (if (and summary
                 (zero? (+ (or (assoc-ref summary 'failures) 0)

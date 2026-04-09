@@ -3,6 +3,7 @@
   #:use-module (ares suitbl runners)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module (ares suitbl discovery)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 exceptions)
@@ -31,7 +32,9 @@
       (test-runner `((type . runner/run-tests)
                      (runner/config
                       . ((schedule-tests . ,only-suitbl-tests))))))
-    (define summary (test-runner `((type . runner/get-run-summary))))
+    (define summary
+      (state:get-run-summary
+       (test-runner `((type . runner/get-state)))))
 
     (define number-of-tests
       (assoc-ref summary 'tests))
