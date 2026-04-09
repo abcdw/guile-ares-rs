@@ -173,6 +173,9 @@ environment just set it to new instance of test runner.
       result))
 
   (define (run-test test)
+    "Test can either pass, fail or error.
+
+test-run/result can carry information about number of asserts."
     (let* ((result (%run-test test))
            (error? (any (lambda (x) (eq? x 'error)) result))
            (fail? (any (lambda (x) (eq? x 'fail)) result)))
