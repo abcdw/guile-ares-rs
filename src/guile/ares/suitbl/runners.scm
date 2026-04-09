@@ -16,7 +16,8 @@
   #:use-module ((srfi srfi-197) #:select (chain chain-and chain-when))
 
   #:use-module ((ares suitbl state) #:prefix state:)
-  #:export (make-suitbl-test-runner
+  #:export (summarize-test-run-events
+            make-suitbl-test-runner
             make-silent-test-runner))
 
 
@@ -42,6 +43,15 @@ environment just set it to new instance of test runner.
 
 (define (copy-procedure-properties! from to)
   (set-procedure-properties! to (procedure-properties from)))
+
+(define (summarize-test-run-events events)
+  (let* ((error? (any (lambda (x) (eq? x 'error)) events))
+         (fail? (any (lambda (x) (eq? x 'fail)) events)))
+    `((tests . 1)
+      (failures . ,(if (and fail? (not error?)) 1 0))
+      (errors . ,(if error? 1 0))
+      (skipped . 0)
+      (assertions . ,(length events)))))
 
 
 ;;;
@@ -176,15 +186,10 @@ environment just set it to new instance of test runner.
     "Test can either pass, fail or error.
 
 test-run/result can carry information about number of asserts."
-    (let* ((result (%run-test test))
-           (error? (any (lambda (x) (eq? x 'error)) result))
-           (fail? (any (lambda (x) (eq? x 'fail)) result)))
+    (let ((run-result
+           (summarize-test-run-events (%run-test test))))
       `((test . ,test)
-        (test-run/result . ((tests . 1)
-                            (failures . ,(if (and fail? (not error?)) 1 0))
-                            (errors . ,(if error? 1 0))
-                            (skipped . 0)
-                            (assertions . ,(length result)))))))
+        (test-run/result . ,run-result))))
 
   (define (make-try-load-suite suite)
     (define suite-body-thunk
