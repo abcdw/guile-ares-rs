@@ -12,12 +12,12 @@
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
 
   #:use-module ((srfi srfi-1)
-                #:select (last drop-right any fold alist-delete alist-cons))
+                #:select (last drop-right fold alist-delete alist-cons))
   #:use-module ((srfi srfi-197) #:select (chain chain-and chain-when))
 
   #:use-module ((ares suitbl state) #:prefix state:)
-  #:export (summarize-test-run-events
-            make-suitbl-test-runner
+  #:use-module ((ares suitbl running) #:prefix running:)
+  #:export (make-suitbl-test-runner
             make-silent-test-runner))
 
 
@@ -43,15 +43,6 @@ environment just set it to new instance of test runner.
 
 (define (copy-procedure-properties! from to)
   (set-procedure-properties! to (procedure-properties from)))
-
-(define (summarize-test-run-events events)
-  (let* ((error? (any (lambda (x) (eq? x 'error)) events))
-         (fail? (any (lambda (x) (eq? x 'fail)) events)))
-    `((tests . 1)
-      (failures . ,(if (and fail? (not error?)) 1 0))
-      (errors . ,(if error? 1 0))
-      (skipped . 0)
-      (assertions . ,(length events)))))
 
 
 ;;;
@@ -187,7 +178,7 @@ environment just set it to new instance of test runner.
 
 test-run/result can carry information about number of asserts."
     (let ((run-result
-           (summarize-test-run-events (%run-test test))))
+           (running:summarize-test-run-events (%run-test test))))
       `((test . ,test)
         (test-run/result . ,run-result))))
 
