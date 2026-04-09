@@ -70,7 +70,7 @@ environment just set it to new instance of test runner.
   ;; with concurrent test runs implemented on top of fibers
   (define %suite-path* (make-parameter '()))
   (define %current-suite-node-items* (make-parameter #f))
-  (define %test* (make-parameter #f))
+  (define %inside-test?* (make-parameter #f))
   (define %test-run-events* (make-parameter #f))
   (define %test-reporter* (make-parameter
                            (state:get-runner-config-value
@@ -127,7 +127,7 @@ environment just set it to new instance of test runner.
     (let* ((assert (chain ctx
                      (get-message _)
                      (assoc-ref _ 'assert)))
-           (inside-test? (and (%test*) #t))
+           (inside-test? (%inside-test?*))
            (test-run-events (%test-run-events*)))
       (when (and (not (null? (%suite-path*)))
                  (not inside-test?))
@@ -145,17 +145,16 @@ environment just set it to new instance of test runner.
 
     (let ((description (assoc-ref test 'test/description))
           (test-body-thunk (assoc-ref test 'test/body-thunk)))
-      (when (%test*)
+      (when (%inside-test?*)
         (chain "Test Macros can't be nested"
           (make-exception-with-message _)
           (raise-exception _)))
       ((get-test-reporter)
        `((type . run/test-start)
          (description . ,description)))
-      ;; TODO: [Andrew Tropin, 2025-08-02] Change %test* to
-      ;; %inside-test?*
+
       (define result
-        (parameterize ((%test* description)
+        (parameterize ((%inside-test?* #t)
                        (%test-run-events* (make-atomic-box '())))
           (with-exception-handler
            (lambda (ex)
@@ -210,7 +209,7 @@ environment just set it to new instance of test runner.
          (lambda (ex)
            (cons 'exception ex))
          (lambda ()
-           (when (%test*)
+           (when (%inside-test?*)
              (chain "Test Suite can't be nested into Test Macro"
                (make-exception-with-message _)
                (raise-exception _)))
