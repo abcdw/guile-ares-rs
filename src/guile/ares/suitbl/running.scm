@@ -7,7 +7,9 @@
                                           call-with-prompt
                                           make-prompt-tag))
   #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
-  #:export (raised?
+  #:export (returned?
+            returned-value
+            raised?
             raised-exception
             raised-continuation
             with-exception-continuation
@@ -23,6 +25,13 @@
 (define exception-continuation-tag
   (make-prompt-tag "suitbl-exception-continuation"))
 
+(define (returned? x)
+  (and (pair? x)
+       (eq? 'returned (car x))))
+
+(define (returned-value returned)
+  (cdr returned))
+
 (define (raised? x)
   (and (pair? x)
        (eq? 'raised (car x))))
@@ -37,7 +46,7 @@
   "Run THUNK and return a tagged result.
 
 Returns:
-- (value . RESULT), when THUNK succeeds.
+- (returned . RESULT), when THUNK succeeds.
 - (raised
     (exception . EXCEPTION)
     (continuation . K)), when THUNK raises an exception,
@@ -49,7 +58,7 @@ Returns:
       (lambda (exception)
         (abort-to-prompt exception-continuation-tag exception))
       (lambda ()
-        (cons 'value (thunk)))
+        (cons 'returned (thunk)))
       #:unwind? #f))
    (lambda (continuation exception)
      `(raised

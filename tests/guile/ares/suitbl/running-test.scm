@@ -137,11 +137,12 @@
    #:unwind? #t))
 
 (define-suite with-exception-continuation-tests
-  (test "returns tagged value when no exception is raised"
-    (is (equal?
-         '(value . ok)
-         (running:with-exception-continuation
-          (lambda () 'ok)))))
+  (test "returns tagged returned value when no exception is raised"
+    (let ((result
+           (running:with-exception-continuation
+            (lambda () 'ok))))
+      (is (running:returned? result))
+      (is (equal? 'ok (running:returned-value result)))))
 
   (test "returns raised with continuation and exception when thunk raises"
     (let ((result
