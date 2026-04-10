@@ -143,29 +143,20 @@
          (running:with-exception-continuation
           (lambda () 'ok)))))
 
-  (test "returns tagged continuation and exception when thunk raises"
+  (test "returns raised with continuation and exception when thunk raises"
     (let ((result
            (running:with-exception-continuation
             (lambda ()
               (error "boom")))))
-      (match result
-        (('exception-continuation
-          ('exception . exception)
-          ('continuation . continuation))
-         (is (procedure? continuation))
-         (is (string=? "boom" (exception-message exception))))
-        (_
-         (is #f)))))
+      (is (running:raised? result))
+      (is (procedure? (running:raised-continuation result)))
+      (is (string=? "boom"
+                    (exception-message (running:raised-exception result))))))
 
   (test "captured continuation re-raises exception when called"
     (let ((result
            (running:with-exception-continuation
             (lambda ()
               (error "boom")))))
-      (match result
-        (('exception-continuation
-          ('exception . _)
-          ('continuation . continuation))
-         (is (raises-exception? continuation)))
-        (_
-         (is #f))))))
+      (is (running:raised? result))
+      (is (raises-exception? (running:raised-continuation result))))))

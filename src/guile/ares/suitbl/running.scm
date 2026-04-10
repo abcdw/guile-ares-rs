@@ -7,7 +7,10 @@
                                           call-with-prompt
                                           make-prompt-tag))
   #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
-  #:export (with-exception-continuation
+  #:export (raised?
+            raised-exception
+            raised-continuation
+            with-exception-continuation
             assertion-events->assertion-summary
             assertion-summary->test-run-status
             assertion-events->test-run-summary))
@@ -20,12 +23,22 @@
 (define exception-continuation-tag
   (make-prompt-tag "suitbl-exception-continuation"))
 
+(define (raised? x)
+  (and (pair? x)
+       (eq? 'raised (car x))))
+
+(define (raised-exception raised)
+  (assoc-ref (cdr raised) 'exception))
+
+(define (raised-continuation raised)
+  (assoc-ref (cdr raised) 'continuation))
+
 (define (with-exception-continuation thunk)
   "Run THUNK and return a tagged result.
 
 Returns:
 - (value . RESULT), when THUNK succeeds.
-- (exception-continuation
+- (raised
     (exception . EXCEPTION)
     (continuation . K)), when THUNK raises an exception,
   where K is a continuation captured at the exception point."
@@ -39,7 +52,7 @@ Returns:
         (cons 'value (thunk)))
       #:unwind? #f))
    (lambda (continuation exception)
-     `(exception-continuation
+     `(raised
        (exception . ,exception)
        (continuation . ,continuation)))))
 
