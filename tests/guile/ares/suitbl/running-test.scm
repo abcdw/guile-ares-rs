@@ -136,6 +136,32 @@
      #f)
    #:unwind? #t))
 
+(define-suite assertion-run-result->assertion-outcome-tests
+  (test "maps truthy returned result to pass outcome"
+    (let* ((run-result
+            (running:with-exception-continuation
+             (lambda () #t)))
+           (outcome
+            (running:assertion-run-result->assertion-outcome run-result)))
+      (is (equal? 'pass outcome))))
+
+  (test "maps falsey returned result to fail outcome"
+    (let* ((run-result
+            (running:with-exception-continuation
+             (lambda () #f)))
+           (outcome
+            (running:assertion-run-result->assertion-outcome run-result)))
+      (is (equal? 'fail outcome))))
+
+  (test "maps raised result to error outcome"
+    (let* ((run-result
+            (running:with-exception-continuation
+             (lambda ()
+               (error "boom"))))
+           (outcome
+            (running:assertion-run-result->assertion-outcome run-result)))
+      (is (equal? 'error outcome)))))
+
 (define-suite assertion-run-result->reporter-message-tests
   (test "maps truthy returned result to assertion-pass reporter message"
     (let* ((run-result
