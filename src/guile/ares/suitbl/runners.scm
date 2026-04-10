@@ -72,7 +72,7 @@ environment just set it to new instance of test runner.
   (define %suite-path* (make-parameter '()))
   (define %current-suite-node-items* (make-parameter #f))
   (define %inside-test?* (make-parameter #f))
-  (define %assertion-events* (make-parameter #f))
+  (define %assertion-outcomes* (make-parameter #f))
   (define %test-reporter* (make-parameter
                            (state:get-runner-config-value
                             state 'test-reporter)))
@@ -88,7 +88,7 @@ environment just set it to new instance of test runner.
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))
 
-  (define (%run-assert assert inside-test? assertion-events)
+  (define (%run-assert assert inside-test? assertion-outcomes)
     (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
            (run-result (running:with-exception-continuation body-thunk)))
@@ -97,7 +97,7 @@ environment just set it to new instance of test runner.
         (let ((result (running:returned-value run-result)))
           (when inside-test?
             (atomic-box-update!
-             assertion-events
+             assertion-outcomes
              (lambda (value)
                (cons (if result 'pass 'fail) value))))
 
@@ -115,7 +115,7 @@ environment just set it to new instance of test runner.
         (let ((ex (running:raised-exception run-result)))
           (when inside-test?
             (atomic-box-update!
-             assertion-events
+             assertion-outcomes
              (lambda (value)
                (cons 'error value))))
 
@@ -133,14 +133,14 @@ environment just set it to new instance of test runner.
                      (get-message _)
                      (assoc-ref _ 'assert)))
            (inside-test? (%inside-test?*))
-           (assertion-events (%assertion-events*)))
+           (assertion-outcomes (%assertion-outcomes*)))
       (when (and (not (null? (%suite-path*)))
                  (not inside-test?))
         (chain
             "Assert encountered inside suite, but outside of test"
           (make-exception-with-message _)
           (raise-exception _)))
-      (%run-assert assert inside-test? assertion-events)))
+      (%run-assert assert inside-test? assertion-outcomes)))
 
   (define (%run-test test)
     ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
@@ -160,7 +160,7 @@ environment just set it to new instance of test runner.
 
       (define result
         (parameterize ((%inside-test?* #t)
-                       (%assertion-events* (make-atomic-box '())))
+                       (%assertion-outcomes* (make-atomic-box '())))
           (with-exception-handler
            (lambda (ex)
              ((get-test-reporter)
@@ -169,7 +169,7 @@ environment just set it to new instance of test runner.
              (raise-exception ex))
            test-body-thunk
            #:unwind? (if (re-raise?) #f #t))
-          (atomic-box-ref (%assertion-events*))))
+          (atomic-box-ref (%assertion-outcomes*))))
 
       ((get-test-reporter)
        `((type . run/test-end)
@@ -182,7 +182,7 @@ environment just set it to new instance of test runner.
 
 test-run/result can carry information about number of asserts."
     (let ((test-run-summary
-           (running:assertion-events->test-run-summary (%run-test test))))
+           (running:assertion-outcomes->test-run-summary (%run-test test))))
       `((test . ,test)
         (test-run/result . ,test-run-summary))))
 

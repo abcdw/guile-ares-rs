@@ -13,9 +13,9 @@
             raised-exception
             raised-continuation
             with-exception-continuation
-            assertion-events->assertion-summary
+            assertion-outcomes->assertion-summary
             assertion-summary->test-run-status
-            assertion-events->test-run-summary))
+            assertion-outcomes->test-run-summary))
 
 
 ;;;
@@ -65,11 +65,11 @@ Returns:
        (exception . ,exception)
        (continuation . ,continuation)))))
 
-(define (assertion-events->assertion-summary events)
-  `((passes . ,(count (lambda (x) (eq? x 'pass)) events))
-    (failures . ,(count (lambda (x) (eq? x 'fail)) events))
-    (errors . ,(count (lambda (x) (eq? x 'error)) events))
-    (assertions . ,(length events))))
+(define (assertion-outcomes->assertion-summary outcomes)
+  `((passes . ,(count (lambda (x) (eq? x 'pass)) outcomes))
+    (failures . ,(count (lambda (x) (eq? x 'fail)) outcomes))
+    (errors . ,(count (lambda (x) (eq? x 'error)) outcomes))
+    (assertions . ,(length outcomes))))
 
 (define (assertion-summary->test-run-status assertion-summary)
   "Convert ASSERTION-SUMMARY alist into a test run status symbol.
@@ -85,8 +85,8 @@ Zero assertion means pass."
      (fail? 'fail)
      (else 'pass))))
 
-(define (assertion-events->test-run-summary events)
-  (let* ((assertion-summary (assertion-events->assertion-summary events))
+(define (assertion-outcomes->test-run-summary outcomes)
+  (let* ((assertion-summary (assertion-outcomes->assertion-summary outcomes))
          (result (assertion-summary->test-run-status assertion-summary)))
     `((tests . 1)
       (failures . ,(if (eq? result 'fail) 1 0))

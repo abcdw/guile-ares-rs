@@ -10,30 +10,30 @@
 
 
 
-(define-suite assertion-events->assertion-summary-tests
-  (test "summarize assertion events with pass-only data"
+(define-suite assertion-outcomes->assertion-summary-tests
+  (test "summarize assertion outcomes with pass-only data"
     (is (equal?
          '((passes . 2)
            (failures . 0)
            (errors . 0)
            (assertions . 2))
-         (running:assertion-events->assertion-summary '(pass pass)))))
+         (running:assertion-outcomes->assertion-summary '(pass pass)))))
 
-  (test "summarize assertion events with mixed data"
+  (test "summarize assertion outcomes with mixed data"
     (is (equal?
          '((passes . 1)
            (failures . 1)
            (errors . 1)
            (assertions . 3))
-         (running:assertion-events->assertion-summary '(pass fail error)))))
+         (running:assertion-outcomes->assertion-summary '(pass fail error)))))
 
-  (test "summarize assertion events with empty data"
+  (test "summarize assertion outcomes with empty data"
     (is (equal?
          '((passes . 0)
            (failures . 0)
            (errors . 0)
            (assertions . 0))
-         (running:assertion-events->assertion-summary '())))))
+         (running:assertion-outcomes->assertion-summary '())))))
 
 (define-suite assertion-summary->test-run-status-tests
   (test "returns pass for zero-assertion summary"
@@ -81,7 +81,7 @@
             (errors . 1)
             (assertions . 2)))))))
 
-(define-suite assertion-events->test-run-summary-tests
+(define-suite assertion-outcomes->test-run-summary-tests
   (test "returns pass summary for pass-only events"
     (is (equal?
          '((tests . 1)
@@ -89,7 +89,7 @@
            (errors . 0)
            (skipped . 0)
            (assertions . 2))
-         (running:assertion-events->test-run-summary '(pass pass)))))
+         (running:assertion-outcomes->test-run-summary '(pass pass)))))
 
   (test "returns fail summary for fail-only events"
     (is (equal?
@@ -98,7 +98,7 @@
            (errors . 0)
            (skipped . 0)
            (assertions . 1))
-         (running:assertion-events->test-run-summary '(fail)))))
+         (running:assertion-outcomes->test-run-summary '(fail)))))
 
   (test "returns error summary for error-only events"
     (is (equal?
@@ -107,7 +107,7 @@
            (errors . 1)
            (skipped . 0)
            (assertions . 1))
-         (running:assertion-events->test-run-summary '(error)))))
+         (running:assertion-outcomes->test-run-summary '(error)))))
 
   (test "returns error summary for mixed fail and error events"
     (is (equal?
@@ -116,7 +116,7 @@
            (errors . 1)
            (skipped . 0)
            (assertions . 3))
-         (running:assertion-events->test-run-summary '(pass fail error)))))
+         (running:assertion-outcomes->test-run-summary '(pass fail error)))))
 
   (test "returns pass summary for empty events"
     (is (equal?
@@ -125,7 +125,7 @@
            (errors . 0)
            (skipped . 0)
            (assertions . 0))
-         (running:assertion-events->test-run-summary '())))))
+         (running:assertion-outcomes->test-run-summary '())))))
 
 (define (raises-exception? thunk)
   (with-exception-handler
