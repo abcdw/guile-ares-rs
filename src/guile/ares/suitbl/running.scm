@@ -13,6 +13,7 @@
             raised-exception
             raised-continuation
             with-exception-continuation
+            assertion-run-result->reporter-message
             assertion-outcomes->assertion-summary
             assertion-summary->test-run-status
             assertion-outcomes->test-run-summary))
@@ -64,6 +65,20 @@ Returns:
      `(raised
        (exception . ,exception)
        (continuation . ,continuation)))))
+
+(define (assertion-run-result->reporter-message run-result)
+  (cond
+   ((returned? run-result)
+    (let ((result (returned-value run-result)))
+      `((type . ,(if result
+                     'run/assertion-pass
+                     'run/assertion-fail))
+        (assertion/result . ,result))))
+   ((raised? run-result)
+    `((type . run/assertion-error)
+      (assertion/error . ,(raised-exception run-result))))
+   (else
+    #f)))
 
 (define (assertion-outcomes->assertion-summary outcomes)
   `((passes . ,(count (lambda (x) (eq? x 'pass)) outcomes))

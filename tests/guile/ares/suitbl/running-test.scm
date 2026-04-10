@@ -136,6 +136,36 @@
      #f)
    #:unwind? #t))
 
+(define-suite assertion-run-result->reporter-message-tests
+  (test "maps truthy returned result to assertion-pass reporter message"
+    (let* ((run-result
+            (running:with-exception-continuation
+             (lambda () #t)))
+           (message
+            (running:assertion-run-result->reporter-message run-result)))
+      (is (equal? 'run/assertion-pass (assoc-ref message 'type)))
+      (is (equal? #t (assoc-ref message 'assertion/result)))))
+
+  (test "maps falsey returned result to assertion-fail reporter message"
+    (let* ((run-result
+            (running:with-exception-continuation
+             (lambda () #f)))
+           (message
+            (running:assertion-run-result->reporter-message run-result)))
+      (is (equal? 'run/assertion-fail (assoc-ref message 'type)))
+      (is (equal? #f (assoc-ref message 'assertion/result)))))
+
+  (test "maps raised result to assertion-error reporter message"
+    (let* ((run-result
+            (running:with-exception-continuation
+             (lambda ()
+               (error "boom"))))
+           (message
+            (running:assertion-run-result->reporter-message run-result)))
+      (is (equal? 'run/assertion-error (assoc-ref message 'type)))
+      (is (equal? (running:raised-exception run-result)
+                  (assoc-ref message 'assertion/error))))))
+
 (define-suite with-exception-continuation-tests
   (test "returns tagged returned value when no exception is raised"
     (let ((result
