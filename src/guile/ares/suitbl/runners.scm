@@ -91,42 +91,25 @@ environment just set it to new instance of test runner.
   (define (%run-assert assert inside-test? assertion-outcomes)
     (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-           (run-result (running:with-exception-continuation body-thunk)))
-      (cond
-       ((running:returned? run-result)
-        (let ((result (running:returned-value run-result)))
-          (when inside-test?
-            (atomic-box-update!
-             assertion-outcomes
-             (lambda (value)
-               (cons (if result 'pass 'fail) value))))
+           (run-result (running:with-exception-continuation body-thunk))
+           (outcome
+            (running:assertion-run-result->assertion-outcome run-result))
+           (reporter-message
+            (running:assertion-run-result->reporter-message run-result)))
 
-          ((get-test-reporter)
-           (append
-            `((type . ,(if result
-                           'run/assertion-pass
-                           'run/assertion-fail))
-              (assertion/result . ,result))
-            assert))
+      (when (and inside-test? outcome)
+        (atomic-box-update!
+         assertion-outcomes
+         (lambda (value)
+           (cons outcome value))))
 
-          result))
+      ((get-test-reporter)
+       (append reporter-message assert))
 
-       ((running:raised? run-result)
-        (let ((ex (running:raised-exception run-result)))
-          (when inside-test?
-            (atomic-box-update!
-             assertion-outcomes
-             (lambda (value)
-               (cons 'error value))))
-
-          ((get-test-reporter)
-           (append
-            `((type . run/assertion-error)
-              (assertion/error . ,ex))
-            assert))
-
-          (if (re-raise?)
-              ((running:raised-continuation run-result))))))))
+      ;; We re-raise it here, inside run-assert to make it work for
+      ;; lonely (is ...)  evaluation case
+      (if (and (re-raise?) (raised? run-result))
+          ((running:raised-continuation run-result)))))
 
   (define (run-assert ctx)
     (let* ((assert (chain ctx
