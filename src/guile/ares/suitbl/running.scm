@@ -3,6 +3,9 @@
 
 (define-module (ares suitbl running)
   #:use-module ((srfi srfi-1) #:select (count))
+  #:use-module ((ice-9 control) #:select (abort-to-prompt
+                                          call-with-prompt
+                                          make-prompt-tag))
   #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
   #:export (with-exception-continuation
             assertion-events->assertion-summary
@@ -14,6 +17,9 @@
 ;;; Running helpers
 ;;;
 
+(define exception-continuation-tag
+  (make-prompt-tag "suitbl-exception-continuation"))
+
 (define (with-exception-continuation thunk)
   "Run THUNK and return a tagged result.
 
@@ -21,16 +27,17 @@ Returns:
 - (value . RESULT), when THUNK succeeds.
 - (exception-continuation . K), when THUNK raises an exception,
   where K is a continuation captured at the exception point."
-  (call/cc
-   (lambda (return)
+  (call-with-prompt
+   exception-continuation-tag
+   (lambda ()
      (with-exception-handler
       (lambda (_)
-        (call/cc
-         (lambda (continuation)
-           (return (cons 'exception-continuation continuation)))))
+        (abort-to-prompt exception-continuation-tag))
       (lambda ()
         (cons 'value (thunk)))
-      #:unwind? #f))))
+      #:unwind? #f))
+   (lambda (continuation . _)
+     (cons 'exception-continuation continuation))))
 
 (define (assertion-events->assertion-summary events)
   `((passes . ,(count (lambda (x) (eq? x 'pass)) events))
