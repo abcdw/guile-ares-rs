@@ -25,19 +25,23 @@
 
 Returns:
 - (value . RESULT), when THUNK succeeds.
-- (exception-continuation . K), when THUNK raises an exception,
+- (exception-continuation
+    (exception . EXCEPTION)
+    (continuation . K)), when THUNK raises an exception,
   where K is a continuation captured at the exception point."
   (call-with-prompt
    exception-continuation-tag
    (lambda ()
      (with-exception-handler
-      (lambda (_)
-        (abort-to-prompt exception-continuation-tag))
+      (lambda (exception)
+        (abort-to-prompt exception-continuation-tag exception))
       (lambda ()
         (cons 'value (thunk)))
       #:unwind? #f))
-   (lambda (continuation . _)
-     (cons 'exception-continuation continuation))))
+   (lambda (continuation exception)
+     `(exception-continuation
+       (exception . ,exception)
+       (continuation . ,continuation)))))
 
 (define (assertion-events->assertion-summary events)
   `((passes . ,(count (lambda (x) (eq? x 'pass)) events))

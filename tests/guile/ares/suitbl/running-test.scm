@@ -3,7 +3,8 @@
 
 (define-module (ares suitbl running-test)
   #:use-module (ares suitbl core)
-  #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
+  #:use-module ((ice-9 exceptions) #:select (exception-message
+                                              with-exception-handler))
   #:use-module (ice-9 match)
   #:use-module ((ares suitbl running) #:prefix running:))
 
@@ -142,14 +143,17 @@
          (running:with-exception-continuation
           (lambda () 'ok)))))
 
-  (test "returns tagged continuation when thunk raises an exception"
+  (test "returns tagged continuation and exception when thunk raises"
     (let ((result
            (running:with-exception-continuation
             (lambda ()
               (error "boom")))))
       (match result
-        (('exception-continuation . continuation)
-         (is (procedure? continuation)))
+        (('exception-continuation
+          ('exception . exception)
+          ('continuation . continuation))
+         (is (procedure? continuation))
+         (is (string=? "boom" (exception-message exception))))
         (_
          (is #f)))))
 
@@ -159,7 +163,9 @@
             (lambda ()
               (error "boom")))))
       (match result
-        (('exception-continuation . continuation)
+        (('exception-continuation
+          ('exception . _)
+          ('continuation . continuation))
          (is (raises-exception? continuation)))
         (_
          (is #f))))))
