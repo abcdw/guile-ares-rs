@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl running-test)
   #:use-module (ares suitbl core)
+  #:use-module (ice-9 match)
   #:use-module ((ares suitbl running) #:prefix running:))
 
 
@@ -123,3 +124,21 @@
            (skipped . 0)
            (assertions . 0))
          (running:assertion-events->test-run-summary '())))))
+
+(define-suite with-exception-continuation-tests
+  (test "returns tagged value when no exception is raised"
+    (is (equal?
+         '(value . ok)
+         (running:with-exception-continuation
+          (lambda () 'ok)))))
+
+  (test "returns tagged continuation when thunk raises an exception"
+    (let ((result
+           (running:with-exception-continuation
+            (lambda ()
+              (error "boom")))))
+      (match result
+        (('exception-continuation . continuation)
+         (is (procedure? continuation)))
+        (_
+         (is #f))))))

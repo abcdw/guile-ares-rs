@@ -3,7 +3,9 @@
 
 (define-module (ares suitbl running)
   #:use-module ((srfi srfi-1) #:select (count))
-  #:export (assertion-events->assertion-summary
+  #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
+  #:export (with-exception-continuation
+            assertion-events->assertion-summary
             assertion-summary->test-run-status
             assertion-events->test-run-summary))
 
@@ -11,6 +13,24 @@
 ;;;
 ;;; Running helpers
 ;;;
+
+(define (with-exception-continuation thunk)
+  "Run THUNK and return a tagged result.
+
+Returns:
+- (value . RESULT), when THUNK succeeds.
+- (exception-continuation . K), when THUNK raises an exception,
+  where K is a continuation captured at the exception point."
+  (call/cc
+   (lambda (return)
+     (with-exception-handler
+      (lambda (_)
+        (call/cc
+         (lambda (continuation)
+           (return (cons 'exception-continuation continuation)))))
+      (lambda ()
+        (cons 'value (thunk)))
+      #:unwind? #f))))
 
 (define (assertion-events->assertion-summary events)
   `((passes . ,(count (lambda (x) (eq? x 'pass)) events))
