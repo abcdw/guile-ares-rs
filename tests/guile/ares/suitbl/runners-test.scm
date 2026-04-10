@@ -4,6 +4,7 @@
 (define-module (ares suitbl runners-test)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:))
 
 (define (silent-runner)
@@ -30,5 +31,19 @@
 
     (is (equal?
          '(#t 123 some-symbol 123 heyhey 5 #f)
-         is-values))))
+         is-values)))
+
+  (test "assert exception is reported as error"
+    (define tr (silent-runner))
+    (define run-summary
+      (with-test-runner tr
+        (test "assert exception"
+          (is (error "boom")))
+        (state:get-run-summary
+         (tr `((type . runner/get-state))))))
+
+    (is (= 1 (assoc-ref run-summary 'errors)))
+    (is (= 0 (assoc-ref run-summary 'failures)))
+    (is (= 1 (assoc-ref run-summary 'assertions)))
+    (is (= 1 (assoc-ref run-summary 'tests)))))
 

@@ -89,40 +89,44 @@ environment just set it to new instance of test runner.
     (state:get-runner-config-value state 're-raise?))
 
   (define (%run-assert assert inside-test? assertion-events)
-    (let ((body-thunk (assoc-ref assert 'assert/body-thunk)))
-      (with-exception-handler
-       (lambda (ex)
-         (when inside-test?
+    (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
+           ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
+           (run-result (running:with-exception-continuation body-thunk)))
+      (cond
+       ((running:returned? run-result)
+        (let ((result (running:returned-value run-result)))
+          (when inside-test?
+            (atomic-box-update!
+             assertion-events
+             (lambda (value)
+               (cons (if result 'pass 'fail) value))))
 
-           (atomic-box-update!
-            assertion-events
-            (lambda (value)
-              (cons 'error value))))
-         ((get-test-reporter)
-          (append
-           `((type . run/assertion-error)
-             (assertion/error . ,ex))
-           assert))
-         (if (re-raise?)
-             (raise-exception ex)))
-       (lambda ()
-         ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
-         ;; TODO: [Andrew Tropin, 2024-12-23] Report start before evaling the form
-         (let* ((result (body-thunk)))
-           (when inside-test?
-             (atomic-box-update!
-              assertion-events
-              (lambda (value)
-                (cons (if result 'pass 'fail) value))))
-           ((get-test-reporter)
-            (append
-             `((type . ,(if result
-                            'run/assertion-pass
-                            'run/assertion-fail))
-               (assertion/result . ,result))
-             assert))
-           result))
-       #:unwind? (if (re-raise?) #f #t))))
+          ((get-test-reporter)
+           (append
+            `((type . ,(if result
+                           'run/assertion-pass
+                           'run/assertion-fail))
+              (assertion/result . ,result))
+            assert))
+
+          result))
+
+       ((running:raised? run-result)
+        (let ((ex (running:raised-exception run-result)))
+          (when inside-test?
+            (atomic-box-update!
+             assertion-events
+             (lambda (value)
+               (cons 'error value))))
+
+          ((get-test-reporter)
+           (append
+            `((type . run/assertion-error)
+              (assertion/error . ,ex))
+            assert))
+
+          (if (re-raise?)
+              ((running:raised-continuation run-result))))))))
 
   (define (run-assert ctx)
     (let* ((assert (chain ctx
