@@ -121,11 +121,6 @@ environment just set it to new instance of test runner.
       (%run-assert assert inside-test? assertion-outcomes)))
 
   (define (%run-test test)
-    ;; TODO: [Andrew Tropin, 2025-04-24] Handle exceptions that can
-    ;; happen inside test case, but outside of assert
-
-    ;; What to do with exception outside of assert?
-
     (let ((description (assoc-ref test 'test/description))
           (test-body-thunk (assoc-ref test 'test/body-thunk)))
       (when (%inside-test?*)
@@ -139,19 +134,21 @@ environment just set it to new instance of test runner.
       (define result
         (parameterize ((%inside-test?* #t)
                        (%assertion-outcomes* (make-atomic-box '())))
-          (with-exception-handler
-           (lambda (ex)
-             ((get-test-reporter)
-              `((type . run/test-end)
-                (description . ,description)))
-             (raise-exception ex))
-           test-body-thunk
-           #:unwind? (if (re-raise?) #f #t))
-          (atomic-box-ref (%assertion-outcomes*))))
+          (let ((run-result
+                 (running:with-exception-continuation test-body-thunk)))
+            (define outcomes (atomic-box-ref (%assertion-outcomes*)))
 
-      ((get-test-reporter)
-       `((type . run/test-end)
-         (description . ,description)))
+            ((get-test-reporter)
+             `((type . run/test-end)
+               (description . ,description)))
+
+            (when (running:raised? run-result)
+              (if (re-raise?)
+                  ((running:raised-continuation run-result))
+                  (raise-exception
+                   (running:raised-exception run-result))))
+
+            outcomes)))
 
       result))
 
