@@ -108,8 +108,11 @@ environment just set it to new instance of test runner.
 
       ;; We re-raise it here, inside run-assert to make it work for
       ;; lonely (is ...)  evaluation case
-      (if (and (re-raise?) (raised? run-result))
-          ((running:raised-continuation run-result)))))
+      (if (and (re-raise?) (running:raised? run-result))
+          ((running:raised-continuation run-result))
+          (if (running:returned? run-result)
+              (running:returned-value run-result)
+              *unspecified*))))
 
   (define (run-assert ctx)
     (let* ((assert (chain ctx
