@@ -6,7 +6,8 @@
   #:use-module ((ice-9 control) #:select (abort-to-prompt
                                           call-with-prompt
                                           make-prompt-tag))
-  #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
+  #:use-module ((ice-9 exceptions) #:select (raise-exception
+                                             with-exception-handler))
   #:export (returned?
             returned-value
             raised?
@@ -23,9 +24,6 @@
 ;;;
 ;;; Running helpers
 ;;;
-
-(define exception-continuation-tag
-  (make-prompt-tag "suitbl-exception-continuation"))
 
 (define (returned? x)
   (and (pair? x)
@@ -52,20 +50,27 @@ Returns:
 - (raised
     (exception . EXCEPTION)
     (continuation . K)), when THUNK raises an exception,
-  where K is a continuation captured at the exception point."
-  (call-with-prompt
-   exception-continuation-tag
-   (lambda ()
-     (with-exception-handler
-      (lambda (exception)
-        (abort-to-prompt exception-continuation-tag exception))
-      (lambda ()
-        (cons 'returned (thunk)))
-      #:unwind? #f))
-   (lambda (continuation exception)
-     `(raised
-       (exception . ,exception)
-       (continuation . ,continuation)))))
+  where K rewinds to the protected call and replays THUNK until
+  EXCEPTION is raised again in the current dynamic context."
+  (let ((exception-continuation-tag
+         (make-prompt-tag "suitbl-exception-continuation")))
+    (define (run replaying-exception?)
+      (with-exception-handler
+       (lambda (exception)
+         (if replaying-exception?
+             (raise-exception exception)
+             (abort-to-prompt exception-continuation-tag exception)))
+       (lambda ()
+         (cons 'returned (thunk)))
+       #:unwind? #f))
+
+    (call-with-prompt
+     exception-continuation-tag
+     (lambda () (run #f))
+     (lambda (_ exception)
+       `(raised
+         (exception . ,exception)
+         (continuation . ,(lambda () (run #t))))))))
 
 (define (assertion-run-result->assertion-outcome run-result)
   (cond
