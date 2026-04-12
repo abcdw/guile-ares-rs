@@ -4,6 +4,8 @@
 (define-module (ares suitbl runners)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
+  #:use-module ((ares suitbl exceptions)
+                #:select (raise-suitbl-wrong-position-exception))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
 
   #:use-module ((ice-9 atomic)
@@ -122,10 +124,9 @@ environment just set it to new instance of test runner.
            (assertion-outcomes (%assertion-outcomes*)))
       (when (and (not (null? (%suite-path*)))
                  (not inside-test?))
-        (chain
-            "Assert encountered inside suite, but outside of test"
-          (make-exception-with-message _)
-          (raise-exception _)))
+        (raise-suitbl-wrong-position-exception
+         'is 'suite-body
+         "Assert encountered inside suite, but outside of test"))
       (%run-assert assert inside-test? assertion-outcomes)))
 
   (define (%run-test test)
@@ -137,9 +138,9 @@ environment just set it to new instance of test runner.
     (let ((description (assoc-ref test 'test/description))
           (test-body-thunk (assoc-ref test 'test/body-thunk)))
       (when (%inside-test?*)
-        (chain "Test Macros can't be nested"
-          (make-exception-with-message _)
-          (raise-exception _)))
+        (raise-suitbl-wrong-position-exception
+         'test 'test-body
+         "Test Macros can't be nested"))
       ((get-test-reporter)
        `((type . run/test-start)
          (description . ,description)))
@@ -199,9 +200,9 @@ test-run/result can carry information about number of asserts."
            (cons 'exception ex))
          (lambda ()
            (when (%inside-test?*)
-             (chain "Test Suite can't be nested into Test Macro"
-               (make-exception-with-message _)
-               (raise-exception _)))
+             (raise-suitbl-wrong-position-exception
+              'suite 'test-body
+              "Test Suite can't be nested into Test Macro"))
            (parameterize ((%current-suite-node-items* (make-atomic-box '()))
                           (%suite-path* (cons suite (%suite-path*))))
              (suite-body-thunk)
