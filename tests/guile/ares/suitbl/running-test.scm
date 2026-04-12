@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl running-test)
   #:use-module (ares suitbl core)
+  #:use-module (ice-9 control)
   #:use-module ((ice-9 exceptions) #:select (exception-message
                                               with-exception-handler))
   #:use-module (ice-9 match)
@@ -136,6 +137,44 @@
      #f)
    #:unwind? #t))
 
+
+;;;
+;;; Stack capture helpers
+;;;
+
+(define (exception-stack-frame-procedure-names thunk)
+  (let/ec return
+    (with-exception-handler
+     (lambda (_)
+       (return
+        (let ((stack (make-stack #t)))
+          (let loop ((index 0)
+                     (result '()))
+            (if (= index (stack-length stack))
+                (reverse result)
+                (loop (1+ index)
+                      (cons (frame-procedure-name (stack-ref stack index))
+                            result)))))))
+     thunk
+     #:unwind? #f)))
+
+(define (list-prefix? prefix lst)
+  (cond
+   ((null? prefix) #t)
+   ((null? lst) #f)
+   ((equal? (car prefix) (car lst))
+    (list-prefix? (cdr prefix) (cdr lst)))
+   (else
+    #f)))
+
+(define (contains-contiguous-sublist? lst sublist)
+  (cond
+   ((null? sublist) #t)
+   ((null? lst) #f)
+   ((list-prefix? sublist lst) #t)
+   (else
+    (contains-contiguous-sublist? (cdr lst) sublist))))
+
 (define-suite assertion-run-result->assertion-outcome-tests
   (test "maps truthy returned result to pass outcome"
     (let* ((run-result
@@ -216,4 +255,32 @@
             (lambda ()
               (error "boom")))))
       (is (running:raised? result))
-      (is (raises-exception? (running:raised-continuation result))))))
+      (is (raises-exception? (running:raised-continuation result)))))
+
+  (test "captured continuation re-raises exception with original stack"
+    (define top #f)
+    (define mid #f)
+    (define bot #f)
+    (define expected-stack-procedure-names
+      '(bot mid top))
+
+    ;; Two tricks to avoid inlining optimization of the function
+    ;; described in docs/guile/function-inlining.md
+    (set! bot (lambda () (error "boom")))
+    (set! mid (lambda () (list (bot))))
+    (set! top (lambda () (list (mid))))
+
+    (let* ((direct-stack
+            (exception-stack-frame-procedure-names top))
+           (result
+            (running:with-exception-continuation top))
+           (reraised-stack
+            (exception-stack-frame-procedure-names
+             (running:raised-continuation result))))
+      (is (running:raised? result))
+      (is (contains-contiguous-sublist?
+           direct-stack
+           expected-stack-procedure-names))
+      (is (contains-contiguous-sublist?
+           reraised-stack
+           expected-stack-procedure-names)))))
