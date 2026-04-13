@@ -14,7 +14,7 @@
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
 
   #:use-module ((srfi srfi-1)
-                #:select (last drop-right fold alist-delete alist-cons))
+                #:select (last drop-right fold alist-delete alist-cons find))
   #:use-module ((srfi srfi-197) #:select (chain chain-and chain-when))
 
   #:use-module ((ares suitbl state) #:prefix state:)
@@ -81,6 +81,12 @@ environment just set it to new instance of test runner.
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))
 
+  (define (first-erroring-assertion-execution assertion-executions)
+    (find (lambda (assertion-execution)
+            (running:raised?
+             (assoc-ref assertion-execution 'assertion-run/result)))
+          assertion-executions))
+
   (define (%run-assert assert inside-test? assertion-executions)
     (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
@@ -100,9 +106,11 @@ environment just set it to new instance of test runner.
       ((get-test-reporter)
        reporter-message)
 
-      ;; We re-raise it here, inside run-assert to make it work for
-      ;; lonely (is ...)  evaluation case
-      (if (and (re-raise?) (running:raised? run-result))
+      ;; Re-raise lonely (is ...) immediately, but defer assertion
+      ;; replays executed inside tests until %run-test finishes.
+      (if (and (re-raise?)
+               (running:raised? run-result)
+               (not inside-test?))
           ((running:raised-continuation run-result))
           (if (running:returned? run-result)
               (running:returned-value run-result)
@@ -143,6 +151,15 @@ environment just set it to new instance of test runner.
             ((get-test-reporter)
              `((type . run/test-end)
                (description . ,description)))
+
+            (define raised-assertion-execution
+              (first-erroring-assertion-execution
+               assertion-executions))
+
+            (when (and (re-raise?) raised-assertion-execution)
+              ((running:raised-continuation
+                (assoc-ref raised-assertion-execution
+                           'assertion-run/result))))
 
             (when (running:raised? run-result)
               (if (re-raise?)
