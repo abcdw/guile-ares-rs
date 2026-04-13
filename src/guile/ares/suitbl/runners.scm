@@ -159,11 +159,14 @@ environment just set it to new instance of test runner.
 test-run/summary carries assertion counters, while test-run/outcome
 carries the final verdict."
     (let* ((assertion-executions (%run-test test))
-           (test-run-summary
-            (running:assertion-executions->test-run-summary
+           (assertion-summary
+            (running:assertion-executions->assertion-summary
              assertion-executions))
+           (test-run-summary
+            (running:assertion-summary->test-run-summary
+             assertion-summary))
            (test-run-outcome
-            (running:assertion-summary->test-run-outcome
+            (running:run-summary->run-outcome
              test-run-summary)))
       `((test . ,test)
         (test-run/assertions . ,assertion-executions)

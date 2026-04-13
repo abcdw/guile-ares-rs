@@ -10,7 +10,7 @@
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl running)
-                #:select (assertion-summary->test-run-outcome))
+                #:select (run-summary->run-outcome))
   #:use-module ((srfi srfi-1)
                 #:select (alist-delete alist-cons fold filter-map))
   #:use-module ((ice-9 match) #:select (match))
@@ -205,7 +205,7 @@
                                       (assoc-ref child 'suite-run/summary)))
                                 annotated-children)))
              (suite-outcome
-              (assertion-summary->test-run-outcome suite-summary))
+              (run-summary->run-outcome suite-summary))
              (updated-node (alist-update node 'suite-node/children
                                        (lambda (_) annotated-children))))
         (chain updated-node

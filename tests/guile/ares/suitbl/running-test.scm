@@ -88,6 +88,54 @@
             (errors . 1)
             (assertions . 2)))))))
 
+(define-suite assertion-summary->test-run-summary-tests
+  (test "returns pass summary for zero-assertion summary"
+    (is (equal?
+         '((tests . 1)
+           (failures . 0)
+           (errors . 0)
+           (skipped . 0)
+           (assertions . 0))
+         (running:assertion-summary->test-run-summary
+          '((passes . 0)
+            (failures . 0)
+            (errors . 0)
+            (assertions . 0))))))
+
+  (test "returns error summary for mixed assertion summary"
+    (is (equal?
+         '((tests . 1)
+           (failures . 0)
+           (errors . 1)
+           (skipped . 0)
+           (assertions . 3))
+         (running:assertion-summary->test-run-summary
+          '((passes . 1)
+            (failures . 2)
+            (errors . 1)
+            (assertions . 3)))))))
+
+(define-suite run-summary->run-outcome-tests
+  (test "returns pass for summary without failures and errors"
+    (is (eq?
+         'pass
+         (running:run-summary->run-outcome
+          '((tests . 1)
+            (failures . 0)
+            (errors . 0)
+            (skipped . 0)
+            (assertions . 2))))))
+
+  (test "returns error for summary with failures and errors"
+    (is (eq?
+         'error
+         (running:run-summary->run-outcome
+          '((tests . 2)
+            (failures . 1)
+            (errors . 1)
+            (skipped . 0)
+            (assertions . 3)))))))
+
 (define-suite assertion-outcomes->test-run-summary-tests
   (test "returns pass summary for pass-only events"
     (is (equal?

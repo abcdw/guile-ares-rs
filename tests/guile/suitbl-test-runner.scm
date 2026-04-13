@@ -39,7 +39,7 @@
     (define number-of-tests
       (assoc-ref summary 'tests))
 
-    (unless (= 109 number-of-tests)
+    (unless (= 113 number-of-tests)
       (chain "Unexpected number of tests (~a), make sure all tests are executed and
 expected number of tests is up-to-date."
         (format #f _ number-of-tests)

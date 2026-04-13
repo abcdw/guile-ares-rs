@@ -19,7 +19,9 @@
             assertion-run-result->reporter-message
             assertion-executions->assertion-summary
             assertion-outcomes->assertion-summary
+            assertion-summary->test-run-summary
             assertion-summary->test-run-outcome
+            run-summary->run-outcome
             assertion-executions->test-run-summary
             assertion-outcomes->test-run-summary))
 
@@ -122,35 +124,36 @@ Returns:
     (errors . ,(count (lambda (x) (eq? x 'error)) outcomes))
     (assertions . ,(length outcomes))))
 
-(define (assertion-summary->test-run-outcome assertion-summary)
-  "Convert ASSERTION-SUMMARY alist into a test run outcome symbol.
-
-Returns one of: 'pass, 'fail, or 'error.  If both failures and errors
-are present, test run outcome is considered 'error.
-
-Zero assertion means pass."
+(define (assertion-summary->test-run-summary assertion-summary)
   (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
         (fail? (> (assoc-ref assertion-summary 'failures) 0)))
+    `((tests . 1)
+      (failures . ,(if (and fail? (not error?)) 1 0))
+      (errors . ,(if error? 1 0))
+      (skipped . 0)
+      (assertions . ,(assoc-ref assertion-summary 'assertions)))))
+
+(define (run-summary->run-outcome run-summary)
+  "Convert RUN-SUMMARY alist into a run outcome symbol.
+
+Returns one of: 'pass, 'fail, or 'error.  If both failures and errors
+are present, run outcome is considered 'error."
+  (let ((error? (> (assoc-ref run-summary 'errors) 0))
+        (fail? (> (assoc-ref run-summary 'failures) 0)))
     (cond
      (error? 'error)
      (fail? 'fail)
      (else 'pass))))
 
+(define (assertion-summary->test-run-outcome assertion-summary)
+  "Convert ASSERTION-SUMMARY alist into a test run outcome symbol."
+  (run-summary->run-outcome
+   (assertion-summary->test-run-summary assertion-summary)))
+
 (define (assertion-executions->test-run-summary assertion-executions)
-  (let* ((assertion-summary
-          (assertion-executions->assertion-summary assertion-executions))
-         (outcome (assertion-summary->test-run-outcome assertion-summary)))
-    `((tests . 1)
-      (failures . ,(if (eq? outcome 'fail) 1 0))
-      (errors . ,(if (eq? outcome 'error) 1 0))
-      (skipped . 0)
-      (assertions . ,(assoc-ref assertion-summary 'assertions)))))
+  (assertion-summary->test-run-summary
+   (assertion-executions->assertion-summary assertion-executions)))
 
 (define (assertion-outcomes->test-run-summary outcomes)
-  (let* ((assertion-summary (assertion-outcomes->assertion-summary outcomes))
-         (outcome (assertion-summary->test-run-outcome assertion-summary)))
-    `((tests . 1)
-      (failures . ,(if (eq? outcome 'fail) 1 0))
-      (errors . ,(if (eq? outcome 'error) 1 0))
-      (skipped . 0)
-      (assertions . ,(assoc-ref assertion-summary 'assertions)))))
+  (assertion-summary->test-run-summary
+   (assertion-outcomes->assertion-summary outcomes)))
