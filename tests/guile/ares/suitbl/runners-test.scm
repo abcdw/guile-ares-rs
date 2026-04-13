@@ -50,7 +50,7 @@
     (define run-summary
       (with-test-runner tr
         (test "assert exception"
-          (is (error "boom")))
+          (is (error "assertions-handling-tests/assert exception")))
         (state:get-run-summary
          (tr `((type . runner/get-state))))))
 
@@ -113,9 +113,9 @@
          (with-test-runner tr
            (test "replay-check"
              (set! counter (+ counter 1))
-             (error "boom"))))))
+             (error "re-raise-tests/test-body replay-check"))))))
     (is exception)
-    (is (equal? "boom"
+    (is (equal? "re-raise-tests/test-body replay-check"
                 (exception-message exception)))
     (is (= 2 counter)))
 
@@ -128,8 +128,8 @@
       (capture-exception
        (lambda ()
          (with-test-runner tr
-           (is (error "boom"))))))
+           (is (error "re-raise-tests/lonely-is"))))))
     (is exception)
-    (is (equal? "boom"
+    (is (equal? "re-raise-tests/lonely-is"
                 (exception-message exception)))))
 
