@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl runners)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
@@ -65,7 +65,7 @@ environment just set it to new instance of test runner.
   (define %suite-path* (make-parameter '()))
   (define %current-suite-node-items* (make-parameter #f))
   (define %inside-test?* (make-parameter #f))
-  (define %assertion-outcomes* (make-parameter #f))
+  (define %assertion-executions* (make-parameter #f))
   (define %test-reporter* (make-parameter
                            (state:get-runner-config-value
                             state 'test-reporter)))
@@ -81,20 +81,20 @@ environment just set it to new instance of test runner.
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))
 
-  (define (%run-assert assert inside-test? assertion-outcomes)
+  (define (%run-assert assert inside-test? assertion-executions)
     (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
            (run-result (running:with-exception-continuation body-thunk))
-           (outcome
-            (running:assertion-run-result->assertion-outcome run-result))
+           (assertion-execution
+            (running:make-assertion-execution assert run-result))
            (reporter-message
             (running:assertion-run-result->reporter-message run-result)))
 
-      (when (and inside-test? outcome)
+      (when inside-test?
         (atomic-box-update!
-         assertion-outcomes
+         assertion-executions
          (lambda (value)
-           (cons outcome value))))
+           (cons assertion-execution value))))
 
       ((get-test-reporter)
        (append reporter-message assert))
@@ -112,13 +112,13 @@ environment just set it to new instance of test runner.
                      (get-message _)
                      (assoc-ref _ 'assert)))
            (inside-test? (%inside-test?*))
-           (assertion-outcomes (%assertion-outcomes*)))
+           (assertion-executions (%assertion-executions*)))
       (when (and (not (null? (%suite-path*)))
                  (not inside-test?))
         (raise-suitbl-wrong-position-exception
          'is 'suite-body
          "Assert encountered inside suite, but outside of test"))
-      (%run-assert assert inside-test? assertion-outcomes)))
+      (%run-assert assert inside-test? assertion-executions)))
 
   (define (%run-test test)
     (let ((description (assoc-ref test 'test/description))
@@ -133,10 +133,11 @@ environment just set it to new instance of test runner.
 
       (define result
         (parameterize ((%inside-test?* #t)
-                       (%assertion-outcomes* (make-atomic-box '())))
+                       (%assertion-executions* (make-atomic-box '())))
           (let ((run-result
                  (running:with-exception-continuation test-body-thunk)))
-            (define outcomes (atomic-box-ref (%assertion-outcomes*)))
+            (define assertion-executions
+              (reverse (atomic-box-ref (%assertion-executions*))))
 
             ((get-test-reporter)
              `((type . run/test-end)
@@ -148,7 +149,7 @@ environment just set it to new instance of test runner.
                   (raise-exception
                    (running:raised-exception run-result))))
 
-            outcomes)))
+            assertion-executions)))
 
       result))
 
@@ -156,9 +157,12 @@ environment just set it to new instance of test runner.
     "Test can either pass, fail or error.
 
 test-run/result can carry information about number of asserts."
-    (let ((test-run-summary
-           (running:assertion-outcomes->test-run-summary (%run-test test))))
+    (let* ((assertion-executions (%run-test test))
+           (test-run-summary
+            (running:assertion-executions->test-run-summary
+             assertion-executions)))
       `((test . ,test)
+        (test-run/assertions . ,assertion-executions)
         (test-run/result . ,test-run-summary))))
 
   (define (make-try-load-suite suite)

@@ -14,10 +14,13 @@
             raised-exception
             raised-continuation
             with-exception-continuation
+            make-assertion-execution
             assertion-run-result->assertion-outcome
             assertion-run-result->reporter-message
+            assertion-executions->assertion-summary
             assertion-outcomes->assertion-summary
             assertion-summary->test-run-status
+            assertion-executions->test-run-summary
             assertion-outcomes->test-run-summary))
 
 
@@ -72,6 +75,17 @@ Returns:
          (exception . ,exception)
          (continuation . ,(lambda () (run #t))))))))
 
+
+;;;
+;;; Assertion execution helpers
+;;;
+
+(define (make-assertion-execution assertion run-result)
+  `((assertion . ,assertion)
+    (assertion-run/result . ,run-result)
+    (assertion-run/outcome
+     . ,(assertion-run-result->assertion-outcome run-result))))
+
 (define (assertion-run-result->assertion-outcome run-result)
   (cond
    ((returned? run-result)
@@ -95,6 +109,13 @@ Returns:
       (else
        #f))))
 
+(define (assertion-execution-outcome assertion-execution)
+  (assoc-ref assertion-execution 'assertion-run/outcome))
+
+(define (assertion-executions->assertion-summary assertion-executions)
+  (assertion-outcomes->assertion-summary
+   (map assertion-execution-outcome assertion-executions)))
+
 (define (assertion-outcomes->assertion-summary outcomes)
   `((passes . ,(count (lambda (x) (eq? x 'pass)) outcomes))
     (failures . ,(count (lambda (x) (eq? x 'fail)) outcomes))
@@ -114,6 +135,16 @@ Zero assertion means pass."
      (error? 'error)
      (fail? 'fail)
      (else 'pass))))
+
+(define (assertion-executions->test-run-summary assertion-executions)
+  (let* ((assertion-summary
+          (assertion-executions->assertion-summary assertion-executions))
+         (result (assertion-summary->test-run-status assertion-summary)))
+    `((tests . 1)
+      (failures . ,(if (eq? result 'fail) 1 0))
+      (errors . ,(if (eq? result 'error) 1 0))
+      (skipped . 0)
+      (assertions . ,(assoc-ref assertion-summary 'assertions)))))
 
 (define (assertion-outcomes->test-run-summary outcomes)
   (let* ((assertion-summary (assertion-outcomes->assertion-summary outcomes))

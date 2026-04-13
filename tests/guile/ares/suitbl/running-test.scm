@@ -11,6 +11,12 @@
 
 
 
+(define (sample-assertion body)
+  `((assert/body . ,body)
+    (assert/location . ((filename . "running-test.scm")
+                        (line . 0)
+                        (column . 0)))))
+
 (define-suite assertion-outcomes->assertion-summary-tests
   (test "summarize assertion outcomes with pass-only data"
     (is (equal?
@@ -127,6 +133,101 @@
            (skipped . 0)
            (assertions . 0))
          (running:assertion-outcomes->test-run-summary '())))))
+
+(define-suite make-assertion-execution-tests
+  (test "stores assertion, pass outcome, and returned value"
+    (define assertion (sample-assertion #t))
+    (define execution
+      (running:make-assertion-execution
+       assertion
+       (running:with-exception-continuation (lambda () #t))))
+    (define stored-run-result
+      (assoc-ref execution 'assertion-run/result))
+
+    (is (equal? assertion (assoc-ref execution 'assertion)))
+    (is (eq? 'pass (assoc-ref execution 'assertion-run/outcome)))
+    (is (running:returned? stored-run-result))
+    (is (eq? #t (running:returned-value stored-run-result))))
+
+  (test "stores assertion, fail outcome, and returned value"
+    (define assertion (sample-assertion #f))
+    (define execution
+      (running:make-assertion-execution
+       assertion
+       (running:with-exception-continuation (lambda () #f))))
+    (define stored-run-result
+      (assoc-ref execution 'assertion-run/result))
+
+    (is (equal? assertion (assoc-ref execution 'assertion)))
+    (is (eq? 'fail (assoc-ref execution 'assertion-run/outcome)))
+    (is (running:returned? stored-run-result))
+    (is (eq? #f (running:returned-value stored-run-result))))
+
+  (test "stores assertion, error outcome, and exception"
+    (define assertion (sample-assertion '(error "boom")))
+    (define execution
+      (running:make-assertion-execution
+       assertion
+       (running:with-exception-continuation
+        (lambda ()
+          (error "boom")))))
+    (define stored-run-result
+      (assoc-ref execution 'assertion-run/result))
+
+    (is (equal? assertion (assoc-ref execution 'assertion)))
+    (is (eq? 'error (assoc-ref execution 'assertion-run/outcome)))
+    (is (running:raised? stored-run-result))
+    (is (equal? "boom"
+                (exception-message
+                 (running:raised-exception stored-run-result))))))
+
+(define-suite assertion-executions-summary-tests
+  (test "summarize assertion executions with mixed data"
+    (define assertion-executions
+      (list
+       (running:make-assertion-execution
+        (sample-assertion #t)
+        (running:with-exception-continuation (lambda () #t)))
+       (running:make-assertion-execution
+        (sample-assertion #f)
+        (running:with-exception-continuation (lambda () #f)))
+       (running:make-assertion-execution
+        (sample-assertion '(error "boom"))
+        (running:with-exception-continuation
+         (lambda ()
+           (error "boom"))))))
+
+    (is (equal?
+         '((passes . 1)
+           (failures . 1)
+           (errors . 1)
+           (assertions . 3))
+         (running:assertion-executions->assertion-summary
+          assertion-executions))))
+
+  (test "returns error test summary for mixed assertion executions"
+    (define assertion-executions
+      (list
+       (running:make-assertion-execution
+        (sample-assertion #t)
+        (running:with-exception-continuation (lambda () #t)))
+       (running:make-assertion-execution
+        (sample-assertion #f)
+        (running:with-exception-continuation (lambda () #f)))
+       (running:make-assertion-execution
+        (sample-assertion '(error "boom"))
+        (running:with-exception-continuation
+         (lambda ()
+           (error "boom"))))))
+
+    (is (equal?
+         '((tests . 1)
+           (failures . 0)
+           (errors . 1)
+           (skipped . 0)
+           (assertions . 3))
+         (running:assertion-executions->test-run-summary
+          assertion-executions)))))
 
 (define (raises-exception? thunk)
   (with-exception-handler
