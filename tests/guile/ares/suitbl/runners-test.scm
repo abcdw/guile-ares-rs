@@ -100,3 +100,21 @@
     (is (equal? "Test Suite can't be nested into Test Macro"
                 (exception-message exception)))))
 
+(define-suite re-raise-tests
+  (test "test body exception is replayed when re-raise is enabled"
+    (define counter 0)
+    (define tr
+      (make-suitbl-test-runner
+       #:config `((test-reporter . ,reporter:silent)
+                  (re-raise? . #t))))
+    (define exception
+      (capture-exception
+       (lambda ()
+         (with-test-runner tr
+           (test "replay-check"
+             (set! counter (+ counter 1))
+             (error "boom"))))))
+    (is exception)
+    (is (equal? "boom" (exception-message exception)))
+    (is (= 2 counter))))
+
