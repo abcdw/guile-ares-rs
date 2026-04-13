@@ -145,15 +145,13 @@ environment just set it to new instance of test runner.
       (%run-assert assert inside-test? assertion-executions)))
 
   (define (%run-test test)
-    (let ((description (assoc-ref test 'test/description))
-          (test-body-thunk (assoc-ref test 'test/body-thunk)))
+    (let ((test-body-thunk (assoc-ref test 'test/body-thunk)))
       (when (%inside-test?*)
         (raise-suitbl-wrong-position-exception
          'test 'test-body
          "Test Macros can't be nested"))
       ((get-test-reporter)
        `((type . run/test-start)
-         (description . ,description)
          (test . ,test)))
 
       (define result
@@ -168,8 +166,7 @@ environment just set it to new instance of test runner.
 
             ((get-test-reporter)
              (append
-              `((type . run/test-end)
-                (description . ,description))
+              `((type . run/test-end))
               test-execution))
 
             (define raised-assertion-execution
@@ -201,21 +198,19 @@ carries the final verdict."
   (define (make-try-load-suite suite)
     (define suite-body-thunk
       (assoc-ref suite 'suite/body-thunk))
-    (define description
-      (assoc-ref suite 'suite/description))
 
     (define suite-enter!
       (lambda ()
         ((get-test-reporter)
          `((type . load/suite-enter)
            (suite-path . ,(%suite-path*))
-           (description . ,description)))))
+           (suite . ,suite)))))
     (define suite-leave!
       (lambda ()
         ((get-test-reporter)
          `((type . load/suite-leave)
            (suite-path . ,(%suite-path*))
-           (description . ,description)))))
+           (suite . ,suite)))))
 
     (lambda ()
       (suite-enter!)
@@ -324,15 +319,14 @@ carries the final verdict."
                       (get-message _)
                       (assoc-ref _ 'test)))
               (test-with-context
-               (cons `(suite/path . ,(reverse (%suite-path*))) test))
-              (description (assoc-ref test 'test/description)))
+               (cons `(suite/path . ,(reverse (%suite-path*))) test)))
 
          (state:add-loaded-test! state test-with-context)
 
          ((get-test-reporter)
           `((type . load/test)
             (suite-path . ,(%suite-path*))
-            (description . ,description)))
+            (test . ,test-with-context)))
 
          (let ((suite-node-items (%current-suite-node-items*)))
            ;; (pk (%suite-path*))

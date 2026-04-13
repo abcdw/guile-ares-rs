@@ -2,7 +2,6 @@
 ;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl reporters)
-  #:use-module ((ares suitbl definitions) #:select (test? suite?))
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl reporting)
                 #:select (format-location
@@ -73,7 +72,7 @@ to @code{(current-output-port)}.
 (test-reporter
  `((type . load/test)
    (suite-path . ("suite1" "nested-suite"))
-   (description . "basic arithmetics")))
+   (test . ((test/description . "basic arithmetics")))))
 
 
 Test reporters can be combined with reporter-every or
@@ -85,6 +84,16 @@ A final test reporter can be attached to test runner.
 
 (define (get-port message)
   (or (assoc-ref message 'reporting/port) (current-output-port)))
+
+(define (message-test-description message)
+  (let ((test (assoc-ref message 'test)))
+    (and (list? test)
+         (assoc-ref test 'test/description))))
+
+(define (message-suite-description message)
+  (let ((suite (assoc-ref message 'suite)))
+    (and (list? suite)
+         (assoc-ref suite 'suite/description))))
 
 (define (silent message)
   "Do nothing, return @code{#t}."
@@ -116,21 +125,21 @@ to catch unhandled messages."
      (format (get-port message) "~a"
              (string-repeat "|" (length (assoc-ref message 'suite-path))))
      (format (get-port message) " + test ~a\n"
-             (assoc-ref message 'description)))
+             (message-test-description message)))
     ((load/suite-enter)
      (format (get-port message) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "┌"))
      (format (get-port message) "> ~a\n"
-             (assoc-ref message 'description)))
+             (message-suite-description message)))
     ((load/suite-leave)
      (format (get-port message) "~a"
              (string-append
               (string-repeat "|" (length (assoc-ref message 'suite-path)))
               "└"))
      (format (get-port message) "> ~a\n"
-             (assoc-ref message 'description)))
+             (message-suite-description message)))
 
     (else #f)))
 
@@ -138,10 +147,10 @@ to catch unhandled messages."
   (case (assoc-ref message 'type)
     ((run/test-start)
      (format (get-port message) "\n┌Test ~a\n"
-             (assoc-ref message 'description)))
+             (message-test-description message)))
     ((run/test-end)
      (format (get-port message) "└Test ~a\n"
-             (assoc-ref message 'description)))
+             (message-test-description message)))
 
     ((run/assertion-pass)
      (format (get-port message) "~y✓\n"
@@ -166,7 +175,7 @@ to catch unhandled messages."
   (case msg-type
     ((load/test)
      (format (get-port message) "-> ~a\n"
-             (assoc-ref message 'description)))
+             (message-test-description message)))
 
     (else #f)))
 
@@ -176,7 +185,7 @@ to catch unhandled messages."
 
     ((run/test-start)
      (format (get-port message) "--- [~a] ---\n"
-             (assoc-ref message 'description)))
+             (message-test-description message)))
     ((run/test-end)
      (format (get-port message) "\n"))
 
@@ -213,7 +222,7 @@ to catch unhandled messages."
 
     ((run/test-start)
      (format (get-port message) "--- [~a] ---\n"
-             (assoc-ref message 'description)))
+             (message-test-description message)))
     ((run/test-end)
      (format (get-port message) "\n"))
 
