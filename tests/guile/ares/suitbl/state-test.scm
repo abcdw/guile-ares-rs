@@ -54,33 +54,36 @@
 
     (define expected-simplified-history
       '(((test . "another good one")
-         (test-run/result
+         (test-run/summary
           (tests . 1)
           (failures . 0)
           (errors . 0)
           (skipped . 0)
-          (assertions . 1)))
+          (assertions . 1))
+         (test-run/outcome . pass))
         ((test . "failing test")
-         (test-run/result
+         (test-run/summary
           (tests . 1)
           (failures . 0)
           (errors . 1)
           (skipped . 0)
-          (assertions . 2)))
+          (assertions . 2))
+         (test-run/outcome . error))
         ((test . "good one")
-         (test-run/result
+         (test-run/summary
           (tests . 1)
           (failures . 0)
           (errors . 0)
           (skipped . 0)
-          (assertions . 2)))))
+          (assertions . 2))
+         (test-run/outcome . pass))))
 
     (is (equal?
          expected-simplified-history
          (state:simplify-run-history run-history)))))
 
 (define-suite run-summarization-tests
-  (test "run forest has run result summary attached to each node"
+  (test "run forest has run summary and outcome attached to each node"
     (define tr (get-test-runner-with-sample-suite-loaded))
 
     (define state
@@ -93,7 +96,8 @@
       '(((suite . "first suite")
          (suite-node/children
           ((test . "good one")
-           (test-run/result
+           (test-run/outcome . pass)
+           (test-run/summary
             (tests . 1)
             (failures . 0)
             (errors . 0)
@@ -102,26 +106,30 @@
           ((suite . "nested-suite")
            (suite-node/children
             ((test . "failing test")
-             (test-run/result
+             (test-run/outcome . error)
+             (test-run/summary
               (tests . 1)
               (failures . 0)
               (errors . 1)
               (skipped . 0)
               (assertions . 2))))
-           (suite-run/result
+           (suite-run/outcome . error)
+           (suite-run/summary
             (tests . 1)
             (failures . 0)
             (errors . 1)
             (skipped . 0)
             (assertions . 2)))
           ((test . "another good one")
-           (test-run/result
+           (test-run/outcome . pass)
+           (test-run/summary
             (tests . 1)
             (failures . 0)
             (errors . 0)
             (skipped . 0)
             (assertions . 1))))
-         (suite-run/result
+         (suite-run/outcome . error)
+         (suite-run/summary
           (tests . 3)
           (failures . 0)
           (errors . 1)

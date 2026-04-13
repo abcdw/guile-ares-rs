@@ -56,9 +56,8 @@ are no failures, return all tests unfiltered."
   (let* ((run-history (or (get-run-history state) '()))
          (failed-set
           (filter-map (lambda (entry)
-                        (let ((result (assoc-ref entry 'test-run/result)))
-                          (and (or (> (assoc-ref result 'failures) 0)
-                                   (> (assoc-ref result 'errors) 0))
+                        (let ((outcome (assoc-ref entry 'test-run/outcome)))
+                          (and (memq outcome '(fail error))
                                (assoc-ref entry 'test))))
                       run-history)))
     (if (null? failed-set)

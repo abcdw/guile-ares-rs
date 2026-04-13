@@ -156,14 +156,19 @@ environment just set it to new instance of test runner.
   (define (run-test test)
     "Test can either pass, fail or error.
 
-test-run/result can carry information about number of asserts."
+test-run/summary carries assertion counters, while test-run/outcome
+carries the final verdict."
     (let* ((assertion-executions (%run-test test))
            (test-run-summary
             (running:assertion-executions->test-run-summary
-             assertion-executions)))
+             assertion-executions))
+           (test-run-outcome
+            (running:assertion-summary->test-run-outcome
+             test-run-summary)))
       `((test . ,test)
         (test-run/assertions . ,assertion-executions)
-        (test-run/result . ,test-run-summary))))
+        (test-run/summary . ,test-run-summary)
+        (test-run/outcome . ,test-run-outcome))))
 
   (define (make-try-load-suite suite)
     (define suite-body-thunk

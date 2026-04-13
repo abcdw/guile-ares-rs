@@ -42,11 +42,11 @@
            (assertions . 0))
          (running:assertion-outcomes->assertion-summary '())))))
 
-(define-suite assertion-summary->test-run-status-tests
+(define-suite assertion-summary->test-run-outcome-tests
   (test "returns pass for zero-assertion summary"
     (is (eq?
          'pass
-         (running:assertion-summary->test-run-status
+         (running:assertion-summary->test-run-outcome
           '((passes . 0)
             (failures . 0)
             (errors . 0)
@@ -55,7 +55,7 @@
   (test "returns pass for pass-only summary"
     (is (eq?
          'pass
-         (running:assertion-summary->test-run-status
+         (running:assertion-summary->test-run-outcome
           '((passes . 2)
             (failures . 0)
             (errors . 0)
@@ -64,7 +64,7 @@
   (test "returns fail for summary with failures"
     (is (eq?
          'fail
-         (running:assertion-summary->test-run-status
+         (running:assertion-summary->test-run-outcome
           '((passes . 1)
             (failures . 1)
             (errors . 0)
@@ -73,7 +73,7 @@
   (test "returns error for summary with errors"
     (is (eq?
          'error
-         (running:assertion-summary->test-run-status
+         (running:assertion-summary->test-run-outcome
           '((passes . 1)
             (failures . 0)
             (errors . 1)
@@ -82,7 +82,7 @@
   (test "returns error when both failures and errors are present"
     (is (eq?
          'error
-         (running:assertion-summary->test-run-status
+         (running:assertion-summary->test-run-outcome
           '((passes . 0)
             (failures . 1)
             (errors . 1)

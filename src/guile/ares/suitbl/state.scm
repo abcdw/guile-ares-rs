@@ -9,6 +9,8 @@
                  atomic-box-ref))
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
+  #:use-module ((ares suitbl running)
+                #:select (assertion-summary->test-run-outcome))
   #:use-module ((srfi srfi-1)
                 #:select (alist-delete alist-cons fold filter-map))
   #:use-module ((ice-9 match) #:select (match))
@@ -132,7 +134,8 @@
 (define (simplify-run-history run-history)
   (map (lambda (entry)
          `((test . ,(test->string (assoc-ref entry 'test)))
-           (test-run/result . ,(assoc-ref entry 'test-run/result))))
+           (test-run/summary . ,(assoc-ref entry 'test-run/summary))
+           (test-run/outcome . ,(assoc-ref entry 'test-run/outcome))))
        run-history))
 
 
@@ -161,7 +164,7 @@
   (define suite-forest (get-suite-forest state))
 
   ;; TODO: [Andrew Tropin, 2025-10-02] Make lookup O(1)
-  (define (find-test-result test suite-path)
+  (define (find-test-run-entry test suite-path)
     (and
      run-history
      (let loop ((history run-history))
@@ -171,16 +174,20 @@
              (if (and (equal? (assoc-ref entry 'test) test)
                       (equal? (assoc-ref (assoc-ref entry 'test) 'suite/path)
                               suite-path))
-                 (assoc-ref entry 'test-run/result)
+                 entry
                  (loop (cdr history))))))))
 
   (define (annotate-node node suite-path)
     (cond
      ((test-node? node)
       (let* ((test (assoc-ref node 'test))
-             (result (find-test-result test suite-path)))
-        (if result
-            (alist-cons 'test-run/result result node)
+             (entry (find-test-run-entry test suite-path)))
+        (if entry
+            (let ((summary (assoc-ref entry 'test-run/summary))
+                  (outcome (assoc-ref entry 'test-run/outcome)))
+              (chain node
+                (alist-cons 'test-run/summary summary _)
+                (alist-cons 'test-run/outcome outcome _)))
             node)))
 
      ((suite-node? node)
@@ -194,12 +201,16 @@
               (fold merge-run-summaries
                     initial-run-summary
                     (filter-map (lambda (child)
-                                  (or (assoc-ref child 'test-run/result)
-                                      (assoc-ref child 'suite-run/result)))
+                                  (or (assoc-ref child 'test-run/summary)
+                                      (assoc-ref child 'suite-run/summary)))
                                 annotated-children)))
+             (suite-outcome
+              (assertion-summary->test-run-outcome suite-summary))
              (updated-node (alist-update node 'suite-node/children
                                        (lambda (_) annotated-children))))
-        (alist-cons 'suite-run/result suite-summary updated-node)))
+        (chain updated-node
+          (alist-cons 'suite-run/summary suite-summary _)
+          (alist-cons 'suite-run/outcome suite-outcome _))))
 
      (else node)))
 
@@ -276,7 +287,7 @@
             summary
             (let ((item (car remaining-items)))
               (loop
-               (merge-run-summaries summary (assoc-ref item 'test-run/result))
+               (merge-run-summaries summary (assoc-ref item 'test-run/summary))
                (cdr remaining-items)))))
       #f))
 

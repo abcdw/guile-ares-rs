@@ -19,7 +19,7 @@
             assertion-run-result->reporter-message
             assertion-executions->assertion-summary
             assertion-outcomes->assertion-summary
-            assertion-summary->test-run-status
+            assertion-summary->test-run-outcome
             assertion-executions->test-run-summary
             assertion-outcomes->test-run-summary))
 
@@ -122,11 +122,11 @@ Returns:
     (errors . ,(count (lambda (x) (eq? x 'error)) outcomes))
     (assertions . ,(length outcomes))))
 
-(define (assertion-summary->test-run-status assertion-summary)
-  "Convert ASSERTION-SUMMARY alist into a test run status symbol.
+(define (assertion-summary->test-run-outcome assertion-summary)
+  "Convert ASSERTION-SUMMARY alist into a test run outcome symbol.
 
 Returns one of: 'pass, 'fail, or 'error.  If both failures and errors
-are present, test run status is considered 'error.
+are present, test run outcome is considered 'error.
 
 Zero assertion means pass."
   (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
@@ -139,18 +139,18 @@ Zero assertion means pass."
 (define (assertion-executions->test-run-summary assertion-executions)
   (let* ((assertion-summary
           (assertion-executions->assertion-summary assertion-executions))
-         (result (assertion-summary->test-run-status assertion-summary)))
+         (outcome (assertion-summary->test-run-outcome assertion-summary)))
     `((tests . 1)
-      (failures . ,(if (eq? result 'fail) 1 0))
-      (errors . ,(if (eq? result 'error) 1 0))
+      (failures . ,(if (eq? outcome 'fail) 1 0))
+      (errors . ,(if (eq? outcome 'error) 1 0))
       (skipped . 0)
       (assertions . ,(assoc-ref assertion-summary 'assertions)))))
 
 (define (assertion-outcomes->test-run-summary outcomes)
   (let* ((assertion-summary (assertion-outcomes->assertion-summary outcomes))
-         (result (assertion-summary->test-run-status assertion-summary)))
+         (outcome (assertion-summary->test-run-outcome assertion-summary)))
     `((tests . 1)
-      (failures . ,(if (eq? result 'fail) 1 0))
-      (errors . ,(if (eq? result 'error) 1 0))
+      (failures . ,(if (eq? outcome 'fail) 1 0))
+      (errors . ,(if (eq? outcome 'error) 1 0))
       (skipped . 0)
       (assertions . ,(assoc-ref assertion-summary 'assertions)))))
