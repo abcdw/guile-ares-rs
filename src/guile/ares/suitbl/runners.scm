@@ -88,7 +88,8 @@ environment just set it to new instance of test runner.
            (assertion-execution
             (running:make-assertion-execution assert run-result))
            (reporter-message
-            (running:assertion-run-result->reporter-message run-result)))
+            (running:assertion-execution->reporter-message
+             assertion-execution)))
 
       (when inside-test?
         (atomic-box-update!
@@ -97,7 +98,7 @@ environment just set it to new instance of test runner.
            (cons assertion-execution value))))
 
       ((get-test-reporter)
-       (append reporter-message assert))
+       reporter-message)
 
       ;; We re-raise it here, inside run-assert to make it work for
       ;; lonely (is ...)  evaluation case

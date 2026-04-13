@@ -15,6 +15,7 @@
             raised-continuation
             with-exception-continuation
             make-assertion-execution
+            assertion-execution->reporter-message
             assertion-run-result->assertion-outcome
             assertion-run-result->reporter-message
             assertion-executions->assertion-summary
@@ -110,6 +111,14 @@ Returns:
          (assertion/error . ,(raised-exception run-result))))
       (else
        #f))))
+
+(define (assertion-execution->reporter-message assertion-execution)
+  (let ((assertion (assoc-ref assertion-execution 'assertion))
+        (run-result (assoc-ref assertion-execution 'assertion-run/result)))
+    (let ((reporter-message
+           (assertion-run-result->reporter-message run-result)))
+      (and reporter-message
+           (append reporter-message assertion)))))
 
 (define (assertion-execution-outcome assertion-execution)
   (assoc-ref assertion-execution 'assertion-run/outcome))

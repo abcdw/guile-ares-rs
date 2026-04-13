@@ -380,6 +380,37 @@
       (is (equal? (running:raised-exception run-result)
                   (assoc-ref message 'assertion/error))))))
 
+(define-suite assertion-execution->reporter-message-tests
+  (test "includes assertion data for passing assertion executions"
+    (define assertion (sample-assertion #t))
+    (define execution
+      (running:make-assertion-execution
+       assertion
+       (running:with-exception-continuation (lambda () #t))))
+    (define message
+      (running:assertion-execution->reporter-message execution))
+
+    (is (equal? 'run/assertion-pass (assoc-ref message 'type)))
+    (is (equal? #t (assoc-ref message 'assertion/result)))
+    (is (equal? #t (assoc-ref message 'assert/body))))
+
+  (test "includes assertion error for erroring assertion executions"
+    (define assertion (sample-assertion '(error "boom")))
+    (define execution
+      (running:make-assertion-execution
+       assertion
+       (running:with-exception-continuation
+        (lambda ()
+          (error "boom")))))
+    (define message
+      (running:assertion-execution->reporter-message execution))
+
+    (is (equal? 'run/assertion-error (assoc-ref message 'type)))
+    (is (equal? '(error "boom") (assoc-ref message 'assert/body)))
+    (is (equal? "boom"
+                (exception-message
+                 (assoc-ref message 'assertion/error))))))
+
 (define-suite with-exception-continuation-tests
   (test "returns tagged returned value when no exception is raised"
     (let ((result
