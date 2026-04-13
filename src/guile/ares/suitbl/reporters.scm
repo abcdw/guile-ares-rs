@@ -33,7 +33,8 @@
             junit
             load-tree
             load-summary
-            run-summary))
+            run-summary
+            zero-assertion-warning))
 
 
 ;;;
@@ -206,9 +207,26 @@ to catch unhandled messages."
 
     (else #f)))
 
+(define (zero-assertion-warning message)
+  "Warn when a test finishes without executing any assertions."
+  (case (assoc-ref message 'type)
+    ((run/test-end)
+     (let* ((summary (assoc-ref message 'test-run/summary))
+            (assertions (and summary
+                             (assoc-ref summary 'assertions))))
+       (if (and assertions (zero? assertions))
+           (begin
+             (format (get-port message)
+                     "\nwarning: Test `~a' executed zero assertions.\n"
+                     (message-test-description message))
+             #t)
+           #f)))
+    (else #f)))
+
 (define minimal
   (chain (list
           run-minimal
+          zero-assertion-warning
           run-summary
           load-ignore-messages
           load-minimal)
@@ -244,6 +262,7 @@ to catch unhandled messages."
 (define spying
   (chain (list
           execution-spying
+          zero-assertion-warning
           load-minimal)
     (reporter-every _)
     (list _ unhandled)
@@ -297,6 +316,7 @@ when a top-level suite finishes loading."
 
 (define base
   (chain (list verbose
+               zero-assertion-warning
                load-ignore-messages
                ;; hierarchy
                load-tree
@@ -324,7 +344,9 @@ when a top-level suite finishes loading."
     (else #f)))
 
 (define dots-with-hierarchy
-  (chain (list dots hierarchy)
+  (chain (list dots
+               zero-assertion-warning
+               hierarchy)
     (reporter-every _)
     (list _ unhandled)
     (reporter-first _)))
