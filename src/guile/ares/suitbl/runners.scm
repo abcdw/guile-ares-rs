@@ -87,6 +87,21 @@ environment just set it to new instance of test runner.
              (assoc-ref assertion-execution 'assertion-run/result)))
           assertion-executions))
 
+  (define (make-test-execution test assertion-executions)
+    (let* ((assertion-summary
+            (running:assertion-executions->assertion-summary
+             assertion-executions))
+           (test-run-summary
+            (running:assertion-summary->test-run-summary
+             assertion-summary))
+           (test-run-outcome
+            (running:run-summary->run-outcome
+             test-run-summary)))
+      `((test . ,test)
+        (test-run/assertions . ,assertion-executions)
+        (test-run/summary . ,test-run-summary)
+        (test-run/outcome . ,test-run-outcome))))
+
   (define (%run-assert assert inside-test? assertion-executions)
     (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
@@ -147,10 +162,14 @@ environment just set it to new instance of test runner.
                  (running:with-exception-continuation test-body-thunk)))
             (define assertion-executions
               (reverse (atomic-box-ref (%assertion-executions*))))
+            (define test-execution
+              (make-test-execution test assertion-executions))
 
             ((get-test-reporter)
-             `((type . run/test-end)
-               (description . ,description)))
+             (append
+              `((type . run/test-end)
+                (description . ,description))
+              test-execution))
 
             (define raised-assertion-execution
               (first-erroring-assertion-execution
@@ -167,7 +186,7 @@ environment just set it to new instance of test runner.
                   (raise-exception
                    (running:raised-exception test-run-result))))
 
-            assertion-executions)))
+            test-execution)))
 
       result))
 
@@ -176,20 +195,7 @@ environment just set it to new instance of test runner.
 
 test-run/summary carries assertion counters, while test-run/outcome
 carries the final verdict."
-    (let* ((assertion-executions (%run-test test))
-           (assertion-summary
-            (running:assertion-executions->assertion-summary
-             assertion-executions))
-           (test-run-summary
-            (running:assertion-summary->test-run-summary
-             assertion-summary))
-           (test-run-outcome
-            (running:run-summary->run-outcome
-             test-run-summary)))
-      `((test . ,test)
-        (test-run/assertions . ,assertion-executions)
-        (test-run/summary . ,test-run-summary)
-        (test-run/outcome . ,test-run-outcome))))
+    (%run-test test))
 
   (define (make-try-load-suite suite)
     (define suite-body-thunk
