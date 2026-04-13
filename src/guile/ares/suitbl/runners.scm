@@ -37,15 +37,6 @@ environment just set it to new instance of test runner.
 
 |#
 
-
-
-;;;
-;;; Helpers
-;;;
-
-(define (copy-procedure-properties! from to)
-  (set-procedure-properties! to (procedure-properties from)))
-
 
 ;;;
 ;;; Test runner
