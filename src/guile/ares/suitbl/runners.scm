@@ -153,7 +153,8 @@ environment just set it to new instance of test runner.
          "Test Macros can't be nested"))
       ((get-test-reporter)
        `((type . run/test-start)
-         (description . ,description)))
+         (description . ,description)
+         (test . ,test)))
 
       (define result
         (parameterize ((%inside-test?* #t)
