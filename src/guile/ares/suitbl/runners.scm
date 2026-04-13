@@ -143,7 +143,7 @@ environment just set it to new instance of test runner.
       (define result
         (parameterize ((%inside-test?* #t)
                        (%assertion-executions* (make-atomic-box '())))
-          (let ((run-result
+          (let ((test-run-result
                  (running:with-exception-continuation test-body-thunk)))
             (define assertion-executions
               (reverse (atomic-box-ref (%assertion-executions*))))
@@ -161,11 +161,11 @@ environment just set it to new instance of test runner.
                 (assoc-ref raised-assertion-execution
                            'assertion-run/result))))
 
-            (when (running:raised? run-result)
+            (when (running:raised? test-run-result)
               (if (re-raise?)
-                  ((running:raised-continuation run-result))
+                  ((running:raised-continuation test-run-result))
                   (raise-exception
-                   (running:raised-exception run-result))))
+                   (running:raised-exception test-run-result))))
 
             assertion-executions)))
 
