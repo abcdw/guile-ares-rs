@@ -119,6 +119,28 @@
                 (exception-message exception)))
     (is (= 2 counter)))
 
+  (test "is inside test is replayed when re-raise is enabled"
+    (define test-body-counter 0)
+    (define is-body-counter 0)
+    (define tr
+      (make-suitbl-test-runner
+       #:config `((test-reporter . ,reporter:silent)
+                  (re-raise? . #t))))
+    (define exception
+      (capture-exception
+       (lambda ()
+         (with-test-runner tr
+           (test "is replay-check"
+             (set! test-body-counter (+ test-body-counter 1))
+             (is (begin
+                   (set! is-body-counter (+ is-body-counter 1))
+                   (error "re-raise-tests/is-inside-test"))))))))
+    (is exception)
+    (is (equal? "re-raise-tests/is-inside-test"
+                (exception-message exception)))
+    (is (= 1 test-body-counter))
+    (is (= 2 is-body-counter)))
+
   (test "lonely is re-raises exception when re-raise is enabled"
     (define tr
       (make-suitbl-test-runner
