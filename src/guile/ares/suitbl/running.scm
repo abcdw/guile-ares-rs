@@ -32,20 +32,25 @@
 ;;;
 
 (define (returned? x)
+  "Return true when X is a successful run result."
   (and (pair? x)
        (eq? 'returned (car x))))
 
 (define (returned-value returned)
+  "Extract the value from RETURNED run result."
   (cdr returned))
 
 (define (raised? x)
+  "Return true when X is a failed run result carrying an exception."
   (and (pair? x)
        (eq? 'raised (car x))))
 
 (define (raised-exception raised)
+  "Extract the exception object from RAISED run result."
   (assoc-ref (cdr raised) 'exception))
 
 (define (raised-continuation raised)
+  "Extract the replay continuation from RAISED run result."
   (assoc-ref (cdr raised) 'continuation))
 
 (define (with-exception-continuation thunk)
@@ -84,12 +89,14 @@ Returns:
 ;;;
 
 (define (make-assertion-execution assertion run-result)
+  "Build an assertion execution record from ASSERTION and RUN-RESULT."
   `((assertion . ,assertion)
     (assertion-run/result . ,run-result)
     (assertion-run/outcome
      . ,(assertion-run-result->assertion-outcome run-result))))
 
 (define (assertion-run-result->assertion-outcome run-result)
+  "Classify RUN-RESULT as one of: pass, fail, or error."
   (cond
    ((returned? run-result)
     (if (returned-value run-result) 'pass 'fail))
@@ -99,6 +106,7 @@ Returns:
     #f)))
 
 (define (assertion-run-result->reporter-message run-result)
+  "Convert RUN-RESULT to a reporter message fragment."
   (let ((outcome (assertion-run-result->assertion-outcome run-result)))
     (case outcome
       ((pass fail)
@@ -113,6 +121,7 @@ Returns:
        #f))))
 
 (define (assertion-execution->reporter-message assertion-execution)
+  "Convert ASSERTION-EXECUTION to a complete reporter message."
   (let ((assertion (assoc-ref assertion-execution 'assertion))
         (run-result (assoc-ref assertion-execution 'assertion-run/result)))
     (let ((reporter-message
@@ -124,16 +133,19 @@ Returns:
   (assoc-ref assertion-execution 'assertion-run/outcome))
 
 (define (assertion-executions->assertion-summary assertion-executions)
+  "Summarize ASSERTION-EXECUTIONS into pass, failure, and error counts."
   (assertion-outcomes->assertion-summary
    (map assertion-execution-outcome assertion-executions)))
 
 (define (assertion-outcomes->assertion-summary outcomes)
+  "Summarize assertion OUTCOMES into pass, failure, and error counts."
   `((passes . ,(count (lambda (x) (eq? x 'pass)) outcomes))
     (failures . ,(count (lambda (x) (eq? x 'fail)) outcomes))
     (errors . ,(count (lambda (x) (eq? x 'error)) outcomes))
     (assertions . ,(length outcomes))))
 
 (define (assertion-summary->test-run-summary assertion-summary)
+  "Convert ASSERTION-SUMMARY into a per-test run summary alist."
   (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
         (fail? (> (assoc-ref assertion-summary 'failures) 0)))
     `((tests . 1)
@@ -160,9 +172,11 @@ are present, run outcome is considered 'error."
    (assertion-summary->test-run-summary assertion-summary)))
 
 (define (assertion-executions->test-run-summary assertion-executions)
+  "Convert ASSERTION-EXECUTIONS into a per-test run summary alist."
   (assertion-summary->test-run-summary
    (assertion-executions->assertion-summary assertion-executions)))
 
 (define (assertion-outcomes->test-run-summary outcomes)
+  "Convert assertion OUTCOMES into a per-test run summary alist."
   (assertion-summary->test-run-summary
    (assertion-outcomes->assertion-summary outcomes)))
