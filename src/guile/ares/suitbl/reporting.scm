@@ -109,17 +109,17 @@ Returns an empty string if no location is available."
 ;;; JUnit XML
 ;;;
 
-(define (suite-summary->attributes summary)
-  "Convert suite-run/summary alist to JUnit testsuite attributes"
-  `((tests ,(number->string (assoc-ref summary 'tests)))
-    (failures ,(number->string (assoc-ref summary 'failures)))
-    (errors ,(number->string (assoc-ref summary 'errors)))
-    (skipped ,(number->string (assoc-ref summary 'skipped)))
-    (assertions ,(number->string (assoc-ref summary 'assertions)))))
+(define (suite-run-summary->attributes suite-run-summary)
+  "Convert SUITE-RUN-SUMMARY alist to JUnit testsuite attributes"
+  `((tests ,(number->string (assoc-ref suite-run-summary 'tests)))
+    (failures ,(number->string (assoc-ref suite-run-summary 'failures)))
+    (errors ,(number->string (assoc-ref suite-run-summary 'errors)))
+    (skipped ,(number->string (assoc-ref suite-run-summary 'skipped)))
+    (assertions ,(number->string (assoc-ref suite-run-summary 'assertions)))))
 
-(define (test-summary->attributes summary)
-  "Convert test-run/summary alist to JUnit testcase attributes"
-  `((assertions ,(number->string (assoc-ref summary 'assertions)))))
+(define (test-run-summary->attributes test-run-summary)
+  "Convert TEST-RUN-SUMMARY alist to JUnit testcase attributes"
+  `((assertions ,(number->string (assoc-ref test-run-summary 'assertions)))))
 
 (define (node->junit-sxml node classname-path)
   "Convert a single node (suite or test) to JUnit SXML"
@@ -130,14 +130,15 @@ Returns an empty string if no location is available."
     (let* ((suite (assoc-ref node 'suite))
            (suite-name (assoc-ref suite 'suite/description))
            (children (assoc-ref node 'suite-node/children))
-           (suite-summary (assoc-ref node 'suite-run/summary))
+           (suite-run-summary (assoc-ref node 'suite-run/summary))
            (new-classname-path
             (if (null? classname-path)
                 suite-name
                 (string-append classname-path "." suite-name)))
-           (attributes (if suite-summary
+           (attributes (if suite-run-summary
                            (cons `(name ,suite-name)
-                                 (suite-summary->attributes suite-summary))
+                                 (suite-run-summary->attributes
+                                  suite-run-summary))
                            `((name ,suite-name)))))
       `(testsuite (@ ,@attributes)
                   ,@(map (lambda (child)
@@ -148,13 +149,13 @@ Returns an empty string if no location is available."
    ((assoc-ref node 'test)
     (let* ((test (assoc-ref node 'test))
            (test-name (assoc-ref test 'test/description))
-           (test-summary (assoc-ref node 'test-run/summary))
+           (test-run-summary (assoc-ref node 'test-run/summary))
            (test-outcome (assoc-ref node 'test-run/outcome))
            (attributes (append
                         `((name ,test-name)
                           (classname ,classname-path))
-                        (if test-summary
-                            (test-summary->attributes test-summary)
+                        (if test-run-summary
+                            (test-run-summary->attributes test-run-summary)
                             '())))
            (status-element (case test-outcome
                              ((error)
@@ -172,12 +173,12 @@ Returns an empty string if no location is available."
 (define (calculate-totals forest)
   "Calculate total statistics from all top-level suites"
   (fold (lambda (node acc)
-          (let ((summary (assoc-ref node 'suite-run/summary)))
-            (if summary
+          (let ((suite-run-summary (assoc-ref node 'suite-run/summary)))
+            (if suite-run-summary
                 (map (lambda (key-val)
                        (match key-val
                          ((key val)
-                          (cons key (+ val (assoc-ref summary key))))))
+                          (cons key (+ val (assoc-ref suite-run-summary key))))))
                      acc)
                 acc)))
         '((tests 0)
@@ -191,7 +192,7 @@ Returns an empty string if no location is available."
   "Convert a forest-with-summary to JUnit SXML format"
   (let* ((totals (calculate-totals forest))
          (root-attributes (cons `(name ,name)
-                                (suite-summary->attributes totals))))
+                                (suite-run-summary->attributes totals))))
     `(*TOP*
       (*PI* xml "version=\"1.0\" encoding=\"UTF-8\"")
       (testsuites (@ ,@root-attributes)

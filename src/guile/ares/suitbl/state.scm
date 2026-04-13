@@ -183,11 +183,11 @@
       (let* ((test (assoc-ref node 'test))
              (entry (find-test-run-entry test suite-path)))
         (if entry
-            (let ((summary (assoc-ref entry 'test-run/summary))
-                  (outcome (assoc-ref entry 'test-run/outcome)))
+            (let ((test-run-summary (assoc-ref entry 'test-run/summary))
+                  (test-run-outcome (assoc-ref entry 'test-run/outcome)))
               (chain node
-                (alist-cons 'test-run/summary summary _)
-                (alist-cons 'test-run/outcome outcome _)))
+                (alist-cons 'test-run/summary test-run-summary _)
+                (alist-cons 'test-run/outcome test-run-outcome _)))
             node)))
 
      ((suite-node? node)
@@ -197,20 +197,20 @@
              (annotated-children (map (lambda (child)
                                         (annotate-node child new-suite-path))
                                       children))
-             (suite-summary
+             (suite-run-summary
               (fold merge-run-summaries
                     initial-run-summary
                     (filter-map (lambda (child)
                                   (or (assoc-ref child 'test-run/summary)
                                       (assoc-ref child 'suite-run/summary)))
                                 annotated-children)))
-             (suite-outcome
-              (run-summary->run-outcome suite-summary))
+             (suite-run-outcome
+              (run-summary->run-outcome suite-run-summary))
              (updated-node (alist-update node 'suite-node/children
                                        (lambda (_) annotated-children))))
         (chain updated-node
-          (alist-cons 'suite-run/summary suite-summary _)
-          (alist-cons 'suite-run/outcome suite-outcome _))))
+          (alist-cons 'suite-run/summary suite-run-summary _)
+          (alist-cons 'suite-run/outcome suite-run-outcome _))))
 
      (else node)))
 
