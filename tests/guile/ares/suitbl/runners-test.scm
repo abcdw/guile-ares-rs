@@ -115,6 +115,21 @@
              (set! counter (+ counter 1))
              (error "boom"))))))
     (is exception)
-    (is (equal? "boom" (exception-message exception)))
-    (is (= 2 counter))))
+    (is (equal? "boom"
+                (exception-message exception)))
+    (is (= 2 counter)))
+
+  (test "lonely is re-raises exception when re-raise is enabled"
+    (define tr
+      (make-suitbl-test-runner
+       #:config `((test-reporter . ,reporter:silent)
+                  (re-raise? . #t))))
+    (define exception
+      (capture-exception
+       (lambda ()
+         (with-test-runner tr
+           (is (error "boom"))))))
+    (is exception)
+    (is (equal? "boom"
+                (exception-message exception)))))
 
