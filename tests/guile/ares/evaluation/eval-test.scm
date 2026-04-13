@@ -73,6 +73,19 @@
       (check-value "addition" 1)
       (send channel '(evaluate (("code" . "(* 1 2 3 4)"))))
       (check-value "multiplication" 24)
+
+      (send channel
+            '(evaluate
+              (("code" . "(begin
+(use-modules (ice-9 exceptions))
+(exception-message
+ (with-exception-handler
+   (lambda (ex) ex)
+   (lambda () (error \"boom\"))
+   #:unwind? #t)))"))))
+      (check-value "Module uses (scheme base) error binding"
+                   "boom")
+
       (send channel '(evaluate (("code" . "(/ 4935 0)"))))
       (check-exception "enter recursive evaluation" 'numerical-overflow)
       (check-message "enter recursive evaluation message"

@@ -47,6 +47,13 @@
 (define evaluation-tag (make-prompt-tag "ares-evaluation"))
 (define evaluation-state (make-thread-local-fluid 'idle))
 
+(define (ensure-scheme-base-error-binding! module)
+  "Ensure MODULE has a local `error' binding with (scheme base)
+semantics, unless it already defines one."
+  (unless (module-local-variable module 'error)
+    (module-define! module 'error
+                    (module-ref (resolve-interface '(scheme base)) 'error))))
+
 (define (evaluation-thunk nrepl-message)
   "Return a thunk, which evaluate code in appropriate module and handle
 exceptions."
@@ -59,6 +66,7 @@ exceptions."
              (current-module))))
       (save-module-excursion
        (lambda ()
+         (ensure-scheme-base-error-binding! module)
          (set-current-module module)
          (call-with-input-string
           code
