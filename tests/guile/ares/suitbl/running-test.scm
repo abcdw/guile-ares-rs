@@ -357,8 +357,7 @@
              (lambda () #t)))
            (message
             (running:assertion-run-result->reporter-message run-result)))
-      (is (equal? 'run/assertion-pass (assoc-ref message 'type)))
-      (is (equal? #t (assoc-ref message 'assertion/result)))))
+      (is (equal? 'run/assertion-pass (assoc-ref message 'type)))))
 
   (test "maps falsey returned result to assertion-fail reporter message"
     (let* ((run-result
@@ -366,8 +365,7 @@
              (lambda () #f)))
            (message
             (running:assertion-run-result->reporter-message run-result)))
-      (is (equal? 'run/assertion-fail (assoc-ref message 'type)))
-      (is (equal? #f (assoc-ref message 'assertion/result)))))
+      (is (equal? 'run/assertion-fail (assoc-ref message 'type)))))
 
   (test "maps raised result to assertion-error reporter message"
     (let* ((run-result
@@ -376,9 +374,7 @@
                (error "boom"))))
            (message
             (running:assertion-run-result->reporter-message run-result)))
-      (is (equal? 'run/assertion-error (assoc-ref message 'type)))
-      (is (equal? (running:raised-exception run-result)
-                  (assoc-ref message 'assertion/error))))))
+      (is (equal? 'run/assertion-error (assoc-ref message 'type))))))
 
 (define-suite assertion-run->reporter-message-tests
   (test "includes assertion data for passing assertion runs"
@@ -391,8 +387,8 @@
       (running:assertion-run->reporter-message assertion-run))
 
     (is (equal? 'run/assertion-pass (assoc-ref message 'type)))
-    (is (equal? #t (assoc-ref message 'assertion/result)))
-    (is (equal? #t (assoc-ref message 'assert/body))))
+    (is (equal? assertion (assoc-ref message 'assertion)))
+    (is (equal? assertion-run (assoc-ref message 'assertion-run))))
 
   (test "includes assertion error for erroring assertion runs"
     (define assertion (sample-assertion '(error "boom")))
@@ -404,12 +400,17 @@
           (error "boom")))))
     (define message
       (running:assertion-run->reporter-message assertion-run))
+    (define message-assertion-run
+      (assoc-ref message 'assertion-run))
+    (define message-run-result
+      (assoc-ref message-assertion-run 'assertion-run/result))
 
     (is (equal? 'run/assertion-error (assoc-ref message 'type)))
-    (is (equal? '(error "boom") (assoc-ref message 'assert/body)))
+    (is (equal? assertion (assoc-ref message 'assertion)))
+    (is (equal? assertion-run message-assertion-run))
     (is (equal? "boom"
                 (exception-message
-                 (assoc-ref message 'assertion/error))))))
+                 (running:raised-exception message-run-result))))))
 
 (define-suite with-exception-continuation-tests
   (test "returns tagged returned value when no exception is raised"

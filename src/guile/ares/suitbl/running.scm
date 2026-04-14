@@ -107,17 +107,15 @@ Returns:
     #f)))
 
 (define (assertion-run-result->reporter-message run-result)
-  "Convert RUN-RESULT to a reporter message fragment."
+  "Convert RUN-RESULT to an assertion reporter message fragment."
   (let ((outcome (assertion-run-result->assertion-outcome run-result)))
     (case outcome
       ((pass fail)
        `((type . ,(if (eq? 'pass outcome)
                       'run/assertion-pass
-                      'run/assertion-fail))
-         (assertion/result . ,(returned-value run-result))))
+                      'run/assertion-fail))))
       ((error)
-       `((type . run/assertion-error)
-         (assertion/error . ,(raised-exception run-result))))
+       '((type . run/assertion-error)))
       (else
        #f))))
 
@@ -128,7 +126,9 @@ Returns:
     (let ((reporter-message
            (assertion-run-result->reporter-message run-result)))
       (and reporter-message
-           (append reporter-message assertion)))))
+           `((type . ,(assoc-ref reporter-message 'type))
+             (assertion . ,assertion)
+             (assertion-run . ,assertion-run))))))
 
 (define (assertion-run-outcome assertion-run)
   (assoc-ref assertion-run 'assertion-run/outcome))

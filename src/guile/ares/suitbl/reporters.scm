@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl reporters)
   #:use-module ((ares suitbl state) #:prefix state:)
+  #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((ares suitbl reporting)
                 #:select (format-location
                           actual pre-evaled-expression
@@ -123,19 +124,30 @@ to catch unhandled messages."
 
     ((run/assertion-pass)
      (format (get-port message) "~y✓\n"
-             (assoc-ref message 'assert/body)))
+             (chain-and message
+               (assoc-ref _ 'assertion)
+               (assoc-ref _ 'assert/body))))
 
     ((run/assertion-fail)
      (format (get-port message) "~a\n~y✗ ~a\n"
              (format-location message)
-             (assoc-ref message 'assert/body) (actual message)))
+             (chain-and message
+               (assoc-ref _ 'assertion)
+               (assoc-ref _ 'assert/body))
+             (actual message)))
 
     ((run/assertion-error)
-     (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
-             (format-location message)
-             (assoc-ref message 'assert/body)
-             (exception->string
-              (assoc-ref message 'assertion/error))))
+     (let ((run-result (chain-and message
+                         (assoc-ref _ 'assertion-run)
+                         (assoc-ref _ 'assertion-run/result))))
+       (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
+               (format-location message)
+               (chain-and message
+                 (assoc-ref _ 'assertion)
+                 (assoc-ref _ 'assert/body))
+               (exception->string
+                (and (running:raised? run-result)
+                     (running:raised-exception run-result))))))
 
     (else #f)))
 
@@ -164,14 +176,23 @@ to catch unhandled messages."
     ((run/assertion-fail)
      (format (get-port message) "~a\n~y✗ ~a\n"
              (format-location message)
-             (assoc-ref message 'assert/body) (actual message)))
+             (chain-and message
+               (assoc-ref _ 'assertion)
+               (assoc-ref _ 'assert/body))
+             (actual message)))
 
     ((run/assertion-error)
-     (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
-             (format-location message)
-             (assoc-ref message 'assert/body)
-             (exception->string
-              (assoc-ref message 'assertion/error))))
+     (let ((run-result (chain-and message
+                         (assoc-ref _ 'assertion-run)
+                         (assoc-ref _ 'assertion-run/result))))
+       (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
+               (format-location message)
+               (chain-and message
+                 (assoc-ref _ 'assertion)
+                 (assoc-ref _ 'assert/body))
+               (exception->string
+                (and (running:raised? run-result)
+                     (running:raised-exception run-result))))))
 
     (else #f)))
 
@@ -215,17 +236,29 @@ to catch unhandled messages."
      (format (get-port message) "\n"))
 
     ((run/assertion-pass run/assertion-fail)
-     (format (get-port message) "~y~y => ~y"
-             (assoc-ref message 'assert/body)
-             (pre-evaled-expression message)
-             (assoc-ref message 'assertion/result)))
+     (let ((run-result (chain-and message
+                         (assoc-ref _ 'assertion-run)
+                         (assoc-ref _ 'assertion-run/result))))
+       (format (get-port message) "~y~y => ~y"
+               (chain-and message
+                 (assoc-ref _ 'assertion)
+                 (assoc-ref _ 'assert/body))
+               (pre-evaled-expression message)
+               (and (running:returned? run-result)
+                    (running:returned-value run-result)))))
 
     ((run/assertion-error)
-     (format (get-port message) "\n ~a\n ~y✗ produced error:\n ~s\n"
-             (format-location message)
-             (assoc-ref message 'assert/body)
-             (exception->string
-              (assoc-ref message 'assertion/error))))
+     (let ((run-result (chain-and message
+                         (assoc-ref _ 'assertion-run)
+                         (assoc-ref _ 'assertion-run/result))))
+       (format (get-port message) "\n ~a\n ~y✗ produced error:\n ~s\n"
+               (format-location message)
+               (chain-and message
+                 (assoc-ref _ 'assertion)
+                 (assoc-ref _ 'assert/body))
+               (exception->string
+                (and (running:raised? run-result)
+                     (running:raised-exception run-result))))))
 
     (else #f)))
 

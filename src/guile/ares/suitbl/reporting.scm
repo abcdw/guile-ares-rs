@@ -4,8 +4,9 @@
 (define-module (ares suitbl reporting)
   #:use-module ((ares suitbl definitions) #:select (test? suite?))
   #:use-module ((ares suitbl state) #:prefix state:)
+  #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((srfi srfi-1) #:select (fold))
-  #:use-module ((srfi srfi-197) #:select (chain))
+  #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
   #:use-module ((ice-9 match) #:select (match))
   #:use-module ((sxml simple) #:select (sxml->xml))
@@ -55,7 +56,9 @@
   "Extract assert/location from MESSAGE and format it as a human-readable
 string like \"file:line:column\".  Line numbers are converted to 1-indexed.
 Returns an empty string if no location is available."
-  (let ((location (assoc-ref message 'assert/location)))
+  (let ((location (chain-and message
+                    (assoc-ref _ 'assertion)
+                    (assoc-ref _ 'assert/location))))
     (if (and location (list? location))
         (let ((filename (assoc-ref location 'filename))
               (line (assoc-ref location 'line))
@@ -79,9 +82,16 @@ Returns an empty string if no location is available."
   (format #f "~y" obj))
 
 (define (actual message)
-    (let* ((assert-body (assoc-ref message 'assert/body))
-           (args-thunk (assoc-ref message 'assert/args-thunk))
-           (safe-args-thunk (safify-thunk args-thunk)))
+    (let* ((assert-body (chain-and message
+                          (assoc-ref _ 'assertion)
+                          (assoc-ref _ 'assert/body)))
+           (args-thunk (chain-and message
+                         (assoc-ref _ 'assertion)
+                         (assoc-ref _ 'assert/args-thunk)))
+           (safe-args-thunk (safify-thunk args-thunk))
+           (run-result (chain-and message
+                         (assoc-ref _ 'assertion-run)
+                         (assoc-ref _ 'assertion-run/result))))
       (if (and (list? assert-body) (= 3 (length assert-body)))
           (match (safe-args-thunk)
             ((value . (first second))
@@ -91,19 +101,28 @@ Returns an empty string if no location is available."
                      (car assert-body)))
             ((exception . ex)
              (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
-          (assoc-ref message 'assertion/result))))
+          (and (running:returned? run-result)
+               (running:returned-value run-result)))))
 
 (define (pre-evaled-expression message)
-    (let* ((assert-body (assoc-ref message 'assert/body))
-           (args-thunk (assoc-ref message 'assert/args-thunk))
-           (safe-args-thunk (safify-thunk args-thunk)))
+    (let* ((assert-body (chain-and message
+                          (assoc-ref _ 'assertion)
+                          (assoc-ref _ 'assert/body)))
+           (args-thunk (chain-and message
+                         (assoc-ref _ 'assertion)
+                         (assoc-ref _ 'assert/args-thunk)))
+           (safe-args-thunk (safify-thunk args-thunk))
+           (run-result (chain-and message
+                         (assoc-ref _ 'assertion-run)
+                         (assoc-ref _ 'assertion-run/result))))
       (if (list? assert-body)
           (match (safe-args-thunk)
             ((value . evaluated-args)
              (cons (car assert-body) evaluated-args))
             ((exception . ex)
              (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
-          (assoc-ref message 'assertion/result))))
+          (and (running:returned? run-result)
+               (running:returned-value run-result)))))
 
 ;;;
 ;;; JUnit XML
