@@ -60,51 +60,51 @@
     (is (= 1 (assoc-ref run-summary 'assertions)))
     (is (= 1 (assoc-ref run-summary 'tests)))))
 
-(define-suite assertion-execution-history-tests
-  (test "run history stores assertion executions in source order"
+(define-suite assertion-run-history-tests
+  (test "run history stores assertion runs in source order"
     (define tr (silent-runner))
     (define run-history
       (with-test-runner tr
         (test "history test"
           (is #t)
           (is #f)
-          (is (error "assertion-execution-history-tests/history test")))
+          (is (error "assertion-run-history-tests/history test")))
         (state:get-run-history
          (tr `((type . runner/get-state))))))
     (define test-run (car run-history))
-    (define assertion-executions
-      (assoc-ref test-run 'test-run/assertions))
-    (define first-execution (car assertion-executions))
-    (define second-execution (cadr assertion-executions))
-    (define third-execution (caddr assertion-executions))
+    (define assertion-runs
+      (assoc-ref test-run 'test-run/assertion-runs))
+    (define first-run (car assertion-runs))
+    (define second-run (cadr assertion-runs))
+    (define third-run (caddr assertion-runs))
     (define first-run-result
-      (assoc-ref first-execution 'assertion-run/result))
+      (assoc-ref first-run 'assertion-run/result))
     (define second-run-result
-      (assoc-ref second-execution 'assertion-run/result))
+      (assoc-ref second-run 'assertion-run/result))
     (define third-run-result
-      (assoc-ref third-execution 'assertion-run/result))
+      (assoc-ref third-run 'assertion-run/result))
 
-    (is (= 3 (length assertion-executions)))
+    (is (= 3 (length assertion-runs)))
     (is (equal?
-         '(#t #f (error "assertion-execution-history-tests/history test"))
-         (map (lambda (assertion-execution)
+         '(#t #f (error "assertion-run-history-tests/history test"))
+         (map (lambda (assertion-run)
                 (assoc-ref
-                 (assoc-ref assertion-execution 'assertion)
+                 (assoc-ref assertion-run 'assertion)
                  'assert/body))
-              assertion-executions)))
+              assertion-runs)))
 
-    (is (eq? 'pass (assoc-ref first-execution 'assertion-run/outcome)))
+    (is (eq? 'pass (assoc-ref first-run 'assertion-run/outcome)))
     (is (running:returned? first-run-result))
     (is (eq? #t (running:returned-value first-run-result)))
 
-    (is (eq? 'fail (assoc-ref second-execution 'assertion-run/outcome)))
+    (is (eq? 'fail (assoc-ref second-run 'assertion-run/outcome)))
     (is (running:returned? second-run-result))
     (is (eq? #f (running:returned-value second-run-result)))
 
-    (is (eq? 'error (assoc-ref third-execution 'assertion-run/outcome)))
+    (is (eq? 'error (assoc-ref third-run 'assertion-run/outcome)))
     (is (running:raised? third-run-result))
     (is (equal?
-         "assertion-execution-history-tests/history test"
+         "assertion-run-history-tests/history test"
          (exception-message
           (running:raised-exception third-run-result))))))
 

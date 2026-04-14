@@ -65,7 +65,7 @@ environment just set it to new instance of test runner.
   (define %suite-path* (make-parameter '()))
   (define %current-suite-node-items* (make-parameter #f))
   (define %inside-test?* (make-parameter #f))
-  (define %assertion-executions* (make-parameter #f))
+  (define %assertion-runs* (make-parameter #f))
   (define %test-reporter* (make-parameter
                            (state:get-runner-config-value
                             state 'test-reporter)))
@@ -81,16 +81,16 @@ environment just set it to new instance of test runner.
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))
 
-  (define (first-erroring-assertion-execution assertion-executions)
-    (find (lambda (assertion-execution)
+  (define (first-erroring-assertion-run assertion-runs)
+    (find (lambda (assertion-run)
             (running:raised?
-             (assoc-ref assertion-execution 'assertion-run/result)))
-          assertion-executions))
+             (assoc-ref assertion-run 'assertion-run/result)))
+          assertion-runs))
 
-  (define (make-test-run test test-run-result assertion-executions)
+  (define (make-test-run test test-run-result assertion-runs)
     (let* ((assertion-summary
-            (running:assertion-executions->assertion-summary
-             assertion-executions))
+            (running:assertion-runs->assertion-summary
+             assertion-runs))
            (test-run-summary
             (running:assertion-summary->test-run-summary
              assertion-summary))
@@ -99,25 +99,25 @@ environment just set it to new instance of test runner.
              test-run-summary)))
       `((test . ,test)
         (test-run/result . ,test-run-result)
-        (test-run/assertions . ,assertion-executions)
+        (test-run/assertion-runs . ,assertion-runs)
         (test-run/summary . ,test-run-summary)
         (test-run/outcome . ,test-run-outcome))))
 
-  (define (%run-assert assert inside-test? assertion-executions)
+  (define (%run-assert assert inside-test? assertion-runs)
     (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
            (run-result (running:with-exception-continuation body-thunk))
-           (assertion-execution
-            (running:make-assertion-execution assert run-result))
+           (assertion-run
+            (running:make-assertion-run assert run-result))
            (reporter-message
-            (running:assertion-execution->reporter-message
-             assertion-execution)))
+            (running:assertion-run->reporter-message
+             assertion-run)))
 
       (when inside-test?
         (atomic-box-update!
-         assertion-executions
+         assertion-runs
          (lambda (value)
-           (cons assertion-execution value))))
+           (cons assertion-run value))))
 
       ((get-test-reporter)
        reporter-message)
@@ -137,13 +137,13 @@ environment just set it to new instance of test runner.
                      (get-message _)
                      (assoc-ref _ 'assert)))
            (inside-test? (%inside-test?*))
-           (assertion-executions (%assertion-executions*)))
+           (assertion-runs (%assertion-runs*)))
       (when (and (not (null? (%suite-path*)))
                  (not inside-test?))
         (raise-suitbl-wrong-position-exception
          'is 'suite-body
          "Assert encountered inside suite, but outside of test"))
-      (%run-assert assert inside-test? assertion-executions)))
+      (%run-assert assert inside-test? assertion-runs)))
 
   (define (%run-test test)
     (let ((test-body-thunk (assoc-ref test 'test/body-thunk)))
@@ -157,26 +157,26 @@ environment just set it to new instance of test runner.
 
       (define result
         (parameterize ((%inside-test?* #t)
-                       (%assertion-executions* (make-atomic-box '())))
+                       (%assertion-runs* (make-atomic-box '())))
           (let ((test-run-result
                  (running:with-exception-continuation test-body-thunk)))
-            (define assertion-executions
-              (reverse (atomic-box-ref (%assertion-executions*))))
+            (define assertion-runs
+              (reverse (atomic-box-ref (%assertion-runs*))))
             (define test-run
-              (make-test-run test test-run-result assertion-executions))
+              (make-test-run test test-run-result assertion-runs))
 
             ((get-test-reporter)
              `((type . run/test-end)
                (test . ,test)
                (test-run . ,test-run)))
 
-            (define raised-assertion-execution
-              (first-erroring-assertion-execution
-               assertion-executions))
+            (define raised-assertion-run
+              (first-erroring-assertion-run
+               assertion-runs))
 
-            (when (and (re-raise?) raised-assertion-execution)
+            (when (and (re-raise?) raised-assertion-run)
               ((running:raised-continuation
-                (assoc-ref raised-assertion-execution
+                (assoc-ref raised-assertion-run
                            'assertion-run/result))))
 
             (when (running:raised? test-run-result)

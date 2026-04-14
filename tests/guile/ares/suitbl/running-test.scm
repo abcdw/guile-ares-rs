@@ -182,64 +182,64 @@
            (assertions . 0))
          (running:assertion-outcomes->test-run-summary '())))))
 
-(define-suite make-assertion-execution-tests
+(define-suite make-assertion-run-tests
   (test "stores assertion, pass outcome, and returned value"
     (define assertion (sample-assertion #t))
-    (define execution
-      (running:make-assertion-execution
+    (define assertion-run
+      (running:make-assertion-run
        assertion
        (running:with-exception-continuation (lambda () #t))))
     (define stored-run-result
-      (assoc-ref execution 'assertion-run/result))
+      (assoc-ref assertion-run 'assertion-run/result))
 
-    (is (equal? assertion (assoc-ref execution 'assertion)))
-    (is (eq? 'pass (assoc-ref execution 'assertion-run/outcome)))
+    (is (equal? assertion (assoc-ref assertion-run 'assertion)))
+    (is (eq? 'pass (assoc-ref assertion-run 'assertion-run/outcome)))
     (is (running:returned? stored-run-result))
     (is (eq? #t (running:returned-value stored-run-result))))
 
   (test "stores assertion, fail outcome, and returned value"
     (define assertion (sample-assertion #f))
-    (define execution
-      (running:make-assertion-execution
+    (define assertion-run
+      (running:make-assertion-run
        assertion
        (running:with-exception-continuation (lambda () #f))))
     (define stored-run-result
-      (assoc-ref execution 'assertion-run/result))
+      (assoc-ref assertion-run 'assertion-run/result))
 
-    (is (equal? assertion (assoc-ref execution 'assertion)))
-    (is (eq? 'fail (assoc-ref execution 'assertion-run/outcome)))
+    (is (equal? assertion (assoc-ref assertion-run 'assertion)))
+    (is (eq? 'fail (assoc-ref assertion-run 'assertion-run/outcome)))
     (is (running:returned? stored-run-result))
     (is (eq? #f (running:returned-value stored-run-result))))
 
   (test "stores assertion, error outcome, and exception"
     (define assertion (sample-assertion '(error "boom")))
-    (define execution
-      (running:make-assertion-execution
+    (define assertion-run
+      (running:make-assertion-run
        assertion
        (running:with-exception-continuation
         (lambda ()
           (error "boom")))))
     (define stored-run-result
-      (assoc-ref execution 'assertion-run/result))
+      (assoc-ref assertion-run 'assertion-run/result))
 
-    (is (equal? assertion (assoc-ref execution 'assertion)))
-    (is (eq? 'error (assoc-ref execution 'assertion-run/outcome)))
+    (is (equal? assertion (assoc-ref assertion-run 'assertion)))
+    (is (eq? 'error (assoc-ref assertion-run 'assertion-run/outcome)))
     (is (running:raised? stored-run-result))
     (is (equal? "boom"
                 (exception-message
                  (running:raised-exception stored-run-result))))))
 
-(define-suite assertion-executions-summary-tests
-  (test "summarize assertion executions with mixed data"
-    (define assertion-executions
+(define-suite assertion-runs-summary-tests
+  (test "summarize assertion runs with mixed data"
+    (define assertion-runs
       (list
-       (running:make-assertion-execution
+       (running:make-assertion-run
         (sample-assertion #t)
         (running:with-exception-continuation (lambda () #t)))
-       (running:make-assertion-execution
+       (running:make-assertion-run
         (sample-assertion #f)
         (running:with-exception-continuation (lambda () #f)))
-       (running:make-assertion-execution
+       (running:make-assertion-run
         (sample-assertion '(error "boom"))
         (running:with-exception-continuation
          (lambda ()
@@ -250,19 +250,19 @@
            (failures . 1)
            (errors . 1)
            (assertions . 3))
-         (running:assertion-executions->assertion-summary
-          assertion-executions))))
+         (running:assertion-runs->assertion-summary
+          assertion-runs))))
 
-  (test "returns error test summary for mixed assertion executions"
-    (define assertion-executions
+  (test "returns error test summary for mixed assertion runs"
+    (define assertion-runs
       (list
-       (running:make-assertion-execution
+       (running:make-assertion-run
         (sample-assertion #t)
         (running:with-exception-continuation (lambda () #t)))
-       (running:make-assertion-execution
+       (running:make-assertion-run
         (sample-assertion #f)
         (running:with-exception-continuation (lambda () #f)))
-       (running:make-assertion-execution
+       (running:make-assertion-run
         (sample-assertion '(error "boom"))
         (running:with-exception-continuation
          (lambda ()
@@ -274,8 +274,8 @@
            (errors . 1)
            (skipped . 0)
            (assertions . 3))
-         (running:assertion-executions->test-run-summary
-          assertion-executions)))))
+         (running:assertion-runs->test-run-summary
+          assertion-runs)))))
 
 (define (raises-exception? thunk)
   (with-exception-handler
@@ -380,30 +380,30 @@
       (is (equal? (running:raised-exception run-result)
                   (assoc-ref message 'assertion/error))))))
 
-(define-suite assertion-execution->reporter-message-tests
-  (test "includes assertion data for passing assertion executions"
+(define-suite assertion-run->reporter-message-tests
+  (test "includes assertion data for passing assertion runs"
     (define assertion (sample-assertion #t))
-    (define execution
-      (running:make-assertion-execution
+    (define assertion-run
+      (running:make-assertion-run
        assertion
        (running:with-exception-continuation (lambda () #t))))
     (define message
-      (running:assertion-execution->reporter-message execution))
+      (running:assertion-run->reporter-message assertion-run))
 
     (is (equal? 'run/assertion-pass (assoc-ref message 'type)))
     (is (equal? #t (assoc-ref message 'assertion/result)))
     (is (equal? #t (assoc-ref message 'assert/body))))
 
-  (test "includes assertion error for erroring assertion executions"
+  (test "includes assertion error for erroring assertion runs"
     (define assertion (sample-assertion '(error "boom")))
-    (define execution
-      (running:make-assertion-execution
+    (define assertion-run
+      (running:make-assertion-run
        assertion
        (running:with-exception-continuation
         (lambda ()
           (error "boom")))))
     (define message
-      (running:assertion-execution->reporter-message execution))
+      (running:assertion-run->reporter-message assertion-run))
 
     (is (equal? 'run/assertion-error (assoc-ref message 'type)))
     (is (equal? '(error "boom") (assoc-ref message 'assert/body)))
