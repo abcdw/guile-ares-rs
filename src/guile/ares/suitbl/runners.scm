@@ -87,22 +87,6 @@ environment just set it to new instance of test runner.
              (assoc-ref assertion-run 'assertion-run/result)))
           assertion-runs))
 
-  (define (make-test-run test test-run-result assertion-runs)
-    (let* ((assertion-summary
-            (running:assertion-runs->assertion-summary
-             assertion-runs))
-           (test-run-summary
-            (running:assertion-summary->test-run-summary
-             assertion-summary))
-           (test-run-outcome
-            (running:run-summary->run-outcome
-             test-run-summary)))
-      `((test . ,test)
-        (test-run/result . ,test-run-result)
-        (test-run/assertion-runs . ,assertion-runs)
-        (test-run/summary . ,test-run-summary)
-        (test-run/outcome . ,test-run-outcome))))
-
   (define (%run-assert assert inside-test? assertion-runs)
     (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
@@ -163,7 +147,7 @@ environment just set it to new instance of test runner.
             (define assertion-runs
               (reverse (atomic-box-ref (%assertion-runs*))))
             (define test-run
-              (make-test-run test test-run-result assertion-runs))
+              (running:make-test-run test test-run-result assertion-runs))
 
             ((get-test-reporter)
              `((type . run/test-end)

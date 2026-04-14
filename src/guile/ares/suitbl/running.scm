@@ -15,6 +15,7 @@
             raised-continuation
             with-exception-continuation
             make-assertion-run
+            make-test-run
             assertion-run->reporter-message
             assertion-run-result->assertion-outcome
             assertion-run-result->reporter-message
@@ -180,3 +181,22 @@ are present, run outcome is considered 'error."
   "Convert assertion OUTCOMES into a per-test run summary alist."
   (assertion-summary->test-run-summary
    (assertion-outcomes->assertion-summary outcomes)))
+
+
+;;;
+;;; Test run helpers
+;;;
+
+(define (make-test-run test test-run-result assertion-runs)
+  "Build a test run record from TEST, TEST-RUN-RESULT, and ASSERTION-RUNS."
+  (let* ((assertion-summary
+          (assertion-runs->assertion-summary assertion-runs))
+         (test-run-summary
+          (assertion-summary->test-run-summary assertion-summary))
+         (test-run-outcome
+          (assertion-summary->test-run-outcome assertion-summary)))
+    `((test . ,test)
+      (test-run/result . ,test-run-result)
+      (test-run/assertion-runs . ,assertion-runs)
+      (test-run/summary . ,test-run-summary)
+      (test-run/outcome . ,test-run-outcome))))
