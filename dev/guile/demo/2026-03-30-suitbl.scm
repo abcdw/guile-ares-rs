@@ -329,15 +329,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;; several and lets you compose them.
 
 (comment
- ;; Dots reporter — compact output
- (with-test-runner
-  (make-suitbl-test-runner
-   #:config `((test-reporter . ,reporter:dots)))
-  (suite "dots demo"
-    (test "all pass" (is #t) (is #t) (is #t))
-    (test "one fails" (is #t) (is #f))))
-
- ;; Minimal reporter — test names + pass/fail marks
+ ;; Minimal reporter - test names + pass/fail marks
  (with-test-runner
   (make-suitbl-test-runner
    #:config `((test-reporter . ,reporter:minimal)))
@@ -351,13 +343,13 @@ API-first, can be easily integrated in your IDE and other tools.
       (is (= 1 1))
       (is (= 2 2)))))
 
- ;; Compose reporters: tree structure + dots
+ ;; Compose reporters: tree structure + run summary
  (with-test-runner
   (make-suitbl-test-runner
    #:config `((test-reporter
                . ,(reporter-every
                    (list reporter:load-tree
-                         reporter:dots)))))
+                         reporter:run-summary)))))
   (suite "composed reporters"
     (test "a" (is #t))
     (test "b" (is #t)))))

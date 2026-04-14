@@ -6,7 +6,6 @@
   #:use-module ((ares suitbl reporting)
                 #:select (format-location
                           actual pre-evaled-expression
-                          string-repeat
                           tree-node-children
                           tree-node-description
                           suite-forest->tree-string
@@ -26,8 +25,6 @@
             unhandled
             load-ignore-messages
             base
-            dots
-            dots-with-hierarchy
             minimal
             spying
             junit
@@ -91,11 +88,6 @@ A final test reporter can be attached to test runner.
     (and (list? test)
          (assoc-ref test 'test/description))))
 
-(define (message-suite-description message)
-  (let ((suite (assoc-ref message 'suite)))
-    (and (list? suite)
-         (assoc-ref suite 'suite/description))))
-
 (define (silent message)
   "Do nothing, return @code{#t}."
   #t)
@@ -118,30 +110,6 @@ to catch unhandled messages."
   "Silently handle load-phase messages to avoid noisy unhandled output."
   (case (assoc-ref message 'type)
     ((load/test load/suite-enter load/suite-leave) #t)
-    (else #f)))
-
-(define (hierarchy message)
-  (case (assoc-ref message 'type)
-    ((load/test)
-     (format (get-port message) "~a"
-             (string-repeat "|" (length (assoc-ref message 'suite-path))))
-     (format (get-port message) " + test ~a\n"
-             (message-test-description message)))
-    ((load/suite-enter)
-     (format (get-port message) "~a"
-             (string-append
-              (string-repeat "|" (length (assoc-ref message 'suite-path)))
-              "┌"))
-     (format (get-port message) "> ~a\n"
-             (message-suite-description message)))
-    ((load/suite-leave)
-     (format (get-port message) "~a"
-             (string-append
-              (string-repeat "|" (length (assoc-ref message 'suite-path)))
-              "└"))
-     (format (get-port message) "> ~a\n"
-             (message-suite-description message)))
-
     (else #f)))
 
 (define (verbose message)
@@ -320,35 +288,9 @@ when a top-level suite finishes loading."
   (chain (list verbose
                zero-assertion-warning
                load-ignore-messages
-               ;; hierarchy
                load-tree
                load-summary
                run-summary)
-    (reporter-every _)
-    (list _ unhandled)
-    (reporter-first _)))
-
-(define (dots message)
-  (define msg-type (assoc-ref message 'type))
-  (case msg-type
-    ((run/test-start)
-     (format (get-port message) "("))
-    ((run/test-end)
-     (format (get-port message) ")"))
-
-    ((run/assertion-pass)
-     (format (get-port message) "."))
-    ((run/assertion-fail)
-     (format (get-port message) "F"))
-    ((run/assertion-error)
-     (format (get-port message) "E"))
-
-    (else #f)))
-
-(define dots-with-hierarchy
-  (chain (list dots
-               zero-assertion-warning
-               hierarchy)
     (reporter-every _)
     (list _ unhandled)
     (reporter-first _)))

@@ -17,8 +17,8 @@
   (format #f "Usage: ~a [OPTION]... [-- GUILE_OPTION]...
 
   -r, --reporter=EXPR  evaluate EXPR in the context of (ares suitbl reporters)
-                       e.g. -r base, -r dots,
-                            -r '(reporter-every (list dots run-summary))'
+                       e.g. -r base, -r minimal,
+                            -r '(reporter-every (list load-tree run-summary))'
   -s, --scheduler=EXPR evaluate EXPR in the context of (ares suitbl schedulers)
                        e.g. -s fast, -s failed-or-all,
                             -s '(make-matching \"macro\")'
