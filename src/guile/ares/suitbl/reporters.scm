@@ -130,7 +130,10 @@ to catch unhandled messages."
 
     ((run/assertion-fail)
      (format (get-port message) "~a\n~y✗ ~a\n"
-             (format-location message)
+             (format-location
+              (chain-and message
+                (assoc-ref _ 'assertion)
+                (assoc-ref _ 'assert/location)))
              (chain-and message
                (assoc-ref _ 'assertion)
                (assoc-ref _ 'assert/body))
@@ -141,7 +144,10 @@ to catch unhandled messages."
                          (assoc-ref _ 'assertion-run)
                          (assoc-ref _ 'assertion-run/result))))
        (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
-               (format-location message)
+               (format-location
+                (chain-and message
+                  (assoc-ref _ 'assertion)
+                  (assoc-ref _ 'assert/location)))
                (chain-and message
                  (assoc-ref _ 'assertion)
                  (assoc-ref _ 'assert/body))
@@ -175,7 +181,10 @@ to catch unhandled messages."
 
     ((run/assertion-fail)
      (format (get-port message) "~a\n~y✗ ~a\n"
-             (format-location message)
+             (format-location
+              (chain-and message
+                (assoc-ref _ 'assertion)
+                (assoc-ref _ 'assert/location)))
              (chain-and message
                (assoc-ref _ 'assertion)
                (assoc-ref _ 'assert/body))
@@ -186,7 +195,10 @@ to catch unhandled messages."
                          (assoc-ref _ 'assertion-run)
                          (assoc-ref _ 'assertion-run/result))))
        (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
-               (format-location message)
+               (format-location
+                (chain-and message
+                  (assoc-ref _ 'assertion)
+                  (assoc-ref _ 'assert/location)))
                (chain-and message
                  (assoc-ref _ 'assertion)
                  (assoc-ref _ 'assert/body))
@@ -252,7 +264,10 @@ to catch unhandled messages."
                          (assoc-ref _ 'assertion-run)
                          (assoc-ref _ 'assertion-run/result))))
        (format (get-port message) "\n ~a\n ~y✗ produced error:\n ~s\n"
-               (format-location message)
+               (format-location
+                (chain-and message
+                  (assoc-ref _ 'assertion)
+                  (assoc-ref _ 'assert/location)))
                (chain-and message
                  (assoc-ref _ 'assertion)
                  (assoc-ref _ 'assert/body))

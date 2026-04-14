@@ -52,22 +52,19 @@
 ;;; Formatting Helpers
 ;;;
 
-(define (format-location message)
-  "Extract assert/location from MESSAGE and format it as a human-readable
-string like \"file:line:column\".  Line numbers are converted to 1-indexed.
-Returns an empty string if no location is available."
-  (let ((location (chain-and message
-                    (assoc-ref _ 'assertion)
-                    (assoc-ref _ 'assert/location))))
-    (if (and location (list? location))
-        (let ((filename (assoc-ref location 'filename))
-              (line (assoc-ref location 'line))
-              (column (assoc-ref location 'column)))
-          (format #f "~a:~a:~a"
-                  (or filename "<unknown>")
-                  (if line (1+ line) "?")
-                  (or column "?")))
-        "")))
+(define (format-location location)
+  "Format LOCATION as a human-readable string like \"file:line:column\".
+Line numbers are converted to 1-indexed.  Returns an empty string if
+no location is available."
+  (if (and location (list? location))
+      (let ((filename (assoc-ref location 'filename))
+            (line (assoc-ref location 'line))
+            (column (assoc-ref location 'column)))
+        (format #f "~a:~a:~a"
+                (or filename "<unknown>")
+                (if line (1+ line) "?")
+                (or column "?")))
+      ""))
 
 (define (safify-thunk thunk)
   (lambda ()
