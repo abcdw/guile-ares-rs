@@ -297,10 +297,10 @@ carries the final verdict."
                (lambda ()
                  ((get-test-reporter)
                   `((type . run/start)))
-                 (let ((test-run-results
+                 (let ((run-history
                         (map run-test
                              (state:get-scheduled-tests state runner-config))))
-                   (state:save-run-history! state test-run-results)
+                   (state:save-run-history! state run-history)
                    ((get-test-reporter)
                     `((type . run/end)))))))
          (if reporter
