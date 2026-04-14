@@ -14,7 +14,7 @@
                           forest->junit-xml))
   #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1) #:select (fold))
-  #:use-module ((srfi srfi-197) #:select (chain))
+  #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
   #:use-module ((ice-9 format) #:select (format))
   #:use-module ((ice-9 match) #:select (match))
@@ -211,7 +211,9 @@ to catch unhandled messages."
   "Warn when a test finishes without executing any assertions."
   (case (assoc-ref message 'type)
     ((run/test-end)
-     (let* ((summary (assoc-ref message 'test-run/summary))
+     (let* ((summary (chain-and message
+                       (assoc-ref _ 'test-run)
+                       (assoc-ref _ 'test-run/summary)))
             (assertions (and summary
                              (assoc-ref summary 'assertions))))
        (if (and assertions (zero? assertions))

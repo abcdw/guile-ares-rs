@@ -87,7 +87,7 @@ environment just set it to new instance of test runner.
              (assoc-ref assertion-execution 'assertion-run/result)))
           assertion-executions))
 
-  (define (make-test-execution test assertion-executions)
+  (define (make-test-run test assertion-executions)
     (let* ((assertion-summary
             (running:assertion-executions->assertion-summary
              assertion-executions))
@@ -161,13 +161,13 @@ environment just set it to new instance of test runner.
                  (running:with-exception-continuation test-body-thunk)))
             (define assertion-executions
               (reverse (atomic-box-ref (%assertion-executions*))))
-            (define test-execution
-              (make-test-execution test assertion-executions))
+            (define test-run
+              (make-test-run test assertion-executions))
 
             ((get-test-reporter)
-             (append
-              `((type . run/test-end))
-              test-execution))
+             `((type . run/test-end)
+               (test . ,test)
+               (test-run . ,test-run)))
 
             (define raised-assertion-execution
               (first-erroring-assertion-execution
@@ -184,7 +184,7 @@ environment just set it to new instance of test runner.
                   (raise-exception
                    (running:raised-exception test-run-result))))
 
-            test-execution)))
+            test-run)))
 
       result))
 
@@ -297,10 +297,10 @@ carries the final verdict."
                (lambda ()
                  ((get-test-reporter)
                   `((type . run/start)))
-                 (let ((test-execution-results
+                 (let ((test-run-results
                         (map run-test
                              (state:get-scheduled-tests state runner-config))))
-                   (state:save-run-history! state test-execution-results)
+                   (state:save-run-history! state test-run-results)
                    ((get-test-reporter)
                     `((type . run/end)))))))
          (if reporter
