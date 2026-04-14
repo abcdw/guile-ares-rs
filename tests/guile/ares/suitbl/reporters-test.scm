@@ -98,8 +98,11 @@
               `((type . run/test-start)
                 (description . "some test")))))
     (is (not (reporter:junit
-              `((type . run/assertion-pass)
-                (assert/body . (= 1 1)))))))
+              `((type . run/assertion-end)
+                (assertion . ((assert/body . (= 1 1))))
+                (assertion-run
+                 . ((assertion-run/result . (returned . #t))
+                    (assertion-run/outcome . pass))))))))
 
   (test "emits JUnit XML on run-end"
     (define port (open-output-string))

@@ -351,30 +351,30 @@
       (is (equal? 'error outcome)))))
 
 (define-suite assertion-run-result->reporter-message-tests
-  (test "maps truthy returned result to assertion-pass reporter message"
+  (test "maps truthy returned result to assertion-end reporter message"
     (let* ((run-result
             (running:with-exception-continuation
              (lambda () #t)))
            (message
             (running:assertion-run-result->reporter-message run-result)))
-      (is (equal? 'run/assertion-pass (assoc-ref message 'type)))))
+      (is (equal? 'run/assertion-end (assoc-ref message 'type)))))
 
-  (test "maps falsey returned result to assertion-fail reporter message"
+  (test "maps falsey returned result to assertion-end reporter message"
     (let* ((run-result
             (running:with-exception-continuation
              (lambda () #f)))
            (message
             (running:assertion-run-result->reporter-message run-result)))
-      (is (equal? 'run/assertion-fail (assoc-ref message 'type)))))
+      (is (equal? 'run/assertion-end (assoc-ref message 'type)))))
 
-  (test "maps raised result to assertion-error reporter message"
+  (test "maps raised result to assertion-end reporter message"
     (let* ((run-result
             (running:with-exception-continuation
              (lambda ()
                (error "boom"))))
            (message
             (running:assertion-run-result->reporter-message run-result)))
-      (is (equal? 'run/assertion-error (assoc-ref message 'type))))))
+      (is (equal? 'run/assertion-end (assoc-ref message 'type))))))
 
 (define-suite assertion-run->reporter-message-tests
   (test "includes assertion data for passing assertion runs"
@@ -386,7 +386,7 @@
     (define message
       (running:assertion-run->reporter-message assertion-run))
 
-    (is (equal? 'run/assertion-pass (assoc-ref message 'type)))
+    (is (equal? 'run/assertion-end (assoc-ref message 'type)))
     (is (equal? assertion (assoc-ref message 'assertion)))
     (is (equal? assertion-run (assoc-ref message 'assertion-run))))
 
@@ -405,7 +405,7 @@
     (define message-run-result
       (assoc-ref message-assertion-run 'assertion-run/result))
 
-    (is (equal? 'run/assertion-error (assoc-ref message 'type)))
+    (is (equal? 'run/assertion-end (assoc-ref message 'type)))
     (is (equal? assertion (assoc-ref message 'assertion)))
     (is (equal? assertion-run message-assertion-run))
     (is (equal? "boom"
