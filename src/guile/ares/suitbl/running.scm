@@ -145,15 +145,10 @@ Returns:
     (errors . ,(count (lambda (x) (eq? x 'error)) outcomes))
     (assertions . ,(length outcomes))))
 
-(define (assertion-summary->test-run-summary assertion-summary)
-  "Convert ASSERTION-SUMMARY into a per-test run summary alist."
-  (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
-        (fail? (> (assoc-ref assertion-summary 'failures) 0)))
-    `((tests . 1)
-      (failures . ,(if (and fail? (not error?)) 1 0))
-      (errors . ,(if error? 1 0))
-      (skipped . 0)
-      (assertions . ,(assoc-ref assertion-summary 'assertions)))))
+
+;;;
+;;; Run summary helpers
+;;;
 
 (define (run-summary->run-outcome run-summary)
   "Convert RUN-SUMMARY alist into a run outcome symbol.
@@ -166,6 +161,21 @@ are present, run outcome is considered 'error."
      (error? 'error)
      (fail? 'fail)
      (else 'pass))))
+
+
+;;;
+;;; Test run helpers
+;;;
+
+(define (assertion-summary->test-run-summary assertion-summary)
+  "Convert ASSERTION-SUMMARY into a per-test run summary alist."
+  (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
+        (fail? (> (assoc-ref assertion-summary 'failures) 0)))
+    `((tests . 1)
+      (failures . ,(if (and fail? (not error?)) 1 0))
+      (errors . ,(if error? 1 0))
+      (skipped . 0)
+      (assertions . ,(assoc-ref assertion-summary 'assertions)))))
 
 (define (assertion-summary->test-run-outcome assertion-summary)
   "Convert ASSERTION-SUMMARY alist into a test run outcome symbol."
@@ -181,11 +191,6 @@ are present, run outcome is considered 'error."
   "Convert assertion OUTCOMES into a per-test run summary alist."
   (assertion-summary->test-run-summary
    (assertion-outcomes->assertion-summary outcomes)))
-
-
-;;;
-;;; Test run helpers
-;;;
 
 (define (make-test-run test test-run-result assertion-runs)
   "Build a test run record from TEST, TEST-RUN-RESULT, and ASSERTION-RUNS."
