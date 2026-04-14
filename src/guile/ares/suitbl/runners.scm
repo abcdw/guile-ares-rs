@@ -87,7 +87,7 @@ environment just set it to new instance of test runner.
              (assoc-ref assertion-execution 'assertion-run/result)))
           assertion-executions))
 
-  (define (make-test-run test assertion-executions)
+  (define (make-test-run test test-run-result assertion-executions)
     (let* ((assertion-summary
             (running:assertion-executions->assertion-summary
              assertion-executions))
@@ -98,6 +98,7 @@ environment just set it to new instance of test runner.
             (running:run-summary->run-outcome
              test-run-summary)))
       `((test . ,test)
+        (test-run/result . ,test-run-result)
         (test-run/assertions . ,assertion-executions)
         (test-run/summary . ,test-run-summary)
         (test-run/outcome . ,test-run-outcome))))
@@ -162,7 +163,7 @@ environment just set it to new instance of test runner.
             (define assertion-executions
               (reverse (atomic-box-ref (%assertion-executions*))))
             (define test-run
-              (make-test-run test assertion-executions))
+              (make-test-run test test-run-result assertion-executions))
 
             ((get-test-reporter)
              `((type . run/test-end)
