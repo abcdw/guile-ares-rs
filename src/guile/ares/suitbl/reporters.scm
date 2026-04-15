@@ -28,9 +28,11 @@
             base
             minimal
             spying
+            compact
             junit
             load-tree
             load-summary
+            run-dots
             run-plan-compact
             run-summary
             zero-assertion-warning))
@@ -345,6 +347,48 @@ Expects a @code{run-plan} alist on @code{run/start} messages with
            (format (get-port message)
                    "No test results available.\n"))))
     (else #f)))
+
+(define (run-dots message)
+  "A compact test reporter that prints a single character per test:
+@code{.} for pass, @code{F} for fail, @code{E} for error.  Silently
+consumes assertion and test-start messages.  Prints a trailing newline
+at @code{run/end}."
+  (case (assoc-ref message 'type)
+    ((run/test-start)
+     #t)
+
+    ((run/assertion-end)
+     #t)
+
+    ((run/test-end)
+     (let ((outcome (chain-and message
+                      (assoc-ref _ 'test-run)
+                      (assoc-ref _ 'test-run/outcome))))
+       (case outcome
+         ((pass)  (format (get-port message) "."))
+         ((fail)  (format (get-port message) "F"))
+         ((error) (format (get-port message) "E"))
+         (else #f))
+       (force-output (get-port message))
+       #t))
+
+    ((run/end)
+     #t)
+
+    (else #f)))
+
+(define compact
+  (chain (list
+          run-dots
+
+          run-plan-compact
+          run-summary
+
+          load-summary
+          load-ignore-messages)
+    (reporter-every _)
+    (list _ unhandled)
+    (reporter-first _)))
 
 (define base
   (chain (list verbose

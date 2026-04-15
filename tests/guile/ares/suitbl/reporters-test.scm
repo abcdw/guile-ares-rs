@@ -113,6 +113,39 @@
     (is (equal? "Running 1 of 1 loaded test...\n"
                 (get-output-string port)))))
 
+(define-suite run-dots-reporter-tests
+  (test "prints . for passing test"
+    (define port (open-output-string))
+    (reporter:run-dots
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (test-run . ((test-run/outcome . pass)))))
+    (is (equal? "." (get-output-string port))))
+
+  (test "prints F for failing test"
+    (define port (open-output-string))
+    (reporter:run-dots
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (test-run . ((test-run/outcome . fail)))))
+    (is (equal? "F" (get-output-string port))))
+
+  (test "prints E for erroring test"
+    (define port (open-output-string))
+    (reporter:run-dots
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (test-run . ((test-run/outcome . error)))))
+    (is (equal? "E" (get-output-string port))))
+
+  (test "silently handles run/assertion-end"
+    (is (eq? #t (reporter:run-dots
+                 `((type . run/assertion-end))))))
+
+  (test "silently handles run/test-start"
+    (is (eq? #t (reporter:run-dots
+                 `((type . run/test-start)))))))
+
 (define-suite junit-reporter-tests
   (test "returns #f for unrelated message types"
     (is (not (reporter:junit
