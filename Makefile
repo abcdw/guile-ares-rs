@@ -31,6 +31,7 @@ suitbl:
 	${GUILE_DEV} \
 	-e '(ares scripts ares-suitbl)' \
 	-s ./src/guile/ares/scripts/ares-suitbl.scm \
+	-r 'compact' \
 	$(if $(SCHEDULER),-s '$(SCHEDULER)') \
 	-- $(LOAD_PATHS)
 

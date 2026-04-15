@@ -348,11 +348,15 @@ Expects a @code{run-plan} alist on @code{run/start} messages with
                    "No test results available.\n"))))
     (else #f)))
 
+(define %run-dots-line-width 50)
+
 (define (run-dots message)
   "A compact test reporter that prints a single character per test:
-@code{.} for pass, @code{F} for fail, @code{E} for error.  Silently
-consumes assertion and test-start messages.  Prints a trailing newline
-at @code{run/end}."
+@code{.} for pass, @code{F} for fail, @code{E} for error.  Shows at
+most 50 tests per line with a right-aligned counter.  When a
+@code{run-progress} alist is present in the message (with keys
+@code{progress/current} and @code{progress/total}), prints a
+@code{N/TOTAL} suffix at every 50th test and at the end of the run."
   (case (assoc-ref message 'type)
     ((run/test-start)
      #t)
@@ -361,15 +365,37 @@ at @code{run/end}."
      #t)
 
     ((run/test-end)
-     (let ((outcome (chain-and message
-                      (assoc-ref _ 'test-run)
-                      (assoc-ref _ 'test-run/outcome))))
-       (case outcome
-         ((pass)  (format (get-port message) "."))
-         ((fail)  (format (get-port message) "F"))
-         ((error) (format (get-port message) "E"))
-         (else #f))
-       (force-output (get-port message))
+     (let* ((port (get-port message))
+            (outcome (chain-and message
+                       (assoc-ref _ 'test-run)
+                       (assoc-ref _ 'test-run/outcome)))
+            (progress (assoc-ref message 'run-progress))
+            (current (and progress (assoc-ref progress 'progress/current)))
+            (total (and progress (assoc-ref progress 'progress/total))))
+
+       (format port "~a"
+               (case outcome
+                 ((pass)  ".")
+                 ((fail)  "F")
+                 ((error) "E")
+                 (else    "?")))
+
+       (when (and current total)
+         (let* ((line-pos (modulo (1- current) %run-dots-line-width))
+                (end-of-line?
+                 (or (= current total)
+                     (= (1+ line-pos) %run-dots-line-width))))
+
+           (when end-of-line?
+             (let* ((dots-on-line (1+ line-pos))
+                    (padding (- %run-dots-line-width dots-on-line))
+                    (total-width (string-length
+                                  (number->string total))))
+               (format port "~a  ~vd/~a\n"
+                       (make-string padding #\space)
+                       total-width current
+                       total)))))
+       (force-output port)
        #t))
 
     ((run/end)

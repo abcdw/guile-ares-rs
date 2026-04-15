@@ -144,7 +144,54 @@
 
   (test "silently handles run/test-start"
     (is (eq? #t (reporter:run-dots
-                 `((type . run/test-start)))))))
+                 `((type . run/test-start))))))
+
+  (test "prints right-aligned counter at end of last line"
+    (define port (open-output-string))
+    (reporter:run-dots
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (run-progress . ((progress/current . 3)
+                        (progress/total . 3)))
+       (test-run . ((test-run/outcome . pass)))))
+    (is (string-suffix? "3/3\n" (get-output-string port))))
+
+  (test "prints counter at every 50th test"
+    (define port (open-output-string))
+    (reporter:run-dots
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (run-progress . ((progress/current . 50)
+                        (progress/total . 100)))
+       (test-run . ((test-run/outcome . pass)))))
+    (define output (get-output-string port))
+    (is (string-suffix? " 50/100\n" output)))
+
+  (test "does not print counter mid-line"
+    (define port (open-output-string))
+    (reporter:run-dots
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (run-progress . ((progress/current . 51)
+                        (progress/total . 100)))
+       (test-run . ((test-run/outcome . pass)))))
+    (is (equal? "." (get-output-string port))))
+
+  (test "aligns counter across full and partial lines"
+    (define port (open-output-string))
+    (let loop ((i 1))
+      (when (<= i 53)
+        (reporter:run-dots
+         `((type . run/test-end)
+           (reporting/port . ,port)
+           (run-progress . ((progress/current . ,i)
+                            (progress/total . 53)))
+           (test-run . ((test-run/outcome . pass)))))
+        (loop (1+ i))))
+    (define lines (string-split (get-output-string port) #\newline))
+    (is (= 3 (length lines)))
+    (is (= (string-length (list-ref lines 0))
+           (string-length (list-ref lines 1))))))
 
 (define-suite junit-reporter-tests
   (test "returns #f for unrelated message types"

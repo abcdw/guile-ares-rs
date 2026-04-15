@@ -14,7 +14,7 @@
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
 
   #:use-module ((srfi srfi-1)
-                #:select (last drop-right fold alist-delete alist-cons find))
+                #:select (last drop-right fold alist-delete alist-cons find iota))
   #:use-module ((srfi srfi-197) #:select (chain chain-and chain-when))
 
   #:use-module ((ares suitbl state) #:prefix state:)
@@ -129,7 +129,7 @@ environment just set it to new instance of test runner.
          "Assert encountered inside suite, but outside of test"))
       (%run-assert assert inside-test? assertion-runs)))
 
-  (define (%run-test test)
+  (define* (%run-test test #:key run-progress)
     (let ((test-body-thunk (assoc-ref test 'test/body-thunk)))
       (when (%inside-test?*)
         (raise-suitbl-wrong-position-exception
@@ -137,7 +137,10 @@ environment just set it to new instance of test runner.
          "Test Macros can't be nested"))
       ((get-test-reporter)
        `((type . run/test-start)
-         (test . ,test)))
+         (test . ,test)
+         ,@(if run-progress
+               `((run-progress . ,run-progress))
+               '())))
 
       (define result
         (parameterize ((%inside-test?* #t)
@@ -152,7 +155,10 @@ environment just set it to new instance of test runner.
             ((get-test-reporter)
              `((type . run/test-end)
                (test . ,test)
-               (test-run . ,test-run)))
+               (test-run . ,test-run)
+               ,@(if run-progress
+                     `((run-progress . ,run-progress))
+                     '())))
 
             (define raised-assertion-run
               (first-erroring-assertion-run
@@ -173,12 +179,12 @@ environment just set it to new instance of test runner.
 
       result))
 
-  (define (run-test test)
+  (define* (run-test test #:key run-progress)
     "Test can either pass, fail or error.
 
 test-run/summary carries assertion counters, while test-run/outcome
 carries the final verdict."
-    (%run-test test))
+    (%run-test test #:run-progress run-progress))
 
   (define (make-try-load-suite suite)
     (define suite-body-thunk
@@ -290,7 +296,15 @@ carries the final verdict."
                     `((type . run/start)
                       (run-plan . ,run-plan)))
 
-                   (let ((run-history (map run-test scheduled-tests)))
+                   (let* ((total (length scheduled-tests))
+                          (run-history
+                           (map (lambda (test current)
+                                  (run-test test
+                                            #:run-progress
+                                            `((progress/current . ,current)
+                                              (progress/total . ,total))))
+                                scheduled-tests
+                                (iota total 1))))
                      (state:save-run-history! state run-history))
 
                    ((get-test-reporter)
