@@ -280,14 +280,21 @@ carries the final verdict."
               (reporter (assoc-ref runner-config 'test-reporter))
               (run-tests!
                (lambda ()
-                 ((get-test-reporter)
-                  `((type . run/start)))
-                 (let ((run-history
-                        (map run-test
-                             (state:get-scheduled-tests state runner-config))))
-                   (state:save-run-history! state run-history)
+                 (let* ((scheduled-tests
+                         (state:get-scheduled-tests state runner-config))
+                        (loaded-tests (state:get-loaded-tests state))
+                        (run-plan
+                         `((plan/scheduled-count . ,(length scheduled-tests))
+                           (plan/loaded-count . ,(length loaded-tests)))))
                    ((get-test-reporter)
-                    `((type . run/end)))))))
+                    `((type . run/start)
+                      (run-plan . ,run-plan)))
+
+                   (let ((run-history (map run-test scheduled-tests)))
+                     (state:save-run-history! state run-history))
+
+                   ((get-test-reporter)
+                      `((type . run/end)))))))
          (if reporter
              (parameterize ((%test-reporter* reporter))
                (run-tests!))

@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl reporters)
   #:use-module ((ares suitbl state) #:prefix state:)
@@ -31,6 +31,7 @@
             junit
             load-tree
             load-summary
+            run-plan-compact
             run-summary
             zero-assertion-warning))
 
@@ -310,6 +311,21 @@ when a top-level suite finishes loading."
                tests tests suites suites modules modules empty)))
     (else #f)))
 
+(define (run-plan-compact message)
+  "A reporter that prints a single compact line at the start of a test
+run, showing how many tests were scheduled out of the loaded total.
+Expects a @code{run-plan} alist on @code{run/start} messages with
+@code{plan/scheduled-count} and @code{plan/loaded-count} keys."
+  (case (assoc-ref message 'type)
+    ((run/start)
+     (let* ((plan (or (assoc-ref message 'run-plan) '()))
+            (scheduled (or (assoc-ref plan 'plan/scheduled-count) 0))
+            (loaded (or (assoc-ref plan 'plan/loaded-count) scheduled)))
+       (format (get-port message)
+               "Running ~a of ~a loaded test~p...\n"
+               scheduled loaded loaded)))
+    (else #f)))
+
 (define (run-summary message)
   "A reporter that prints a summary line after all tests have been executed."
   (case (assoc-ref message 'type)
@@ -336,6 +352,7 @@ when a top-level suite finishes loading."
                load-ignore-messages
                load-tree
                load-summary
+               run-plan-compact
                run-summary)
     (reporter-every _)
     (list _ unhandled)

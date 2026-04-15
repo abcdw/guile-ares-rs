@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2025 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl reporters-test)
   #:use-module (ares suitbl core)
@@ -91,6 +91,27 @@
     (is (equal?
          "Loaded 3 tests and 3 suites (1 module, 1 empty).\n"
          (get-output-string port)))))
+
+(define-suite run-plan-compact-reporter-tests
+  (test "formats the compact run line"
+    (define port (open-output-string))
+    (reporter:run-plan-compact
+     `((type . run/start)
+       (reporting/port . ,port)
+       (run-plan . ((plan/scheduled-count . 3)
+                    (plan/loaded-count . 5)))))
+    (is (equal? "Running 3 of 5 loaded tests...\n"
+                (get-output-string port))))
+
+  (test "pluralizes when exactly one loaded test"
+    (define port (open-output-string))
+    (reporter:run-plan-compact
+     `((type . run/start)
+       (reporting/port . ,port)
+       (run-plan . ((plan/scheduled-count . 1)
+                    (plan/loaded-count . 1)))))
+    (is (equal? "Running 1 of 1 loaded test...\n"
+                (get-output-string port)))))
 
 (define-suite junit-reporter-tests
   (test "returns #f for unrelated message types"
