@@ -357,6 +357,14 @@ most 50 tests per line with a right-aligned counter.  When a
 @code{run-progress} alist is present in the message (with keys
 @code{progress/current} and @code{progress/total}), prints a
 @code{N/TOTAL} suffix at every 50th test and at the end of the run."
+  (define (print-outcome port outcome)
+    (format port "~a"
+            (case outcome
+              ((pass)  ".")
+              ((fail)  "F")
+              ((error) "E")
+              (else    "?"))))
+
   (define (print-counter port current total)
     (when (and current total)
       (let* ((line-pos (modulo (1- current) %run-dots-line-width))
@@ -389,13 +397,7 @@ most 50 tests per line with a right-aligned counter.  When a
             (current (and progress (assoc-ref progress 'progress/current)))
             (total (and progress (assoc-ref progress 'progress/total))))
 
-       (format port "~a"
-               (case outcome
-                 ((pass)  ".")
-                 ((fail)  "F")
-                 ((error) "E")
-                 (else    "?")))
-
+       (print-outcome port outcome)
        (print-counter port current total)
        (force-output port)
        #t))
