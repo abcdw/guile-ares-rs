@@ -9,11 +9,9 @@
                  atomic-box-ref))
   #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
-  #:use-module ((ares suitbl running)
-                #:select (run-summary->run-outcome))
+  #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((srfi srfi-1)
                 #:select (alist-delete alist-cons fold filter-map))
-  #:use-module ((ice-9 match) #:select (match))
 
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
@@ -198,14 +196,14 @@
                                         (annotate-node child new-suite-path))
                                       children))
              (suite-run-summary
-              (fold merge-run-summaries
-                    initial-run-summary
+              (fold running:merge-run-summaries
+                    running:initial-run-summary
                     (filter-map (lambda (child)
                                   (or (assoc-ref child 'test-run/summary)
                                       (assoc-ref child 'suite-run/summary)))
                                 annotated-children)))
              (suite-run-outcome
-              (run-summary->run-outcome suite-run-summary))
+              (running:run-summary->run-outcome suite-run-summary))
              (updated-node (alist-update node 'suite-node/children
                                        (lambda (_) annotated-children))))
         (chain updated-node
@@ -262,34 +260,9 @@
     (atomic-box-ref _)
     (assoc-ref _ 'runner/run-history)))
 
-(define initial-run-summary
-  `((tests . 0)
-    (failures . 0)
-    (errors . 0)
-    (skipped . 0)
-    (assertions . 0)))
-
-(define (merge-run-summaries s1 s2)
-  (map
-   (lambda (v)
-     (match v
-       ((key . value)
-        (cons key (+ (assoc-ref s2 key) value)))))
-   s1))
-
 (define (get-run-summary state)
-  (define run-history (get-run-history state))
-
-  (if run-history
-      (let loop ((summary initial-run-summary)
-                 (remaining-items run-history))
-        (if (null? remaining-items)
-            summary
-            (let ((item (car remaining-items)))
-              (loop
-               (merge-run-summaries summary (assoc-ref item 'test-run/summary))
-               (cdr remaining-items)))))
-      #f))
+  (let ((run-history (get-run-history state)))
+    (and run-history (running:run-history->run-summary run-history))))
 
 
 ;;;

@@ -182,6 +182,58 @@
            (assertions . 0))
          (running:assertion-outcomes->test-run-summary '())))))
 
+(define-suite run-history->run-summary-tests
+  (test "returns initial run summary for empty run history"
+    (is (equal?
+         '((tests . 0)
+           (failures . 0)
+           (errors . 0)
+           (skipped . 0)
+           (assertions . 0))
+         (running:run-history->run-summary '()))))
+
+  (test "returns single per-test summary for one-entry run history"
+    (is (equal?
+         '((tests . 1)
+           (failures . 0)
+           (errors . 0)
+           (skipped . 0)
+           (assertions . 2))
+         (running:run-history->run-summary
+          `(((test-run/summary
+              . ((tests . 1)
+                 (failures . 0)
+                 (errors . 0)
+                 (skipped . 0)
+                 (assertions . 2)))))))))
+
+  (test "sums mixed-outcome per-test summaries across run history"
+    (is (equal?
+         '((tests . 3)
+           (failures . 1)
+           (errors . 1)
+           (skipped . 0)
+           (assertions . 6))
+         (running:run-history->run-summary
+          `(((test-run/summary
+              . ((tests . 1)
+                 (failures . 0)
+                 (errors . 0)
+                 (skipped . 0)
+                 (assertions . 2))))
+            ((test-run/summary
+              . ((tests . 1)
+                 (failures . 1)
+                 (errors . 0)
+                 (skipped . 0)
+                 (assertions . 1))))
+            ((test-run/summary
+              . ((tests . 1)
+                 (failures . 0)
+                 (errors . 1)
+                 (skipped . 0)
+                 (assertions . 3))))))))))
+
 (define (sample-test description)
   `((test/description . ,description)))
 

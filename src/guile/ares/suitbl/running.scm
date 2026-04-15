@@ -2,12 +2,13 @@
 ;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl running)
-  #:use-module ((srfi srfi-1) #:select (count))
+  #:use-module ((srfi srfi-1) #:select (count fold))
   #:use-module ((ice-9 control) #:select (abort-to-prompt
                                           call-with-prompt
                                           make-prompt-tag))
   #:use-module ((ice-9 exceptions) #:select (raise-exception
                                              with-exception-handler))
+  #:use-module ((ice-9 match) #:select (match))
   #:export (returned?
             returned-value
             raised?
@@ -25,7 +26,10 @@
             assertion-summary->test-run-outcome
             run-summary->run-outcome
             assertion-runs->test-run-summary
-            assertion-outcomes->test-run-summary))
+            assertion-outcomes->test-run-summary
+            initial-run-summary
+            merge-run-summaries
+            run-history->run-summary))
 
 
 ;;;
@@ -203,3 +207,33 @@ are present, run outcome is considered 'error."
       (test-run/summary . ,test-run-summary)
       (test-run/outcome . ,test-run-outcome)
       (test-run/extended-outcome . ,test-run-extended-outcome))))
+
+
+;;;
+;;; Run history helpers
+;;;
+
+(define initial-run-summary
+  `((tests . 0)
+    (failures . 0)
+    (errors . 0)
+    (skipped . 0)
+    (assertions . 0)))
+
+(define (merge-run-summaries s1 s2)
+  "Sum two run summaries key by key."
+  (map
+   (lambda (v)
+     (match v
+       ((key . value)
+        (cons key (+ (assoc-ref s2 key) value)))))
+   s1))
+
+(define (run-history->run-summary run-history)
+  "Aggregate per-test summaries from RUN-HISTORY into a single run summary."
+  (fold (lambda (entry acc)
+          (merge-run-summaries
+           acc
+           (assoc-ref entry 'test-run/summary)))
+        initial-run-summary
+        run-history))
