@@ -123,31 +123,42 @@
                 (exception-message exception))))
 
   (test "test raises suitbl wrong-position exception inside test body"
-    (define exception
-      (capture-exception
-       (lambda ()
-         (with-test-runner (silent-runner)
-           (test "outer test"
-             (test "inner test"
-               (is #t)))))))
-    (is (suitbl-wrong-position-exception? exception))
-    (is (eq? 'test (suitbl-wrong-position-exception-form exception)))
-    (is (eq? 'test-body (suitbl-wrong-position-exception-position exception)))
-    (is (equal? "Test Macros can't be nested" (exception-message exception))))
+    (define tr (silent-runner))
+    (with-test-runner tr
+      (test "outer test"
+        (test "inner test"
+          (is #t))))
+    (define run-history
+      (state:get-run-history (tr `((type . runner/get-state)))))
+    (define outer-test-run (car run-history))
+    (define test-run-result
+      (assoc-ref outer-test-run 'test-run/result))
+    (is (running:raised? test-run-result))
+    (let ((exception (running:raised-exception test-run-result)))
+      (is (suitbl-wrong-position-exception? exception))
+      (is (eq? 'test (suitbl-wrong-position-exception-form exception)))
+      (is (eq? 'test-body (suitbl-wrong-position-exception-position exception)))
+      (is (equal? "Test Macros can't be nested"
+                  (exception-message exception)))))
 
   (test "suite raises suitbl wrong-position exception inside test body"
-    (define exception
-      (capture-exception
-       (lambda ()
-         (with-test-runner (silent-runner)
-           (test "outer test"
-             (suite "inner suite"
-               (is #t)))))))
-    (is (suitbl-wrong-position-exception? exception))
-    (is (eq? 'suite (suitbl-wrong-position-exception-form exception)))
-    (is (eq? 'test-body (suitbl-wrong-position-exception-position exception)))
-    (is (equal? "Test Suite can't be nested into Test Macro"
-                (exception-message exception)))))
+    (define tr (silent-runner))
+    (with-test-runner tr
+      (test "outer test"
+        (suite "inner suite"
+          (is #t))))
+    (define run-history
+      (state:get-run-history (tr `((type . runner/get-state)))))
+    (define outer-test-run (car run-history))
+    (define test-run-result
+      (assoc-ref outer-test-run 'test-run/result))
+    (is (running:raised? test-run-result))
+    (let ((exception (running:raised-exception test-run-result)))
+      (is (suitbl-wrong-position-exception? exception))
+      (is (eq? 'suite (suitbl-wrong-position-exception-form exception)))
+      (is (eq? 'test-body (suitbl-wrong-position-exception-position exception)))
+      (is (equal? "Test Suite can't be nested into Test Macro"
+                  (exception-message exception))))))
 
 (define-suite re-raise-tests
   (test "test body exception is replayed when re-raise is enabled"

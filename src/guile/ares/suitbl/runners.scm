@@ -169,11 +169,9 @@ environment just set it to new instance of test runner.
                 (assoc-ref raised-assertion-run
                            'assertion-run/result))))
 
-            (when (running:raised? test-run-result)
-              (if (re-raise?)
-                  ((running:raised-continuation test-run-result))
-                  (raise-exception
-                   (running:raised-exception test-run-result))))
+            (when (and (running:raised? test-run-result)
+                       (re-raise?))
+              ((running:raised-continuation test-run-result)))
 
             test-run)))
 

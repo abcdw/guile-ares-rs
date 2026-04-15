@@ -4,6 +4,7 @@
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl discovery)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
+  #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module (ares alist)
   #:use-module (srfi srfi-1)
@@ -289,26 +290,34 @@ because test macro is not composable and can't be wrapped.
     (is (throws-exception? (+ b 1 2) programming-error?)))
 
   (test "nested test macro usage is forbidden"
-    (is
-     (throws-exception?
+    (define run-history
       (with-silent-test-environment
        (test "outer test macro"
-         (test "nested test macro" (is #t))))
-      (lambda (ex)
-        (string=? "Test Macros can't be nested"
-                  (exception-message ex))))))
+         (test "nested test macro" (is #t)))
+       (state:get-run-history
+        ((test-runner*) `((type . runner/get-state))))))
+    (define outer-test-run (car run-history))
+    (is (eq? 'aborted
+             (assoc-ref outer-test-run 'test-run/extended-outcome)))
+    (is (string=? "Test Macros can't be nested"
+                  (exception-message
+                   (running:raised-exception
+                    (assoc-ref outer-test-run 'test-run/result))))))
 
-  (define specific-type-of-exception
-    (lambda (ex)
-      (string=? "Test Suite can't be nested into Test Macro"
-                (exception-message ex))))
   (test "that suite nested in test case is forbidden"
-    (is
-     (throws-exception?
+    (define run-history
       (with-silent-test-environment
        (test "test macro"
-         (suite "nested suite" (is #t))))
-      specific-type-of-exception)))
+         (suite "nested suite" (is #t)))
+       (state:get-run-history
+        ((test-runner*) `((type . runner/get-state))))))
+    (define outer-test-run (car run-history))
+    (is (eq? 'aborted
+             (assoc-ref outer-test-run 'test-run/extended-outcome)))
+    (is (string=? "Test Suite can't be nested into Test Macro"
+                  (exception-message
+                   (running:raised-exception
+                    (assoc-ref outer-test-run 'test-run/result))))))
 
   ;; TODO: [Andrew Tropin, 2025-05-23] Make reporter to provide
   ;; following error:
