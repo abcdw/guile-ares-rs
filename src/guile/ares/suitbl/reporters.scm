@@ -357,6 +357,22 @@ most 50 tests per line with a right-aligned counter.  When a
 @code{run-progress} alist is present in the message (with keys
 @code{progress/current} and @code{progress/total}), prints a
 @code{N/TOTAL} suffix at every 50th test and at the end of the run."
+  (define (print-counter port current total)
+    (when (and current total)
+      (let* ((line-pos (modulo (1- current) %run-dots-line-width))
+             (end-of-line?
+              (or (= current total)
+                  (= (1+ line-pos) %run-dots-line-width))))
+        (when end-of-line?
+          (let* ((dots-on-line (1+ line-pos))
+                 (padding (- %run-dots-line-width dots-on-line))
+                 (total-width (string-length
+                                (number->string total))))
+            (format port "~a  ~vd/~a\n"
+                    (make-string padding #\space)
+                    total-width current
+                    total))))))
+
   (case (assoc-ref message 'type)
     ((run/test-start)
      #t)
@@ -380,21 +396,7 @@ most 50 tests per line with a right-aligned counter.  When a
                  ((error) "E")
                  (else    "?")))
 
-       (when (and current total)
-         (let* ((line-pos (modulo (1- current) %run-dots-line-width))
-                (end-of-line?
-                 (or (= current total)
-                     (= (1+ line-pos) %run-dots-line-width))))
-
-           (when end-of-line?
-             (let* ((dots-on-line (1+ line-pos))
-                    (padding (- %run-dots-line-width dots-on-line))
-                    (total-width (string-length
-                                  (number->string total))))
-               (format port "~a  ~vd/~a\n"
-                       (make-string padding #\space)
-                       total-width current
-                       total)))))
+       (print-counter port current total)
        (force-output port)
        #t))
 
