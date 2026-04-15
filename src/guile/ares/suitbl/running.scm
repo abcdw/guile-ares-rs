@@ -189,9 +189,17 @@ are present, run outcome is considered 'error."
          (test-run-summary
           (assertion-summary->test-run-summary assertion-summary))
          (test-run-outcome
-          (assertion-summary->test-run-outcome assertion-summary)))
+          (assertion-summary->test-run-outcome assertion-summary))
+         (test-run-extended-outcome
+          (cond
+           ((raised? test-run-result) 'aborted)
+           ((and (eq? test-run-outcome 'pass)
+                 (zero? (assoc-ref assertion-summary 'assertions)))
+            'zero-asserts)
+           (else test-run-outcome))))
     `((test . ,test)
       (test-run/result . ,test-run-result)
       (test-run/assertion-runs . ,assertion-runs)
       (test-run/summary . ,test-run-summary)
-      (test-run/outcome . ,test-run-outcome))))
+      (test-run/outcome . ,test-run-outcome)
+      (test-run/extended-outcome . ,test-run-extended-outcome))))

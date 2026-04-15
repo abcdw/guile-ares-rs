@@ -182,6 +182,39 @@
            (assertions . 0))
          (running:assertion-outcomes->test-run-summary '())))))
 
+(define (sample-test description)
+  `((test/description . ,description)))
+
+(define-suite make-test-run-extended-outcome-tests
+  (test "extended outcome is pass for normal passing test"
+    (define test-run
+      (running:make-test-run
+       (sample-test "t")
+       (running:with-exception-continuation (lambda () #t))
+       (list (running:make-assertion-run
+              (sample-assertion #t)
+              (running:with-exception-continuation (lambda () #t))))))
+    (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
+    (is (eq? 'pass (assoc-ref test-run 'test-run/extended-outcome))))
+
+  (test "extended outcome is zero-asserts when no assertions ran"
+    (define test-run
+      (running:make-test-run
+       (sample-test "t")
+       (running:with-exception-continuation (lambda () #t))
+       '()))
+    (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
+    (is (eq? 'zero-asserts (assoc-ref test-run 'test-run/extended-outcome))))
+
+  (test "extended outcome is aborted when test body raised"
+    (define test-run
+      (running:make-test-run
+       (sample-test "t")
+       (running:with-exception-continuation (lambda () (error "boom")))
+       '()))
+    (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
+    (is (eq? 'aborted (assoc-ref test-run 'test-run/extended-outcome)))))
+
 (define-suite make-assertion-run-tests
   (test "stores assertion, pass outcome, and returned value"
     (define assertion (sample-assertion #t))
