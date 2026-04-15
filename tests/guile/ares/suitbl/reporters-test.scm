@@ -193,6 +193,35 @@
     (is (= (string-length (list-ref lines 0))
            (string-length (list-ref lines 1))))))
 
+(define-suite run-dots-extended-reporter-tests
+  (test "prints Z for zero-asserts test"
+    (define port (open-output-string))
+    (reporter:run-dots-extended
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (test-run . ((test-run/extended-outcome . zero-asserts)))))
+    (is (equal? "Z" (get-output-string port))))
+
+  (test "prints A for aborted test"
+    (define port (open-output-string))
+    (reporter:run-dots-extended
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (test-run . ((test-run/extended-outcome . aborted)))))
+    (is (equal? "A" (get-output-string port))))
+
+  (test "prints . for passing test"
+    (define port (open-output-string))
+    (reporter:run-dots-extended
+     `((type . run/test-end)
+       (reporting/port . ,port)
+       (test-run . ((test-run/extended-outcome . pass)))))
+    (is (equal? "." (get-output-string port))))
+
+  (test "silently handles run/assertion-end and run/test-start"
+    (is (eq? #t (reporter:run-dots-extended `((type . run/assertion-end)))))
+    (is (eq? #t (reporter:run-dots-extended `((type . run/test-start)))))))
+
 (define-suite junit-reporter-tests
   (test "returns #f for unrelated message types"
     (is (not (reporter:junit

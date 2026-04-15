@@ -33,6 +33,7 @@
             load-tree
             load-summary
             run-dots
+            run-dots-extended
             run-plan-compact
             run-summary
             zero-assertion-warning))
@@ -350,66 +351,72 @@ Expects a @code{run-plan} alist on @code{run/start} messages with
 
 (define %run-dots-line-width 50)
 
-(define (run-dots message)
-  "A compact test reporter that prints a single character per test:
-@code{.} for pass, @code{F} for fail, @code{E} for error.  Shows at
-most 50 tests per line with a right-aligned counter.  When a
-@code{run-progress} alist is present in the message (with keys
-@code{progress/current} and @code{progress/total}), prints a
-@code{N/TOTAL} suffix at every 50th test and at the end of the run."
-  (define (print-outcome port outcome)
-    (format port "~a"
-            (case outcome
-              ((pass)  ".")
-              ((fail)  "F")
-              ((error) "E")
-              (else    "?"))))
+(define (make-run-dots outcome-key outcome->char)
+  "Return a dots reporter using OUTCOME-KEY to look up the test outcome
+and OUTCOME->CHAR to map it to a display character.  Shows at most 50
+tests per line with a right-aligned counter when @code{run-progress} is
+present in the message."
+  (lambda (message)
+    (define (print-outcome port outcome)
+      (format port "~a" (outcome->char outcome)))
 
-  (define (print-counter port current total)
-    (when (and current total)
-      (let* ((line-pos (modulo (1- current) %run-dots-line-width))
-             (end-of-line?
-              (or (= current total)
-                  (= (1+ line-pos) %run-dots-line-width))))
-        (when end-of-line?
-          (let* ((dots-on-line (1+ line-pos))
-                 (padding (- %run-dots-line-width dots-on-line))
-                 (total-width (string-length
-                                (number->string total))))
-            (format port "~a  ~vd/~a\n"
-                    (make-string padding #\space)
-                    total-width current
-                    total))))))
+    (define (print-counter port current total)
+      (when (and current total)
+        (let* ((line-pos (modulo (1- current) %run-dots-line-width))
+               (end-of-line?
+                (or (= current total)
+                    (= (1+ line-pos) %run-dots-line-width))))
+          (when end-of-line?
+            (let* ((dots-on-line (1+ line-pos))
+                   (padding (- %run-dots-line-width dots-on-line))
+                   (total-width (string-length (number->string total))))
+              (format port "~a  ~vd/~a\n"
+                      (make-string padding #\space)
+                      total-width current total))))))
 
-  (case (assoc-ref message 'type)
-    ((run/test-start)
-     #t)
+    (case (assoc-ref message 'type)
+      ((run/test-start)    #t)
+      ((run/assertion-end) #t)
+      ((run/test-end)
+       (let* ((port (get-port message))
+              (outcome (chain-and message
+                         (assoc-ref _ 'test-run)
+                         (assoc-ref _ outcome-key)))
+              (progress (assoc-ref message 'run-progress))
+              (current (and progress (assoc-ref progress 'progress/current)))
+              (total (and progress (assoc-ref progress 'progress/total))))
+         (print-outcome port outcome)
+         (print-counter port current total)
+         (force-output port)
+         #t))
+      ((run/end) #t)
+      (else #f))))
 
-    ((run/assertion-end)
-     #t)
+(define run-dots
+  (make-run-dots
+   'test-run/outcome
+   (lambda (outcome)
+     (case outcome
+       ((pass)  ".")
+       ((fail)  "F")
+       ((error) "E")
+       (else    "?")))))
 
-    ((run/test-end)
-     (let* ((port (get-port message))
-            (outcome (chain-and message
-                       (assoc-ref _ 'test-run)
-                       (assoc-ref _ 'test-run/outcome)))
-            (progress (assoc-ref message 'run-progress))
-            (current (and progress (assoc-ref progress 'progress/current)))
-            (total (and progress (assoc-ref progress 'progress/total))))
-
-       (print-outcome port outcome)
-       (print-counter port current total)
-       (force-output port)
-       #t))
-
-    ((run/end)
-     #t)
-
-    (else #f)))
+(define run-dots-extended
+  (make-run-dots
+   'test-run/extended-outcome
+   (lambda (outcome)
+     (case outcome
+       ((pass)         ".")
+       ((fail)         "F")
+       ((error)        "E")
+       ((zero-asserts) "Z")
+       ((aborted)      "A")
+       (else           "?")))))
 
 (define compact
   (chain (list
-          run-dots
+          run-dots-extended
 
           run-plan-compact
           run-summary
