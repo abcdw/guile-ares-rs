@@ -392,6 +392,13 @@ present in the message."
       ((run/end) #t)
       (else #f))))
 
+(define (make-newline-reporter types)
+  (lambda (message)
+    (define msg-type (assoc-ref message 'type))
+    (define port (get-port message))
+    (when (member msg-type types)
+      (newline port))))
+
 (define run-dots
   (make-run-dots
    'test-run/outcome
@@ -419,6 +426,10 @@ present in the message."
           run-dots-extended
 
           run-plan-compact
+
+          (make-newline-reporter '(run/end))
+          zero-assertion-warning
+          (make-newline-reporter '(run/end))
           run-summary
 
           load-summary
