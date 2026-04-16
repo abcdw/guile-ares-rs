@@ -249,14 +249,14 @@
     (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
     (is (eq? 'pass (assoc-ref test-run 'test-run/extended-outcome))))
 
-  (test "extended outcome is zero-asserts when no assertions ran"
+  (test "extended outcome is zero-assertions when no assertions ran"
     (define test-run
       (running:make-test-run
        (sample-test "t")
        (running:with-exception-continuation (lambda () #t))
        '()))
     (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
-    (is (eq? 'zero-asserts (assoc-ref test-run 'test-run/extended-outcome))))
+    (is (eq? 'zero-assertions (assoc-ref test-run 'test-run/extended-outcome))))
 
   (test "extended outcome is aborted when test body raised"
     (define test-run

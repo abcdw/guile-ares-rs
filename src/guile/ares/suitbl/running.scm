@@ -208,7 +208,7 @@ are present, run outcome is considered 'error."
    ((raised? test-run-result) 'aborted)
    ((and (eq? test-run-outcome 'pass)
          (zero? (assoc-ref assertion-summary 'assertions)))
-    'zero-asserts)
+    'zero-assertions)
    (else test-run-outcome)))
 
 (define (make-test-run test test-run-result assertion-runs)

@@ -194,12 +194,12 @@
            (string-length (list-ref lines 1))))))
 
 (define-suite run-dots-extended-reporter-tests
-  (test "prints Z for zero-asserts test"
+  (test "prints Z for zero-assertions test"
     (define port (open-output-string))
     (reporter:run-dots-extended
      `((type . run/test-end)
        (reporting/port . ,port)
-       (test-run . ((test-run/extended-outcome . zero-asserts)))))
+       (test-run . ((test-run/extended-outcome . zero-assertions)))))
     (is (equal? "Z" (get-output-string port))))
 
   (test "prints A for aborted test"

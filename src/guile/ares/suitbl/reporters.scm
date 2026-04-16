@@ -410,7 +410,7 @@ present in the message."
        ((pass)         ".")
        ((fail)         "F")
        ((error)        "E")
-       ((zero-asserts) "Z")
+       ((zero-assertions) "Z")
        ((aborted)      "A")
        (else           "?")))))
 
