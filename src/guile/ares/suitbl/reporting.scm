@@ -20,6 +20,10 @@
             forest->junit-sxml
             forest->junit-xml
 
+            format-test-compact
+            format-test-twoline
+            format-test-verbose
+
             suite-forest->tree-string
             tree-node-children
             tree-node-description
@@ -121,6 +125,34 @@ no location is available."
           (and (running:returned? run-result)
                (running:returned-value run-result)))))
 
+;;;
+;;; Test Formatting
+;;;
+
+(define (format-test-compact test)
+  "Format TEST as a compact single-line string: just the description."
+  (or (assoc-ref test 'test/description) "<unnamed test>"))
+
+(define (format-test-twoline test)
+  "Format TEST as two lines: description and source location."
+  (let ((desc (or (assoc-ref test 'test/description) "<unnamed test>"))
+        (loc (format-location (assoc-ref test 'test/location))))
+    (if (string-null? loc)
+        desc
+        (format #f "~a\n  ~a" desc loc))))
+
+(define (format-test-verbose test)
+  "Format TEST as a multi-line verbose string with description,
+location, and metadata."
+  (let* ((desc (format-test-compact test))
+         (loc (format-location (assoc-ref test 'test/location)))
+         (metadata (or (assoc-ref test 'test/metadata) '())))
+    (string-append
+     desc "\n"
+     (if (string-null? loc) "" (format #f "  location: ~a\n" loc))
+     (if (null? metadata) "" (format #f "  metadata: ~y" metadata)))))
+
+
 ;;;
 ;;; JUnit XML
 ;;;
