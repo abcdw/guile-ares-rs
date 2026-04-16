@@ -368,11 +368,12 @@ Expects a @code{run-plan} alist on @code{run/start} messages with
 
 (define %run-dots-line-width 50)
 
-(define (make-run-dots outcome-key outcome->char)
-  "Return a dots reporter using OUTCOME-KEY to look up the test outcome
-and OUTCOME->CHAR to map it to a display character.  Shows at most 50
-tests per line with a right-aligned counter when @code{run-progress} is
-present in the message."
+(define (make-run-dots outcome-key outcome->char legend)
+  "Return a dots reporter using OUTCOME-KEY to look up the test outcome,
+OUTCOME->CHAR to map it to a display character, and LEGEND to explain
+those characters at @code{run/start}.  Shows at most 50 tests per line
+with a right-aligned counter when @code{run-progress} is present in the
+message."
   (lambda (message)
     (define (print-outcome port outcome)
       (format port "~a" (outcome->char outcome)))
@@ -392,6 +393,9 @@ present in the message."
                       total-width current total))))))
 
     (case (assoc-ref message 'type)
+      ((run/start)
+       (format (get-port message) "Legend: ~a\n" legend)
+       #t)
       ((run/test-start)    #t)
       ((run/assertion-end) #t)
       ((run/test-end)
@@ -424,7 +428,8 @@ present in the message."
        ((pass)  ".")
        ((fail)  "F")
        ((error) "E")
-       (else    "?")))))
+       (else    "?")))
+   ".=pass, F=fail, E=error"))
 
 (define run-dots-extended
   (make-run-dots
@@ -436,13 +441,14 @@ present in the message."
        ((error)        "E")
        ((zero-assertions) "Z")
        ((aborted)      "A")
-       (else           "?")))))
+       (else           "?")))
+   ".=pass, F=fail, E=error, Z=zero assertions, A=aborted"))
 
 (define compact
   (chain (list
-          run-dots-extended
-
           run-plan-compact
+
+          run-dots-extended
 
           (make-newline-reporter '(run/end))
           zero-assertion-warning

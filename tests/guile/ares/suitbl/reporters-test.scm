@@ -114,6 +114,14 @@
                 (get-output-string port)))))
 
 (define-suite run-dots-reporter-tests
+  (test "prints legend on run/start"
+    (define port (open-output-string))
+    (reporter:run-dots
+     `((type . run/start)
+       (reporting/port . ,port)))
+    (is (equal? "Legend: .=pass, F=fail, E=error\n"
+                (get-output-string port))))
+
   (test "prints . for passing test"
     (define port (open-output-string))
     (reporter:run-dots
@@ -194,6 +202,15 @@
            (string-length (list-ref lines 1))))))
 
 (define-suite run-dots-extended-reporter-tests
+  (test "prints legend on run/start"
+    (define port (open-output-string))
+    (reporter:run-dots-extended
+     `((type . run/start)
+       (reporting/port . ,port)))
+    (is (equal?
+         "Legend: .=pass, F=fail, E=error, Z=zero assertions, A=aborted\n"
+         (get-output-string port))))
+
   (test "prints Z for zero-assertions test"
     (define port (open-output-string))
     (reporter:run-dots-extended
