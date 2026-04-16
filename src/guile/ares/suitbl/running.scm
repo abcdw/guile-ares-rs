@@ -9,6 +9,7 @@
   #:use-module ((ice-9 exceptions) #:select (raise-exception
                                              with-exception-handler))
   #:use-module ((ice-9 match) #:select (match))
+  #:use-module ((srfi srfi-197) #:select (chain))
   #:export (returned?
             returned-value
             raised?
@@ -186,13 +187,15 @@ are present, run outcome is considered 'error."
 
 (define (assertion-runs->test-run-summary assertion-runs)
   "Convert ASSERTION-RUNS into a per-test run summary alist."
-  (assertion-summary->test-run-summary
-   (assertion-runs->assertion-summary assertion-runs)))
+  (chain assertion-runs
+    (assertion-runs->assertion-summary _)
+    (assertion-summary->test-run-summary _)))
 
 (define (assertion-outcomes->test-run-summary outcomes)
   "Convert assertion OUTCOMES into a per-test run summary alist."
-  (assertion-summary->test-run-summary
-   (assertion-outcomes->assertion-summary outcomes)))
+  (chain outcomes
+    (assertion-outcomes->assertion-summary _)
+    (assertion-summary->test-run-summary _)))
 
 (define (test-run-result+assertion-summary->test-run-outcome
          test-run-result assertion-summary)
