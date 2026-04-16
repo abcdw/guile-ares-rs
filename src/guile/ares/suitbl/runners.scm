@@ -160,18 +160,18 @@ environment just set it to new instance of test runner.
                      `((run-progress . ,run-progress))
                      '())))
 
-            (define raised-assertion-run
-              (first-erroring-assertion-run
-               assertion-runs))
+            (when (re-raise?)
 
-            (when (and (re-raise?) raised-assertion-run)
-              ((running:raised-continuation
-                (assoc-ref raised-assertion-run
-                           'assertion-run/result))))
+              (define raised-assertion-run
+                (first-erroring-assertion-run
+                 assertion-runs))
+              (when raised-assertion-run
+                ((running:raised-continuation
+                  (assoc-ref raised-assertion-run
+                             'assertion-run/result))))
 
-            (when (and (running:raised? test-run-result)
-                       (re-raise?))
-              ((running:raised-continuation test-run-result)))
+              (when (running:raised? test-run-result)
+                ((running:raised-continuation test-run-result))))
 
             test-run)))
 
