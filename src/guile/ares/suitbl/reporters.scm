@@ -14,7 +14,7 @@
                           forest->junit-xml))
   #:use-module ((ares suitbl reporting) #:prefix reporting:)
   #:use-module ((ares guile exceptions) #:select (exception->string))
-  #:use-module ((srfi srfi-1) #:select (fold))
+  #:use-module ((srfi srfi-1) #:select (alist-delete fold))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
   #:use-module ((ice-9 format) #:select (format))
@@ -24,6 +24,7 @@
             reporter-first
             silent
             logging
+            make-spying
             unhandled
             load-ignore-messages
             base
@@ -100,6 +101,25 @@ A final test reporter can be attached to test runner.
 (define (logging message)
   "Just log the @code{message}."
   (format (get-port message) "message: ~y" message))
+
+(define (default-spying-transform message)
+  (chain message
+    (alist-delete 'suitbl/state _)
+    (format #f "~y\n" _)))
+
+(define* (make-spying types
+                      #:key
+                      (predicate (lambda (_) #t))
+                      (transform default-spying-transform))
+  "Return a reporter that writes transformed messages whose type is in
+TYPES.  Useful for debugging reporter traffic.  When PREDICATE is
+provided, print only messages for which it returns a truthy value.
+TRANSFORM should accept MESSAGE and return a string to write to the
+reporting port."
+  (lambda (message)
+    (and (memq (assoc-ref message 'type) types)
+         (predicate message)
+         (format (get-port message) "~a" (transform message)))))
 
 (define (unhandled message)
   "A simple test reporter, which prints incomming message.  It can be
