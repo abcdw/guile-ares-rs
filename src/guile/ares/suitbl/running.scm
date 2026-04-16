@@ -190,13 +190,22 @@ are present, run outcome is considered 'error."
   "Build a test run record from TEST, TEST-RUN-RESULT, and ASSERTION-RUNS."
   (let* ((assertion-summary
           (assertion-runs->assertion-summary assertion-runs))
+         (test-body-error? (raised? test-run-result))
          (test-run-summary
-          (assertion-summary->test-run-summary assertion-summary))
+          (if test-body-error?
+              `((tests . 1)
+                (failures . 0)
+                (errors . 1)
+                (skipped . 0)
+                (assertions . ,(assoc-ref assertion-summary 'assertions)))
+              (assertion-summary->test-run-summary assertion-summary)))
          (test-run-outcome
-          (assertion-summary->test-run-outcome assertion-summary))
+          (if test-body-error?
+              'error
+              (assertion-summary->test-run-outcome assertion-summary)))
          (test-run-extended-outcome
           (cond
-           ((raised? test-run-result) 'aborted)
+           (test-body-error? 'aborted)
            ((and (eq? test-run-outcome 'pass)
                  (zero? (assoc-ref assertion-summary 'assertions)))
             'zero-asserts)

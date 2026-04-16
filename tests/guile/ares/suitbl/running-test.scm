@@ -264,8 +264,46 @@
        (sample-test "t")
        (running:with-exception-continuation (lambda () (error "boom")))
        '()))
-    (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
-    (is (eq? 'aborted (assoc-ref test-run 'test-run/extended-outcome)))))
+    (is (eq? 'error (assoc-ref test-run 'test-run/outcome)))
+    (is (eq? 'aborted (assoc-ref test-run 'test-run/extended-outcome))))
+
+  (test "test body error overrides earlier assertion failure in summary"
+    (define test-run
+      (running:make-test-run
+       (sample-test "t")
+       (running:with-exception-continuation (lambda () (error "boom")))
+       (list (running:make-assertion-run
+              (sample-assertion #f)
+              (running:with-exception-continuation (lambda () #f))))))
+    (define test-run-summary
+      (assoc-ref test-run 'test-run/summary))
+    (is (equal?
+         '((tests . 1)
+           (failures . 0)
+           (errors . 1)
+           (skipped . 0)
+           (assertions . 1))
+         test-run-summary)))
+
+  (test "test body error does not double-count assertion error in summary"
+    (define test-run
+      (running:make-test-run
+       (sample-test "t")
+       (running:with-exception-continuation (lambda () (error "boom")))
+       (list (running:make-assertion-run
+              (sample-assertion '(error "assertion boom"))
+              (running:with-exception-continuation
+               (lambda ()
+                 (error "assertion boom")))))))
+    (define test-run-summary
+      (assoc-ref test-run 'test-run/summary))
+    (is (equal?
+         '((tests . 1)
+           (failures . 0)
+           (errors . 1)
+           (skipped . 0)
+           (assertions . 1))
+         test-run-summary))))
 
 (define-suite make-assertion-run-tests
   (test "stores assertion, pass outcome, and returned value"
