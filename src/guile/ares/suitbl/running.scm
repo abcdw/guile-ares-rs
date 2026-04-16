@@ -161,20 +161,28 @@ are present, run outcome is considered 'error."
 ;;; Test run helpers
 ;;;
 
-(define (assertion-summary->test-run-summary assertion-summary)
-  "Convert ASSERTION-SUMMARY into a per-test run summary alist."
-  (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
-        (fail? (> (assoc-ref assertion-summary 'failures) 0)))
-    `((tests . 1)
-      (failures . ,(if (and fail? (not error?)) 1 0))
-      (errors . ,(if error? 1 0))
-      (skipped . 0)
-      (assertions . ,(assoc-ref assertion-summary 'assertions)))))
+(define (test-run-outcome->test-run-summary test-run-outcome assertions-count)
+  "Convert TEST-RUN-OUTCOME and ASSERTIONS-COUNT into a per-test run summary."
+  `((tests . 1)
+    (failures . ,(if (eq? test-run-outcome 'fail) 1 0))
+    (errors . ,(if (eq? test-run-outcome 'error) 1 0))
+    (skipped . 0)
+    (assertions . ,assertions-count)))
 
 (define (assertion-summary->test-run-outcome assertion-summary)
   "Convert ASSERTION-SUMMARY alist into a test run outcome symbol."
-  (run-summary->run-outcome
-   (assertion-summary->test-run-summary assertion-summary)))
+  (let ((error? (> (assoc-ref assertion-summary 'errors) 0))
+        (fail? (> (assoc-ref assertion-summary 'failures) 0)))
+    (cond
+     (error? 'error)
+     (fail? 'fail)
+     (else 'pass))))
+
+(define (assertion-summary->test-run-summary assertion-summary)
+  "Convert ASSERTION-SUMMARY into a per-test run summary alist."
+  (test-run-outcome->test-run-summary
+   (assertion-summary->test-run-outcome assertion-summary)
+   (assoc-ref assertion-summary 'assertions)))
 
 (define (assertion-runs->test-run-summary assertion-runs)
   "Convert ASSERTION-RUNS into a per-test run summary alist."
@@ -186,30 +194,37 @@ are present, run outcome is considered 'error."
   (assertion-summary->test-run-summary
    (assertion-outcomes->assertion-summary outcomes)))
 
+(define (test-run-result+assertion-summary->test-run-outcome
+         test-run-result assertion-summary)
+  "Compute final test run outcome from TEST-RUN-RESULT and ASSERTION-SUMMARY."
+  (if (raised? test-run-result)
+      'error
+      (assertion-summary->test-run-outcome assertion-summary)))
+
+(define (test-run-result+assertion-summary->test-run-extended-outcome
+         test-run-result assertion-summary test-run-outcome)
+  "Compute extended test run outcome from TEST-RUN-RESULT and ASSERTION-SUMMARY."
+  (cond
+   ((raised? test-run-result) 'aborted)
+   ((and (eq? test-run-outcome 'pass)
+         (zero? (assoc-ref assertion-summary 'assertions)))
+    'zero-asserts)
+   (else test-run-outcome)))
+
 (define (make-test-run test test-run-result assertion-runs)
   "Build a test run record from TEST, TEST-RUN-RESULT, and ASSERTION-RUNS."
   (let* ((assertion-summary
           (assertion-runs->assertion-summary assertion-runs))
-         (test-body-error? (raised? test-run-result))
-         (test-run-summary
-          (if test-body-error?
-              `((tests . 1)
-                (failures . 0)
-                (errors . 1)
-                (skipped . 0)
-                (assertions . ,(assoc-ref assertion-summary 'assertions)))
-              (assertion-summary->test-run-summary assertion-summary)))
          (test-run-outcome
-          (if test-body-error?
-              'error
-              (assertion-summary->test-run-outcome assertion-summary)))
+          (test-run-result+assertion-summary->test-run-outcome
+           test-run-result assertion-summary))
+         (test-run-summary
+          (test-run-outcome->test-run-summary
+           test-run-outcome
+           (assoc-ref assertion-summary 'assertions)))
          (test-run-extended-outcome
-          (cond
-           (test-body-error? 'aborted)
-           ((and (eq? test-run-outcome 'pass)
-                 (zero? (assoc-ref assertion-summary 'assertions)))
-            'zero-asserts)
-           (else test-run-outcome))))
+          (test-run-result+assertion-summary->test-run-extended-outcome
+           test-run-result assertion-summary test-run-outcome)))
     `((test . ,test)
       (test-run/result . ,test-run-result)
       (test-run/assertion-runs . ,assertion-runs)
