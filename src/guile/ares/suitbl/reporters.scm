@@ -12,6 +12,7 @@
                           suite-forest->tree-string
                           count-suites-and-tests
                           forest->junit-xml))
+  #:use-module ((ares suitbl reporting) #:prefix reporting:)
   #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1) #:select (fold))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
@@ -210,21 +211,37 @@ to catch unhandled messages."
     (else #f)))
 
 (define (zero-assertion-warning message)
-  "Warn when a test finishes without executing any assertions."
+  "Warn at run end about tests that executed zero assertions."
+  (define port (get-port message))
+  (define (zero-assertion-test-descriptions state)
+    (reverse
+     (fold (lambda (entry result)
+             (let* ((extended-outcome (assoc-ref entry 'test-run/extended-outcome)))
+               (if (eq? 'zero-assertions extended-outcome)
+                   (cons (reporting:format-test-twoline (assoc-ref entry 'test))
+                         result)
+                   result)))
+           '()
+           (or (state:get-run-history state) '()))))
+
   (case (assoc-ref message 'type)
-    ((run/test-end)
-     (let* ((summary (chain-and message
-                       (assoc-ref _ 'test-run)
-                       (assoc-ref _ 'test-run/summary)))
-            (assertions (and summary
-                             (assoc-ref summary 'assertions))))
-       (if (and assertions (zero? assertions))
+    ((run/end)
+     (let* ((descriptions
+             (zero-assertion-test-descriptions
+              (assoc-ref message 'suitbl/state)))
+            (count (length descriptions)))
+       (if (zero? count)
+           #f
            (begin
-             (format (get-port message)
-                     "\nwarning: Test `~a' executed zero assertions.\n"
-                     (message-test-description message))
-             #t)
-           #f)))
+             (format port
+                     "warning: ~a test~p executed zero assertions:\n"
+                     count count)
+             (for-each (lambda (description)
+                         (format port
+                                 "- ~a\n"
+                                 description))
+                       descriptions)
+             #t))))
     (else #f)))
 
 (define minimal
