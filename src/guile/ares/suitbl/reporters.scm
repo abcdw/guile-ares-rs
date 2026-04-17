@@ -6,7 +6,7 @@
   #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((ares suitbl reporting)
                 #:select (format-location
-                          actual pre-evaled-expression
+                          actual
                           tree-node-children
                           tree-node-description
                           suite-forest->tree-string
@@ -28,7 +28,6 @@
             load-ignore-messages
             base
             minimal
-            spying
             compact
             junit
             load-tree
@@ -255,55 +254,6 @@ to catch unhandled messages."
     (list _ unhandled)
     (reporter-first _)))
 
-(define (execution-spying message)
-  (define msg-type (assoc-ref message 'type))
-  (case msg-type
-
-    ((run/test-start)
-     (format (get-port message) "--- [~a] ---\n"
-             (message-test-description message)))
-    ((run/test-end)
-     (format (get-port message) "\n"))
-
-    ((run/assertion-end)
-     (let ((outcome (chain-and message
-                      (assoc-ref _ 'assertion-run)
-                      (assoc-ref _ 'assertion-run/outcome)))
-           (run-result (chain-and message
-                         (assoc-ref _ 'assertion-run)
-                         (assoc-ref _ 'assertion-run/result)))
-           (assert-body (chain-and message
-                          (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assert/body)))
-           (assert-location (chain-and message
-                              (assoc-ref _ 'assertion)
-                              (assoc-ref _ 'assert/location))))
-       (case outcome
-         ((pass fail)
-          (format (get-port message) "~y~y => ~y"
-                  assert-body
-                  (pre-evaled-expression message)
-                  (and (running:returned? run-result)
-                       (running:returned-value run-result))))
-         ((error)
-          (format (get-port message) "\n ~a\n ~y✗ produced error:\n ~s\n"
-                  (format-location assert-location)
-                  assert-body
-                  (exception->string
-                   (and (running:raised? run-result)
-                        (running:raised-exception run-result)))))
-         (else #f))))
-
-    (else #f)))
-
-(define spying
-  (chain (list
-          execution-spying
-          zero-assertion-warning
-          load-minimal)
-    (reporter-every _)
-    (list _ unhandled)
-    (reporter-first _)))
 
 (define (load-tree message)
   "A reporter that prints the complete suite tree (like the @code{tree}
