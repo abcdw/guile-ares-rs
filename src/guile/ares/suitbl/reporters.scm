@@ -27,6 +27,7 @@
             make-spying
             unhandled
             load-ignore-messages
+            verbose-all
             base
             minimal
             compact
@@ -137,7 +138,7 @@ to catch unhandled messages."
     ((load/test load/suite-enter load/suite-leave) #t)
     (else #f)))
 
-(define (verbose message)
+(define (verbose-all message)
   (case (assoc-ref message 'type)
     ((run/test-start)
      (format (get-port message) "\n┌Test ~a\n"
@@ -432,7 +433,7 @@ message."
     (reporter-first _)))
 
 (define base
-  (chain (list verbose
+  (chain (list verbose-all
                zero-assertion-warning
                load-ignore-messages
                load-tree
