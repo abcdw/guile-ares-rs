@@ -140,42 +140,38 @@ to catch unhandled messages."
 
 (define (verbose-all message)
   (case (assoc-ref message 'type)
-    ((run/test-start)
-     (format (get-port message) "\n┌Test ~a\n"
-             (message-test-description message)))
     ((run/test-end)
-     (format (get-port message) "└Test ~a\n"
-             (message-test-description message)))
-
-    ((run/assertion-end)
-     (let ((outcome (chain-and message
-                      (assoc-ref _ 'assertion-run)
-                      (assoc-ref _ 'assertion-run/outcome)))
-           (run-result (chain-and message
-                         (assoc-ref _ 'assertion-run)
-                         (assoc-ref _ 'assertion-run/result)))
-           (assert-body (chain-and message
-                          (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assertion/body)))
-           (assert-location (chain-and message
-                              (assoc-ref _ 'assertion)
-                              (assoc-ref _ 'assertion/location))))
-       (case outcome
-         ((pass)
-          (format (get-port message) "~y✓\n" assert-body))
-         ((fail)
-          (format (get-port message) "~a\n~y✗ ~a\n"
-                  (format-location assert-location)
-                  assert-body
-                  (actual message)))
-         ((error)
-          (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
-                  (format-location assert-location)
-                  assert-body
-                  (exception->string
-                   (and (running:raised? run-result)
-                        (running:raised-exception run-result)))))
-         (else #f))))
+     (let* ((port (get-port message))
+            (test-run (assoc-ref message 'test-run))
+            (assertion-runs (assoc-ref test-run 'test-run/assertion-runs)))
+       (format port "\n┌Test ~a\n" (message-test-description message))
+       (for-each
+        (lambda (ar)
+          (let* ((outcome (assoc-ref ar 'assertion-run/outcome))
+                 (run-result (assoc-ref ar 'assertion-run/result))
+                 (assertion (assoc-ref ar 'assertion))
+                 (assert-body (assoc-ref assertion 'assertion/body))
+                 (assert-location (assoc-ref assertion 'assertion/location))
+                 (ar-message `((assertion . ,assertion)
+                               (assertion-run . ,ar))))
+            (case outcome
+              ((pass)
+               (format port "~y✓\n" assert-body))
+              ((fail)
+               (format port "~a\n~y✗ ~a\n"
+                       (format-location assert-location)
+                       assert-body
+                       (actual ar-message)))
+              ((error)
+               (format port "~a\n~y✗ produced error:\n ~s\n"
+                       (format-location assert-location)
+                       assert-body
+                       (exception->string
+                        (and (running:raised? run-result)
+                             (running:raised-exception run-result)))))
+              (else #f))))
+        assertion-runs)
+       (format port "└Test ~a\n" (message-test-description message))))
 
     (else #f)))
 
