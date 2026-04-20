@@ -93,7 +93,7 @@ is available."
            ((running:returned? args-run-result)
             (match (running:returned-value args-run-result)
               ((first second)
-               (format #f "\n~a and\n~a are not ~a"
+               (format #f "~a and\n~a are not ~a"
                        (pretty-string first)
                        (pretty-string second)
                        (car assert-body)))))
@@ -133,12 +133,12 @@ is available."
       ((pass)
        (pass-formatter assert-body))
       ((fail)
-       (format #f "~a\n~y✗ ~a\n"
+       (format #f "✗ ~a\n~y~a\n"
                (format-location assert-location)
                assert-body
                (format-assertion-failure-detail assertion-run)))
       ((error)
-       (format #f "~a\n~y✗ produced error:\n ~s\n"
+       (format #f "✗ ~a\n~yproduced error:\n ~s\n"
                (format-location assert-location)
                assert-body
                (exception->string
@@ -152,7 +152,7 @@ is available."
 (define (format-assertion-verbose assertion-run)
   (format-assertion assertion-run
                     (lambda (assert-body)
-                      (format #f "~y✓\n" assert-body))))
+                      (format #f "✓ ~y" assert-body))))
 
 ;;;
 ;;; Test Formatting
