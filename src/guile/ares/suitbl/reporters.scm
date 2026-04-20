@@ -145,11 +145,8 @@ TYPES."
        (format port "\n┌Test ~a\n" (message-test-description message))
        (for-each
         (lambda (assertion-run)
-          (let* ((assertion-message
-                  (running:assertion-run->reporter-message assertion-run))
-                 (formatted
-                  (and assertion-message
-                       (reporting:format-assertion-verbose assertion-message))))
+          (let ((formatted
+                 (reporting:format-assertion-verbose assertion-run)))
             (and formatted
                  (format port "~a" formatted))))
         assertion-runs)
@@ -177,7 +174,10 @@ TYPES."
      (format (get-port message) "\n"))
 
     ((run/assertion-end)
-     (let ((formatted (reporting:format-assertion-minimal message)))
+     (let ((formatted
+            (chain message
+              (assoc-ref _ 'assertion-run)
+              (reporting:format-assertion-minimal _))))
        (and formatted
             (format (get-port message) "~a" formatted))))
 

@@ -123,20 +123,12 @@ is available."
           (and (running:returned? run-result)
                (running:returned-value run-result)))))
 
-(define (format-assertion message pass-formatter)
-  (let ((assertion-run (assoc-ref message 'assertion-run))
-        (outcome (chain-and message
-                   (assoc-ref _ 'assertion-run)
-                   (assoc-ref _ 'assertion-run/outcome)))
-        (run-result (chain-and message
-                      (assoc-ref _ 'assertion-run)
-                      (assoc-ref _ 'assertion-run/result)))
-        (assert-body (chain-and message
-                       (assoc-ref _ 'assertion)
-                       (assoc-ref _ 'assertion/body)))
-        (assert-location (chain-and message
-                           (assoc-ref _ 'assertion)
-                           (assoc-ref _ 'assertion/location))))
+(define (format-assertion assertion-run pass-formatter)
+  (let* ((outcome (assoc-ref assertion-run 'assertion-run/outcome))
+         (run-result (assoc-ref assertion-run 'assertion-run/result))
+         (assertion (assoc-ref assertion-run 'assertion))
+         (assert-body (assoc-ref assertion 'assertion/body))
+         (assert-location (assoc-ref assertion 'assertion/location)))
     (case outcome
       ((pass)
        (pass-formatter assert-body))
@@ -154,11 +146,11 @@ is available."
                      (running:raised-exception run-result)))))
       (else #f))))
 
-(define (format-assertion-minimal message)
-  (format-assertion message (lambda (_) "✓")))
+(define (format-assertion-minimal assertion-run)
+  (format-assertion assertion-run (lambda (_) "✓")))
 
-(define (format-assertion-verbose message)
-  (format-assertion message
+(define (format-assertion-verbose assertion-run)
+  (format-assertion assertion-run
                     (lambda (assert-body)
                       (format #f "~y✓\n" assert-body))))
 
