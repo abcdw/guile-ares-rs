@@ -4,14 +4,6 @@
 (define-module (ares suitbl reporters)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl running) #:prefix running:)
-  #:use-module ((ares suitbl reporting)
-                #:select (format-assertion-minimal
-                          format-assertion-verbose
-                          tree-node-children
-                          tree-node-description
-                          suite-forest->tree-string
-                          count-suites-and-tests
-                          forest->junit-xml))
   #:use-module ((ares suitbl reporting) #:prefix reporting:)
   #:use-module ((srfi srfi-1) #:select (alist-delete fold))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
@@ -157,7 +149,7 @@ TYPES."
                   (running:assertion-run->reporter-message assertion-run))
                  (formatted
                   (and assertion-message
-                       (format-assertion-verbose assertion-message))))
+                       (reporting:format-assertion-verbose assertion-message))))
             (and formatted
                  (format port "~a" formatted))))
         assertion-runs)
@@ -185,7 +177,7 @@ TYPES."
      (format (get-port message) "\n"))
 
     ((run/assertion-end)
-     (let ((formatted (format-assertion-minimal message)))
+     (let ((formatted (reporting:format-assertion-minimal message)))
        (and formatted
             (format (get-port message) "~a" formatted))))
 
@@ -244,7 +236,7 @@ CLI command) when a top-level suite finishes loading."
     ((load/end)
      (let ((suite-node (assoc-ref message 'suite-node)))
        (format (get-port message) "\n~a"
-               (suite-forest->tree-string (list suite-node)))))
+               (reporting:suite-forest->tree-string (list suite-node)))))
     (else #f)))
 
 (define (load-summary message)
@@ -253,7 +245,7 @@ when a top-level suite finishes loading."
   (case (assoc-ref message 'type)
     ((load/end)
      (let* ((suite-node (assoc-ref message 'suite-node))
-            (counts (count-suites-and-tests suite-node))
+            (counts (reporting:count-suites-and-tests suite-node))
             (suites (assoc-ref counts 'suites))
             (tests (assoc-ref counts 'tests))
             (modules (assoc-ref counts 'module-suites))
@@ -414,6 +406,6 @@ running.  Silent for all other message types."
     ((run/end)
      (let* ((state (assoc-ref message 'suitbl/state))
             (forest (state:get-suite-forest-with-summary state))
-            (xml (forest->junit-xml forest)))
+            (xml (reporting:forest->junit-xml forest)))
        (format (get-port message) "~a\n" xml)))
     (else #f)))
