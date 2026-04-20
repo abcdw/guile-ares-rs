@@ -246,7 +246,7 @@
                 (description . "some test")))))
     (is (not (reporter:junit
               `((type . run/assertion-end)
-                (assertion . ((assert/body . (= 1 1))))
+                (assertion . ((assertion/body . (= 1 1))))
                 (assertion-run
                  . ((assertion-run/result . (returned . #t))
                     (assertion-run/outcome . pass))))))))

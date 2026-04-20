@@ -12,10 +12,10 @@
 
 
 (define (sample-assertion body)
-  `((assert/body . ,body)
-    (assert/location . ((filename . "running-test.scm")
-                        (line . 0)
-                        (column . 0)))))
+  `((assertion/body . ,body)
+    (assertion/location . ((filename . "running-test.scm")
+                           (line . 0)
+                           (column . 0)))))
 
 (define-suite assertion-outcomes->assertion-summary-tests
   (test "summarize assertion outcomes with pass-only data"

@@ -156,10 +156,10 @@ to catch unhandled messages."
                          (assoc-ref _ 'assertion-run/result)))
            (assert-body (chain-and message
                           (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assert/body)))
+                          (assoc-ref _ 'assertion/body)))
            (assert-location (chain-and message
                               (assoc-ref _ 'assertion)
-                              (assoc-ref _ 'assert/location))))
+                              (assoc-ref _ 'assertion/location))))
        (case outcome
          ((pass)
           (format (get-port message) "~y✓\n" assert-body))
@@ -207,10 +207,10 @@ to catch unhandled messages."
                          (assoc-ref _ 'assertion-run/result)))
            (assert-body (chain-and message
                           (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assert/body)))
+                          (assoc-ref _ 'assertion/body)))
            (assert-location (chain-and message
                               (assoc-ref _ 'assertion)
-                              (assoc-ref _ 'assert/location))))
+                              (assoc-ref _ 'assertion/location))))
        (case outcome
          ((pass)
           (format (get-port message) "✓"))

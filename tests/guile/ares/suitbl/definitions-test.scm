@@ -36,7 +36,7 @@
     (else
      (chain entry
        (assoc-ref _ 'assertion)
-       (assoc-ref _ 'assert/body)))))
+       (assoc-ref _ 'assertion/body)))))
 
 (define (simplify-log log)
   (map simplify-log-entry log))
@@ -82,18 +82,18 @@
     (is (equal? '(str (= 1 (+ 2 -1))) (simplify-log events-log)))
 
     (let* ((assertion-1 (chain events-log (car _) (assoc-ref _ 'assertion)))
-           (assertion-1-body (assoc-ref assertion-1 'assert/body))
+           (assertion-1-body (assoc-ref assertion-1 'assertion/body))
            (assertion-1-body-value
-            ((assoc-ref assertion-1 'assert/body-thunk))))
+            ((assoc-ref assertion-1 'assertion/body-thunk))))
       (is (equal? 'str assertion-1-body))
       (is (equal? "a1" assertion-1-body-value)))
 
     (let* ((assertion-2 (chain events-log (cadr _) (assoc-ref _ 'assertion)))
-           (assertion-2-body (assoc-ref assertion-2 'assert/body))
+           (assertion-2-body (assoc-ref assertion-2 'assertion/body))
            (assertion-2-body-value
-            ((assoc-ref assertion-2 'assert/body-thunk)))
+            ((assoc-ref assertion-2 'assertion/body-thunk)))
            (assertion-2-args-value
-            ((assoc-ref assertion-2 'assert/args-thunk))))
+            ((assoc-ref assertion-2 'assertion/args-thunk))))
       (is (equal? '(= 1 (+ 2 -1)) assertion-2-body))
       (is (equal? #t assertion-2-body-value))
       (is (equal? '(1 1) assertion-2-args-value))))

@@ -90,7 +90,7 @@
          (map (lambda (assertion-run)
                 (assoc-ref
                  (assoc-ref assertion-run 'assertion)
-                 'assert/body))
+                 'assertion/body))
               assertion-runs)))
 
     (is (eq? 'pass (assoc-ref first-run 'assertion-run/outcome)))

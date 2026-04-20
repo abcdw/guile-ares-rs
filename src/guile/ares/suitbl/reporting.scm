@@ -85,10 +85,10 @@ no location is available."
 (define (actual message)
     (let* ((assert-body (chain-and message
                           (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assert/body)))
+                          (assoc-ref _ 'assertion/body)))
            (args-thunk (chain-and message
                          (assoc-ref _ 'assertion)
-                         (assoc-ref _ 'assert/args-thunk)))
+                         (assoc-ref _ 'assertion/args-thunk)))
            (safe-args-thunk (safify-thunk args-thunk))
            (run-result (chain-and message
                          (assoc-ref _ 'assertion-run)
@@ -108,10 +108,10 @@ no location is available."
 (define (pre-evaled-expression message)
     (let* ((assert-body (chain-and message
                           (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assert/body)))
+                          (assoc-ref _ 'assertion/body)))
            (args-thunk (chain-and message
                          (assoc-ref _ 'assertion)
-                         (assoc-ref _ 'assert/args-thunk)))
+                         (assoc-ref _ 'assertion/args-thunk)))
            (safe-args-thunk (safify-thunk args-thunk))
            (run-result (chain-and message
                          (assoc-ref _ 'assertion-run)

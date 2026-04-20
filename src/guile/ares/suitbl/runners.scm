@@ -88,7 +88,7 @@ environment just set it to new instance of test runner.
           assertion-runs))
 
   (define (%run-assert assertion inside-test? assertion-runs)
-    (let* ((body-thunk (assoc-ref assertion 'assert/body-thunk))
+    (let* ((body-thunk (assoc-ref assertion 'assertion/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
            (run-result (running:with-exception-continuation body-thunk))
            (assertion-run
