@@ -133,14 +133,14 @@ is available."
       ((pass)
        (pass-formatter assert-body))
       ((fail)
-       (format #f "✗ ~a\n~y~a\n"
-               (format-location assert-location)
+       (format #f "✗ ~y~a\n~a\n"
                assert-body
+               (format-location assert-location)
                (format-assertion-failure-detail assertion-run)))
       ((error)
-       (format #f "✗ ~a\n~yproduced error:\n ~s\n"
-               (format-location assert-location)
+       (format #f "✗ ~y~a\nproduced error:\n ~s\n"
                assert-body
+               (format-location assert-location)
                (exception->string
                 (and (running:raised? run-result)
                      (running:raised-exception run-result)))))
