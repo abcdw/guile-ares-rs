@@ -205,9 +205,8 @@ location, and metadata."
                      "┐")))))
 
 (define (format-test-run-outcome-line test-run)
-  (and=> (test-run-outcome-label test-run)
-         (lambda (outcome)
-           (format #f "Outcome: ~a\n" outcome))))
+  (chain-and (test-run-outcome-label test-run)
+    (format #f "Outcome: ~a\n" _)))
 
 (define (format-test-run-body-error test-run)
   (let ((run-result (assoc-ref test-run 'test-run/result)))
@@ -226,9 +225,8 @@ location, and metadata."
          (with-output-to-string
            (lambda ()
              (format #t "\n~a\n" (format-test-run-first-line desc))
-             (and=> (format-test-run-outcome-line test-run)
-                    (lambda (line)
-                      (format #t "~a" line)))
+             (chain-and (format-test-run-outcome-line test-run)
+               (format #t "~a" _))
              (for-each
               (lambda (assertion-run)
                 (let ((formatted
@@ -236,9 +234,8 @@ location, and metadata."
                   (and formatted
                        (format #t "~a" formatted))))
               assertion-runs)
-             (and=> (format-test-run-body-error test-run)
-                    (lambda (formatted)
-                      (format #t "~a" formatted)))
+             (chain-and (format-test-run-body-error test-run)
+               (format #t "~a" _))
              (chain (- %verbose-test-run-line-width 2)
                (string-repeat "─" _)
                (format #t "└~a┘\n" _)))))))
