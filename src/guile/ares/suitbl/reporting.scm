@@ -15,7 +15,7 @@
   #:export (string-repeat
             tests->pretty-string
             format-location
-            actual
+            format-assertion-failure-detail
             pre-evaled-expression
             format-assertion-minimal
             format-assertion-verbose
@@ -85,28 +85,33 @@ no location is available."
 (define (pretty-string obj)
   (format #f "~y" obj))
 
-(define (actual message)
-    (let* ((assert-body (chain-and message
-                          (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assertion/body)))
-           (args-thunk (chain-and message
-                         (assoc-ref _ 'assertion)
-                         (assoc-ref _ 'assertion/args-thunk)))
-           (safe-args-thunk (safify-thunk args-thunk))
-           (run-result (chain-and message
-                         (assoc-ref _ 'assertion-run)
-                         (assoc-ref _ 'assertion-run/result))))
-      (if (and (list? assert-body) (= 3 (length assert-body)))
-          (match (safe-args-thunk)
-            ((value . (first second))
-             (format #f "\n~a and\n~a are not ~a"
-                     (pretty-string first)
-                     (pretty-string second)
-                     (car assert-body)))
-            ((exception . ex)
-             (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
-          (and (running:returned? run-result)
-               (running:returned-value run-result)))))
+(define (format-assertion-failure-detail message)
+  "Format extra detail for a failing assertion MESSAGE.
+
+For binary predicate assertions, show the evaluated operands and the
+predicate name.  Otherwise, fall back to the returned value when one
+is available."
+  (let* ((assert-body (chain-and message
+                        (assoc-ref _ 'assertion)
+                        (assoc-ref _ 'assertion/body)))
+         (args-thunk (chain-and message
+                       (assoc-ref _ 'assertion)
+                       (assoc-ref _ 'assertion/args-thunk)))
+         (safe-args-thunk (safify-thunk args-thunk))
+         (run-result (chain-and message
+                       (assoc-ref _ 'assertion-run)
+                       (assoc-ref _ 'assertion-run/result))))
+    (if (and (list? assert-body) (= 3 (length assert-body)))
+        (match (safe-args-thunk)
+          ((value . (first second))
+           (format #f "\n~a and\n~a are not ~a"
+                   (pretty-string first)
+                   (pretty-string second)
+                   (car assert-body)))
+          ((exception . ex)
+           (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
+        (and (running:returned? run-result)
+             (running:returned-value run-result)))))
 
 (define (pre-evaled-expression message)
     (let* ((assert-body (chain-and message
@@ -148,7 +153,7 @@ no location is available."
        (format #f "~a\n~y✗ ~a\n"
                (format-location assert-location)
                assert-body
-               (actual message)))
+               (format-assertion-failure-detail message)))
       ((error)
        (format #f "~a\n~y✗ produced error:\n ~s\n"
                (format-location assert-location)
