@@ -184,6 +184,10 @@ location, and metadata."
 
 (define %verbose-test-run-line-width 80)
 
+(define (test-run-outcome-label test-run)
+  (or (assoc-ref test-run 'test-run/extended-outcome)
+      (assoc-ref test-run 'test-run/outcome)))
+
 (define (format-test-run-first-line desc)
   (let* ((prefix (format #f "┌Test ~a" desc))
          (remaining (- %verbose-test-run-line-width
@@ -200,6 +204,11 @@ location, and metadata."
                      (string-repeat "─" (- remaining 1))
                      "┐")))))
 
+(define (format-test-run-outcome-line test-run)
+  (and=> (test-run-outcome-label test-run)
+         (lambda (outcome)
+           (format #f "Outcome: ~a\n" outcome))))
+
 (define (format-test-run-verbose test-run)
   "Format TEST-RUN as a verbose multi-line report block."
   (and (list? test-run)
@@ -210,6 +219,9 @@ location, and metadata."
          (with-output-to-string
            (lambda ()
              (format #t "\n~a\n" (format-test-run-first-line desc))
+             (and=> (format-test-run-outcome-line test-run)
+                    (lambda (line)
+                      (format #t "~a" line)))
              (for-each
               (lambda (assertion-run)
                 (let ((formatted
