@@ -25,6 +25,7 @@
             silent
             logging
             make-spying
+            make-ignore-reporter
             unhandled
             load-ignore-messages
             verbose-all
@@ -132,11 +133,18 @@ to catch unhandled messages."
   ;; (force-output (current-error-port))
   )
 
+(define (make-ignore-reporter types)
+  "Return a reporter that silently handles messages whose type is in
+TYPES."
+  (lambda (message)
+    (and (memq (assoc-ref message 'type) types) #t)))
+
+(define %load-ignore-messages
+  (make-ignore-reporter '(load/test load/suite-enter load/suite-leave)))
+
 (define (load-ignore-messages message)
   "Silently handle load-phase messages to avoid noisy unhandled output."
-  (case (assoc-ref message 'type)
-    ((load/test load/suite-enter load/suite-leave) #t)
-    (else #f)))
+  (%load-ignore-messages message))
 
 (define (verbose-all message)
   (case (assoc-ref message 'type)
