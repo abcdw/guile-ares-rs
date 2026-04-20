@@ -104,16 +104,11 @@ is available."
         (and (running:returned? run-result)
              (running:returned-value run-result)))))
 
-(define (pre-evaled-expression message)
-    (let* ((assert-body (chain-and message
-                          (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assertion/body)))
-           (args-thunk (chain-and message
-                         (assoc-ref _ 'assertion)
-                         (assoc-ref _ 'assertion/args-thunk)))
-           (run-result (chain-and message
-                         (assoc-ref _ 'assertion-run)
-                         (assoc-ref _ 'assertion-run/result))))
+(define (pre-evaled-expression assertion-run)
+    (let* ((assertion (assoc-ref assertion-run 'assertion))
+           (assert-body (assoc-ref assertion 'assertion/body))
+           (args-thunk (assoc-ref assertion 'assertion/args-thunk))
+           (run-result (assoc-ref assertion-run 'assertion-run/result)))
       (if (list? assert-body)
           (let ((args-run-result
                  (running:with-exception-continuation args-thunk)))
