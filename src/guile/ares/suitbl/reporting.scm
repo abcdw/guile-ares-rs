@@ -1,10 +1,11 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl reporting)
   #:use-module ((ares suitbl definitions) #:select (test? suite?))
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl running) #:prefix running:)
+  #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1) #:select (fold))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
@@ -16,6 +17,8 @@
             format-location
             actual
             pre-evaled-expression
+            format-assertion-minimal
+            format-assertion-verbose
 
             forest->junit-sxml
             forest->junit-xml
@@ -124,6 +127,44 @@ no location is available."
              (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
           (and (running:returned? run-result)
                (running:returned-value run-result)))))
+
+(define (format-assertion message pass-formatter)
+  (let ((outcome (chain-and message
+                   (assoc-ref _ 'assertion-run)
+                   (assoc-ref _ 'assertion-run/outcome)))
+        (run-result (chain-and message
+                      (assoc-ref _ 'assertion-run)
+                      (assoc-ref _ 'assertion-run/result)))
+        (assert-body (chain-and message
+                       (assoc-ref _ 'assertion)
+                       (assoc-ref _ 'assertion/body)))
+        (assert-location (chain-and message
+                           (assoc-ref _ 'assertion)
+                           (assoc-ref _ 'assertion/location))))
+    (case outcome
+      ((pass)
+       (pass-formatter assert-body))
+      ((fail)
+       (format #f "~a\n~y✗ ~a\n"
+               (format-location assert-location)
+               assert-body
+               (actual message)))
+      ((error)
+       (format #f "~a\n~y✗ produced error:\n ~s\n"
+               (format-location assert-location)
+               assert-body
+               (exception->string
+                (and (running:raised? run-result)
+                     (running:raised-exception run-result)))))
+      (else #f))))
+
+(define (format-assertion-minimal message)
+  (format-assertion message (lambda (_) "✓")))
+
+(define (format-assertion-verbose message)
+  (format-assertion message
+                    (lambda (assert-body)
+                      (format #f "~y✓\n" assert-body))))
 
 ;;;
 ;;; Test Formatting

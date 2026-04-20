@@ -5,20 +5,18 @@
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((ares suitbl reporting)
-                #:select (format-location
-                          actual
+                #:select (format-assertion-minimal
+                          format-assertion-verbose
                           tree-node-children
                           tree-node-description
                           suite-forest->tree-string
                           count-suites-and-tests
                           forest->junit-xml))
   #:use-module ((ares suitbl reporting) #:prefix reporting:)
-  #:use-module ((ares guile exceptions) #:select (exception->string))
   #:use-module ((srfi srfi-1) #:select (alist-delete fold))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
   #:use-module ((ice-9 format) #:select (format))
-  #:use-module ((ice-9 match) #:select (match))
 
   #:export (reporter-every
             reporter-first
@@ -154,30 +152,14 @@ TYPES."
             (assertion-runs (assoc-ref test-run 'test-run/assertion-runs)))
        (format port "\n┌Test ~a\n" (message-test-description message))
        (for-each
-        (lambda (ar)
-          (let* ((outcome (assoc-ref ar 'assertion-run/outcome))
-                 (run-result (assoc-ref ar 'assertion-run/result))
-                 (assertion (assoc-ref ar 'assertion))
-                 (assert-body (assoc-ref assertion 'assertion/body))
-                 (assert-location (assoc-ref assertion 'assertion/location))
-                 (ar-message `((assertion . ,assertion)
-                               (assertion-run . ,ar))))
-            (case outcome
-              ((pass)
-               (format port "~y✓\n" assert-body))
-              ((fail)
-               (format port "~a\n~y✗ ~a\n"
-                       (format-location assert-location)
-                       assert-body
-                       (actual ar-message)))
-              ((error)
-               (format port "~a\n~y✗ produced error:\n ~s\n"
-                       (format-location assert-location)
-                       assert-body
-                       (exception->string
-                        (and (running:raised? run-result)
-                             (running:raised-exception run-result)))))
-              (else #f))))
+        (lambda (assertion-run)
+          (let* ((assertion-message
+                  (running:assertion-run->reporter-message assertion-run))
+                 (formatted
+                  (and assertion-message
+                       (format-assertion-verbose assertion-message))))
+            (and formatted
+                 (format port "~a" formatted))))
         assertion-runs)
        (format port "└Test ~a\n" (message-test-description message))))
 
@@ -203,34 +185,9 @@ TYPES."
      (format (get-port message) "\n"))
 
     ((run/assertion-end)
-     (let ((outcome (chain-and message
-                      (assoc-ref _ 'assertion-run)
-                      (assoc-ref _ 'assertion-run/outcome)))
-           (run-result (chain-and message
-                         (assoc-ref _ 'assertion-run)
-                         (assoc-ref _ 'assertion-run/result)))
-           (assert-body (chain-and message
-                          (assoc-ref _ 'assertion)
-                          (assoc-ref _ 'assertion/body)))
-           (assert-location (chain-and message
-                              (assoc-ref _ 'assertion)
-                              (assoc-ref _ 'assertion/location))))
-       (case outcome
-         ((pass)
-          (format (get-port message) "✓"))
-         ((fail)
-          (format (get-port message) "~a\n~y✗ ~a\n"
-                  (format-location assert-location)
-                  assert-body
-                  (actual message)))
-         ((error)
-          (format (get-port message) "~a\n~y✗ produced error:\n ~s\n"
-                  (format-location assert-location)
-                  assert-body
-                  (exception->string
-                   (and (running:raised? run-result)
-                        (running:raised-exception run-result)))))
-         (else #f))))
+     (let ((formatted (format-assertion-minimal message)))
+       (and formatted
+            (format (get-port message) "~a" formatted))))
 
     (else #f)))
 
