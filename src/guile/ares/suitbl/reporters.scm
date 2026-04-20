@@ -396,7 +396,7 @@ message."
     (reporter-first _)))
 
 (define base
-  (chain (list verbose-only-failed
+  (chain (list verbose-all
                (make-ignore-reporter '(run/test-start run/assertion-end))
                zero-assertion-warning
                load-ignore-messages

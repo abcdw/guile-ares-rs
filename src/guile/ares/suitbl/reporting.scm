@@ -182,6 +182,24 @@ location, and metadata."
      (if (string-null? loc) "" (format #f "  location: ~a\n" loc))
      (if (null? metadata) "" (format #f "  metadata: ~y" metadata)))))
 
+(define %verbose-test-run-line-width 80)
+
+(define (format-test-run-first-line desc)
+  (let* ((prefix (format #f "┌Test ~a" desc))
+         (remaining (- %verbose-test-run-line-width
+                       (string-length prefix)
+                       1)))
+    (cond
+     ((<= remaining 0)
+      (string-append prefix "┐"))
+     ((= remaining 1)
+      (string-append prefix "┐"))
+     (else
+      (string-append prefix
+                     " "
+                     (string-repeat "─" (- remaining 1))
+                     "┐")))))
+
 (define (format-test-run-verbose test-run)
   "Format TEST-RUN as a verbose multi-line report block."
   (and (list? test-run)
@@ -191,7 +209,7 @@ location, and metadata."
                (or (assoc-ref test-run 'test-run/assertion-runs) '())))
          (with-output-to-string
            (lambda ()
-             (format #t "\n┌Test ~a\n" desc)
+             (format #t "\n~a\n" (format-test-run-first-line desc))
              (for-each
               (lambda (assertion-run)
                 (let ((formatted
@@ -199,7 +217,9 @@ location, and metadata."
                   (and formatted
                        (format #t "~a" formatted))))
               assertion-runs)
-             (format #t "└Test ~a\n" desc))))))
+             (chain (- %verbose-test-run-line-width 2)
+               (string-repeat "─" _)
+               (format #t "└~a┘\n" _)))))))
 
 
 ;;;
