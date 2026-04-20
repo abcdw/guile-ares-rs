@@ -85,22 +85,17 @@ no location is available."
 (define (pretty-string obj)
   (format #f "~y" obj))
 
-(define (format-assertion-failure-detail message)
-  "Format extra detail for a failing assertion MESSAGE.
+(define (format-assertion-failure-detail assertion-run)
+  "Format extra detail for a failing ASSERTION-RUN.
 
 For binary predicate assertions, show the evaluated operands and the
 predicate name.  Otherwise, fall back to the returned value when one
 is available."
-  (let* ((assert-body (chain-and message
-                        (assoc-ref _ 'assertion)
-                        (assoc-ref _ 'assertion/body)))
-         (args-thunk (chain-and message
-                       (assoc-ref _ 'assertion)
-                       (assoc-ref _ 'assertion/args-thunk)))
+  (let* ((assertion (assoc-ref assertion-run 'assertion))
+         (assert-body (assoc-ref assertion 'assertion/body))
+         (args-thunk (assoc-ref assertion 'assertion/args-thunk))
          (safe-args-thunk (safify-thunk args-thunk))
-         (run-result (chain-and message
-                       (assoc-ref _ 'assertion-run)
-                       (assoc-ref _ 'assertion-run/result))))
+         (run-result (assoc-ref assertion-run 'assertion-run/result)))
     (if (and (list? assert-body) (= 3 (length assert-body)))
         (match (safe-args-thunk)
           ((value . (first second))
@@ -134,7 +129,8 @@ is available."
                (running:returned-value run-result)))))
 
 (define (format-assertion message pass-formatter)
-  (let ((outcome (chain-and message
+  (let ((assertion-run (assoc-ref message 'assertion-run))
+        (outcome (chain-and message
                    (assoc-ref _ 'assertion-run)
                    (assoc-ref _ 'assertion-run/outcome)))
         (run-result (chain-and message
@@ -153,7 +149,7 @@ is available."
        (format #f "~a\n~y✗ ~a\n"
                (format-location assert-location)
                assert-body
-               (format-assertion-failure-detail message)))
+               (format-assertion-failure-detail assertion-run)))
       ((error)
        (format #f "~a\n~y✗ produced error:\n ~s\n"
                (format-location assert-location)
