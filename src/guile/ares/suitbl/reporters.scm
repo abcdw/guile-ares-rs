@@ -21,6 +21,7 @@
             verbose-all
             verbose-only-failed
             base
+            base-all
             minimal
             compact
             junit
@@ -395,8 +396,8 @@ message."
     (list _ unhandled)
     (reporter-first _)))
 
-(define base
-  (chain (list verbose-all
+(define (make-base-reporter verbose-reporter)
+  (chain (list verbose-reporter
                (make-ignore-reporter '(run/test-start run/assertion-end))
 
                (make-newline-reporter '(run/end))
@@ -411,6 +412,12 @@ message."
     (reporter-every _)
     (list _ unhandled)
     (reporter-first _)))
+
+(define base
+  (make-base-reporter verbose-only-failed))
+
+(define base-all
+  (make-base-reporter verbose-all))
 
 (define (junit message)
   "A test reporter that emits JUnit XML to the port specified via
