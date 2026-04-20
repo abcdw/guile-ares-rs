@@ -35,7 +35,7 @@
        (assoc-ref _ 'test/description)))
     (else
      (chain entry
-       (assoc-ref _ 'assert)
+       (assoc-ref _ 'assertion)
        (assoc-ref _ 'assert/body)))))
 
 (define (simplify-log log)
@@ -81,19 +81,22 @@
 
     (is (equal? '(str (= 1 (+ 2 -1))) (simplify-log events-log)))
 
-    (let* ((a1 (chain events-log (car _) (assoc-ref _ 'assert)))
-           (a1-body (assoc-ref a1 'assert/body))
-           (a1-body-value  ((assoc-ref a1 'assert/body-thunk))))
-      (is (equal? 'str a1-body))
-      (is (equal? "a1" a1-body-value)))
+    (let* ((assertion-1 (chain events-log (car _) (assoc-ref _ 'assertion)))
+           (assertion-1-body (assoc-ref assertion-1 'assert/body))
+           (assertion-1-body-value
+            ((assoc-ref assertion-1 'assert/body-thunk))))
+      (is (equal? 'str assertion-1-body))
+      (is (equal? "a1" assertion-1-body-value)))
 
-    (let* ((a2 (chain events-log (cadr _) (assoc-ref _ 'assert)))
-           (a2-body (assoc-ref a2 'assert/body))
-           (a2-body-value  ((assoc-ref a2 'assert/body-thunk)))
-           (a2-args-value  ((assoc-ref a2 'assert/args-thunk))))
-      (is (equal? '(= 1 (+ 2 -1)) a2-body))
-      (is (equal? #t a2-body-value))
-      (is (equal? '(1 1) a2-args-value))))
+    (let* ((assertion-2 (chain events-log (cadr _) (assoc-ref _ 'assertion)))
+           (assertion-2-body (assoc-ref assertion-2 'assert/body))
+           (assertion-2-body-value
+            ((assoc-ref assertion-2 'assert/body-thunk)))
+           (assertion-2-args-value
+            ((assoc-ref assertion-2 'assert/args-thunk))))
+      (is (equal? '(= 1 (+ 2 -1)) assertion-2-body))
+      (is (equal? #t assertion-2-body-value))
+      (is (equal? '(1 1) assertion-2-args-value))))
 
   (test "test emits proper values to the test runner"
     (define events-log

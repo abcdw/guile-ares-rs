@@ -87,12 +87,12 @@ environment just set it to new instance of test runner.
              (assoc-ref assertion-run 'assertion-run/result)))
           assertion-runs))
 
-  (define (%run-assert assert inside-test? assertion-runs)
-    (let* ((body-thunk (assoc-ref assert 'assert/body-thunk))
+  (define (%run-assert assertion inside-test? assertion-runs)
+    (let* ((body-thunk (assoc-ref assertion 'assert/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
            (run-result (running:with-exception-continuation body-thunk))
            (assertion-run
-            (running:make-assertion-run assert run-result))
+            (running:make-assertion-run assertion run-result))
            (reporter-message
             (running:assertion-run->reporter-message
              assertion-run)))
@@ -117,9 +117,9 @@ environment just set it to new instance of test runner.
               *unspecified*))))
 
   (define (run-assert ctx)
-    (let* ((assert (chain ctx
-                     (get-message _)
-                     (assoc-ref _ 'assert)))
+    (let* ((assertion (chain ctx
+                         (get-message _)
+                         (assoc-ref _ 'assertion)))
            (inside-test? (%inside-test?*))
            (assertion-runs (%assertion-runs*)))
       (when (and (not (null? (%suite-path*)))
@@ -127,7 +127,7 @@ environment just set it to new instance of test runner.
         (raise-suitbl-wrong-position-exception
          'is 'suite-body
          "Assert encountered inside suite, but outside of test"))
-      (%run-assert assert inside-test? assertion-runs)))
+      (%run-assert assertion inside-test? assertion-runs)))
 
   (define* (%run-test test #:key run-progress)
     (let ((test-body-thunk (assoc-ref test 'test/body-thunk)))

@@ -87,7 +87,7 @@ at macro-expansion time."
 
 (define-syntax is
   (lambda (stx)
-    "A flexible assert macro.  The behavior can be customized by test runner."
+    "A flexible assertion macro.  The behavior can be customized by test runner."
     (syntax-case stx ()
       ((_ (pred args ...))
        (with-syntax ((location (datum->syntax
@@ -95,19 +95,19 @@ at macro-expansion time."
                                 (make-source-absolute (syntax-source stx)))))
          #'((test-runner*)
             `((type . runner/run-assert)
-              (assert . ((assert/body-thunk . ,(lambda () (pred args ...)))
-                         (assert/args-thunk . ,(lambda () (list args ...)))
-                         (assert/body . (pred args ...))
-                         (assert/location . location)))))))
+              (assertion . ((assert/body-thunk . ,(lambda () (pred args ...)))
+                            (assert/args-thunk . ,(lambda () (list args ...)))
+                            (assert/body . (pred args ...))
+                            (assert/location . location)))))))
       ((_ form)
        (with-syntax ((location (datum->syntax
                                 stx
                                 (make-source-absolute (syntax-source stx)))))
          #'((test-runner*)
             `((type . runner/run-assert)
-              (assert . ((assert/body-thunk . ,(lambda () form))
-                         (assert/body . form)
-                         (assert/location . location))))))))))
+              (assertion . ((assert/body-thunk . ,(lambda () form))
+                            (assert/body . form)
+                            (assert/location . location))))))))))
 
 (define (alist-merge l1 l2)
   (append l1 l2))
