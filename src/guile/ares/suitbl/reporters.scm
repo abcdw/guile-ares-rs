@@ -19,6 +19,7 @@
             unhandled
             load-ignore-messages
             verbose-all
+            verbose-only-failed
             base
             minimal
             compact
@@ -136,13 +137,30 @@ TYPES."
   "Silently handle load-phase messages to avoid noisy unhandled output."
   (%load-ignore-messages message))
 
+(define (write-verbose-test-run message)
+  (chain-and message
+    (assoc-ref _ 'test-run)
+    (reporting:format-test-run-verbose _)
+    (format (get-port message) "~a" _)))
+
+(define (failed-test-run? test-run)
+  (memq (assoc-ref test-run 'test-run/outcome) '(fail error)))
+
 (define (verbose-all message)
   (case (assoc-ref message 'type)
     ((run/test-end)
-     (chain-and message
-       (assoc-ref _ 'test-run)
-       (reporting:format-test-run-verbose _)
-       (format (get-port message) "~a" _)))
+     (write-verbose-test-run message))
+
+    (else #f)))
+
+(define (verbose-only-failed message)
+  (case (assoc-ref message 'type)
+    ((run/test-end)
+     (and (chain-and message
+            (assoc-ref _ 'test-run)
+            (failed-test-run? _))
+          (write-verbose-test-run message))
+     #t)
 
     (else #f)))
 
@@ -378,7 +396,7 @@ message."
     (reporter-first _)))
 
 (define base
-  (chain (list verbose-all
+  (chain (list verbose-only-failed
                (make-ignore-reporter '(run/test-start run/assertion-end))
                zero-assertion-warning
                load-ignore-messages
