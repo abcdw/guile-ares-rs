@@ -353,7 +353,8 @@ message."
     (define msg-type (assoc-ref message 'type))
     (define port (get-port message))
     (when (member msg-type types)
-      (newline port))))
+      (newline port))
+    #f))
 
 (define run-dots
   (make-run-dots
