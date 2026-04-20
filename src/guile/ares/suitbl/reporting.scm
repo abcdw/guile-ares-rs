@@ -26,6 +26,7 @@
             format-test-compact
             format-test-twoline
             format-test-verbose
+            format-test-run-verbose
 
             suite-forest->tree-string
             tree-node-children
@@ -180,6 +181,25 @@ location, and metadata."
      desc "\n"
      (if (string-null? loc) "" (format #f "  location: ~a\n" loc))
      (if (null? metadata) "" (format #f "  metadata: ~y" metadata)))))
+
+(define (format-test-run-verbose test-run)
+  "Format TEST-RUN as a verbose multi-line report block."
+  (and (list? test-run)
+       (let* ((test (or (assoc-ref test-run 'test) '()))
+              (desc (format-test-compact test))
+              (assertion-runs
+               (or (assoc-ref test-run 'test-run/assertion-runs) '())))
+         (with-output-to-string
+           (lambda ()
+             (format #t "\n┌Test ~a\n" desc)
+             (for-each
+              (lambda (assertion-run)
+                (let ((formatted
+                       (format-assertion-verbose assertion-run)))
+                  (and formatted
+                       (format #t "~a" formatted))))
+              assertion-runs)
+             (format #t "└Test ~a\n" desc))))))
 
 
 ;;;

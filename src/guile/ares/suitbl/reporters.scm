@@ -139,18 +139,10 @@ TYPES."
 (define (verbose-all message)
   (case (assoc-ref message 'type)
     ((run/test-end)
-     (let* ((port (get-port message))
-            (test-run (assoc-ref message 'test-run))
-            (assertion-runs (assoc-ref test-run 'test-run/assertion-runs)))
-       (format port "\n┌Test ~a\n" (message-test-description message))
-       (for-each
-        (lambda (assertion-run)
-          (let ((formatted
-                 (reporting:format-assertion-verbose assertion-run)))
-            (and formatted
-                 (format port "~a" formatted))))
-        assertion-runs)
-       (format port "└Test ~a\n" (message-test-description message))))
+     (chain-and message
+       (assoc-ref _ 'test-run)
+       (reporting:format-test-run-verbose _)
+       (format (get-port message) "~a" _)))
 
     (else #f)))
 
