@@ -209,6 +209,13 @@ location, and metadata."
          (lambda (outcome)
            (format #f "Outcome: ~a\n" outcome))))
 
+(define (format-test-run-body-error test-run)
+  (let ((run-result (assoc-ref test-run 'test-run/result)))
+    (and (running:raised? run-result)
+         (format #f "Test body produced error:\n~a"
+                 (exception->string
+                  (running:raised-exception run-result))))))
+
 (define (format-test-run-verbose test-run)
   "Format TEST-RUN as a verbose multi-line report block."
   (and (list? test-run)
@@ -229,6 +236,9 @@ location, and metadata."
                   (and formatted
                        (format #t "~a" formatted))))
               assertion-runs)
+             (and=> (format-test-run-body-error test-run)
+                    (lambda (formatted)
+                      (format #t "~a" formatted)))
              (chain (- %verbose-test-run-line-width 2)
                (string-repeat "─" _)
                (format #t "└~a┘\n" _)))))))
