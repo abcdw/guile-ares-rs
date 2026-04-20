@@ -139,7 +139,7 @@ is available."
                (format-location assert-location)
                (format-assertion-failure-detail assertion-run)))
       ((error)
-       (format #f "✗ ~y~a\nproduced error:\n ~s\n"
+       (format #f "✗ ~y~a\nproduced error:\n ~a"
                assert-body
                (format-location assert-location)
                (exception->string
