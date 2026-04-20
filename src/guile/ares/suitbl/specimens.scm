@@ -2,6 +2,7 @@
 ;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl specimens)
+  #:use-module ((ares guile prelude) #:select (comment))
   #:use-module (ares suitbl definitions)
   #:export ())
 
@@ -60,3 +61,26 @@
   (suite-thunk "all tests"
     (passing-tests)
     (failing-tests)))
+
+(define (run-all-tests-with-reporter reporter)
+  (define make-suitbl-test-runner
+    (module-ref (resolve-interface '(ares suitbl runners))
+                'make-suitbl-test-runner))
+  (define test-runner
+    (make-suitbl-test-runner
+     #:config `((auto-run? . #f)
+                (test-reporter . ,reporter))))
+
+  (parameterize ((test-runner* test-runner))
+    (all-tests)
+    (test-runner `((type . runner/run-tests)))))
+
+
+;;;
+;;; Examples
+;;;
+
+(comment
+ (run-all-tests-with-reporter (@ (ares suitbl reporters) compact))
+ (run-all-tests-with-reporter (@ (ares suitbl reporters) minimal))
+ (run-all-tests-with-reporter (@ (ares suitbl reporters) base)))
