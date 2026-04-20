@@ -73,15 +73,6 @@ no location is available."
                 (or column "?")))
       ""))
 
-(define (safify-thunk thunk)
-  (lambda ()
-    (with-exception-handler
-     (lambda (ex)
-       `(exception . ,ex))
-     (lambda ()
-       `(value . ,(thunk)))
-     #:unwind? #t)))
-
 (define (pretty-string obj)
   (format #f "~y" obj))
 
@@ -94,17 +85,22 @@ is available."
   (let* ((assertion (assoc-ref assertion-run 'assertion))
          (assert-body (assoc-ref assertion 'assertion/body))
          (args-thunk (assoc-ref assertion 'assertion/args-thunk))
-         (safe-args-thunk (safify-thunk args-thunk))
          (run-result (assoc-ref assertion-run 'assertion-run/result)))
     (if (and (list? assert-body) (= 3 (length assert-body)))
-        (match (safe-args-thunk)
-          ((value . (first second))
-           (format #f "\n~a and\n~a are not ~a"
-                   (pretty-string first)
-                   (pretty-string second)
-                   (car assert-body)))
-          ((exception . ex)
-           (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
+        (let ((args-run-result
+               (running:with-exception-continuation args-thunk)))
+          (cond
+           ((running:returned? args-run-result)
+            (match (running:returned-value args-run-result)
+              ((first second)
+               (format #f "\n~a and\n~a are not ~a"
+                       (pretty-string first)
+                       (pretty-string second)
+                       (car assert-body)))))
+           ((running:raised? args-run-result)
+            (format #f "Evaluation of arguments thunk failed with:\n~a"
+                    (running:raised-exception args-run-result)))
+           (else #f)))
         (and (running:returned? run-result)
              (running:returned-value run-result)))))
 
@@ -115,16 +111,20 @@ is available."
            (args-thunk (chain-and message
                          (assoc-ref _ 'assertion)
                          (assoc-ref _ 'assertion/args-thunk)))
-           (safe-args-thunk (safify-thunk args-thunk))
            (run-result (chain-and message
                          (assoc-ref _ 'assertion-run)
                          (assoc-ref _ 'assertion-run/result))))
       (if (list? assert-body)
-          (match (safe-args-thunk)
-            ((value . evaluated-args)
-             (cons (car assert-body) evaluated-args))
-            ((exception . ex)
-             (format #f "Evaluation of arguments thunk failed with:\n~a" ex)))
+          (let ((args-run-result
+                 (running:with-exception-continuation args-thunk)))
+            (cond
+             ((running:returned? args-run-result)
+              (cons (car assert-body)
+                    (running:returned-value args-run-result)))
+             ((running:raised? args-run-result)
+              (format #f "Evaluation of arguments thunk failed with:\n~a"
+                      (running:raised-exception args-run-result)))
+             (else #f)))
           (and (running:returned? run-result)
                (running:returned-value run-result)))))
 
