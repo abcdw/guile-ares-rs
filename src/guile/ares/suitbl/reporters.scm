@@ -438,6 +438,7 @@ message."
 
 (define base
   (chain (list verbose-all
+               (make-ignore-reporter '(run/test-start run/assertion-end))
                zero-assertion-warning
                load-ignore-messages
                load-tree
