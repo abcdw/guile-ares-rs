@@ -138,11 +138,15 @@ TYPES."
   "Silently handle load-phase messages to avoid noisy unhandled output."
   (%load-ignore-messages message))
 
+(define (%write-verbose-test-run port test-run)
+  (chain-and test-run
+    (reporting:format-test-run-verbose _)
+    (format port "~a" _)))
+
 (define (write-verbose-test-run message)
   (chain-and message
     (assoc-ref _ 'test-run)
-    (reporting:format-test-run-verbose _)
-    (format (get-port message) "~a" _)))
+    (%write-verbose-test-run (get-port message) _)))
 
 (define (failed-test-run? test-run)
   (memq (assoc-ref test-run 'test-run/outcome) '(fail error)))
@@ -301,6 +305,23 @@ Expects a @code{run-plan} alist on @code{run/start} messages with
                    "No test results available.\n"))))
     (else #f)))
 
+(define (run-failed-test-runs message)
+  "Print verbose reports for failed and erroring test runs at run end."
+  (case (assoc-ref message 'type)
+    ((run/end)
+     (let ((run-history
+            (chain-and message
+              (assoc-ref _ 'suitbl/state)
+              (state:get-run-history _))))
+       (let loop ((history run-history))
+         (unless (null? history)
+           (let ((test-run (car history)))
+             (when (failed-test-run? test-run)
+               (%write-verbose-test-run (get-port message) test-run))
+             (loop (cdr history)))))
+       #t))
+    (else #f)))
+
 (define %run-dots-line-width 50)
 
 (define (make-run-dots outcome-key outcome->char legend)
@@ -385,6 +406,7 @@ message."
           run-plan-compact
 
           run-dots-extended
+          run-failed-test-runs
 
           (make-newline-reporter '(run/end))
           zero-assertion-warning
