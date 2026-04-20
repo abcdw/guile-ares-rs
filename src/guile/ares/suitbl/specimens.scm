@@ -55,3 +55,8 @@
        "failing-tests/test body exception after assertion error")
       (is (string-prefix? "suit"
                           "suitbl")))))
+
+(define all-tests
+  (suite-thunk "all tests"
+    (passing-tests)
+    (failing-tests)))
