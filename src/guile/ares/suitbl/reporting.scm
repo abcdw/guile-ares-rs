@@ -169,7 +169,7 @@ is available."
         (loc (format-location (assoc-ref test 'test/location))))
     (if (string-null? loc)
         desc
-        (format #f "~a\n  ~a" desc loc))))
+        (format #f "~a\n~a" desc loc))))
 
 (define (format-test-verbose test)
   "Format TEST as a multi-line verbose string with description,
