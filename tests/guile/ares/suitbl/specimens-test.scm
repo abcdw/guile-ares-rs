@@ -18,8 +18,8 @@
   (suite-thunk "passing tests"
     (test "contains several passing assertions"
       (is (= 4 (+ 2 2)))
-      (is (equal? '(a b c)
-                  (list 'a 'b 'c)))
+      (is (equal? '(a b c d e f g h j k l m n o p q r)
+                  (list 'a 'b 'c 'd 'e 'f 'g 'h 'j 'k 'l 'm 'n 'o 'p 'q 'r)))
       (is (string=? "suitbl"
                     (string-append "suit" "bl"))))))
 
@@ -27,8 +27,10 @@
   (suite-thunk "failing tests"
     (test "contains a failing assertion among passing ones"
       (is (= 4 (+ 2 2)))
-      (is (equal? '(a b c)
-                  (list 'a 'c 'b)))
+      (is (equal? '(a b c d e f g h j k l m n o p q r)
+                  (list 'a 'b 'c 'd 'e 'f 'g 'h 'j 'k 'l 'm 'n 'o 'p 'q 'r)))
+      (is (equal? '(a b c d e f g h j k l m n o p q r)
+                  (list 'a 'c 'b 'd 'e 'f 'g 'h 'j 'k 'l 'm 'n 'o 'p 'q 'r)))
       (is (string=? "suitbl"
                     (string-append "suit" "bl"))))
 
