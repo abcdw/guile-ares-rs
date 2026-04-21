@@ -150,14 +150,14 @@ is available."
                       (pretty-string assert-body)
                       (format-assertion-failure-detail assertion-run))
          (pad-new-lines _ "  ")
-         (string-append _ (format-location assert-location) "\n")))
+         (string-append _ (format-location assert-location) "\n\n")))
       ((error)
-       (chain (format #f "✗ ~a\nproduced error:\n ~a"
+       (chain (format #f "✗ ~a\nproduced error:\n ~a\n"
                       (pretty-string assert-body)
                       (exception->string
                        (running:raised-exception run-result)))
          (pad-new-lines _ "  ")
-         (string-append _ (format-location assert-location) "\n")))
+         (string-append _ (format-location assert-location) "\n\n")))
       (else #f))))
 
 (define (format-assertion-minimal assertion-run)
