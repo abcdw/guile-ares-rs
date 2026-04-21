@@ -224,7 +224,11 @@ location, and metadata."
 (define (format-test-run-body-error test-run)
   (let* ((run-result (assoc-ref test-run 'test-run/result))
          (test (or (assoc-ref test-run 'test) '()))
-         (location (format-location (assoc-ref test 'test/location))))
+         (location
+          (format-location
+           (or (and (running:raised? run-result)
+                    (running:raised-location run-result))
+               (assoc-ref test 'test/location)))))
     (and (running:raised? run-result)
          (string-append
           (format #f "✖ Test body produced error:\n   ~a"
