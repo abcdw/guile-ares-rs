@@ -208,7 +208,7 @@
      `((type . run/start)
        (reporting/port . ,port)))
     (is (equal?
-         "Legend: .=pass, F=fail, E=error, Z=zero assertions, A=aborted\n"
+         "Legend: .=pass, Z=zero assertions, F=fail, E=error, A=aborted\n"
          (get-output-string port))))
 
   (test "prints Z for zero-assertions test"

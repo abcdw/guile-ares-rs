@@ -395,7 +395,7 @@ message."
        ((zero-assertions) "Z")
        ((aborted)      "A")
        (else           "?")))
-   ".=pass, F=fail, E=error, Z=zero assertions, A=aborted"))
+   ".=pass, Z=zero assertions, F=fail, E=error, A=aborted"))
 
 (define compact
   (chain (list
