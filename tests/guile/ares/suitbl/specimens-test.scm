@@ -6,6 +6,9 @@
   #:use-module (ares suitbl definitions)
   #:export (all-tests))
 
+;; TODO: [Andrew Tropin, 2026-04-21] Add tests with stdout/stderr
+;; TODO: [Andrew Tropin, 2026-04-21] Add inifinite tests
+
 
 ;;;
 ;;; Specimens
