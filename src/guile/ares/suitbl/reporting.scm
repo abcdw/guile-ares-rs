@@ -224,7 +224,7 @@ location, and metadata."
 (define (format-test-run-body-error test-run)
   (let ((run-result (assoc-ref test-run 'test-run/result)))
     (and (running:raised? run-result)
-         (format #f "Test body produced error:\n~a"
+         (format #f "✖ Test body produced error:\n   ~a"
                  (exception->string
                   (running:raised-exception run-result))))))
 
