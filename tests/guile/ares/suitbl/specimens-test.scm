@@ -56,9 +56,9 @@
     (test "contains an erroring assertion and then an exception outside assertions"
       (is (= 4 (+ 2 2)))
       (is (error
-           "failing-tests/assertion and test body exception"))
+           "failing-tests/assertion and\ntest body exception"))
       (error
-       "failing-tests/test body exception after assertion error")
+       "failing-tests/test body exception\n after assertion error")
       (is (string-prefix? "suit"
                           "suitbl")))))
 

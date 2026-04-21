@@ -154,8 +154,9 @@ is available."
       ((error)
        (chain (format #f "✗ ~a\nproduced error:\n ~a\n"
                       (pretty-string assert-body)
-                      (exception->string
-                       (running:raised-exception run-result)))
+                      (chain (running:raised-exception run-result)
+                        (exception->string _)
+                        (pad-new-lines _ " ")))
          (pad-new-lines _ "  ")
          (string-append _ (format-location assert-location) "\n\n")))
       (else #f))))
@@ -230,8 +231,9 @@ location, and metadata."
                (assoc-ref test 'test/location)))))
     (string-append
      (format #f "✖ Test body produced error:\n   ~a"
-             (exception->string
-              (running:raised-exception run-result)))
+             (chain (running:raised-exception run-result)
+               (exception->string _)
+               (pad-new-lines _ "   ")))
      (format #f "\n~a\n" location))))
 
 (define (format-test-run-verbose test-run)
