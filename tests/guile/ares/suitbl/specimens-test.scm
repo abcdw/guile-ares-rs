@@ -1,10 +1,10 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
-(define-module (ares suitbl specimens)
+(define-module (ares suitbl specimens-test)
   #:use-module ((ares guile prelude) #:select (comment))
   #:use-module (ares suitbl definitions)
-  #:export ())
+  #:export (all-tests))
 
 
 ;;;
@@ -59,6 +59,8 @@
 
 (define all-tests
   (suite-thunk "all tests"
+    'metadata
+    '((dev? . #t))
     (passing-tests)
     (failing-tests)))
 
