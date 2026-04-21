@@ -222,11 +222,15 @@ location, and metadata."
     (format #f "Outcome: ~a\n" _)))
 
 (define (format-test-run-body-error test-run)
-  (let ((run-result (assoc-ref test-run 'test-run/result)))
+  (let* ((run-result (assoc-ref test-run 'test-run/result))
+         (test (or (assoc-ref test-run 'test) '()))
+         (location (format-location (assoc-ref test 'test/location))))
     (and (running:raised? run-result)
-         (format #f "✖ Test body produced error:\n   ~a"
-                 (exception->string
-                  (running:raised-exception run-result))))))
+         (string-append
+          (format #f "✖ Test body produced error:\n   ~a"
+                  (exception->string
+                   (running:raised-exception run-result)))
+          (format #f "\n~a\n" location)))))
 
 (define (format-test-run-verbose test-run)
   "Format TEST-RUN as a verbose multi-line report block."
