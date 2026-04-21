@@ -2,6 +2,7 @@
 ;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl running)
+  #:use-module ((ares file) #:select (search-in-load-path))
   #:use-module ((srfi srfi-1) #:select (count fold))
   #:use-module ((ice-9 control) #:select (abort-to-prompt
                                           call-with-prompt
@@ -10,10 +11,15 @@
                                              with-exception-handler))
   #:use-module ((ice-9 match) #:select (match))
   #:use-module ((srfi srfi-197) #:select (chain))
+  #:use-module (system vm frame)
+  #:use-module ((system vm program) #:select (source:column
+                                              source:file
+                                              source:line))
   #:export (returned?
             returned-value
             raised?
             raised-exception
+            raised-location
             raised-continuation
             with-exception-continuation
             make-assertion-run
@@ -55,9 +61,42 @@
   "Extract the exception object from RAISED run result."
   (assoc-ref (cdr raised) 'exception))
 
+(define (raised-location raised)
+  "Extract the source location alist from RAISED run result."
+  (assoc-ref (cdr raised) 'location))
+
 (define (raised-continuation raised)
   "Extract the replay continuation from RAISED run result."
   (assoc-ref (cdr raised) 'continuation))
+
+(define (source->location source)
+  "Convert Guile SOURCE object to a suitbl-style location alist."
+  (and source
+       (let ((filename (source:file source))
+             (line (source:line source))
+             (column (source:column source)))
+         `((filename . ,(or (and filename
+                                 (search-in-load-path filename))
+                            filename))
+           (line . ,line)
+           (column . ,column)))))
+
+(define (first-frame-with-source stack)
+  "Return the first frame in STACK that carries source information."
+  (let loop ((index 0))
+    (and stack
+         (< index (stack-length stack))
+         (let ((frame (stack-ref stack index)))
+           (if (frame-source frame)
+               frame
+               (loop (1+ index)))))))
+
+(define (current-exception-location)
+  "Return best-effort location for the current exception context."
+  (let* ((stack (make-stack #t 3))
+         (frame (first-frame-with-source stack))
+         (source (and frame (frame-source frame))))
+    (source->location source)))
 
 (define (with-exception-continuation thunk)
   "Run THUNK and return a tagged result.
@@ -66,8 +105,10 @@ Returns:
 - (returned . RESULT), when THUNK succeeds.
 - (raised
     (exception . EXCEPTION)
+    (location . LOCATION)
     (continuation . K)), when THUNK raises an exception,
-  where K rewinds to the protected call and replays THUNK until
+  where LOCATION is a best-effort source location alist or @code{#f},
+  and K rewinds to the protected call and replays THUNK until
   EXCEPTION is raised again in the current dynamic context."
   (let ((exception-continuation-tag
          (make-prompt-tag "suitbl-exception-continuation")))
@@ -76,7 +117,10 @@ Returns:
        (lambda (exception)
          (if replaying-exception?
              (raise-exception exception)
-             (abort-to-prompt exception-continuation-tag exception)))
+             (abort-to-prompt
+              exception-continuation-tag
+              `((exception . ,exception)
+                (location . ,(current-exception-location))))))
        (lambda ()
          (cons 'returned (thunk)))
        #:unwind? #f))
@@ -84,9 +128,10 @@ Returns:
     (call-with-prompt
      exception-continuation-tag
      (lambda () (run #f))
-     (lambda (_ exception)
+     (lambda (_ raised-data)
        `(raised
-         (exception . ,exception)
+         (exception . ,(assoc-ref raised-data 'exception))
+         (location . ,(assoc-ref raised-data 'location))
          (continuation . ,(lambda () (run #t))))))))
 
 
