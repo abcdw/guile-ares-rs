@@ -10,6 +10,8 @@
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
   #:use-module ((ice-9 match) #:select (match))
+  #:use-module ((ice-9 regex) #:select (match:suffix
+                                        regexp-substitute/global))
   #:use-module ((sxml simple) #:select (sxml->xml))
 
   #:export (string-repeat
@@ -77,6 +79,14 @@ no location is available."
 (define (pretty-string obj)
   (format #f "~y" obj))
 
+(define (indent-after-newline-runs string indent)
+  (regexp-substitute/global
+   #f "\n+" string
+   'pre 0
+   (lambda (m)
+     (if (string-null? (match:suffix m)) "" indent))
+   'post))
+
 (define (format-assertion-failure-detail assertion-run)
   "Format extra detail for a failing ASSERTION-RUN.
 
@@ -129,23 +139,26 @@ is available."
          (run-result (assoc-ref assertion-run 'assertion-run/result))
          (assertion (assoc-ref assertion-run 'assertion))
          (assert-body (assoc-ref assertion 'assertion/body))
-         (assert-location (assoc-ref assertion 'assertion/location)))
-    (case outcome
-      ((pass)
-       (pass-formatter assert-body))
-      ((fail)
-       (format #f "✗ ~y~a\n~a\n"
-               assert-body
-               (format-location assert-location)
-               (format-assertion-failure-detail assertion-run)))
-      ((error)
-       (format #f "✗ ~y~a\nproduced error:\n ~a"
-               assert-body
-               (format-location assert-location)
-               (exception->string
-                (and (running:raised? run-result)
-                     (running:raised-exception run-result)))))
-      (else #f))))
+         (assert-location (assoc-ref assertion 'assertion/location))
+         (formatted
+          (case outcome
+            ((pass)
+             (pass-formatter assert-body))
+            ((fail)
+             (format #f "✗ ~a\n~a\n\n~a\n"
+                     (pretty-string assert-body)
+                     (format-assertion-failure-detail assertion-run)
+                     (format-location assert-location)))
+            ((error)
+             (format #f "✗ ~a~a\nproduced error:\n ~a"
+                     (pretty-string assert-body)
+                     (exception->string
+                      (and (running:raised? run-result)
+                           (running:raised-exception run-result)))
+                     (format-location assert-location)))
+            (else #f))))
+    (and formatted
+         (indent-after-newline-runs formatted "  "))))
 
 (define (format-assertion-minimal assertion-run)
   (format-assertion assertion-run (lambda (_) "✓")))
