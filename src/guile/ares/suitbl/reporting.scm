@@ -139,26 +139,25 @@ is available."
          (run-result (assoc-ref assertion-run 'assertion-run/result))
          (assertion (assoc-ref assertion-run 'assertion))
          (assert-body (assoc-ref assertion 'assertion/body))
-         (assert-location (assoc-ref assertion 'assertion/location))
-         (formatted
-          (case outcome
-            ((pass)
-             (pass-formatter assert-body))
-            ((fail)
-             (format #f "✗ ~a\n~a\n\n~a\n"
-                     (pretty-string assert-body)
-                     (format-assertion-failure-detail assertion-run)
-                     (format-location assert-location)))
-            ((error)
-             (format #f "✗ ~a~a\nproduced error:\n ~a"
-                     (pretty-string assert-body)
-                     (exception->string
-                      (and (running:raised? run-result)
-                           (running:raised-exception run-result)))
-                     (format-location assert-location)))
-            (else #f))))
-    (and formatted
-         (indent-after-newline-runs formatted "  "))))
+         (assert-location (assoc-ref assertion 'assertion/location)))
+    (case outcome
+      ((pass)
+       (chain (pass-formatter assert-body)
+         (indent-after-newline-runs _ "  ")))
+      ((fail)
+       (chain (format #f "✗ ~a\n~a\n\n"
+                      (pretty-string assert-body)
+                      (format-assertion-failure-detail assertion-run))
+         (indent-after-newline-runs _ "  ")
+         (string-append _ (format-location assert-location) "\n")))
+      ((error)
+       (chain (format #f "✗ ~a\nproduced error:\n ~a"
+                      (pretty-string assert-body)
+                      (exception->string
+                       (running:raised-exception run-result)))
+         (indent-after-newline-runs _ "  ")
+         (string-append _ (format-location assert-location) "\n")))
+      (else #f))))
 
 (define (format-assertion-minimal assertion-run)
   (format-assertion assertion-run (lambda (_) "✓")))
@@ -166,7 +165,7 @@ is available."
 (define (format-assertion-verbose assertion-run)
   (format-assertion assertion-run
                     (lambda (assert-body)
-                      (format #f "✓ ~y" assert-body))))
+                      (format #f "✓ ~a" (pretty-string assert-body)))))
 
 ;;;
 ;;; Test Formatting
