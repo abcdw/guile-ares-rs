@@ -79,12 +79,13 @@ no location is available."
 (define (pretty-string obj)
   (format #f "~y" obj))
 
-(define (indent-after-newline-runs string indent)
+(define (pad-new-lines string prefix)
+  "Pad line starting after first newline with PREFIX."
   (regexp-substitute/global
    #f "\n+" string
    'pre 0
    (lambda (m)
-     (if (string-null? (match:suffix m)) "" indent))
+     (if (string-null? (match:suffix m)) "" prefix))
    'post))
 
 (define (format-assertion-failure-detail assertion-run)
@@ -143,19 +144,19 @@ is available."
     (case outcome
       ((pass)
        (chain (pass-formatter assert-body)
-         (indent-after-newline-runs _ "  ")))
+         (pad-new-lines _ "  ")))
       ((fail)
        (chain (format #f "✗ ~a\n~a\n\n"
                       (pretty-string assert-body)
                       (format-assertion-failure-detail assertion-run))
-         (indent-after-newline-runs _ "  ")
+         (pad-new-lines _ "  ")
          (string-append _ (format-location assert-location) "\n")))
       ((error)
        (chain (format #f "✗ ~a\nproduced error:\n ~a"
                       (pretty-string assert-body)
                       (exception->string
                        (running:raised-exception run-result)))
-         (indent-after-newline-runs _ "  ")
+         (pad-new-lines _ "  ")
          (string-append _ (format-location assert-location) "\n")))
       (else #f))))
 
