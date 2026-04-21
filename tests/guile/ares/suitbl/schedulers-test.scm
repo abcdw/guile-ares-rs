@@ -33,6 +33,40 @@
                '("fast addition" "fast string check")
                (test-descriptions fast))))
 
+  (test "scheduler:non-dev filters tests from dev suites"
+    (define tr (make-silent-test-runner))
+    (with-test-runner tr
+      (suite "root"
+        (test "regular test"
+          (is #t))
+        (suite "dev suite" 'metadata '((dev? . #t))
+          (test "dev test"
+            (is #t)))))
+    (define state (runner->state tr))
+    (define non-dev (scheduler:non-dev (get-scheduled-tests state '()) state))
+    (is (= 1 (length non-dev)))
+    (is (lset= equal?
+               '("regular test")
+               (test-descriptions non-dev))))
+
+  (test "scheduler:non-dev filters tests nested under dev suites"
+    (define tr (make-silent-test-runner))
+    (with-test-runner tr
+      (suite "root"
+        (suite "dev suite" 'metadata '((dev? . #t))
+          (suite "nested suite"
+            (test "nested dev test"
+              (is #t))))
+        (suite "regular suite"
+          (test "nested regular test"
+            (is #t)))))
+    (define state (runner->state tr))
+    (define non-dev (scheduler:non-dev (get-scheduled-tests state '()) state))
+    (is (= 1 (length non-dev)))
+    (is (lset= equal?
+               '("nested regular test")
+               (test-descriptions non-dev))))
+
   (test "scheduler:make-matching filters by description pattern"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))

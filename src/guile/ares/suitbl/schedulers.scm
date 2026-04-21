@@ -4,11 +4,13 @@
 (define-module (ares suitbl schedulers)
   #:use-module ((ares suitbl state)
                 #:select (get-run-history))
-  #:use-module ((srfi srfi-1) #:select (filter filter-map))
+  #:use-module ((srfi srfi-1) #:select (any filter filter-map))
+  #:use-module ((srfi srfi-197) #:select (chain-and))
 
   #:export (all
             slow
             fast
+            non-dev
             make-matching
             failed-or-all
             compose))
@@ -37,6 +39,18 @@
   (filter (lambda (t)
             (let ((metadata (or (assoc-ref t 'test/metadata) '())))
               (not (assoc-ref metadata 'slow?))))
+          tests))
+
+(define (non-dev tests state)
+  "Keep only tests that are not nested under suites with
+@code{(dev? . #t)} metadata."
+  (filter (lambda (t)
+            (not
+             (any (lambda (suite)
+                    (chain-and suite
+                      (assoc-ref _ 'suite/metadata)
+                      (assoc-ref _ 'dev?)))
+                  (or (assoc-ref t 'suite/path) '()))))
           tests))
 
 (define (make-matching pattern)

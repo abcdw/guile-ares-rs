@@ -2,6 +2,7 @@
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl runners)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
+  #:use-module ((ares suitbl schedulers) #:prefix scheduler:)
   #:use-module (ares suitbl discovery)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module (srfi srfi-1)
@@ -31,7 +32,9 @@
       ((@ (ares suitbl ares) load-project-tests))
       (test-runner `((type . runner/run-tests)
                      (runner/config
-                      . ((schedule-tests . ,only-suitbl-tests))))))
+                      . ((schedule-tests
+                          . ,(scheduler:compose only-suitbl-tests
+                                                scheduler:non-dev)))))))
     (define summary
       (state:get-run-summary
        (test-runner `((type . runner/get-state)))))
@@ -39,7 +42,7 @@
     (define number-of-tests
       (assoc-ref summary 'tests))
 
-    (unless (= 140 number-of-tests)
+    (unless (= 142 number-of-tests)
       (chain "Unexpected number of tests (~a), make sure all tests are executed and
 expected number of tests is up-to-date."
         (format #f _ number-of-tests)
