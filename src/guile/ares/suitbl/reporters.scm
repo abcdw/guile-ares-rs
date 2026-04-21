@@ -218,18 +218,14 @@ TYPES."
              (zero-assertion-test-descriptions
               (assoc-ref message 'suitbl/state)))
             (count (length descriptions)))
-       (if (zero? count)
-           #f
-           (begin
-             (format port
-                     "warning: ~a test~p executed zero assertions:\n"
-                     count count)
-             (for-each (lambda (description)
-                         (format port
-                                 "- ~a\n"
-                                 description))
-                       descriptions)
-             #t))))
+       (unless (zero? count)
+         (format port
+                 "Warning: ~a test~p executed zero assertions:\n"
+                 count count)
+         (for-each (lambda (description)
+                     (format port "- ~a\n" description))
+                   descriptions))
+       #t))
     (else #f)))
 
 (define minimal
@@ -344,7 +340,7 @@ message."
             (let* ((dots-on-line (1+ line-pos))
                    (padding (- %run-dots-line-width dots-on-line))
                    (total-width (string-length (number->string total))))
-              (format port "~a  ~vd/~a\n"
+              (format port "~a  [~vd/~a]\n"
                       (make-string padding #\space)
                       total-width current total))))))
 

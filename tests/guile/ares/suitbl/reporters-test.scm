@@ -162,7 +162,7 @@
        (run-progress . ((progress/current . 3)
                         (progress/total . 3)))
        (test-run . ((test-run/outcome . pass)))))
-    (is (string-suffix? "3/3\n" (get-output-string port))))
+    (is (string-suffix? "[3/3]\n" (get-output-string port))))
 
   (test "prints counter at every 50th test"
     (define port (open-output-string))
@@ -173,7 +173,7 @@
                         (progress/total . 100)))
        (test-run . ((test-run/outcome . pass)))))
     (define output (get-output-string port))
-    (is (string-suffix? " 50/100\n" output)))
+    (is (string-suffix? " [ 50/100]\n" output)))
 
   (test "does not print counter mid-line"
     (define port (open-output-string))
