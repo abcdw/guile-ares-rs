@@ -70,11 +70,11 @@
     (failing-tests)))
 
 (define (run-all-tests-with-reporter reporter)
-  (define make-suitbl-test-runner
+  (define make-suitbl
     (module-ref (resolve-interface '(ares suitbl runners))
-                'make-suitbl-test-runner))
+                'make-suitbl))
   (define test-runner
-    (make-suitbl-test-runner
+    (make-suitbl
      #:config `((auto-run? . #f)
                 (test-reporter . ,reporter))))
 

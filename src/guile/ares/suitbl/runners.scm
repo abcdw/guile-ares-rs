@@ -20,8 +20,8 @@
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl running) #:prefix running:)
   #:export (get-state
-            make-suitbl-test-runner
-            make-silent-test-runner))
+            make-suitbl
+            make-silent))
 
 
 ;;;
@@ -43,7 +43,7 @@ environment just set it to new instance of test runner.
 ;;; Test runner
 ;;;
 
-(define* (make-suitbl-test-runner
+(define* (make-suitbl
           #:key
           (config '())
           (default-config `((auto-run? . #t)
@@ -403,13 +403,13 @@ carries the final verdict."
   this)
 
 ;; Set default test runner.
-(test-runner* (make-suitbl-test-runner))
+(test-runner* (make-suitbl))
 
 (define* (get-state #:optional (runner (test-runner*)))
   (runner '((type . runner/get-state))))
 
-(define (make-silent-test-runner)
-  (make-suitbl-test-runner
+(define (make-silent)
+  (make-suitbl
    #:config `((test-reporter . ,reporter:silent))))
 
 

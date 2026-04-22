@@ -12,7 +12,7 @@
                                              with-exception-handler)))
 
 (define (silent-runner)
-  (runner:make-suitbl-test-runner
+  (runner:make-suitbl
    #:config `((test-reporter . ,reporter:silent))))
 
 (define (capture-exception thunk)
@@ -164,7 +164,7 @@
   (test "test body exception is replayed when re-raise is enabled"
     (define counter 0)
     (define tr
-      (runner:make-suitbl-test-runner
+      (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent)
                   (re-raise? . #t))))
     (define exception
@@ -184,7 +184,7 @@
     (define is-body-counter 0)
     (define after-is-counter 0)
     (define tr
-      (runner:make-suitbl-test-runner
+      (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent)
                   (re-raise? . #t))))
     (define exception
@@ -206,7 +206,7 @@
 
   (test "lonely is re-raises exception when re-raise is enabled"
     (define tr
-      (runner:make-suitbl-test-runner
+      (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent)
                   (re-raise? . #t))))
     (define exception

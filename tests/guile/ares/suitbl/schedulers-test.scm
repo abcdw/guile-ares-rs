@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl schedulers-test)
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl state)
                 #:select (get-scheduled-tests))
   #:use-module ((ares suitbl test-utils)
@@ -34,7 +34,7 @@
                (test-descriptions fast))))
 
   (test "scheduler:non-dev filters tests from dev suites"
-    (define tr (make-silent-test-runner))
+    (define tr (runner:make-silent))
     (with-test-runner tr
       (suite "root"
         (test "regular test"
@@ -50,7 +50,7 @@
                (test-descriptions non-dev))))
 
   (test "scheduler:non-dev filters tests nested under dev suites"
-    (define tr (make-silent-test-runner))
+    (define tr (runner:make-silent))
     (with-test-runner tr
       (suite "root"
         (suite "dev suite" 'metadata '((dev? . #t))
@@ -96,7 +96,7 @@
     (is (= (length all-tests) (length scheduled))))
 
   (test "scheduler:failed-or-all keeps tests that errored"
-    (define tr (make-silent-test-runner))
+    (define tr (runner:make-silent))
     (with-test-runner tr
       (suite "suite with failures"
         (test "passing test"

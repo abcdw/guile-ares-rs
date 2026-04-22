@@ -2,7 +2,7 @@
 ;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl core)
-  #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module (ares suitbl definitions)
   #:export (with-test-runner)
   #:re-export (test-runner*
@@ -16,7 +16,7 @@
                define-suite))
 
 ;; Forces to load runners module, so test-runner* is initialized
-(define %runners-module-force-load make-suitbl-test-runner)
+(define %runners-module-force-load runner:make-suitbl)
 
 (define-syntax with-test-runner
   (lambda (stx)

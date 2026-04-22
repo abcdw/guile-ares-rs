@@ -57,7 +57,7 @@
 
 (define (load-tests thunk)
   (define tr
-    (runner:make-suitbl-test-runner
+    (runner:make-suitbl
      #:config `((auto-run? . #f)
                 (test-reporter . ,reporter:silent))))
   (with-test-runner tr

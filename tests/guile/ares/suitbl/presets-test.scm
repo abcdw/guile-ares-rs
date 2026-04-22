@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl presets-test)
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl test-utils)
                 #:select (make-test-runner-with-mixed-tests
                           scheduled-descriptions))
@@ -39,7 +39,7 @@
                 (scheduled-descriptions tr))))
 
   (test "preset:rerun-failed-or-all! configures runner for failed tests"
-    (define tr (make-silent-test-runner))
+    (define tr (runner:make-silent))
     (with-test-runner tr
       (suite "suite with a failure"
         (test "good test"

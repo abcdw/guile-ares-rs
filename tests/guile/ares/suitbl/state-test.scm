@@ -9,7 +9,7 @@
   #:use-module ((srfi srfi-1) #:select (filter)))
 
 (define (get-test-runner-with-sample-suite-loaded)
-  (define tr (runner:make-silent-test-runner))
+  (define tr (runner:make-silent))
 
   (with-test-runner tr
     (suite "first suite"

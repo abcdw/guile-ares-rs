@@ -253,7 +253,7 @@
   (test "emits JUnit XML on run-end"
     (define port (open-output-string))
     (define test-runner
-      (runner:make-suitbl-test-runner
+      (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "sample"
@@ -275,7 +275,7 @@
   (test "reports failures in JUnit XML"
     (define port (open-output-string))
     (define test-runner
-      (runner:make-suitbl-test-runner
+      (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "fail-suite"
@@ -295,7 +295,7 @@
   (test "reports errors in JUnit XML"
     (define port (open-output-string))
     (define test-runner
-      (runner:make-suitbl-test-runner
+      (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "error-suite"

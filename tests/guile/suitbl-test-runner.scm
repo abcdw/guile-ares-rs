@@ -27,7 +27,7 @@
           tests))
 
 (define-public (run-project-tests)
-  (let* ((test-runner (runner:make-suitbl-test-runner)))
+  (let* ((test-runner (runner:make-suitbl)))
     (parameterize ((test-runner* test-runner))
       ((@ (ares suitbl ares) load-project-tests))
       (test-runner `((type . runner/run-tests)
@@ -52,7 +52,7 @@ expected number of tests is up-to-date."
       (exit 1))))
 
 (define-public (run-project-tests-junit-output)
-  (let* ((test-runner (runner:make-suitbl-test-runner
+  (let* ((test-runner (runner:make-suitbl
                        #:config
                        `((test-reporter . ,reporter:junit)))))
     (parameterize ((test-runner* test-runner))

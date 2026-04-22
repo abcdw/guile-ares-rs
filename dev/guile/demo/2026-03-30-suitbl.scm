@@ -157,7 +157,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;;                          error message.
 
 (comment
- (test-runner* (runner:make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl
                 #:config '((log-runner-messages? . #t))))
 
  ;; Simple truthy assertion
@@ -197,7 +197,7 @@ API-first, can be easily integrated in your IDE and other tools.
 
 (comment
  (test-runner*)
- (test-runner* (runner:make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl
                 #:config '((log-runner-messages? . #t))))
  (runner-get-state-pretty)
 
@@ -211,7 +211,7 @@ API-first, can be easily integrated in your IDE and other tools.
 
  ;;; No auto-run
 
- (test-runner* (runner:make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl
                 #:config '((log-runner-messages? . #t)
                            (auto-run? . #f))))
 
@@ -236,7 +236,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;; The tree reporter prints a nice hierarchy when loading completes.
 
 (comment
- (test-runner* (runner:make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl
                 #:config '((log-runner-messages? . #t))))
 
  (suite "math operations"
@@ -331,7 +331,7 @@ API-first, can be easily integrated in your IDE and other tools.
 (comment
  ;; Minimal reporter - test names + pass/fail marks
  (with-test-runner
-  (runner:make-suitbl-test-runner
+  (runner:make-suitbl
    #:config `((test-reporter . ,reporter:minimal)))
   (suite "hehe"
     (test "minimal demo"
@@ -345,7 +345,7 @@ API-first, can be easily integrated in your IDE and other tools.
 
  ;; Compose reporters: tree structure + run summary
  (with-test-runner
-  (runner:make-suitbl-test-runner
+  (runner:make-suitbl
    #:config `((test-reporter
                . ,(reporter-every
                    (list reporter:load-tree
@@ -361,7 +361,7 @@ API-first, can be easily integrated in your IDE and other tools.
 
 (comment
  (with-test-runner
-  (runner:make-suitbl-test-runner
+  (runner:make-suitbl
    #:config `((test-reporter . ,reporter:silent)))
   (suite "quiet suite"
     (test "no output" (is #t) (is #t)))

@@ -12,7 +12,7 @@ suitbl implementation lives under `src/guile/ares/suitbl/`.
   test entity shapes.
 - `exceptions.scm` - suitbl-specific exception types for DSL misuse and other
   structured failures.
-- `runners.scm` - test runner implementation (`make-suitbl-test-runner`).
+- `runners.scm` - test runner implementation (`make-suitbl`).
 - `state.scm` - runner state, loaded tests, suite forest, run history, summaries.
 - `running.scm` - helpers related to running test and assertions.
 - `reporters.scm` - output/reporter implementations and reporter combinators.

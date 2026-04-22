@@ -14,7 +14,7 @@
 
 (define (make-test-runner-with-mixed-tests)
   "Create a runner with a mix of slow and fast tests loaded."
-  (define tr (runner:make-silent-test-runner))
+  (define tr (runner:make-silent))
   (with-test-runner tr
     (suite "mixed tests"
       (test "fast addition"

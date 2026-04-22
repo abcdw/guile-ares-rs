@@ -83,7 +83,7 @@
               ''()))
 
        (define runner
-         (runner:make-suitbl-test-runner
+         (runner:make-suitbl
           #:config (append reporter-config scheduler-config)))
 
        (parameterize ((test-runner* runner))
