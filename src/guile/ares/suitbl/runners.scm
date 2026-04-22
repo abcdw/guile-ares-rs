@@ -87,6 +87,18 @@ environment just set it to new instance of test runner.
              (assoc-ref assertion-run 'assertion-run/result)))
           assertion-runs))
 
+  (define (suite-path->metadata suite-path)
+    (if (null? suite-path)
+        '()
+        (append
+         (or (assoc-ref (car suite-path) 'suite/metadata) '())
+         (suite-path->metadata (cdr suite-path)))))
+
+  (define (compound-test-metadata test suites)
+    (append
+     (or (assoc-ref test 'test/metadata) '())
+     (suite-path->metadata suites)))
+
   (define (%run-assert assertion inside-test? assertion-runs)
     (let* ((body-thunk (assoc-ref assertion 'assertion/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
@@ -322,8 +334,13 @@ carries the final verdict."
        (let* ((test (chain ctx
                       (get-message _)
                       (assoc-ref _ 'test)))
+              (suite-path (reverse (%suite-path*)))
+              (compound-metadata
+               (compound-test-metadata test (%suite-path*)))
               (test-with-context
-               (cons `(suite/path . ,(reverse (%suite-path*))) test)))
+               (chain test
+                 (alist-cons 'test/compound-metadata compound-metadata _)
+                 (alist-cons 'suite/path suite-path _))))
 
          (state:add-loaded-test! state test-with-context)
 

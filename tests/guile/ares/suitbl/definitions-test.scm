@@ -1,10 +1,15 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl definitions-test)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl definitions)
+  #:use-module ((ares suitbl reporters) #:prefix reporter:)
+  #:use-module ((ares suitbl runners)
+                #:select (make-suitbl-test-runner))
+  #:use-module ((ares suitbl state)
+                #:prefix state:)
   #:use-module (srfi srfi-197)
   #:use-module (ice-9 exceptions)
   #:use-module ((ice-9 atomic)
@@ -50,6 +55,16 @@
            body body* ...
            ((test-runner*)
             `((type . runner/get-log))))))))
+
+(define (load-tests thunk)
+  (define tr
+    (make-suitbl-test-runner
+     #:config `((auto-run? . #f)
+                (test-reporter . ,reporter:silent))))
+  (with-test-runner tr
+    (thunk))
+  (state:get-loaded-tests
+   (tr `((type . runner/get-state)))))
 
 (define-suite predicates-tests
   (test "test? predicate recognizes test structures"
@@ -110,6 +125,45 @@
           (assoc-ref _ 'good?)))
     (is (equal? '("t1" "t2") (simplify-log events-log)))
     (is (is-good? (cadr events-log))))
+
+  (test "runner adds compound metadata inherited from suite"
+    (define compound-metadata
+      (chain (suite-thunk "outer" 'metadata '((slow? . #t))
+               (test "t1"
+                 (is #t)))
+        (load-tests _)
+        (car _)
+        (assoc-ref _ 'test/compound-metadata)))
+    (is (equal? '((slow? . #t))
+                compound-metadata)))
+
+  (test "runner merges compound metadata from nested suites and test"
+    (define compound-metadata
+      (chain (suite-thunk "outer"
+               'metadata
+               '((shared . outer)
+                 (outer? . #t))
+               (suite "inner"
+                 'metadata
+                 '((shared . inner)
+                   (inner? . #t))
+                 (test "t1"
+                   'metadata
+                   '((shared . test)
+                     (test? . #t))
+                   (is #t))))
+        (load-tests _)
+        (car _)
+        (assoc-ref _ 'test/compound-metadata)))
+    (is (equal? '((shared . test)
+                  (test? . #t)
+                  (shared . inner)
+                  (inner? . #t)
+                  (shared . outer)
+                  (outer? . #t))
+                compound-metadata))
+    (is (equal? 'test
+                (assoc-ref compound-metadata 'shared))))
 
   (test "suite emits proper values to the test runner"
     (define events-log

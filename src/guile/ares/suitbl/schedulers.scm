@@ -1,11 +1,10 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl schedulers)
   #:use-module ((ares suitbl state)
                 #:select (get-run-history))
-  #:use-module ((srfi srfi-1) #:select (any filter filter-map))
-  #:use-module ((srfi srfi-197) #:select (chain-and))
+  #:use-module ((srfi srfi-1) #:select (filter filter-map))
 
   #:export (all
             slow
@@ -27,30 +26,27 @@
   "Default scheduler that keeps all tests."
   tests)
 
+(define (test-metadata test)
+  (or (assoc-ref test 'test/compound-metadata)
+      (assoc-ref test 'test/metadata)
+      '()))
+
 (define (slow tests state)
-  "Keep only tests with @code{(slow? . #t)} in metadata."
+  "Keep only tests with @code{(slow? . #t)} in compound metadata."
   (filter (lambda (t)
-            (let ((metadata (or (assoc-ref t 'test/metadata) '())))
-              (assoc-ref metadata 'slow?)))
+            (assoc-ref (test-metadata t) 'slow?))
           tests))
 
 (define (fast tests state)
-  "Keep only tests without @code{slow?} metadata."
+  "Keep only tests without @code{slow?} in compound metadata."
   (filter (lambda (t)
-            (let ((metadata (or (assoc-ref t 'test/metadata) '())))
-              (not (assoc-ref metadata 'slow?))))
+            (not (assoc-ref (test-metadata t) 'slow?)))
           tests))
 
 (define (non-dev tests state)
-  "Keep only tests that are not nested under suites with
-@code{(dev? . #t)} metadata."
+  "Keep only tests without @code{(dev? . #t)} in compound metadata."
   (filter (lambda (t)
-            (not
-             (any (lambda (suite)
-                    (chain-and suite
-                      (assoc-ref _ 'suite/metadata)
-                      (assoc-ref _ 'dev?)))
-                  (or (assoc-ref t 'suite/path) '()))))
+            (not (assoc-ref (test-metadata t) 'dev?)))
           tests))
 
 (define (make-matching pattern)
