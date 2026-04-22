@@ -4,7 +4,7 @@
 (define-module (ares suitbl state-test)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl core)
-  #:use-module ((ares suitbl runners) #:prefix runner:)
+  #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((srfi srfi-1) #:select (filter)))
 

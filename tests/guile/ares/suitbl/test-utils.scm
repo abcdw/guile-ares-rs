@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl test-utils)
   #:use-module (ares suitbl core)
-  #:use-module ((ares suitbl runners) #:prefix runner:)
+  #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl state)
                 #:select (get-scheduled-tests
                           get-runner-config))

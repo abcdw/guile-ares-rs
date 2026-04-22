@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl presets-test)
   #:use-module (ares suitbl core)
-  #:use-module ((ares suitbl runners) #:prefix runner:)
+  #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl test-utils)
                 #:select (make-test-runner-with-mixed-tests
                           scheduled-descriptions))

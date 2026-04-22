@@ -63,7 +63,7 @@
   (define run-code
     `(begin
        (use-modules (ares suitbl core)
-                    ((ares suitbl runners) #:prefix runner:)
+                    ((ares suitbl runner) #:prefix runner:)
                     (ares suitbl reporters)
                     ((ares suitbl state) #:prefix state:)
                     (ares suitbl ares))

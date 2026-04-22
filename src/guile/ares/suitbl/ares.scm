@@ -4,7 +4,7 @@
 (define-module (ares suitbl ares)
   #:use-module ((ares guile prelude) #:select (comment))
   #:use-module ((ares suitbl core) #:select (suite test-runner*))
-  #:use-module ((ares suitbl runners) #:prefix runner:)
+  #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl discovery)

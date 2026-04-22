@@ -9,7 +9,7 @@
   #:use-module (ares atomic)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl core)
-  #:use-module ((ares suitbl runners) #:prefix runner:)
+  #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl reporters) #:select (reporter-every))

@@ -1,6 +1,6 @@
 (define-module (suitbl-test-runner)
   #:use-module (ares suitbl core)
-  #:use-module ((ares suitbl runners) #:prefix runner:)
+  #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl schedulers) #:prefix scheduler:)
   #:use-module (ares suitbl discovery)

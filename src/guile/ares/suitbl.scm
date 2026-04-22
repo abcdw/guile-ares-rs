@@ -4,7 +4,7 @@
 (define-module (ares suitbl)
   #:use-module (ares suitbl core)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
-  #:use-module (ares suitbl runners)
+  #:use-module (ares suitbl runner)
   #:use-module ((ares guile prelude) #:select (comment))
 
   #:export (throws-exception?)

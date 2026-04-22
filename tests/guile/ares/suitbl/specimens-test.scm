@@ -71,7 +71,7 @@
 
 (define (run-all-tests-with-reporter reporter)
   (define make-suitbl
-    (module-ref (resolve-interface '(ares suitbl runners))
+    (module-ref (resolve-interface '(ares suitbl runner))
                 'make-suitbl))
   (define test-runner
     (make-suitbl
