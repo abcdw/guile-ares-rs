@@ -6,6 +6,8 @@ HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
 LOAD_PATHS=-L src/guile -L tests/guile -L dev/guile
 GUILE_DEV=${GUILE} $(LOAD_PATHS)
+REPORTER?=compact
+SCHEDULER?=non-dev
 
 repl: server
 
@@ -31,9 +33,26 @@ suitbl:
 	${GUILE_DEV} \
 	-e '(ares scripts ares-suitbl)' \
 	-s ./src/guile/ares/scripts/ares-suitbl.scm \
-	-r 'compact' \
+	-r '$(REPORTER)' \
 	$(if $(SCHEDULER),-s '$(SCHEDULER)') \
 	-- $(LOAD_PATHS)
+
+suitbl-specimens:
+	${MAKE} suitbl \
+		REPORTER='$(REPORTER)' \
+		SCHEDULER='(make-module "specimens-test")'
+
+suitbl-specimens-minimal:
+	${MAKE} suitbl-specimens REPORTER=minimal
+
+suitbl-specimens-compact:
+	${MAKE} suitbl-specimens REPORTER=compact
+
+suitbl-specimens-base:
+	${MAKE} suitbl-specimens REPORTER=base
+
+suitbl-specimens-junit:
+	${MAKE} suitbl-specimens REPORTER=junit
 
 README.html: README
 	${EMACS} -Q --batch -l docs/html-export-config.el README \
