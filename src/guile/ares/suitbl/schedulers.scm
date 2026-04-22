@@ -5,12 +5,14 @@
   #:use-module ((ares suitbl state)
                 #:select (get-run-history))
   #:use-module ((srfi srfi-1) #:select (filter filter-map))
+  #:use-module ((srfi srfi-197) #:select (chain-and))
 
   #:export (all
             slow
             fast
             non-dev
             make-matching
+            make-module
             failed-or-all
             compose))
 
@@ -57,6 +59,19 @@ a regexp PATTERN."
     (filter (lambda (t)
               (let ((description (or (assoc-ref t 'test/description) "")))
                 (regexp-exec rx description)))
+            tests)))
+
+(define (make-module pattern)
+  "Return a scheduler that keeps tests whose module name matches
+a regexp PATTERN."
+  (define rx (make-regexp pattern))
+  (lambda (tests state)
+    (filter (lambda (t)
+              (chain-and (test-metadata t)
+                (assoc-ref _ 'module)
+                (module-name _)
+                (format #f "~a" _)
+                (regexp-exec rx _)))
             tests)))
 
 (define (failed-or-all tests state)

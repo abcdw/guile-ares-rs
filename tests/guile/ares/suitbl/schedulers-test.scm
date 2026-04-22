@@ -123,6 +123,43 @@
     (is (equal? "slow network call"
                 (assoc-ref (car result) 'test/description))))
 
+  (test "scheduler:make-module filters by module name pattern"
+    (define mod (resolve-module '(ares suitbl schedulers-test)))
+    (define tr (runner:make-silent))
+    (with-test-runner tr
+      (suite "root"
+        (suite "module suite"
+          'metadata `((module-suite? . #t)
+                       (module . ,mod))
+          (test "test in current module"
+            (is #t)))
+        (suite "other suite"
+          (test "test without module"
+            (is #t)))))
+    (define state (runner->state tr))
+    (define matched
+      ((scheduler:make-module "schedulers-test")
+       (get-scheduled-tests state '()) state))
+    (is (= 1 (length matched)))
+    (is (equal? "test in current module"
+                (assoc-ref (car matched) 'test/description))))
+
+  (test "scheduler:make-module returns empty when no module matches"
+    (define mod (resolve-module '(ares suitbl schedulers-test)))
+    (define tr (runner:make-silent))
+    (with-test-runner tr
+      (suite "root"
+        (suite "module suite"
+          'metadata `((module-suite? . #t)
+                       (module . ,mod))
+          (test "test in current module"
+            (is #t)))))
+    (define state (runner->state tr))
+    (define matched
+      ((scheduler:make-module "nonexistent-module")
+       (get-scheduled-tests state '()) state))
+    (is (= 0 (length matched))))
+
   (test "scheduler:compose with no schedulers returns all tests"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))
