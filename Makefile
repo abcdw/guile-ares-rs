@@ -35,28 +35,6 @@ suitbl:
 	$(if $(SCHEDULER),-s '$(SCHEDULER)') \
 	-- $(LOAD_PATHS)
 
-check-test:
-	${GUILE_DEV} \
-	-c "((@ (ares srfi-64 test-runners) run-test) \
-	(@@ (ares evaluation-test) test-evaluation-thread-manager))"
-
-check-module:
-	${GUILE_DEV} \
-	-c "((@ (ares srfi-64 test-runners) run-module-tests) \
-	(resolve-module '${TEST_MODULE}))"
-
-check-evaluation:
-	make check-module TEST_MODULE="(ares evaluation-test)"
-
-check-bootstrap:
-	make check-module TEST_MODULE="(ares nrepl bootstrap-test)"
-
-check-integration:
-	make check-module TEST_MODULE="(integration-test)"
-
-check-topological-sort:
-	make check-module TEST_MODULE="(ares topological-sort-test)"
-
 README.html: README
 	${EMACS} -Q --batch -l docs/html-export-config.el README \
 	--funcall org-html-export-to-html
