@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl test-utils)
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl state)
                 #:select (get-scheduled-tests
                           get-runner-config))
@@ -14,7 +14,7 @@
 
 (define (make-test-runner-with-mixed-tests)
   "Create a runner with a mix of slow and fast tests loaded."
-  (define tr (make-silent-test-runner))
+  (define tr (runner:make-silent-test-runner))
   (with-test-runner tr
     (suite "mixed tests"
       (test "fast addition"
@@ -28,7 +28,7 @@
   tr)
 
 (define (runner->state runner)
-  (runner `((type . runner/get-state))))
+  (runner:get-state runner))
 
 (define (test-descriptions tests)
   "Extract descriptions from a list of test alists."

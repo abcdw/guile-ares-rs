@@ -3,8 +3,7 @@
 
 (define-module (ares suitbl reporters-test)
   #:use-module (ares suitbl core)
-  #:use-module ((ares suitbl runners)
-                #:select (make-suitbl-test-runner))
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl state) #:prefix state:))
 
@@ -254,7 +253,7 @@
   (test "emits JUnit XML on run-end"
     (define port (open-output-string))
     (define test-runner
-      (make-suitbl-test-runner
+      (runner:make-suitbl-test-runner
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "sample"
@@ -262,7 +261,7 @@
           (is #t)))
       (test-runner `((type . runner/run-tests))))
     (define runner-state
-      (test-runner `((type . runner/get-state))))
+      (runner:get-state test-runner))
     (reporter:junit
      `((type . run/end)
        (reporting/port . ,port)
@@ -276,7 +275,7 @@
   (test "reports failures in JUnit XML"
     (define port (open-output-string))
     (define test-runner
-      (make-suitbl-test-runner
+      (runner:make-suitbl-test-runner
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "fail-suite"
@@ -284,7 +283,7 @@
           (is #f)))
       (test-runner `((type . runner/run-tests))))
     (define runner-state
-      (test-runner `((type . runner/get-state))))
+      (runner:get-state test-runner))
     (reporter:junit
      `((type . run/end)
        (reporting/port . ,port)
@@ -296,7 +295,7 @@
   (test "reports errors in JUnit XML"
     (define port (open-output-string))
     (define test-runner
-      (make-suitbl-test-runner
+      (runner:make-suitbl-test-runner
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "error-suite"
@@ -304,7 +303,7 @@
           (is (throw 'boom))))
       (test-runner `((type . runner/run-tests))))
     (define runner-state
-      (test-runner `((type . runner/get-state))))
+      (runner:get-state test-runner))
     (reporter:junit
      `((type . run/end)
        (reporting/port . ,port)

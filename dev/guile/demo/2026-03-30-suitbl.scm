@@ -9,7 +9,7 @@
   #:use-module (ares atomic)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl reporters) #:select (reporter-every))
@@ -157,7 +157,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;;                          error message.
 
 (comment
- (test-runner* (make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl-test-runner
                 #:config '((log-runner-messages? . #t))))
 
  ;; Simple truthy assertion
@@ -191,13 +191,13 @@ API-first, can be easily integrated in your IDE and other tools.
 ;; `test` groups related assertions into a named test case.
 
 (define (runner-get-state-pretty)
-  (chain ((test-runner*) `((type . runner/get-state)))
+  (chain (runner:get-state)
     (atomic-box-ref _)
     (format #t "~y" _)))
 
 (comment
  (test-runner*)
- (test-runner* (make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl-test-runner
                 #:config '((log-runner-messages? . #t))))
  (runner-get-state-pretty)
 
@@ -211,7 +211,7 @@ API-first, can be easily integrated in your IDE and other tools.
 
  ;;; No auto-run
 
- (test-runner* (make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl-test-runner
                 #:config '((log-runner-messages? . #t)
                            (auto-run? . #f))))
 
@@ -236,7 +236,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;; The tree reporter prints a nice hierarchy when loading completes.
 
 (comment
- (test-runner* (make-suitbl-test-runner
+ (test-runner* (runner:make-suitbl-test-runner
                 #:config '((log-runner-messages? . #t))))
 
  (suite "math operations"
@@ -265,7 +265,7 @@ API-first, can be easily integrated in your IDE and other tools.
  (chain ((test-runner*) `((type . runner/get-log)))
    (map (lambda (m) (assoc-ref m 'type)) _))
 
- (chain ((test-runner*) `((type . runner/get-state)))
+ (chain (runner:get-state)
    (state:get-run-history _)
    (state:simplify-run-history _))
 
@@ -331,7 +331,7 @@ API-first, can be easily integrated in your IDE and other tools.
 (comment
  ;; Minimal reporter - test names + pass/fail marks
  (with-test-runner
-  (make-suitbl-test-runner
+  (runner:make-suitbl-test-runner
    #:config `((test-reporter . ,reporter:minimal)))
   (suite "hehe"
     (test "minimal demo"
@@ -345,7 +345,7 @@ API-first, can be easily integrated in your IDE and other tools.
 
  ;; Compose reporters: tree structure + run summary
  (with-test-runner
-  (make-suitbl-test-runner
+  (runner:make-suitbl-test-runner
    #:config `((test-reporter
                . ,(reporter-every
                    (list reporter:load-tree
@@ -361,7 +361,7 @@ API-first, can be easily integrated in your IDE and other tools.
 
 (comment
  (with-test-runner
-  (make-suitbl-test-runner
+  (runner:make-suitbl-test-runner
    #:config `((test-reporter . ,reporter:silent)))
   (suite "quiet suite"
     (test "no output" (is #t) (is #t)))

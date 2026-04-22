@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl runners-test)
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module (ares suitbl exceptions)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl running) #:prefix running:)
@@ -12,7 +12,7 @@
                                              with-exception-handler)))
 
 (define (silent-runner)
-  (make-suitbl-test-runner
+  (runner:make-suitbl-test-runner
    #:config `((test-reporter . ,reporter:silent))))
 
 (define (capture-exception thunk)
@@ -53,7 +53,7 @@
         (test "assert exception"
           (is (error "assertions-handling-tests/assert exception")))
         (state:get-run-summary
-         (tr `((type . runner/get-state))))))
+         (runner:get-state tr))))
 
     (is (= 1 (assoc-ref run-summary 'errors)))
     (is (= 0 (assoc-ref run-summary 'failures)))
@@ -70,7 +70,7 @@
           (is #f)
           (is (error "assertion-run-history-tests/history test")))
         (state:get-run-history
-         (tr `((type . runner/get-state))))))
+         (runner:get-state tr))))
     (define test-run (car run-history))
     (define assertion-runs
       (assoc-ref test-run 'test-run/assertion-runs))
@@ -129,7 +129,7 @@
         (test "inner test"
           (is #t))))
     (define run-history
-      (state:get-run-history (tr `((type . runner/get-state)))))
+      (state:get-run-history (runner:get-state tr)))
     (define outer-test-run (car run-history))
     (define test-run-result
       (assoc-ref outer-test-run 'test-run/result))
@@ -148,7 +148,7 @@
         (suite "inner suite"
           (is #t))))
     (define run-history
-      (state:get-run-history (tr `((type . runner/get-state)))))
+      (state:get-run-history (runner:get-state tr)))
     (define outer-test-run (car run-history))
     (define test-run-result
       (assoc-ref outer-test-run 'test-run/result))
@@ -164,7 +164,7 @@
   (test "test body exception is replayed when re-raise is enabled"
     (define counter 0)
     (define tr
-      (make-suitbl-test-runner
+      (runner:make-suitbl-test-runner
        #:config `((test-reporter . ,reporter:silent)
                   (re-raise? . #t))))
     (define exception
@@ -184,7 +184,7 @@
     (define is-body-counter 0)
     (define after-is-counter 0)
     (define tr
-      (make-suitbl-test-runner
+      (runner:make-suitbl-test-runner
        #:config `((test-reporter . ,reporter:silent)
                   (re-raise? . #t))))
     (define exception
@@ -206,7 +206,7 @@
 
   (test "lonely is re-raises exception when re-raise is enabled"
     (define tr
-      (make-suitbl-test-runner
+      (runner:make-suitbl-test-runner
        #:config `((test-reporter . ,reporter:silent)
                   (re-raise? . #t))))
     (define exception

@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl presets)
   #:use-module ((ares suitbl definitions) #:select (test-runner*))
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl state)
                 #:select (set-runner-config-value!
                           get-runner-config))
@@ -22,7 +23,7 @@
 ;;;
 
 (define* (runner->state #:optional (runner (test-runner*)))
-  (runner `((type . runner/get-state))))
+  (runner:get-state runner))
 
 
 

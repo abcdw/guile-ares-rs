@@ -2,8 +2,7 @@
 !#
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2026 Andrew Tropin <andrew@trop.in>
-;;;
+;;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 ;;; SPDX-License-Identifier: GPL-3.0-or-later
 
 (define-module (ares scripts ares-suitbl)
@@ -64,7 +63,7 @@
   (define run-code
     `(begin
        (use-modules (ares suitbl core)
-                    (ares suitbl runners)
+                    ((ares suitbl runners) #:prefix runner:)
                     (ares suitbl reporters)
                     ((ares suitbl state) #:prefix state:)
                     (ares suitbl ares))
@@ -84,7 +83,7 @@
               ''()))
 
        (define runner
-         (make-suitbl-test-runner
+         (runner:make-suitbl-test-runner
           #:config (append reporter-config scheduler-config)))
 
        (parameterize ((test-runner* runner))
@@ -93,7 +92,7 @@
 
        (define summary
          (state:get-run-summary
-          (runner '((type . runner/get-state)))))
+          (runner:get-state runner)))
 
        (if (and summary
                 (zero? (+ (or (assoc-ref summary 'failures) 0)

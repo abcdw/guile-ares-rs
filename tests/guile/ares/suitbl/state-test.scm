@@ -4,12 +4,12 @@
 (define-module (ares suitbl state-test)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl core)
-  #:use-module (ares suitbl runners)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((srfi srfi-1) #:select (filter)))
 
 (define (get-test-runner-with-sample-suite-loaded)
-  (define tr (make-silent-test-runner))
+  (define tr (runner:make-silent-test-runner))
 
   (with-test-runner tr
     (suite "first suite"
@@ -29,7 +29,7 @@
     (define tr (get-test-runner-with-sample-suite-loaded))
 
     (define state
-      (tr `((type . runner/get-state))))
+      (runner:get-state tr))
 
     (define suite-forest
       (state:get-suite-forest state))
@@ -47,7 +47,7 @@
     (define tr (get-test-runner-with-sample-suite-loaded))
 
     (define state
-      (tr `((type . runner/get-state))))
+      (runner:get-state tr))
 
     (define run-history
       (state:get-run-history state))
@@ -87,7 +87,7 @@
     (define tr (get-test-runner-with-sample-suite-loaded))
 
     (define state
-      (tr `((type . runner/get-state))))
+      (runner:get-state tr))
 
     (define run-forest-with-summary
       (state:get-suite-forest-with-summary state))
@@ -143,14 +143,14 @@
 (define-suite schedule-tests-tests
   (test "all loaded tests are scheduled when no schedule-tests in config"
     (define tr (get-test-runner-with-sample-suite-loaded))
-    (define state (tr `((type . runner/get-state))))
+    (define state (runner:get-state tr))
     (define loaded (state:get-loaded-tests state))
     (define scheduled (state:get-scheduled-tests state '()))
     (is (equal? loaded scheduled)))
 
   (test "custom schedule-tests filters tests"
     (define tr (get-test-runner-with-sample-suite-loaded))
-    (define state (tr `((type . runner/get-state))))
+    (define state (runner:get-state tr))
     (define config
       `((schedule-tests
          . ,(lambda (tests state)
@@ -165,7 +165,7 @@
 
   (test "schedule-tests can return empty list"
     (define tr (get-test-runner-with-sample-suite-loaded))
-    (define state (tr `((type . runner/get-state))))
+    (define state (runner:get-state tr))
     (define config
       `((schedule-tests . ,(lambda (tests state) '()))))
     (define scheduled (state:get-scheduled-tests state config))
@@ -173,7 +173,7 @@
 
   (test "get-stats reflects scheduling"
     (define tr (get-test-runner-with-sample-suite-loaded))
-    (define state (tr `((type . runner/get-state))))
+    (define state (runner:get-state tr))
     (define config
       `((schedule-tests
          . ,(lambda (tests state)
@@ -187,7 +187,7 @@
 
   (test "get-stats with default scheduling shows all tests selected"
     (define tr (get-test-runner-with-sample-suite-loaded))
-    (define state (tr `((type . runner/get-state))))
+    (define state (runner:get-state tr))
     (define stats (state:get-stats state '()))
     (is (= 3 (assoc-ref stats 'loaded-tests-count)))
     (is (= 3 (assoc-ref stats 'selected-tests-count)))))

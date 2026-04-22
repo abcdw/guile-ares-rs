@@ -6,8 +6,7 @@
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl definitions)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
-  #:use-module ((ares suitbl runners)
-                #:select (make-suitbl-test-runner))
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl state)
                 #:prefix state:)
   #:use-module (srfi srfi-197)
@@ -58,13 +57,13 @@
 
 (define (load-tests thunk)
   (define tr
-    (make-suitbl-test-runner
+    (runner:make-suitbl-test-runner
      #:config `((auto-run? . #f)
                 (test-reporter . ,reporter:silent))))
   (with-test-runner tr
     (thunk))
   (state:get-loaded-tests
-   (tr `((type . runner/get-state)))))
+   (runner:get-state tr)))
 
 (define-suite predicates-tests
   (test "test? predicate recognizes test structures"

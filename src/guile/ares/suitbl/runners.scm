@@ -19,7 +19,8 @@
 
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl running) #:prefix running:)
-  #:export (make-suitbl-test-runner
+  #:export (get-state
+            make-suitbl-test-runner
             make-silent-test-runner))
 
 
@@ -403,6 +404,9 @@ carries the final verdict."
 
 ;; Set default test runner.
 (test-runner* (make-suitbl-test-runner))
+
+(define* (get-state #:optional (runner (test-runner*)))
+  (runner '((type . runner/get-state))))
 
 (define (make-silent-test-runner)
   (make-suitbl-test-runner

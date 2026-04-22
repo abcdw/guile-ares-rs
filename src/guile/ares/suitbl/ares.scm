@@ -4,6 +4,7 @@
 (define-module (ares suitbl ares)
   #:use-module ((ares guile prelude) #:select (comment))
   #:use-module ((ares suitbl core) #:select (suite test-runner*))
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl state) #:prefix state:)
   #:use-module ((ares suitbl discovery)
@@ -24,10 +25,10 @@
                      .
                      ((test-reporter . ,reporter:minimal)))))
   (state:get-run-summary
-   ((test-runner*) `((type . runner/get-state)))))
+   (runner:get-state)))
 
 (define (get-current-test-runner-stats)
-  (let ((state ((test-runner*) `((type . runner/get-state)))))
+  (let ((state (runner:get-state)))
     (state:get-stats state (state:get-runner-config state))))
 
 (define (load-module-suite m)
@@ -40,11 +41,11 @@
 
 (define (with-auto-run-disabled thunk)
   (state:set-runner-config-value!
-   ((test-runner*) `((type . runner/get-state)))
+   (runner:get-state)
    'auto-run? #f)
   (thunk)
   (state:set-runner-config-value!
-   ((test-runner*) `((type . runner/get-state)))
+   (runner:get-state)
    'auto-run? #t)
   *unspecified*)
 
@@ -67,7 +68,7 @@
        tests (iota (length tests))))
 
 (define (get-current-test-runner-loaded-test)
-  (chain ((test-runner*) `((type . runner/get-state)))
+  (chain (runner:get-state)
     (state:get-loaded-tests _)
     (add-indicies _)))
 

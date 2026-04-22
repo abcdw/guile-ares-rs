@@ -19,6 +19,7 @@
 
                define-suite
 
+               get-state
                make-suitbl-test-runner))
 
 #|

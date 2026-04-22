@@ -1,6 +1,7 @@
 (define-module (ares suitbl-test)
   #:use-module (ares guile prelude)
   #:use-module (ares suitbl)
+  #:use-module ((ares suitbl runners) #:prefix runner:)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl discovery)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
@@ -261,8 +262,7 @@ because test macro is not composable and can't be wrapped.
        (test "simple failure"
          (is #f))
        (state:get-run-summary
-        ((test-runner*)
-         `((type . runner/get-state))))))
+        (runner:get-state))))
 
     (is
      (equal?
@@ -276,8 +276,7 @@ because test macro is not composable and can't be wrapped.
        (test "simple success"
          (is #t))
        (state:get-run-summary
-        ((test-runner*)
-         `((type . runner/get-state))))))
+        (runner:get-state))))
     (is
      (equal?
       '((errors . 0) (failures . 0) (assertions . 1) (tests . 1))
@@ -295,7 +294,7 @@ because test macro is not composable and can't be wrapped.
        (test "outer test macro"
          (test "nested test macro" (is #t)))
        (state:get-run-history
-        ((test-runner*) `((type . runner/get-state))))))
+        (runner:get-state))))
     (define outer-test-run (car run-history))
     (is (eq? 'aborted
              (assoc-ref outer-test-run 'test-run/extended-outcome)))
@@ -310,7 +309,7 @@ because test macro is not composable and can't be wrapped.
        (test "test macro"
          (suite "nested suite" (is #t)))
        (state:get-run-history
-        ((test-runner*) `((type . runner/get-state))))))
+        (runner:get-state))))
     (define outer-test-run (car run-history))
     (is (eq? 'aborted
              (assoc-ref outer-test-run 'test-run/extended-outcome)))
@@ -378,8 +377,7 @@ run summary is #f by default, but appears after test suite is executed"
          #f
          (with-silent-test-environment
           (state:get-run-summary
-           ((test-runner*)
-            `((type . runner/get-state)))))))
+           (runner:get-state)))))
 
     (is (not
          (null?
@@ -388,8 +386,7 @@ run summary is #f by default, but appears after test suite is executed"
              (test "case1"
                (is #t)))
            (state:get-run-summary
-            ((test-runner*)
-             `((type . runner/get-state))))))))
+            (runner:get-state))))))
 
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
@@ -402,8 +399,7 @@ run summary is #f by default, but appears after test suite is executed"
            (is #f)
            (is (throw 'hi))))
        (state:get-run-summary
-        ((test-runner*)
-         `((type . runner/get-state))))))
+        (runner:get-state))))
 
     (is
      (equal?
