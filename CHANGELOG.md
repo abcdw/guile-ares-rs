@@ -75,11 +75,11 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [0.9.0]
 
-[Unreleased]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.7..HEAD
-[0.9.7]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.6..0.9.7
-[0.9.6]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.5..0.9.6
-[0.9.5]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.4..0.9.5
-[0.9.4]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.3..0.9.4
-[0.9.3]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.1..0.9.3
-[0.9.1]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.0..0.9.1
+[Unreleased]: https://git.sr.ht/~abcdw/guile-ares-rs
+[0.9.7]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.7
+[0.9.6]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.6
+[0.9.5]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.5
+[0.9.4]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.4
+[0.9.3]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.3
+[0.9.1]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.1
 [0.9.0]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.0
