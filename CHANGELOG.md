@@ -60,3 +60,23 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ### Removed
 - SRFI-64 custom check targets from Makefile.
 - Early stage of development warning from README.
+
+## [0.9.6] - 2025-07-22
+
+## [0.9.5]
+
+## [0.9.4]
+
+## [0.9.3]
+
+## [0.9.1]
+
+## [0.9.0]
+
+[Unreleased]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.6..HEAD
+[0.9.6]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.5..0.9.6
+[0.9.5]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.4..0.9.5
+[0.9.4]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.3..0.9.4
+[0.9.3]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.1..0.9.3
+[0.9.1]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.0..0.9.1
+[0.9.0]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.0
