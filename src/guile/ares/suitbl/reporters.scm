@@ -228,18 +228,6 @@ TYPES."
        #t))
     (else #f)))
 
-(define minimal
-  (chain (list
-          run-minimal
-          zero-assertion-warning
-          run-summary
-          load-ignore-messages
-          load-minimal)
-    (reporter-every _)
-    (list _ unhandled)
-    (reporter-first _)))
-
-
 (define (load-tree message)
   "A reporter that prints the complete suite tree (like the @code{tree}
 CLI command) when a top-level suite finishes loading."
@@ -437,6 +425,17 @@ message."
 
 (define base-all
   (make-base-reporter verbose-all))
+
+(define minimal
+  (chain (list
+          run-minimal
+          zero-assertion-warning
+          run-summary
+          load-ignore-messages
+          load-minimal)
+    (reporter-every _)
+    (list _ unhandled)
+    (reporter-first _)))
 
 (define (junit message)
   "A test reporter that emits JUnit XML to the port specified via
