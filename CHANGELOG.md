@@ -8,6 +8,8 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-04-23
+
 ### Added
 - `docs/suitbl/README.md` documentation.
 - `docs/ARES-HOOT-ROADMAP.md` roadmap document.
@@ -73,7 +75,8 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [0.9.0]
 
-[Unreleased]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.6..HEAD
+[Unreleased]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.7..HEAD
+[0.9.7]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.6..0.9.7
 [0.9.6]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.5..0.9.6
 [0.9.5]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.4..0.9.5
 [0.9.4]: https://git.sr.ht/~abcdw/guile-ares-rs/log/0.9.3..0.9.4
