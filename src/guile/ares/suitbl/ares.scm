@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl ares)
   #:use-module ((ares guile prelude) #:select (comment))
@@ -23,7 +23,7 @@
   ((test-runner*) `((type . runner/run-tests)
                     (runner/config
                      .
-                     ((test-reporter . ,reporter:minimal)))))
+                     ((test-reporter . ,reporter:base)))))
   (state:get-run-summary
    (runner:get-state)))
 
