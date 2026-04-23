@@ -12,7 +12,6 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ### Added
 - `docs/suitbl/README.md` documentation.
-- `docs/ARES-HOOT-ROADMAP.md` roadmap document.
 - `(ares guile exceptions)` module for displaying exceptions nicely.
 - `(ares evaluation serialization)` module, extracted from thread-manager, with tests.
 - `ares.logging/set-verbosity` nREPL operation for runtime verbosity control.
