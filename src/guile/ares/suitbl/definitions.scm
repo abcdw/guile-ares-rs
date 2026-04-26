@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl definitions)
   #:export (test-runner*
+            set-test-runner!
 
             is
             test test?
@@ -49,6 +50,10 @@ library and enjoy seeing this message. Please, use suitbl or other
 library, which sets an approriate test runner for you."))
 
 (define test-runner* (make-parameter missing-test-runner))
+
+(define (set-test-runner! runner)
+  "Set the current test runner to RUNNER and return the previous runner."
+  (test-runner* runner))
 
 (define (test? x)
   (and (list? x)

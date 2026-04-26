@@ -85,6 +85,23 @@
     (is (suite-thunk? s))
     (is (not (suite-thunk? (lambda () #t))))))
 
+(define-suite test-runner-parameter-tests
+  (test "set-test-runner! changes the current test runner"
+    (define original-runner (test-runner*))
+    (define new-runner (get-logging-test-runner))
+    (define previous-runner #f)
+    (define current-runner #f)
+    (dynamic-wind
+      (lambda () #t)
+      (lambda ()
+        (set! previous-runner (set-test-runner! new-runner))
+        (set! current-runner (test-runner*)))
+      (lambda ()
+        (set-test-runner! original-runner)))
+    (is (eq? original-runner previous-runner))
+    (is (eq? new-runner current-runner))
+    (is (eq? original-runner (test-runner*)))))
+
 (define-suite definitions-to-runner-integration-tests
   (test "is emits proper values to the test runner"
     (define events-log

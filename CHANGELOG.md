@@ -8,6 +8,9 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [Unreleased]
 
+### Added
+- `set-test-runner!` helper for installing the current suitbl test runner.
+
 ## [0.9.7] - 2026-04-23
 
 ### Added

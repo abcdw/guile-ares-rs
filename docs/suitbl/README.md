@@ -8,8 +8,8 @@ and the most common commands to run its tests.
 suitbl implementation lives under `src/guile/ares/suitbl/`.
 
 - `core.scm` - entry point for core API re-exports and `with-test-runner`.
-- `definitions.scm` - test DSL (`is`, `test`, `suite`, `define-suite`) and
-  test entity shapes.
+- `definitions.scm` - test DSL (`is`, `test`, `suite`, `define-suite`),
+  current test-runner helpers, and test entity shapes.
 - `exceptions.scm` - suitbl-specific exception types for DSL misuse and other
   structured failures.
 - `runner.scm` - test runner implementation (`make-suitbl`).
