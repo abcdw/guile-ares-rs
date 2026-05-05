@@ -10,6 +10,10 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ### Added
 - `set-test-runner!` helper for installing the current suitbl test runner.
+- `test-file-path?` predicate in `(ares suitbl discovery)`.
+
+### Fixed
+- suitbl discovery now ignores backup files and files under matching directories when selecting test modules.
 
 ## [0.9.7] - 2026-04-23
 

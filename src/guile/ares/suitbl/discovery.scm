@@ -10,6 +10,7 @@
   #:export (get-test-module
             get-module-suites
             get-module-public-suites
+            test-file-path?
             get-all-test-modules))
 
 
@@ -50,12 +51,21 @@
      (get-module-suites _))
    '()))
 
+(define %default-test-file-pattern
+  ".*-test\\.(scm|ss)$")
+
+(define* (test-file-path? path
+                          #:key
+                          (test-file-pattern %default-test-file-pattern))
+  "Return #t when PATH matches TEST-FILE-PATTERN."
+  (and (string-match test-file-pattern path) #t))
+
 ;; TODO: [Andrew Tropin, 2025-10-06] Integrate with test runner and
 ;; test reporter, so we can control the debug output using test
 ;; reporters.
 (define* (load-test-modules-thunk
           #:key
-          (test-file-pattern ".*-test(\\.scm|\\.ss)")
+          (test-file-pattern %default-test-file-pattern)
           (load-file (lambda (p rp)
                        (format (current-error-port)
                                "loading test module: ~a\n" p)
@@ -70,7 +80,8 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
         (lambda (file-path _ flags _1 _2)
           (when (eq? flags 'regular)
             (let ((relative-path (string-drop file-path (1+ (string-length path)))))
-              (when (string-match test-file-pattern file-path)
+              (when (test-file-path? file-path
+                                      #:test-file-pattern test-file-pattern)
                 (save-module-excursion
                  (lambda ()
                    (load-file file-path relative-path))))))
