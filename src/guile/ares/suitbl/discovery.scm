@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl discovery)
   #:use-module (ares suitbl core)
@@ -11,6 +11,7 @@
             get-module-suites
             get-module-public-suites
             test-file-path?
+            load-path-relative-file-path
             get-all-test-modules))
 
 
@@ -60,6 +61,16 @@
   "Return #t when PATH matches TEST-FILE-PATTERN."
   (and (string-match test-file-pattern path) #t))
 
+(define (load-path-entry->prefix path)
+  (if (string-suffix? "/" path)
+      path
+      (string-append path "/")))
+
+(define (load-path-relative-file-path path file-path)
+  "Return FILE-PATH relative to load path entry PATH."
+  (string-drop file-path
+               (string-length (load-path-entry->prefix path))))
+
 ;; TODO: [Andrew Tropin, 2025-10-06] Integrate with test runner and
 ;; test reporter, so we can control the debug output using test
 ;; reporters.
@@ -79,7 +90,7 @@ using LOAD-FILE procedure, which accepts path and relative to %load-path path."
         path
         (lambda (file-path _ flags _1 _2)
           (when (eq? flags 'regular)
-            (let ((relative-path (string-drop file-path (1+ (string-length path)))))
+            (let ((relative-path (load-path-relative-file-path path file-path)))
               (when (test-file-path? file-path
                                       #:test-file-pattern test-file-pattern)
                 (save-module-excursion

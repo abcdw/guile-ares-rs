@@ -14,6 +14,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ### Fixed
 - suitbl discovery now ignores backup files and files under matching directories when selecting test modules.
+- suitbl discovery now computes test file paths correctly when `%load-path` entries end with `/`.
 
 ## [0.9.7] - 2026-04-23
 

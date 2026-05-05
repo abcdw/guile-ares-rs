@@ -15,3 +15,22 @@
     (is (not (test-file-path? "tests/guile/ares/suitbl/discovery-test.scm.d/data.txt")))
     (is (not (test-file-path? "tests/guile/ares/suitbl/helper.scm")))
     (is (not (test-file-path? "tests/guile/ares/suitbl/discovery-test.scmx")))))
+
+(define-suite load-path-relative-file-path-tests
+  (test "handles load path entries with and without trailing slash"
+    (is (string=? "ares/foo-test.scm"
+                  (load-path-relative-file-path
+                   "tests/guile"
+                   "tests/guile/ares/foo-test.scm")))
+    (is (string=? "ares/foo-test.scm"
+                  (load-path-relative-file-path
+                   "tests/guile/"
+                   "tests/guile/ares/foo-test.scm")))
+    (is (string=? "ares/foo-test.scm"
+                  (load-path-relative-file-path
+                   "."
+                   "./ares/foo-test.scm")))
+    (is (string=? "ares/foo-test.scm"
+                  (load-path-relative-file-path
+                   "./"
+                   "./ares/foo-test.scm")))))
