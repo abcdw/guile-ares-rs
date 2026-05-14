@@ -29,6 +29,10 @@ check-suitbl:
 	${GUILE_DEV} \
 	-c "((@ (suitbl-test-runner) run-project-tests))"
 
+check-srfi-269:
+	${GUILE_DEV} \
+	-c "((@ (ares srfi-64 test-runners) run-module-tests) (resolve-module '(srfi srfi-269-draft-test)))"
+
 suitbl:
 	${GUILE_DEV} \
 	-e '(ares scripts ares-suitbl)' \
