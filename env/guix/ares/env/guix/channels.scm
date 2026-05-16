@@ -1,8 +1,10 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; SPDX-FileCopyrightText: 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
+;;; SPDX-FileCopyrightText: 2023, 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(use-modules (guile))
 
 (define-module (ares env guix channels)
   #:use-module (guix channels)
