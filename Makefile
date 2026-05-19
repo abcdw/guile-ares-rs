@@ -1,4 +1,4 @@
-GUIXTM=guix time-machine -C ./env/guix/ares/env/guix/channels.scm
+GUIXTM=guix time-machine --unsafe-channel-evaluation -C ./env/guix/ares/env/guix/channels.scm
 GUILE=$(GUIXTM) -- shell guile guile-fibers \
 --pure --preserve=.*LANG.* -- guile
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
