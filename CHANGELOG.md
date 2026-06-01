@@ -11,6 +11,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ### Added
 - `set-test-runner!` helper for installing the current suitbl test runner.
 - `test-file-path?` predicate in `(ares suitbl discovery)`.
+- Optional assertion descriptions for suitbl `is` forms.
 
 ### Changed
 - suitbl test entities now use `test/body-procedure` one-argument procedures instead of `test/body-thunk` thunks.

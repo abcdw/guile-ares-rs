@@ -108,15 +108,22 @@
       (with-runner-events-to-list
        (define str "a1")
        (is str)
-       (is (= 1 (+ 2 -1)))))
+       (is (= 1 (+ 2 -1)))
+       (is str "string assertion")
+       (is (= 2 (+ 1 1)) "predicate assertion")))
 
-    (is (equal? '(str (= 1 (+ 2 -1))) (simplify-log events-log)))
+    (is (equal? '(str
+                  (= 1 (+ 2 -1))
+                  str
+                  (= 2 (+ 1 1)))
+                (simplify-log events-log)))
 
     (let* ((assertion-1 (chain events-log (car _) (assoc-ref _ 'assertion)))
            (assertion-1-body (assoc-ref assertion-1 'assertion/body))
            (assertion-1-body-value
             ((assoc-ref assertion-1 'assertion/body-thunk))))
       (is (equal? 'str assertion-1-body))
+      (is (not (assoc-ref assertion-1 'assertion/description)))
       (is (equal? "a1" assertion-1-body-value)))
 
     (let* ((assertion-2 (chain events-log (cadr _) (assoc-ref _ 'assertion)))
@@ -126,8 +133,18 @@
            (assertion-2-args-value
             ((assoc-ref assertion-2 'assertion/args-thunk))))
       (is (equal? '(= 1 (+ 2 -1)) assertion-2-body))
+      (is (not (assoc-ref assertion-2 'assertion/description)))
       (is (equal? #t assertion-2-body-value))
-      (is (equal? '(1 1) assertion-2-args-value))))
+      (is (equal? '(1 1) assertion-2-args-value)))
+
+    (let* ((assertion-3 (chain events-log (caddr _) (assoc-ref _ 'assertion)))
+           (assertion-4 (chain events-log (cadddr _) (assoc-ref _ 'assertion))))
+      (is (equal? "string assertion"
+                  (assoc-ref assertion-3 'assertion/description)))
+      (is (equal? "predicate assertion"
+                  (assoc-ref assertion-4 'assertion/description)))
+      (is (equal? '(2 2)
+                  ((assoc-ref assertion-4 'assertion/args-thunk))))))
 
   (test "test emits proper values to the test runner"
     (define events-log

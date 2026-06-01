@@ -93,26 +93,41 @@ at macro-expansion time."
 (define-syntax is
   (lambda (stx)
     "A flexible assertion macro.  The behavior can be customized by test runner."
+    (define (build-assertion stx fields)
+      (with-syntax ((location (datum->syntax
+                               stx
+                               (make-source-absolute (syntax-source stx))))
+                    ((assertion-field ...) fields))
+        #'((test-runner*)
+           `((type . runner/run-assert)
+             (assertion . (assertion-field ...
+                           (assertion/location . location)))))))
+
     (syntax-case stx ()
+      ((_ (pred args ...) description)
+       (build-assertion stx
+                        #'((assertion/body-thunk
+                            . ,(lambda () (pred args ...)))
+                           (assertion/args-thunk
+                            . ,(lambda () (list args ...)))
+                           (assertion/body . (pred args ...))
+                           (assertion/description . ,description))))
+      ((_ form description)
+       (build-assertion stx
+                        #'((assertion/body-thunk . ,(lambda () form))
+                           (assertion/body . form)
+                           (assertion/description . ,description))))
       ((_ (pred args ...))
-       (with-syntax ((location (datum->syntax
-                                stx
-                                (make-source-absolute (syntax-source stx)))))
-         #'((test-runner*)
-            `((type . runner/run-assert)
-              (assertion . ((assertion/body-thunk . ,(lambda () (pred args ...)))
-                            (assertion/args-thunk . ,(lambda () (list args ...)))
-                            (assertion/body . (pred args ...))
-                            (assertion/location . location)))))))
+       (build-assertion stx
+                        #'((assertion/body-thunk
+                            . ,(lambda () (pred args ...)))
+                           (assertion/args-thunk
+                            . ,(lambda () (list args ...)))
+                           (assertion/body . (pred args ...)))))
       ((_ form)
-       (with-syntax ((location (datum->syntax
-                                stx
-                                (make-source-absolute (syntax-source stx)))))
-         #'((test-runner*)
-            `((type . runner/run-assert)
-              (assertion . ((assertion/body-thunk . ,(lambda () form))
-                            (assertion/body . form)
-                            (assertion/location . location))))))))))
+       (build-assertion stx
+                        #'((assertion/body-thunk . ,(lambda () form))
+                           (assertion/body . form)))))))
 
 (define (alist-merge l1 l2)
   (append l1 l2))
