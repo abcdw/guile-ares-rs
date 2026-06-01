@@ -14,6 +14,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ### Changed
 - suitbl test entities now use `test/body-procedure` one-argument procedures instead of `test/body-thunk` thunks.
+- suitbl now warns when the deprecated `(test DESCRIPTION BODY ...)` form is used.
 
 ### Fixed
 - suitbl discovery now ignores backup files and files under matching directories when selecting test modules.

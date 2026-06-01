@@ -117,26 +117,44 @@ at macro-expansion time."
 (define (alist-merge l1 l2)
   (append l1 l2))
 
+(define (warn-deprecated-test-form location)
+  (let ((port (current-warning-port)))
+    (format port "warning: deprecated suitbl test form")
+    (when (and location (assoc-ref location 'filename))
+      (format port " at ~a" (assoc-ref location 'filename))
+      (when (assoc-ref location 'line)
+        (format port ":~a" (assoc-ref location 'line)))
+      (when (assoc-ref location 'column)
+        (format port ":~a" (assoc-ref location 'column))))
+    (format port "\n")
+    (format port "  `(test DESCRIPTION BODY ...)` syntax is deprecated.\n")
+    (format port "  Use `(test (DESCRIPTION _) BODY ...)` or `(test (DESCRIPTION context) BODY ...)`.")
+    (format port "\n")))
+
 (define-syntax test-thunk
   (lambda (stx)
-    (define (build-test-thunk stx description metadata body-procedure body)
+    (define (build-test-thunk stx description metadata body-procedure body deprecated?)
       (with-syntax ((location (datum->syntax
                                stx
                                (make-source-absolute (syntax-source stx))))
                     (test-description description)
                     (metadata-value metadata)
                     (test-body-procedure body-procedure)
-                    ((test-body ...) body))
-        #'(let ((test-entity
-                 `((test/body-procedure . ,test-body-procedure)
-                   (test/body . (test-body ...))
-                   (test/description . ,test-description)
-                   (test/metadata . ,metadata-value)
-                   (test/location . location))))
-            (lambda ()
-              ((test-runner*)
-               `((type . runner/load-test)
-                 (test . ,test-entity)))))))
+                    ((test-body ...) body)
+                    (deprecated-test-form? deprecated?))
+        #'(begin
+            (when deprecated-test-form?
+              (warn-deprecated-test-form 'location))
+            (let ((test-entity
+                   `((test/body-procedure . ,test-body-procedure)
+                     (test/body . (test-body ...))
+                     (test/description . ,test-description)
+                     (test/metadata . ,metadata-value)
+                     (test/location . location))))
+              (lambda ()
+                ((test-runner*)
+                 `((type . runner/load-test)
+                   (test . ,test-entity))))))))
 
     (syntax-case stx (metadata)
       ((_ (test-description context-name)
@@ -147,7 +165,8 @@ at macro-expansion time."
                          #'metadata-value
                          #'(lambda (context-name)
                              expression expressions ...)
-                         #'(expression expressions ...)))
+                         #'(expression expressions ...)
+                         #'#f))
 
       ((_ test-description (quote metadata) metadata-value expression expressions ...)
        (build-test-thunk stx
@@ -155,7 +174,8 @@ at macro-expansion time."
                          #'metadata-value
                          #'(lambda (%suitbl-context)
                              expression expressions ...)
-                         #'(expression expressions ...)))
+                         #'(expression expressions ...)
+                         #'#t))
 
       ((_ test-head expression expressions ...)
        #'(test-thunk test-head 'metadata '() expression expressions ...)))))
