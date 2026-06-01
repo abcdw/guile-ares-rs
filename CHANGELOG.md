@@ -12,6 +12,9 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - `set-test-runner!` helper for installing the current suitbl test runner.
 - `test-file-path?` predicate in `(ares suitbl discovery)`.
 
+### Changed
+- suitbl test entities now use `test/body-procedure` one-argument procedures instead of `test/body-thunk` thunks.
+
 ### Fixed
 - suitbl discovery now ignores backup files and files under matching directories when selecting test modules.
 - suitbl discovery now computes test file paths correctly when `%load-path` entries end with `/`.

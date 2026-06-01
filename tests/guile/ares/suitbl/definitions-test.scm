@@ -67,10 +67,10 @@
 
 (define-suite predicates-tests
   (test "test? predicate recognizes test structures"
-    (is (test? `((test/body-thunk . ,(lambda () #t))
+    (is (test? `((test/body-procedure . ,(lambda (_) #t))
                  (test/description . "test"))))
     (is (not (test? '())))
-    (is (not (test? `((test/body-thunk . ,(lambda () #t))))))
+    (is (not (test? `((test/body-procedure . ,(lambda (_) #t))))))
     (is (not (test? '((test/description . "hi"))))))
 
   (test "suite? predicate recognizes suite structures"
@@ -133,14 +133,25 @@
     (define events-log
       (with-runner-events-to-list
        (test "t1" 'body)
-       (test "t2" 'metadata '((good? . #t)) 'body)))
+       (test "t2" 'metadata '((good? . #t)) 'body)
+       (test ("t3" ctx) (assoc-ref ctx 'answer))))
+    (define (event-test event)
+      (assoc-ref event 'test))
+    (define test-1 (event-test (car events-log)))
+    (define test-2 (event-test (cadr events-log)))
+    (define test-3 (event-test (caddr events-log)))
     (define (is-good? test)
       (chain test
-          (assoc-ref _ 'test)
-          (assoc-ref _ 'test/metadata)
-          (assoc-ref _ 'good?)))
-    (is (equal? '("t1" "t2") (simplify-log events-log)))
-    (is (is-good? (cadr events-log))))
+        (assoc-ref _ 'test/metadata)
+        (assoc-ref _ 'good?)))
+    (is (equal? '("t1" "t2" "t3") (simplify-log events-log)))
+    (is (procedure? (assoc-ref test-1 'test/body-procedure)))
+    (is (equal? 'body
+                ((assoc-ref test-1 'test/body-procedure) '())))
+    (is (is-good? test-2))
+    (is (equal? 'value
+                ((assoc-ref test-3 'test/body-procedure)
+                 '((answer . value))))))
 
   (test "runner adds compound metadata inherited from suite"
     (define compound-metadata

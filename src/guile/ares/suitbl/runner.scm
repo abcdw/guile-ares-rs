@@ -100,6 +100,13 @@ environment just set it to new instance of test runner.
      (or (assoc-ref test 'test/metadata) '())
      (suite-path->metadata suites)))
 
+  (define (make-test-context test)
+    `((test . ,test)
+      (test/metadata . ,(or (assoc-ref test 'test/metadata) '()))
+      (test/compound-metadata
+       . ,(or (assoc-ref test 'test/compound-metadata) '()))
+      (suite/path . ,(or (assoc-ref test 'suite/path) '()))))
+
   (define (%run-assert assertion inside-test? assertion-runs)
     (let* ((body-thunk (assoc-ref assertion 'assertion/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
@@ -143,7 +150,7 @@ environment just set it to new instance of test runner.
       (%run-assert assertion inside-test? assertion-runs)))
 
   (define* (%run-test test #:key run-progress)
-    (let ((test-body-thunk (assoc-ref test 'test/body-thunk)))
+    (let ((test-body-procedure (assoc-ref test 'test/body-procedure)))
       (when (%inside-test?*)
         (raise-suitbl-wrong-position-exception
          'test 'test-body
@@ -159,7 +166,9 @@ environment just set it to new instance of test runner.
         (parameterize ((%inside-test?* #t)
                        (%assertion-runs* (make-atomic-box '())))
           (let ((test-run-result
-                 (running:with-exception-continuation test-body-thunk)))
+                 (running:with-exception-continuation
+                  (lambda ()
+                    (test-body-procedure (make-test-context test))))))
             (define assertion-runs
               (reverse (atomic-box-ref (%assertion-runs*))))
             (define test-run

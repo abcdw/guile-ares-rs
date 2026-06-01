@@ -102,7 +102,7 @@
  (use-modules (system vm program))
  (chain (get-current-test-runner-loaded-test)
    ;; ((filter-transformation selector) _)
-   (map (lambda (t) (assoc-ref t 'test/body-thunk)) _)
+   (map (lambda (t) (assoc-ref t 'test/body-procedure)) _)
    (car _)
    (program-sources _))
  (use-modules (ares suitbl core))

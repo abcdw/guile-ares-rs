@@ -50,14 +50,17 @@
     (define tr (silent-runner))
     (define run-summary
       (with-test-runner tr
-        (test "assert exception"
+        (test ("assert exception" ctx)
+          (is (equal? "assert exception"
+                      (assoc-ref (assoc-ref ctx 'test)
+                                 'test/description)))
           (is (error "assertions-handling-tests/assert exception")))
         (state:get-run-summary
          (runner:get-state tr))))
 
     (is (= 1 (assoc-ref run-summary 'errors)))
     (is (= 0 (assoc-ref run-summary 'failures)))
-    (is (= 1 (assoc-ref run-summary 'assertions)))
+    (is (= 2 (assoc-ref run-summary 'assertions)))
     (is (= 1 (assoc-ref run-summary 'tests)))))
 
 (define-suite assertion-run-history-tests

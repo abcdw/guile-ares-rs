@@ -57,7 +57,7 @@ library, which sets an approriate test runner for you."))
 
 (define (test? x)
   (and (list? x)
-       (assoc-ref x 'test/body-thunk)
+       (assoc-ref x 'test/body-procedure)
        (assoc-ref x 'test/description)))
 
 (define (suite? x)
@@ -119,24 +119,46 @@ at macro-expansion time."
 
 (define-syntax test-thunk
   (lambda (stx)
-    (syntax-case stx (metadata)
-      ((_ test-description (quote metadata) metadata-value expression expressions ...)
-       (with-syntax ((location (datum->syntax
-                                stx
-                                (make-source-absolute (syntax-source stx)))))
-         #'(let ((test-entity
-                  `((test/body-thunk . ,(lambda () expression expressions ...))
-                    (test/body . (expression expressions ...))
-                    (test/description . ,test-description)
-                    (test/metadata . ,metadata-value)
-                    (test/location . location))))
-           (lambda ()
-             ((test-runner*)
-              `((type . runner/load-test)
-                (test . ,test-entity)))))))
+    (define (build-test-thunk stx description metadata body-procedure body)
+      (with-syntax ((location (datum->syntax
+                               stx
+                               (make-source-absolute (syntax-source stx))))
+                    (test-description description)
+                    (metadata-value metadata)
+                    (test-body-procedure body-procedure)
+                    ((test-body ...) body))
+        #'(let ((test-entity
+                 `((test/body-procedure . ,test-body-procedure)
+                   (test/body . (test-body ...))
+                   (test/description . ,test-description)
+                   (test/metadata . ,metadata-value)
+                   (test/location . location))))
+            (lambda ()
+              ((test-runner*)
+               `((type . runner/load-test)
+                 (test . ,test-entity)))))))
 
-      ((_ test-description expression expressions ...)
-       #'(test-thunk test-description 'metadata '() expression expressions ...)))))
+    (syntax-case stx (metadata)
+      ((_ (test-description context-name)
+          (quote metadata) metadata-value expression expressions ...)
+       (identifier? #'context-name)
+       (build-test-thunk stx
+                         #'test-description
+                         #'metadata-value
+                         #'(lambda (context-name)
+                             expression expressions ...)
+                         #'(expression expressions ...)))
+
+      ((_ test-description (quote metadata) metadata-value expression expressions ...)
+       (build-test-thunk stx
+                         #'test-description
+                         #'metadata-value
+                         #'(lambda (%suitbl-context)
+                             expression expressions ...)
+                         #'(expression expressions ...)))
+
+      ((_ test-head expression expressions ...)
+       #'(test-thunk test-head 'metadata '() expression expressions ...)))))
 
 (define-syntax test
   (lambda (stx)
