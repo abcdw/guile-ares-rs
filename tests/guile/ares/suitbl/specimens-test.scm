@@ -15,7 +15,7 @@
 ;;;
 
 (define passing-tests
-  (suite-thunk "passing tests"
+  (suite-loader "passing tests"
     (test "contains several passing assertions"
       (is (= 4 (+ 2 2)))
       (is (equal? '(a b c d e f g h j k l m n o p q r)
@@ -24,7 +24,7 @@
                     (string-append "suit" "bl"))))))
 
 (define failing-tests
-  (suite-thunk "failing tests"
+  (suite-loader "failing tests"
     (test "contains a failing assertion among passing ones"
       (is (= 4 (+ 2 2)))
       (is (equal? '(a b c d e f g h j k l m n o p q r)
@@ -63,7 +63,7 @@
                           "suitbl")))))
 
 (define all-tests
-  (suite-thunk "all tests"
+  (suite-loader "all tests"
     'metadata
     '((dev? . #t))
     (passing-tests)

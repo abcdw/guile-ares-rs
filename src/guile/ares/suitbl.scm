@@ -51,7 +51,7 @@ developer to visually distinguish functions containing tests
 inside (aka test suits) from usual functions.
 
 (define addition-tests
-  (suite-thunk "addition"
+  (suite-loader "addition"
     (test "small numbers addition"
       (is (= 4 (+ 2 2)))
       (is (= 7 (+ 3 4))))
@@ -62,13 +62,13 @@ inside (aka test suits) from usual functions.
                 2000000000000))))))
 
 (define subtraction-tests
-  (suite-thunk "subtraction"
+  (suite-loader "subtraction"
     (test "small numbers subtraction"
       (is (= 1 (- 4 3)))
       (is (= 3 (- 7 4))))))
 
 (define-public arithmetic-tests
-  (suite-thunk "arithmetic"
+  (suite-loader "arithmetic"
     (addition-tests)
     (subtraction-tests)))
 

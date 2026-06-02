@@ -337,7 +337,7 @@ because test macro is not composable and can't be wrapped.
         (is (= 4 (+ 2 2)))))))
 
 (define failing-asserts-tests
-  (suite-thunk "suite"
+  (suite-loader "suite"
     (test "simple failure"
       (is #f))
     (test "simple error"
@@ -409,7 +409,7 @@ run summary is #f by default, but appears after test suite is executed"
        run-summary-with-failures-and-errors)))))
 
 (define base-test-runner-tests
-  (suite-thunk "base-test-runner-tests"
+  (suite-loader "base-test-runner-tests"
     (is-usage-tests)
     (test-runner-operations-tests)
     (test-macro-usage-tests)

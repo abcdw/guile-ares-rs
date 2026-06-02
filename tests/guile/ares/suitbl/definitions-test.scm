@@ -80,10 +80,10 @@
     (is (not (suite? `((suite/body-thunk . ,(lambda () #t))))))
     (is (not (suite? '((suite/description . "suite"))))))
 
-  (test "suite-thunk? identifies suite thunks"
-    (define s (suite-thunk "test-suite" #t))
-    (is (suite-thunk? s))
-    (is (not (suite-thunk? (lambda () #t))))))
+  (test "suite-loader? identifies suite loaders"
+    (define s (suite-loader "test-suite" #t))
+    (is (suite-loader? s))
+    (is (not (suite-loader? (lambda () #t))))))
 
 (define-suite test-runner-parameter-tests
   (test "set-test-runner! changes the current test runner"
@@ -172,7 +172,7 @@
 
   (test "runner adds compound metadata inherited from suite"
     (define compound-metadata
-      (chain (suite-thunk "outer" 'metadata '((slow? . #t))
+      (chain (suite-loader "outer" 'metadata '((slow? . #t))
                (test "t1"
                  (is #t)))
         (load-tests _)
@@ -183,7 +183,7 @@
 
   (test "runner merges compound metadata from nested suites and test"
     (define compound-metadata
-      (chain (suite-thunk "outer"
+      (chain (suite-loader "outer"
                'metadata
                '((shared . outer)
                  (outer? . #t))
@@ -222,11 +222,11 @@
     (is (equal? '("s1" "s2") (simplify-log events-log)))
     (is (equal? '(integration) (get-tags (cadr events-log)))))
 
-  (test "define-suite creates named suite thunk"
-    (define tmp-suite-thunk
-      (suite-thunk "tmp suite thunk" #t))
-    (is (suite-thunk? tmp-suite-thunk))
-    (is (not (suite-thunk? (lambda () #t))))))
+  (test "define-suite creates named suite loader"
+    (define tmp-suite-loader
+      (suite-loader "tmp suite loader" #t))
+    (is (suite-loader? tmp-suite-loader))
+    (is (not (suite-loader? (lambda () #t))))))
 
 (define-suite documentation-tests
   (test "exception, when macro used in place of predicate"
