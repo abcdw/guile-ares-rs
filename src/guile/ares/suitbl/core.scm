@@ -13,6 +13,7 @@
                test-loader
                test-thunk
                suite suite?
+               suite-loader suite-loader?
                suite-thunk suite-thunk?
 
                define-suite))

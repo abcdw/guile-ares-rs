@@ -12,10 +12,9 @@
   #:re-export (test-runner*
 
                is
-               ;; we omit re-exporting -thunk counterparts, as they
-               ;; probably never needed by end-user
+               ;; Keep deprecated -thunk aliases for compatibility.
                test test-loader test-thunk
-               suite suite-thunk
+               suite suite-loader suite-thunk
 
                define-suite
 

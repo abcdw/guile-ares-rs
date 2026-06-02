@@ -10,6 +10,7 @@
             test-loader
             test-thunk
             suite suite?
+            suite-loader suite-loader?
             suite-thunk suite-thunk?
 
             define-suite))
@@ -66,9 +67,14 @@ library, which sets an approriate test runner for you."))
          (assoc-ref x 'suite/body-thunk)
          (assoc-ref x 'suite/description)))
 
-(define (suite-thunk? x)
+(define (suite-loader? x)
   (and (procedure? x)
-       (procedure-property x 'suitbl-suite-thunk?)))
+       (or (procedure-property x 'suitbl-suite-loader?)
+           (procedure-property x 'suitbl-suite-thunk?))))
+
+(define (suite-thunk? x)
+  (warn-deprecated-suite-thunk-predicate)
+  (suite-loader? x))
 
 (define (make-source-absolute source)
   "Make the filename in a syntax SOURCE alist absolute.  If the
@@ -160,6 +166,25 @@ at macro-expansion time."
     (format port "  Use `(test-loader DESCRIPTION BODY ...)` instead.")
     (format port "\n")))
 
+(define (warn-deprecated-suite-thunk location)
+  (let ((port (current-warning-port)))
+    (format port "warning: deprecated suitbl suite-thunk form")
+    (when (and location (assoc-ref location 'filename))
+      (format port " at ~a" (assoc-ref location 'filename))
+      (when (assoc-ref location 'line)
+        (format port ":~a" (assoc-ref location 'line)))
+      (when (assoc-ref location 'column)
+        (format port ":~a" (assoc-ref location 'column))))
+    (format port "\n")
+    (format port "  Use `(suite-loader DESCRIPTION BODY ...)` instead.")
+    (format port "\n")))
+
+(define (warn-deprecated-suite-thunk-predicate)
+  (let ((port (current-warning-port)))
+    (format port "warning: deprecated suitbl suite-thunk? predicate\n")
+    (format port "  Use `suite-loader?` instead.")
+    (format port "\n")))
+
 (define-syntax test-loader
   (lambda (stx)
     (define (build-test-loader stx description metadata body-procedure body deprecated?)
@@ -228,7 +253,7 @@ more @code{is} asserts."
       ((_ test-description arguments ...)
        #'((test-loader test-description arguments ...))))))
 
-(define-syntax suite-thunk
+(define-syntax suite-loader
   (lambda (stx)
     (syntax-case stx (metadata)
       ((_ suite-description (quote metadata) metadata-value
@@ -242,7 +267,7 @@ more @code{is} asserts."
                      (suite/metadata . ,metadata-value)
                      (suite/location . location)))
 
-                  (%suite-thunk
+                  (%suite-loader
                    ;; Wrapping into identity to prevent setting procedure-name
                    (identity
                     (lambda ()
@@ -251,15 +276,27 @@ more @code{is} asserts."
                          (suite . ,suite-entity)))))))
 
              (set-procedure-properties!
-              %suite-thunk
+              %suite-loader
               `((documentation . ,suite-description)
                 (suite . ,suite-entity)
+                (suitbl-suite-loader? . #t)
                 (suitbl-suite-thunk? . #t)))
-             %suite-thunk)))
+             %suite-loader)))
 
       ((_ suite-description expression expressions ...)
-       #'(suite-thunk
+       #'(suite-loader
           suite-description 'metadata '() expression expressions ...)))))
+
+(define-syntax suite-thunk
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ arguments ...)
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
+         #'(begin
+             (warn-deprecated-suite-thunk 'location)
+             (suite-loader arguments ...)))))))
 
 (define-syntax suite
   (lambda (stx)
@@ -267,12 +304,12 @@ more @code{is} asserts."
 test suites."
     (syntax-case stx ()
       ((_ suite-description arguments ...)
-       #'((suite-thunk suite-description arguments ...))))))
+       #'((suite-loader suite-description arguments ...))))))
 
 (define-syntax define-suite
   (lambda (stx)
-    "Equivalent of (define-public NAME (suite-thunk ...))."
+    "Equivalent of (define-public NAME (suite-loader ...))."
     (syntax-case stx ()
       ((_ suite-name expression ...)
        #'(define-public suite-name
-           (suite-thunk (symbol->string 'suite-name) expression ...))))))
+           (suite-loader (symbol->string 'suite-name) expression ...))))))

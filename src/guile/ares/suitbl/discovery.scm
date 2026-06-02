@@ -41,7 +41,7 @@
    identity
    (module-map (lambda (k v)
                  (and (variable-bound? v)
-                      (suite-thunk? (variable-ref v))
+                      (suite-loader? (variable-ref v))
                       (variable-ref v)))
                module)))
 
