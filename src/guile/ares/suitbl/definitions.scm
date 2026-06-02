@@ -7,6 +7,7 @@
 
             is
             test test?
+            test-loader
             test-thunk
             suite suite?
             suite-thunk suite-thunk?
@@ -146,9 +147,22 @@ at macro-expansion time."
     (format port "  Use `(test (DESCRIPTION _) BODY ...)` or `(test (DESCRIPTION context) BODY ...)`.")
     (format port "\n")))
 
-(define-syntax test-thunk
+(define (warn-deprecated-test-thunk location)
+  (let ((port (current-warning-port)))
+    (format port "warning: deprecated suitbl test-thunk form")
+    (when (and location (assoc-ref location 'filename))
+      (format port " at ~a" (assoc-ref location 'filename))
+      (when (assoc-ref location 'line)
+        (format port ":~a" (assoc-ref location 'line)))
+      (when (assoc-ref location 'column)
+        (format port ":~a" (assoc-ref location 'column))))
+    (format port "\n")
+    (format port "  Use `(test-loader DESCRIPTION BODY ...)` instead.")
+    (format port "\n")))
+
+(define-syntax test-loader
   (lambda (stx)
-    (define (build-test-thunk stx description metadata body-procedure body deprecated?)
+    (define (build-test-loader stx description metadata body-procedure body deprecated?)
       (with-syntax ((location (datum->syntax
                                stx
                                (make-source-absolute (syntax-source stx))))
@@ -175,25 +189,36 @@ at macro-expansion time."
       ((_ (test-description context-name)
           (quote metadata) metadata-value expression expressions ...)
        (identifier? #'context-name)
-       (build-test-thunk stx
-                         #'test-description
-                         #'metadata-value
-                         #'(lambda (context-name)
-                             expression expressions ...)
-                         #'(expression expressions ...)
-                         #'#f))
+       (build-test-loader stx
+                          #'test-description
+                          #'metadata-value
+                          #'(lambda (context-name)
+                              expression expressions ...)
+                          #'(expression expressions ...)
+                          #'#f))
 
       ((_ test-description (quote metadata) metadata-value expression expressions ...)
-       (build-test-thunk stx
-                         #'test-description
-                         #'metadata-value
-                         #'(lambda (%suitbl-context)
-                             expression expressions ...)
-                         #'(expression expressions ...)
-                         #'#t))
+       (build-test-loader stx
+                          #'test-description
+                          #'metadata-value
+                          #'(lambda (%suitbl-context)
+                              expression expressions ...)
+                          #'(expression expressions ...)
+                          #'#t))
 
       ((_ test-head expression expressions ...)
-       #'(test-thunk test-head 'metadata '() expression expressions ...)))))
+       #'(test-loader test-head 'metadata '() expression expressions ...)))))
+
+(define-syntax test-thunk
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ arguments ...)
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
+         #'(begin
+             (warn-deprecated-test-thunk 'location)
+             (test-loader arguments ...)))))))
 
 (define-syntax test
   (lambda (stx)
@@ -201,7 +226,7 @@ at macro-expansion time."
 more @code{is} asserts."
     (syntax-case stx ()
       ((_ test-description arguments ...)
-       #'((test-thunk test-description arguments ...))))))
+       #'((test-loader test-description arguments ...))))))
 
 (define-syntax suite-thunk
   (lambda (stx)

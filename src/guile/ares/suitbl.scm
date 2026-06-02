@@ -14,7 +14,7 @@
                is
                ;; we omit re-exporting -thunk counterparts, as they
                ;; probably never needed by end-user
-               test test-thunk
+               test test-loader test-thunk
                suite suite-thunk
 
                define-suite
