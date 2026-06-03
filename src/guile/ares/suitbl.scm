@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025 Andrew Tropin <andrew@trop.in>
+;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl)
   #:use-module (ares suitbl core)
@@ -48,29 +48,27 @@ Test suite is a function, it can be executed to load tests defined
 inside.  The name of such functions should contain -tests prefix, it's
 not a requirement, but a convention to make it easier for the
 developer to visually distinguish functions containing tests
-inside (aka test suits) from usual functions.
+inside (aka test suits) from usual functions.  Use @code{define-suite}
+to define and export such suite loaders.
 
-(define addition-tests
-  (suite-loader "addition"
-    (test "small numbers addition"
-      (is (= 4 (+ 2 2)))
-      (is (= 7 (+ 3 4))))
+(define-suite (addition-tests)
+  (test "small numbers addition"
+    (is (= 4 (+ 2 2)))
+    (is (= 7 (+ 3 4))))
 
-    (test "big numbers addition"
-      (is (=    4000000000000
-             (+ 2000000000000
-                2000000000000))))))
+  (test "big numbers addition"
+    (is (=    4000000000000
+           (+ 2000000000000
+              2000000000000)))))
 
-(define subtraction-tests
-  (suite-loader "subtraction"
-    (test "small numbers subtraction"
-      (is (= 1 (- 4 3)))
-      (is (= 3 (- 7 4))))))
+(define-suite (subtraction-tests)
+  (test "small numbers subtraction"
+    (is (= 1 (- 4 3)))
+    (is (= 3 (- 7 4)))))
 
-(define-public arithmetic-tests
-  (suite-loader "arithmetic"
-    (addition-tests)
-    (subtraction-tests)))
+(define-suite (arithmetic-tests)
+  (addition-tests)
+  (subtraction-tests))
 
 When you call a test suite, the test runner will build hierarchy of
 nested tests and test suites, add it into test runner, later those

@@ -22,6 +22,18 @@ suitbl implementation lives under `src/guile/ares/suitbl/`.
 - `presets.scm` - convenience presets that adjust runner config.
 - `ares.scm` - project level helpers (`load-project-tests`, `run-tests`, etc).
 
+## Definition syntax
+
+Named suites should use the parenthesized form:
+
+```scheme
+(define-suite (some-cool-tests)
+  ...)
+```
+
+The old bare-name form, `(define-suite some-cool-tests ...)`, remains accepted
+for compatibility and emits a deprecation warning.
+
 ## Test structure
 
 suitbl tests are mainly in:

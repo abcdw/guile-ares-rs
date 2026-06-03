@@ -1,3 +1,6 @@
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
+
 (define-module (ares-demo 02-stack-traces-test)
   #:use-module (ares suitbl core)
   #:use-module (ares guile prelude)
@@ -7,7 +10,7 @@
   (test "fine"
     (is (even? 4))))
 
-(define-suite kek
+(define-suite (kek)
   'metadata
   '((demo? . #t))
 

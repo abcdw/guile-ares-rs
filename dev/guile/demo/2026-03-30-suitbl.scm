@@ -66,7 +66,7 @@
    (test "2"
      'hehey))
 
- (define-suite some-cool-tests
+ (define-suite (some-cool-tests)
    (suite "inner suite"
      (test "1"
        (is #t)))
@@ -283,10 +283,10 @@ API-first, can be easily integrated in your IDE and other tools.
 ;;; 4. `define-suite` - reusable named suites
 ;;;
 
-;; `define-suite` is equivalent to (define-public NAME (suite-thunk ...)).
-;; The suite thunk can be called repeatedly to re-run.
+;; `define-suite` is equivalent to (define-public NAME (suite-loader ...)).
+;; The suite loader can be called repeatedly to load tests again.
 
-(define-suite list-tests
+(define-suite (list-tests)
   (test "cons builds pairs"
     (is (equal? '(1 . 2) (cons 1 2)))
     (is (equal? '(1 2 3) (cons 1 '(2 3)))))
