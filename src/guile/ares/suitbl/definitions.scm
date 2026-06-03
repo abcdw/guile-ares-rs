@@ -28,10 +28,6 @@
 ;; TODO: [Andrew Tropin, 2025-08-27] Write tests to check that test
 ;; runner gets all the necessary information from test definitions.
 
-;; IDEA: [Andrew Tropin, 2025-09-18] Change API of define-suite to
-;; mimic usual define, so the name of the suite is wrapped with
-;; parentesis and can be immediately called.
-
 ;; IDEA: [Andrew Tropin, 2025-09-18] Add support for docstrings for
 ;; define-suite
 
@@ -185,6 +181,20 @@ at macro-expansion time."
     (format port "  Use `suite-loader?` instead.")
     (format port "\n")))
 
+(define (warn-deprecated-define-suite-form location)
+  (let ((port (current-warning-port)))
+    (format port "warning: deprecated suitbl define-suite form")
+    (when (and location (assoc-ref location 'filename))
+      (format port " at ~a" (assoc-ref location 'filename))
+      (when (assoc-ref location 'line)
+        (format port ":~a" (assoc-ref location 'line)))
+      (when (assoc-ref location 'column)
+        (format port ":~a" (assoc-ref location 'column))))
+    (format port "\n")
+    (format port "  `(define-suite NAME BODY ...)` syntax is deprecated.\n")
+    (format port "  Use `(define-suite (NAME) BODY ...)` instead.")
+    (format port "\n")))
+
 (define-syntax test-loader
   (lambda (stx)
     (define (build-test-loader stx description metadata body-procedure body deprecated?)
@@ -308,8 +318,23 @@ test suites."
 
 (define-syntax define-suite
   (lambda (stx)
-    "Equivalent of (define-public NAME (suite-loader ...))."
+    "Define a public suite loader named NAME.
+
+The preferred syntax is @code{(define-suite (NAME) BODY ...)}.
+The deprecated @code{(define-suite NAME BODY ...)} form remains
+accepted for compatibility."
     (syntax-case stx ()
-      ((_ suite-name expression ...)
+      ((_ (suite-name) expression ...)
+       (identifier? #'suite-name)
        #'(define-public suite-name
-           (suite-loader (symbol->string 'suite-name) expression ...))))))
+           (suite-loader (symbol->string 'suite-name) expression ...)))
+      ((_ suite-name expression ...)
+       (identifier? #'suite-name)
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
+         #'(define-public suite-name
+             (begin
+               (warn-deprecated-define-suite-form 'location)
+               (suite-loader (symbol->string 'suite-name)
+                 expression ...))))))))

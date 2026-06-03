@@ -18,6 +18,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl `test-thunk` was renamed to `test-loader`; `test-thunk` remains as a deprecated alias.
 - suitbl `suite-thunk` and `suite-thunk?` were renamed to `suite-loader` and `suite-loader?`; old names remain as deprecated aliases.
 - suitbl now warns when the deprecated `(test DESCRIPTION BODY ...)` form is used.
+- suitbl `define-suite` now prefers `(define-suite (NAME) BODY ...)`; the old `(define-suite NAME BODY ...)` form remains as a deprecated alias.
 
 ### Fixed
 - suitbl discovery now ignores backup files and files under matching directories when selecting test modules.
