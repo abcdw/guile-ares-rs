@@ -17,7 +17,7 @@
 ;;; Preset tests
 ;;;
 
-(define-suite preset-tests
+(define-suite (preset-tests)
   (test "preset:only-slow! configures runner for slow tests"
     (define tr (make-test-runner-with-mixed-tests))
     (preset:only-slow! tr)

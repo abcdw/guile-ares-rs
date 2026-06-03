@@ -18,7 +18,7 @@
               (suite/metadata . ((module-suite? . #t)))))
     (suite-node/children . ,children)))
 
-(define-suite count-suites-and-tests-tests
+(define-suite (count-suites-and-tests-tests)
   (test "single test node"
     (define counts (count-suites-and-tests (make-test-node "a test")))
     (is (= 0 (assoc-ref counts 'suites)))

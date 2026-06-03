@@ -191,7 +191,7 @@ because test macro is not composable and can't be wrapped.
 
 ;; (is-usage-tests)
 
-(define-suite is-usage-tests
+(define-suite (is-usage-tests)
   (test "basic atomic values"
     (is #t)
     (is 123)
@@ -240,7 +240,7 @@ because test macro is not composable and can't be wrapped.
   (test "nested is and is return value"
     (is (= 7 (is (+ 3 4))))))
 
-(define-suite test-macro-usage-tests
+(define-suite (test-macro-usage-tests)
   (test "simple test case with metadata marking it as slow"
     'metadata `((slow? . #t))
     ;; (sleep 1)
@@ -284,7 +284,7 @@ because test macro is not composable and can't be wrapped.
        '(errors failures assertions tests)
        run-summary-without-failures)))))
 
-(define-suite nested-suites-and-test-macros-tests
+(define-suite (nested-suites-and-test-macros-tests)
   (test "expression throws programming-error on unbound variable"
     (is (throws-exception? (+ b 1 2) programming-error?)))
 
@@ -346,7 +346,7 @@ because test macro is not composable and can't be wrapped.
       (is #f)
       (is (throw 'hi)))))
 
-(define-suite suite-usage-tests
+(define-suite (suite-usage-tests)
 
   ;; TODO: [Andrew Tropin, 2025-05-09] Just think about what test
   ;; suite returns, because the expectation that it returns run
@@ -370,7 +370,7 @@ because test macro is not composable and can't be wrapped.
 
 
 ;; (test-runner-operations-tests)
-(define-suite test-runner-operations-tests
+(define-suite (test-runner-operations-tests)
   (test "\
 run summary is #f by default, but appears after test suite is executed"
     (is (equal?
@@ -415,7 +415,7 @@ run summary is #f by default, but appears after test suite is executed"
     (test-macro-usage-tests)
     (suite-usage-tests)))
 
-(define-suite execution-timeout-tests
+(define-suite (execution-timeout-tests)
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf
   (test "test"
     (is #t)))

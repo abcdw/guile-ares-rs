@@ -17,7 +17,7 @@
                            (line . 0)
                            (column . 0)))))
 
-(define-suite assertion-outcomes->assertion-summary-tests
+(define-suite (assertion-outcomes->assertion-summary-tests)
   (test "summarize assertion outcomes with pass-only data"
     (is (equal?
          '((passes . 2)
@@ -42,7 +42,7 @@
            (assertions . 0))
          (running:assertion-outcomes->assertion-summary '())))))
 
-(define-suite assertion-summary->test-run-outcome-tests
+(define-suite (assertion-summary->test-run-outcome-tests)
   (test "returns pass for zero-assertion summary"
     (is (eq?
          'pass
@@ -88,7 +88,7 @@
             (errors . 1)
             (assertions . 2)))))))
 
-(define-suite assertion-summary->test-run-summary-tests
+(define-suite (assertion-summary->test-run-summary-tests)
   (test "returns pass summary for zero-assertion summary"
     (is (equal?
          '((tests . 1)
@@ -115,7 +115,7 @@
             (errors . 1)
             (assertions . 3)))))))
 
-(define-suite run-summary->run-outcome-tests
+(define-suite (run-summary->run-outcome-tests)
   (test "returns pass for summary without failures and errors"
     (is (eq?
          'pass
@@ -136,7 +136,7 @@
             (skipped . 0)
             (assertions . 3)))))))
 
-(define-suite assertion-outcomes->test-run-summary-tests
+(define-suite (assertion-outcomes->test-run-summary-tests)
   (test "returns pass summary for pass-only events"
     (is (equal?
          '((tests . 1)
@@ -182,7 +182,7 @@
            (assertions . 0))
          (running:assertion-outcomes->test-run-summary '())))))
 
-(define-suite run-history->run-summary-tests
+(define-suite (run-history->run-summary-tests)
   (test "returns initial run summary for empty run history"
     (is (equal?
          '((tests . 0)
@@ -237,7 +237,7 @@
 (define (sample-test description)
   `((test/description . ,description)))
 
-(define-suite make-test-run-extended-outcome-tests
+(define-suite (make-test-run-extended-outcome-tests)
   (test "extended outcome is pass for normal passing test"
     (define test-run
       (running:make-test-run
@@ -305,7 +305,7 @@
            (assertions . 1))
          test-run-summary))))
 
-(define-suite make-assertion-run-tests
+(define-suite (make-assertion-run-tests)
   (test "stores assertion, pass outcome, and returned value"
     (define assertion (sample-assertion #t))
     (define assertion-run
@@ -352,7 +352,7 @@
                 (exception-message
                  (running:raised-exception stored-run-result))))))
 
-(define-suite assertion-runs-summary-tests
+(define-suite (assertion-runs-summary-tests)
   (test "summarize assertion runs with mixed data"
     (define assertion-runs
       (list
@@ -447,7 +447,7 @@
    (else
     (contains-contiguous-sublist? (cdr lst) sublist))))
 
-(define-suite assertion-run-result->assertion-outcome-tests
+(define-suite (assertion-run-result->assertion-outcome-tests)
   (test "maps truthy returned result to pass outcome"
     (let* ((run-result
             (running:with-exception-continuation
@@ -473,7 +473,7 @@
             (running:assertion-run-result->assertion-outcome run-result)))
       (is (equal? 'error outcome)))))
 
-(define-suite assertion-run-result->reporter-message-tests
+(define-suite (assertion-run-result->reporter-message-tests)
   (test "maps truthy returned result to assertion-end reporter message"
     (let* ((run-result
             (running:with-exception-continuation
@@ -499,7 +499,7 @@
             (running:assertion-run-result->reporter-message run-result)))
       (is (equal? 'run/assertion-end (assoc-ref message 'type))))))
 
-(define-suite assertion-run->reporter-message-tests
+(define-suite (assertion-run->reporter-message-tests)
   (test "includes assertion data for passing assertion runs"
     (define assertion (sample-assertion #t))
     (define assertion-run
@@ -535,7 +535,7 @@
                 (exception-message
                  (running:raised-exception message-run-result))))))
 
-(define-suite with-exception-continuation-tests
+(define-suite (with-exception-continuation-tests)
   (test "returns tagged returned value when no exception is raised"
     (let ((result
            (running:with-exception-continuation

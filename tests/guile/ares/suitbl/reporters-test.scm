@@ -19,7 +19,7 @@
               (suite/metadata . ((module-suite? . #t)))))
     (suite-node/children . ,children)))
 
-(define-suite reporter-every-tests
+(define-suite (reporter-every-tests)
   (test "returns #t when at least one reporter succeeds"
     (define combined
       (reporter:reporter-every
@@ -45,7 +45,7 @@
     (combined '((type . test)))
     (is (equal? '(c b a) call-log))))
 
-(define-suite load-ignore-messages-tests
+(define-suite (load-ignore-messages-tests)
   (test "returns #t for load/test"
     (is (eq? #t
              (reporter:load-ignore-messages
@@ -68,7 +68,7 @@
     (is (not (reporter:load-ignore-messages
               `((type . run/start)))))))
 
-(define-suite load-summary-reporter-tests
+(define-suite (load-summary-reporter-tests)
   (test "returns #f for unrelated message types"
     (is (not (reporter:load-summary
               `((type . run/test-start)
@@ -91,7 +91,7 @@
          "Loaded 3 tests and 3 suites (1 module, 1 empty).\n"
          (get-output-string port)))))
 
-(define-suite run-plan-compact-reporter-tests
+(define-suite (run-plan-compact-reporter-tests)
   (test "formats the compact run line"
     (define port (open-output-string))
     (reporter:run-plan-compact
@@ -112,7 +112,7 @@
     (is (equal? "Running 1 of 1 loaded test...\n"
                 (get-output-string port)))))
 
-(define-suite run-dots-reporter-tests
+(define-suite (run-dots-reporter-tests)
   (test "prints legend on run/start"
     (define port (open-output-string))
     (reporter:run-dots
@@ -200,7 +200,7 @@
     (is (= (string-length (list-ref lines 0))
            (string-length (list-ref lines 1))))))
 
-(define-suite run-dots-extended-reporter-tests
+(define-suite (run-dots-extended-reporter-tests)
   (test "prints legend on run/start"
     (define port (open-output-string))
     (reporter:run-dots-extended
@@ -238,7 +238,7 @@
     (is (eq? #t (reporter:run-dots-extended `((type . run/assertion-end)))))
     (is (eq? #t (reporter:run-dots-extended `((type . run/test-start)))))))
 
-(define-suite junit-reporter-tests
+(define-suite (junit-reporter-tests)
   (test "returns #f for unrelated message types"
     (is (not (reporter:junit
               `((type . run/test-start)

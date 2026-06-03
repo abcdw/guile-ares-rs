@@ -65,7 +65,19 @@
   (state:get-loaded-tests
    (runner:get-state tr)))
 
-(define-suite predicates-tests
+(define (eval-suite-definition expression suite-name)
+  (define module (make-fresh-user-module))
+  (define generated-suite #f)
+  (define warnings
+    (call-with-output-string
+     (lambda (port)
+       (parameterize ((current-warning-port port))
+         (module-use! module (resolve-interface '(ares suitbl core)))
+         (eval expression module)
+         (set! generated-suite (module-ref module suite-name))))))
+  (values generated-suite warnings))
+
+(define-suite (predicates-tests)
   (test "test? predicate recognizes test structures"
     (is (test? `((test/body-procedure . ,(lambda (_) #t))
                  (test/description . "test"))))
@@ -85,7 +97,7 @@
     (is (suite-loader? s))
     (is (not (suite-loader? (lambda () #t))))))
 
-(define-suite test-runner-parameter-tests
+(define-suite (test-runner-parameter-tests)
   (test "set-test-runner! changes the current test runner"
     (define original-runner (test-runner*))
     (define new-runner (get-logging-test-runner))
@@ -102,7 +114,7 @@
     (is (eq? new-runner current-runner))
     (is (eq? original-runner (test-runner*)))))
 
-(define-suite definitions-to-runner-integration-tests
+(define-suite (definitions-to-runner-integration-tests)
   (test "is emits proper values to the test runner"
     (define events-log
       (with-runner-events-to-list
@@ -222,13 +234,39 @@
     (is (equal? '("s1" "s2") (simplify-log events-log)))
     (is (equal? '(integration) (get-tags (cadr events-log)))))
 
-  (test "define-suite creates named suite loader"
+  (test "suite-loader creates named suite loader"
     (define tmp-suite-loader
       (suite-loader "tmp suite loader" #t))
     (is (suite-loader? tmp-suite-loader))
-    (is (not (suite-loader? (lambda () #t))))))
+    (is (not (suite-loader? (lambda () #t)))))
 
-(define-suite documentation-tests
+  (test "define-suite creates suite loader with parenthesized syntax"
+    (call-with-values
+     (lambda ()
+       (eval-suite-definition
+        '(define-suite (generated-suite) #t)
+        'generated-suite))
+     (lambda (generated-suite warnings)
+       (is (suite-loader? generated-suite))
+       (is (equal? "generated-suite"
+                   (assoc-ref (procedure-property generated-suite 'suite)
+                              'suite/description)))
+       (is (string=? "" warnings)))))
+
+  (test "define-suite warns for deprecated bare-name syntax"
+    (call-with-values
+     (lambda ()
+       (eval-suite-definition
+        '(define-suite deprecated-generated-suite #t)
+        'deprecated-generated-suite))
+     (lambda (generated-suite warnings)
+       (is (suite-loader? generated-suite))
+       (is (string-contains warnings
+                            "warning: deprecated suitbl define-suite form"))
+       (is (string-contains warnings
+                            "`(define-suite NAME BODY ...)` syntax is deprecated."))))))
+
+(define-suite (documentation-tests)
   (test "exception, when macro used in place of predicate"
     ;; Due to the way macros work, if you use `chain' or similiar
     ;; macro in `is' assert, it will throw a quite unexpected

@@ -24,7 +24,7 @@
      #f)
    #:unwind? #t))
 
-(define-suite assertions-handling-tests
+(define-suite (assertions-handling-tests)
   (test "is assert returns the value of its body"
     (define tr (silent-runner))
     (define is-values
@@ -63,7 +63,7 @@
     (is (= 2 (assoc-ref run-summary 'assertions)))
     (is (= 1 (assoc-ref run-summary 'tests)))))
 
-(define-suite assertion-run-history-tests
+(define-suite (assertion-run-history-tests)
   (test "run history stores assertion runs in source order"
     (define tr (silent-runner))
     (define run-history
@@ -111,7 +111,7 @@
          (exception-message
           (running:raised-exception third-run-result))))))
 
-(define-suite wrong-position-tests
+(define-suite (wrong-position-tests)
   (test "is raises suitbl wrong-position exception inside suite body"
     (define exception
       (capture-exception
@@ -163,7 +163,7 @@
       (is (equal? "Test Suite can't be nested into Test Macro"
                   (exception-message exception))))))
 
-(define-suite re-raise-tests
+(define-suite (re-raise-tests)
   (test "test body exception is replayed when re-raise is enabled"
     (define counter 0)
     (define tr

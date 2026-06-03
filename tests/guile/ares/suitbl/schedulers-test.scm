@@ -14,7 +14,7 @@
                 #:prefix scheduler:)
   #:use-module ((srfi srfi-1) #:select (lset=)))
 
-(define-suite scheduler-tests
+(define-suite (scheduler-tests)
   (test "scheduler:slow keeps only slow tests"
     (define tr (make-test-runner-with-mixed-tests))
     (define state (runner->state tr))

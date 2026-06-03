@@ -24,7 +24,7 @@
         (is #t))))
     tr)
 
-(define-suite sample-test-suite-state-tests
+(define-suite (sample-test-suite-state-tests)
   (test "test runner has a correct suite forest"
     (define tr (get-test-runner-with-sample-suite-loaded))
 
@@ -82,7 +82,7 @@
          expected-simplified-history
          (state:simplify-run-history run-history)))))
 
-(define-suite run-summarization-tests
+(define-suite (run-summarization-tests)
   (test "run forest has run summary and outcome attached to each node"
     (define tr (get-test-runner-with-sample-suite-loaded))
 
@@ -140,7 +140,7 @@
          expected-simplified-forest
          (state:simplify-suite-forest run-forest-with-summary)))))
 
-(define-suite schedule-tests-tests
+(define-suite (schedule-tests-tests)
   (test "all loaded tests are scheduled when no schedule-tests in config"
     (define tr (get-test-runner-with-sample-suite-loaded))
     (define state (runner:get-state tr))
