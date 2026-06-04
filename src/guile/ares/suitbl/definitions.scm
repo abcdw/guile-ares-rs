@@ -102,7 +102,7 @@ at macro-expansion time."
                                (make-source-absolute (syntax-source stx))))
                     ((assertion-field ...) fields))
         #'((test-runner*)
-           `((type . runner/run-assert)
+           `((type . runner/run-assertion)
              (assertion . (assertion-field ...
                            (assertion/location . location)))))))
 

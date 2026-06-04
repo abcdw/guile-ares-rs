@@ -107,7 +107,7 @@ environment just set it to new instance of test runner.
        . ,(or (assoc-ref test 'test/compound-metadata) '()))
       (suite/path . ,(or (assoc-ref test 'suite/path) '()))))
 
-  (define (%run-assert assertion inside-test? assertion-runs)
+  (define (%run-assertion assertion inside-test? assertion-runs)
     (let* ((body-thunk (assoc-ref assertion 'assertion/body-thunk))
            ;; TODO: [Andrew Tropin, 2024-12-23] Write down evaluation time
            (run-result (running:with-exception-continuation body-thunk))
@@ -136,7 +136,7 @@ environment just set it to new instance of test runner.
               (running:returned-value run-result)
               *unspecified*))))
 
-  (define (run-assert ctx)
+  (define (run-assertion ctx)
     (let* ((assertion (chain ctx
                          (get-message _)
                          (assoc-ref _ 'assertion)))
@@ -147,7 +147,7 @@ environment just set it to new instance of test runner.
         (raise-suitbl-wrong-position-exception
          'is 'suite-body
          "Assert encountered inside suite, but outside of test"))
-      (%run-assert assertion inside-test? assertion-runs)))
+      (%run-assertion assertion inside-test? assertion-runs)))
 
   (define* (%run-test test #:key run-progress)
     (let ((test-body-procedure (assoc-ref test 'test/body-procedure)))
@@ -298,8 +298,8 @@ carries the final verdict."
       ((runner/get-log)
        (state:get-log state))
 
-      ((runner/run-assert)
-       (run-assert ctx))
+      ((runner/run-assertion)
+       (run-assertion ctx))
 
       ((runner/run-tests)
        (let* ((runner-config (get-runner-cfg ctx))
