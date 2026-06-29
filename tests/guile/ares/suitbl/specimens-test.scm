@@ -16,7 +16,7 @@
 
 (define passing-tests
   (suite-loader "passing tests"
-    (test "contains several passing assertions"
+    (test ("contains several passing assertions" _)
       (is (= 4 (+ 2 2)))
       (is (equal? '(a b c d e f g h j k l m n o p q r)
                   (list 'a 'b 'c 'd 'e 'f 'g 'h 'j 'k 'l 'm 'n 'o 'p 'q 'r)))
@@ -25,7 +25,7 @@
 
 (define failing-tests
   (suite-loader "failing tests"
-    (test "contains a failing assertion among passing ones"
+    (test ("contains a failing assertion among passing ones" _)
       (is (= 4 (+ 2 2)))
       (is (equal? '(a b c d e f g h j k l m n o p q r)
                   (list 'a 'b 'c 'd 'e 'f 'g 'h 'j 'k 'l 'm 'n 'o 'p 'q 'r)))
@@ -34,18 +34,18 @@
       (is (string=? "suitbl"
                     (string-append "suit" "bl"))))
 
-    (test "contains an erroring assertion among passing ones"
+    (test ("contains an erroring assertion among passing ones" _)
       (is (pair? '(a b c)))
       (is (error "failing-tests/erroring assertion"))
       (is (string? "still reached after error")))
 
-    (test "contains an exception in the middle outside assertions"
+    (test ("contains an exception in the middle outside assertions" _)
       (is (= 4 (+ 2 2)))
       (error "failing-tests/test body exception")
       (is (string-prefix? "suit"
                           "suitbl")))
 
-    (test "contains a failing assertion and then an exception outside assertions"
+    (test ("contains a failing assertion and then an exception outside assertions" _)
       (is (equal? '(a b c)
                   (list 'a 'b 'c)))
       (is (= 5 (+ 2 2)))
@@ -53,7 +53,7 @@
       (is (string-prefix? "suit"
                           "suitbl")))
 
-    (test "contains an erroring assertion and then an exception outside assertions"
+    (test ("contains an erroring assertion and then an exception outside assertions" _)
       (is (= 4 (+ 2 2)))
       (is (error
            "failing-tests/assertion and\ntest body exception"))

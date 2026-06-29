@@ -8,7 +8,7 @@
 
 
 (define-suite (test-file-path?-tests)
-  (test "matches only canonical Scheme test files"
+  (test ("matches only canonical Scheme test files" _)
     (is (test-file-path? "tests/guile/ares/suitbl/discovery-test.scm"))
     (is (test-file-path? "tests/guile/ares/suitbl/module-test.ss"))
     (is (not (test-file-path? "tests/guile/ares/suitbl/discovery-test.scm~")))
@@ -17,7 +17,7 @@
     (is (not (test-file-path? "tests/guile/ares/suitbl/discovery-test.scmx")))))
 
 (define-suite (load-path-relative-file-path-tests)
-  (test "handles load path entries with and without trailing slash"
+  (test ("handles load path entries with and without trailing slash" _)
     (is (string=? "ares/foo-test.scm"
                   (load-path-relative-file-path
                    "tests/guile"

@@ -16,6 +16,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ### Changed
 - Migrated bencode tests from SRFI-64 to suitbl.
 - suitbl runner assertion message type was renamed from `runner/run-assert` to `runner/run-assertion`.
+- suitbl-based tests now use the preferred `(test (DESCRIPTION _) BODY ...)` syntax.
 - suitbl test entities now use `test/body-procedure` one-argument procedures instead of `test/body-thunk` thunks.
 - suitbl `test-thunk` was renamed to `test-loader`; `test-thunk` remains as a deprecated alias.
 - suitbl `suite-thunk` and `suite-thunk?` were renamed to `suite-loader` and `suite-loader?`; old names remain as deprecated aliases.

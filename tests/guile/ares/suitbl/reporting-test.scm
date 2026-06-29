@@ -19,14 +19,14 @@
     (suite-node/children . ,children)))
 
 (define-suite (count-suites-and-tests-tests)
-  (test "single test node"
+  (test ("single test node" _)
     (define counts (count-suites-and-tests (make-test-node "a test")))
     (is (= 0 (assoc-ref counts 'suites)))
     (is (= 1 (assoc-ref counts 'tests)))
     (is (= 0 (assoc-ref counts 'module-suites)))
     (is (= 0 (assoc-ref counts 'empty-suites))))
 
-  (test "single suite with one test"
+  (test ("single suite with one test" _)
     (define counts
       (count-suites-and-tests
        (make-suite-node "s" (list (make-test-node "t")))))
@@ -35,7 +35,7 @@
     (is (= 0 (assoc-ref counts 'module-suites)))
     (is (= 0 (assoc-ref counts 'empty-suites))))
 
-  (test "suite with multiple tests"
+  (test ("suite with multiple tests" _)
     (define counts
       (count-suites-and-tests
        (make-suite-node "s"
@@ -45,7 +45,7 @@
     (is (= 1 (assoc-ref counts 'suites)))
     (is (= 3 (assoc-ref counts 'tests))))
 
-  (test "nested suites"
+  (test ("nested suites" _)
     (define counts
       (count-suites-and-tests
        (make-suite-node "outer"
@@ -56,7 +56,7 @@
     (is (= 2 (assoc-ref counts 'suites)))
     (is (= 2 (assoc-ref counts 'tests))))
 
-  (test "empty suite"
+  (test ("empty suite" _)
     (define counts
       (count-suites-and-tests
        (make-suite-node "empty" '())))
@@ -64,7 +64,7 @@
     (is (= 0 (assoc-ref counts 'tests)))
     (is (= 1 (assoc-ref counts 'empty-suites))))
 
-  (test "module suite"
+  (test ("module suite" _)
     (define counts
       (count-suites-and-tests
        (make-module-suite-node "mod"
@@ -73,7 +73,7 @@
     (is (= 1 (assoc-ref counts 'tests)))
     (is (= 1 (assoc-ref counts 'module-suites))))
 
-  (test "complex tree with nested, module, and empty suites"
+  (test ("complex tree with nested, module, and empty suites" _)
     ;; root-suite (module)
     ;;   ├── test-a
     ;;   ├── inner-suite

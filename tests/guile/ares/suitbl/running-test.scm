@@ -18,7 +18,7 @@
                            (column . 0)))))
 
 (define-suite (assertion-outcomes->assertion-summary-tests)
-  (test "summarize assertion outcomes with pass-only data"
+  (test ("summarize assertion outcomes with pass-only data" _)
     (is (equal?
          '((passes . 2)
            (failures . 0)
@@ -26,7 +26,7 @@
            (assertions . 2))
          (running:assertion-outcomes->assertion-summary '(pass pass)))))
 
-  (test "summarize assertion outcomes with mixed data"
+  (test ("summarize assertion outcomes with mixed data" _)
     (is (equal?
          '((passes . 1)
            (failures . 1)
@@ -34,7 +34,7 @@
            (assertions . 3))
          (running:assertion-outcomes->assertion-summary '(pass fail error)))))
 
-  (test "summarize assertion outcomes with empty data"
+  (test ("summarize assertion outcomes with empty data" _)
     (is (equal?
          '((passes . 0)
            (failures . 0)
@@ -43,7 +43,7 @@
          (running:assertion-outcomes->assertion-summary '())))))
 
 (define-suite (assertion-summary->test-run-outcome-tests)
-  (test "returns pass for zero-assertion summary"
+  (test ("returns pass for zero-assertion summary" _)
     (is (eq?
          'pass
          (running:assertion-summary->test-run-outcome
@@ -52,7 +52,7 @@
             (errors . 0)
             (assertions . 0))))))
 
-  (test "returns pass for pass-only summary"
+  (test ("returns pass for pass-only summary" _)
     (is (eq?
          'pass
          (running:assertion-summary->test-run-outcome
@@ -61,7 +61,7 @@
             (errors . 0)
             (assertions . 2))))))
 
-  (test "returns fail for summary with failures"
+  (test ("returns fail for summary with failures" _)
     (is (eq?
          'fail
          (running:assertion-summary->test-run-outcome
@@ -70,7 +70,7 @@
             (errors . 0)
             (assertions . 2))))))
 
-  (test "returns error for summary with errors"
+  (test ("returns error for summary with errors" _)
     (is (eq?
          'error
          (running:assertion-summary->test-run-outcome
@@ -79,7 +79,7 @@
             (errors . 1)
             (assertions . 2))))))
 
-  (test "returns error when both failures and errors are present"
+  (test ("returns error when both failures and errors are present" _)
     (is (eq?
          'error
          (running:assertion-summary->test-run-outcome
@@ -89,7 +89,7 @@
             (assertions . 2)))))))
 
 (define-suite (assertion-summary->test-run-summary-tests)
-  (test "returns pass summary for zero-assertion summary"
+  (test ("returns pass summary for zero-assertion summary" _)
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -102,7 +102,7 @@
             (errors . 0)
             (assertions . 0))))))
 
-  (test "returns error summary for mixed assertion summary"
+  (test ("returns error summary for mixed assertion summary" _)
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -116,7 +116,7 @@
             (assertions . 3)))))))
 
 (define-suite (run-summary->run-outcome-tests)
-  (test "returns pass for summary without failures and errors"
+  (test ("returns pass for summary without failures and errors" _)
     (is (eq?
          'pass
          (running:run-summary->run-outcome
@@ -126,7 +126,7 @@
             (skipped . 0)
             (assertions . 2))))))
 
-  (test "returns error for summary with failures and errors"
+  (test ("returns error for summary with failures and errors" _)
     (is (eq?
          'error
          (running:run-summary->run-outcome
@@ -137,7 +137,7 @@
             (assertions . 3)))))))
 
 (define-suite (assertion-outcomes->test-run-summary-tests)
-  (test "returns pass summary for pass-only events"
+  (test ("returns pass summary for pass-only events" _)
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -146,7 +146,7 @@
            (assertions . 2))
          (running:assertion-outcomes->test-run-summary '(pass pass)))))
 
-  (test "returns fail summary for fail-only events"
+  (test ("returns fail summary for fail-only events" _)
     (is (equal?
          '((tests . 1)
            (failures . 1)
@@ -155,7 +155,7 @@
            (assertions . 1))
          (running:assertion-outcomes->test-run-summary '(fail)))))
 
-  (test "returns error summary for error-only events"
+  (test ("returns error summary for error-only events" _)
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -164,7 +164,7 @@
            (assertions . 1))
          (running:assertion-outcomes->test-run-summary '(error)))))
 
-  (test "returns error summary for mixed fail and error events"
+  (test ("returns error summary for mixed fail and error events" _)
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -173,7 +173,7 @@
            (assertions . 3))
          (running:assertion-outcomes->test-run-summary '(pass fail error)))))
 
-  (test "returns pass summary for empty events"
+  (test ("returns pass summary for empty events" _)
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -183,7 +183,7 @@
          (running:assertion-outcomes->test-run-summary '())))))
 
 (define-suite (run-history->run-summary-tests)
-  (test "returns initial run summary for empty run history"
+  (test ("returns initial run summary for empty run history" _)
     (is (equal?
          '((tests . 0)
            (failures . 0)
@@ -192,7 +192,7 @@
            (assertions . 0))
          (running:run-history->run-summary '()))))
 
-  (test "returns single per-test summary for one-entry run history"
+  (test ("returns single per-test summary for one-entry run history" _)
     (is (equal?
          '((tests . 1)
            (failures . 0)
@@ -207,7 +207,7 @@
                  (skipped . 0)
                  (assertions . 2)))))))))
 
-  (test "sums mixed-outcome per-test summaries across run history"
+  (test ("sums mixed-outcome per-test summaries across run history" _)
     (is (equal?
          '((tests . 3)
            (failures . 1)
@@ -238,7 +238,7 @@
   `((test/description . ,description)))
 
 (define-suite (make-test-run-extended-outcome-tests)
-  (test "extended outcome is pass for normal passing test"
+  (test ("extended outcome is pass for normal passing test" _)
     (define test-run
       (running:make-test-run
        (sample-test "t")
@@ -249,7 +249,7 @@
     (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
     (is (eq? 'pass (assoc-ref test-run 'test-run/extended-outcome))))
 
-  (test "extended outcome is zero-assertions when no assertions ran"
+  (test ("extended outcome is zero-assertions when no assertions ran" _)
     (define test-run
       (running:make-test-run
        (sample-test "t")
@@ -258,7 +258,7 @@
     (is (eq? 'pass (assoc-ref test-run 'test-run/outcome)))
     (is (eq? 'zero-assertions (assoc-ref test-run 'test-run/extended-outcome))))
 
-  (test "extended outcome is aborted when test body raised"
+  (test ("extended outcome is aborted when test body raised" _)
     (define test-run
       (running:make-test-run
        (sample-test "t")
@@ -267,7 +267,7 @@
     (is (eq? 'error (assoc-ref test-run 'test-run/outcome)))
     (is (eq? 'aborted (assoc-ref test-run 'test-run/extended-outcome))))
 
-  (test "test body error overrides earlier assertion failure in summary"
+  (test ("test body error overrides earlier assertion failure in summary" _)
     (define test-run
       (running:make-test-run
        (sample-test "t")
@@ -285,7 +285,7 @@
            (assertions . 1))
          test-run-summary)))
 
-  (test "test body error does not double-count assertion error in summary"
+  (test ("test body error does not double-count assertion error in summary" _)
     (define test-run
       (running:make-test-run
        (sample-test "t")
@@ -306,7 +306,7 @@
          test-run-summary))))
 
 (define-suite (make-assertion-run-tests)
-  (test "stores assertion, pass outcome, and returned value"
+  (test ("stores assertion, pass outcome, and returned value" _)
     (define assertion (sample-assertion #t))
     (define assertion-run
       (running:make-assertion-run
@@ -320,7 +320,7 @@
     (is (running:returned? stored-run-result))
     (is (eq? #t (running:returned-value stored-run-result))))
 
-  (test "stores assertion, fail outcome, and returned value"
+  (test ("stores assertion, fail outcome, and returned value" _)
     (define assertion (sample-assertion #f))
     (define assertion-run
       (running:make-assertion-run
@@ -334,7 +334,7 @@
     (is (running:returned? stored-run-result))
     (is (eq? #f (running:returned-value stored-run-result))))
 
-  (test "stores assertion, error outcome, and exception"
+  (test ("stores assertion, error outcome, and exception" _)
     (define assertion (sample-assertion '(error "boom")))
     (define assertion-run
       (running:make-assertion-run
@@ -353,7 +353,7 @@
                  (running:raised-exception stored-run-result))))))
 
 (define-suite (assertion-runs-summary-tests)
-  (test "summarize assertion runs with mixed data"
+  (test ("summarize assertion runs with mixed data" _)
     (define assertion-runs
       (list
        (running:make-assertion-run
@@ -376,7 +376,7 @@
          (running:assertion-runs->assertion-summary
           assertion-runs))))
 
-  (test "returns error test summary for mixed assertion runs"
+  (test ("returns error test summary for mixed assertion runs" _)
     (define assertion-runs
       (list
        (running:make-assertion-run
@@ -448,7 +448,7 @@
     (contains-contiguous-sublist? (cdr lst) sublist))))
 
 (define-suite (assertion-run-result->assertion-outcome-tests)
-  (test "maps truthy returned result to pass outcome"
+  (test ("maps truthy returned result to pass outcome" _)
     (let* ((run-result
             (running:with-exception-continuation
              (lambda () #t)))
@@ -456,7 +456,7 @@
             (running:assertion-run-result->assertion-outcome run-result)))
       (is (equal? 'pass outcome))))
 
-  (test "maps falsey returned result to fail outcome"
+  (test ("maps falsey returned result to fail outcome" _)
     (let* ((run-result
             (running:with-exception-continuation
              (lambda () #f)))
@@ -464,7 +464,7 @@
             (running:assertion-run-result->assertion-outcome run-result)))
       (is (equal? 'fail outcome))))
 
-  (test "maps raised result to error outcome"
+  (test ("maps raised result to error outcome" _)
     (let* ((run-result
             (running:with-exception-continuation
              (lambda ()
@@ -474,7 +474,7 @@
       (is (equal? 'error outcome)))))
 
 (define-suite (assertion-run-result->reporter-message-tests)
-  (test "maps truthy returned result to assertion-end reporter message"
+  (test ("maps truthy returned result to assertion-end reporter message" _)
     (let* ((run-result
             (running:with-exception-continuation
              (lambda () #t)))
@@ -482,7 +482,7 @@
             (running:assertion-run-result->reporter-message run-result)))
       (is (equal? 'run/assertion-end (assoc-ref message 'type)))))
 
-  (test "maps falsey returned result to assertion-end reporter message"
+  (test ("maps falsey returned result to assertion-end reporter message" _)
     (let* ((run-result
             (running:with-exception-continuation
              (lambda () #f)))
@@ -490,7 +490,7 @@
             (running:assertion-run-result->reporter-message run-result)))
       (is (equal? 'run/assertion-end (assoc-ref message 'type)))))
 
-  (test "maps raised result to assertion-end reporter message"
+  (test ("maps raised result to assertion-end reporter message" _)
     (let* ((run-result
             (running:with-exception-continuation
              (lambda ()
@@ -500,7 +500,7 @@
       (is (equal? 'run/assertion-end (assoc-ref message 'type))))))
 
 (define-suite (assertion-run->reporter-message-tests)
-  (test "includes assertion data for passing assertion runs"
+  (test ("includes assertion data for passing assertion runs" _)
     (define assertion (sample-assertion #t))
     (define assertion-run
       (running:make-assertion-run
@@ -513,7 +513,7 @@
     (is (equal? assertion (assoc-ref message 'assertion)))
     (is (equal? assertion-run (assoc-ref message 'assertion-run))))
 
-  (test "includes assertion error for erroring assertion runs"
+  (test ("includes assertion error for erroring assertion runs" _)
     (define assertion (sample-assertion '(error "boom")))
     (define assertion-run
       (running:make-assertion-run
@@ -536,14 +536,14 @@
                  (running:raised-exception message-run-result))))))
 
 (define-suite (with-exception-continuation-tests)
-  (test "returns tagged returned value when no exception is raised"
+  (test ("returns tagged returned value when no exception is raised" _)
     (let ((result
            (running:with-exception-continuation
             (lambda () 'ok))))
       (is (running:returned? result))
       (is (equal? 'ok (running:returned-value result)))))
 
-  (test "returns raised with continuation and exception when thunk raises"
+  (test ("returns raised with continuation and exception when thunk raises" _)
     (let ((result
            (running:with-exception-continuation
             (lambda ()
@@ -553,7 +553,7 @@
       (is (string=? "boom"
                     (exception-message (running:raised-exception result))))))
 
-  (test "captured continuation re-raises exception when called"
+  (test ("captured continuation re-raises exception when called" _)
     (let ((result
            (running:with-exception-continuation
             (lambda ()
@@ -561,7 +561,7 @@
       (is (running:raised? result))
       (is (raises-exception? (running:raised-continuation result)))))
 
-  (test "captured continuation re-raises exception with original stack"
+  (test ("captured continuation re-raises exception with original stack" _)
     (define top #f)
     (define mid #f)
     (define bot #f)

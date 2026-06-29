@@ -17,13 +17,13 @@
   (define tr (runner:make-silent))
   (with-test-runner tr
     (suite "mixed tests"
-      (test "fast addition"
+      (test ("fast addition" _)
         (is (= 4 (+ 2 2))))
-      (test "slow network call" 'metadata '((slow? . #t))
+      (test ("slow network call" _) 'metadata '((slow? . #t))
         (is #t))
-      (test "fast string check"
+      (test ("fast string check" _)
         (is (string? "hello")))
-      (test "slow database query" 'metadata '((slow? . #t))
+      (test ("slow database query" _) 'metadata '((slow? . #t))
         (is #t))))
   tr)
 

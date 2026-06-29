@@ -78,27 +78,27 @@
   (values generated-suite warnings))
 
 (define-suite (predicates-tests)
-  (test "test? predicate recognizes test structures"
+  (test ("test? predicate recognizes test structures" _)
     (is (test? `((test/body-procedure . ,(lambda (_) #t))
                  (test/description . "test"))))
     (is (not (test? '())))
     (is (not (test? `((test/body-procedure . ,(lambda (_) #t))))))
     (is (not (test? '((test/description . "hi"))))))
 
-  (test "suite? predicate recognizes suite structures"
+  (test ("suite? predicate recognizes suite structures" _)
     (is (suite? `((suite/body-thunk . ,(lambda () #t))
                   (suite/description . "suite"))))
     (is (not (suite? '())))
     (is (not (suite? `((suite/body-thunk . ,(lambda () #t))))))
     (is (not (suite? '((suite/description . "suite"))))))
 
-  (test "suite-loader? identifies suite loaders"
+  (test ("suite-loader? identifies suite loaders" _)
     (define s (suite-loader "test-suite" #t))
     (is (suite-loader? s))
     (is (not (suite-loader? (lambda () #t))))))
 
 (define-suite (test-runner-parameter-tests)
-  (test "set-test-runner! changes the current test runner"
+  (test ("set-test-runner! changes the current test runner" _)
     (define original-runner (test-runner*))
     (define new-runner (get-logging-test-runner))
     (define previous-runner #f)
@@ -115,7 +115,7 @@
     (is (eq? original-runner (test-runner*)))))
 
 (define-suite (definitions-to-runner-integration-tests)
-  (test "is emits proper values to the test runner"
+  (test ("is emits proper values to the test runner" ctx)
     (define events-log
       (with-runner-events-to-list
        (define str "a1")
@@ -158,11 +158,11 @@
       (is (equal? '(2 2)
                   ((assoc-ref assertion-4 'assertion/args-thunk))))))
 
-  (test "test emits proper values to the test runner"
+  (test ("test emits proper values to the test runner" ctx)
     (define events-log
       (with-runner-events-to-list
-       (test "t1" 'body)
-       (test "t2" 'metadata '((good? . #t)) 'body)
+       (test ("t1" _) 'body)
+       (test ("t2" _) 'metadata '((good? . #t)) 'body)
        (test ("t3" ctx) (assoc-ref ctx 'answer))))
     (define (event-test event)
       (assoc-ref event 'test))
@@ -182,10 +182,10 @@
                 ((assoc-ref test-3 'test/body-procedure)
                  '((answer . value))))))
 
-  (test "runner adds compound metadata inherited from suite"
+  (test ("runner adds compound metadata inherited from suite" ctx)
     (define compound-metadata
       (chain (suite-loader "outer" 'metadata '((slow? . #t))
-               (test "t1"
+               (test ("t1" _)
                  (is #t)))
         (load-tests _)
         (car _)
@@ -193,7 +193,7 @@
     (is (equal? '((slow? . #t))
                 compound-metadata)))
 
-  (test "runner merges compound metadata from nested suites and test"
+  (test ("runner merges compound metadata from nested suites and test" ctx)
     (define compound-metadata
       (chain (suite-loader "outer"
                'metadata
@@ -203,7 +203,7 @@
                  'metadata
                  '((shared . inner)
                    (inner? . #t))
-                 (test "t1"
+                 (test ("t1" _)
                    'metadata
                    '((shared . test)
                      (test? . #t))
@@ -221,7 +221,7 @@
     (is (equal? 'test
                 (assoc-ref compound-metadata 'shared))))
 
-  (test "suite emits proper values to the test runner"
+  (test ("suite emits proper values to the test runner" ctx)
     (define events-log
       (with-runner-events-to-list
        (suite "s1" 'body)
@@ -234,13 +234,13 @@
     (is (equal? '("s1" "s2") (simplify-log events-log)))
     (is (equal? '(integration) (get-tags (cadr events-log)))))
 
-  (test "suite-loader creates named suite loader"
+  (test ("suite-loader creates named suite loader" _)
     (define tmp-suite-loader
       (suite-loader "tmp suite loader" #t))
     (is (suite-loader? tmp-suite-loader))
     (is (not (suite-loader? (lambda () #t)))))
 
-  (test "define-suite creates suite loader with parenthesized syntax"
+  (test ("define-suite creates suite loader with parenthesized syntax" _)
     (call-with-values
      (lambda ()
        (eval-suite-definition
@@ -253,7 +253,7 @@
                               'suite/description)))
        (is (string=? "" warnings)))))
 
-  (test "define-suite warns for deprecated bare-name syntax"
+  (test ("define-suite warns for deprecated bare-name syntax" _)
     (call-with-values
      (lambda ()
        (eval-suite-definition
@@ -267,7 +267,7 @@
                             "`(define-suite NAME BODY ...)` syntax is deprecated."))))))
 
 (define-suite (documentation-tests)
-  (test "exception, when macro used in place of predicate"
+  (test ("exception, when macro used in place of predicate" _)
     ;; Due to the way macros work, if you use `chain' or similiar
     ;; macro in `is' assert, it will throw a quite unexpected
     ;; exception.  This happens because `is' macro extracts a list of

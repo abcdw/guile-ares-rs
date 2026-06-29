@@ -7,21 +7,21 @@
   #:use-module (ares-demo 02-stack-traces))
 
 (define (fine-test)
-  (test "fine"
+  (test ("fine" _)
     (is (even? 4))))
 
 (define-suite (kek)
   'metadata
   '((demo? . #t))
 
-  (test "another fine"
+  (test ("another fine" _)
     ;; (sleep 1)
     (is 'ok))
 
-  (test "7 div 2 = 3"
+  (test ("7 div 2 = 3" _)
     (is (= (some-fn 7) 3)))
 
-  (test "8 div 2 = 4"
+  (test ("8 div 2 = 4" _)
     (is (= (some-fn 8) 4)))
 
   (fine-test))
