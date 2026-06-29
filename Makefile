@@ -17,7 +17,7 @@ server:
 
 ares: server
 
-check: check-suitbl
+check: check-suitbl suitbl
 	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-project-tests-cli))"
 
@@ -27,11 +27,12 @@ check-project-junit-output:
 
 check-suitbl:
 	${GUILE_DEV} \
-	-c "((@ (suitbl-test-runner) run-project-tests))"
+	-c "((@ (suitbl-test-runner) run-suitbl-tests))"
 
 check-srfi-269:
 	${GUILE_DEV} \
-	-c "((@ (ares srfi-64 test-runners) run-module-tests) (resolve-module '(srfi srfi-269-draft-test)))"
+	-c "((@ (ares srfi-64 test-runners) run-module-tests) \
+(resolve-module '(srfi srfi-269-draft-test)))"
 
 suitbl:
 	${GUILE_DEV} \

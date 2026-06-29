@@ -30,7 +30,9 @@
                  (or (assoc-ref t 'suite/path) '())))
           tests))
 
-(define-public (run-project-tests)
+(define-public (run-suitbl-tests)
+  "Special test-runner's configuration, which manually validates number
+of executed tests."
   (let* ((test-runner (runner:make-suitbl)))
     (parameterize ((test-runner* test-runner))
       ((@ (ares suitbl ares) load-project-tests))
