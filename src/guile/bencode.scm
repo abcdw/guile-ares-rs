@@ -1,3 +1,6 @@
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; SPDX-FileCopyrightText: 2023-2026 Andrew Tropin <andrew@trop.in>
+
 (define-module (bencode)
   ;; TODO: Make explicit overrides if possible to supress warnings
   ;; This is too much broad, better to list somehow all functions that
@@ -126,7 +129,10 @@
           #:key (delimeter #\e))
   (let loop ((ch (read-char port))
              (res ""))
-    (cond ((and (char=? delimeter ch)
+    (cond ((eof-object? ch)
+           (raise-bencode-decoding-exception port))
+
+          ((and (char=? delimeter ch)
                 (not (string-null? res))
                 (not (string=? res "-")))
            (string->number res))
@@ -151,6 +157,9 @@
   (let loop ((res #())
              (next-ch (peek-char port)))
     (cond
+     ((eof-object? next-ch)
+      (raise-bencode-decoding-exception port))
+
      ((char=? #\e next-ch)
       (read-char port)
       res)
@@ -164,6 +173,9 @@
   (let loop ((res '())
              (next-ch (peek-char port)))
     (cond
+     ((eof-object? next-ch)
+      (raise-bencode-decoding-exception port))
+
      ((char=? #\e next-ch)
       (read-char port)
       (reverse res))
@@ -176,6 +188,9 @@
 (define* (bencode->scm #:optional (port (current-input-port)))
   (let ((ch (peek-char port)))
     (cond
+     ((eof-object? ch)
+      (raise-bencode-decoding-exception port))
+
      ((char=? #\i ch)
       (read-char port)
       (read-bencode-integer port))
