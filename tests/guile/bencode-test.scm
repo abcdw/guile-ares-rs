@@ -61,7 +61,17 @@
     (is (equal? "d1:ai1ee" (scm->bencode-string '((#:a . 1))))
         "dict with keyword keys")
     (is (equal? "d1:ai1ee" (scm->bencode-string '((a . 1))))
-        "dict with symbol keys")))
+        "dict with symbol keys"))
+
+  (test ("unsupported types" _)
+    (is (raises-exception? (lambda () (scm->bencode-string #f)))
+        "top-level #f")
+    (is (raises-exception? (lambda () (scm->bencode-string #(#f))))
+        "#f in list")
+    (is (raises-exception? (lambda () (scm->bencode-string '((#f . "x")))))
+        "#f as dictionary key")
+    (is (raises-exception? (lambda () (scm->bencode-string '(("x" . #f)))))
+        "#f as dictionary value")))
 
 (define-suite (decode)
   (test ("integers" _)
