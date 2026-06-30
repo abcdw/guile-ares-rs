@@ -10,15 +10,20 @@
             make-bencode-encoding-exception
             bencode-encoding-exception?
             bencode-encoding-exception-value
+            &bencode-decoding-exception
+            make-bencode-decoding-exception
+            bencode-decoding-exception?
+            bencode-decoding-exception-port
             scm->bencode
             scm->bencode-string
             bencode->scm
             bencode-string->scm))
 
 (define-exception-type
-  &read-exception &exception make-read-exception read-exception?
-  (read-reason read-exception-reason)
-  (read-severity read-exception-severity))
+  &bencode-decoding-exception &exception
+  make-bencode-decoding-exception
+  bencode-decoding-exception?
+  (port bencode-decoding-exception-port))
 
 (define-exception-type
   &bencode-encoding-exception &exception
@@ -33,11 +38,12 @@
     (make-exception-with-message "value cannot be bencoded")
     (make-exception-with-irritants value))))
 
-(define (bencode-exception port)
+(define (raise-bencode-decoding-exception port)
   (raise-exception
-   (make-exception (make-read-exception 'bencode-invalid 'high)
-                   (make-exception-with-message "bencode is invalid")
-                   (make-exception-with-irritants port))))
+   (make-exception
+    (make-bencode-decoding-exception port)
+    (make-exception-with-message "bencode is invalid")
+    (make-exception-with-irritants port))))
 
 (define (write-u8-char char port)
   (write-u8 (char->integer char) port))
@@ -107,8 +113,8 @@
 (define (expect-char pred port)
   (let ((ch (peek-char port)))
     (cond
-     ((not (pred ch)) (bencode-exception port))
-     ((eof-object? ch) (bencode-exception port)))))
+     ((not (pred ch)) (raise-bencode-decoding-exception port))
+     ((eof-object? ch) (raise-bencode-decoding-exception port)))))
 
 (define (digit? c)
   (case c
@@ -131,14 +137,15 @@
            (loop (read-char port) (string-append res (string ch))))
 
           (else
-           (bencode-exception port)))))
+           (raise-bencode-decoding-exception port)))))
 
 (define (read-bencode-string port)
   (let* ((str-length (read-bencode-integer port #:delimeter #\:))
          (res (read-bytevector str-length port)))
-    (if (= (bytevector-length res) str-length)
+    (if (and (bytevector? res)
+             (= (bytevector-length res) str-length))
         (utf8->string res)
-        (bencode-exception port))))
+        (raise-bencode-decoding-exception port))))
 
 (define (read-bencode-list port)
   (let loop ((res #())
