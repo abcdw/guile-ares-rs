@@ -1,6 +1,6 @@
 (define-module (ares suitbl-test)
   #:use-module (ares guile prelude)
-  #:use-module (ares suitbl)
+  #:use-module (ares suitbl checks)
   #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl discovery)

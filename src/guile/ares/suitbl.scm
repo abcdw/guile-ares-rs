@@ -1,15 +1,14 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl)
+  #:use-module (ares suitbl checks)
   #:use-module (ares suitbl core)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module (ares suitbl runner)
-  #:use-module ((ares guile prelude) #:select (comment))
 
-  #:export (throws-exception?)
-
-  #:re-export (test-runner*
+  #:re-export (throws-exception?
+               test-runner*
 
                is
                ;; Keep deprecated -thunk aliases for compatibility.
@@ -76,25 +75,6 @@ loaded tests will be executed.  The order and concurrency of execution
 depends on the test runner implementation.
 
 |#
-
-
-;;;
-;;; Auxiliary helpers
-;;;
-
-(define-syntax throws-exception?
-  (lambda (x)
-    (syntax-case x ()
-      ((throws-exception? expression)
-       #'(throws-exception? expression exception?))
-      ((throws-exception? expression predicate)
-       #'(with-exception-handler
-          (lambda (ex) (predicate ex))
-          (lambda ()
-            expression
-            #f)
-          #:unwind? #t)))))
-
 
 
 #|

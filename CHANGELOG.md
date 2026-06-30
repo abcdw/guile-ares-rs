@@ -9,6 +9,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ## [Unreleased]
 
 ### Added
+- `(ares suitbl checks)` module with `throws-exception?` for test definitions.
 - `set-test-runner!` helper for installing the current suitbl test runner.
 - `test-file-path?` predicate in `(ares suitbl discovery)`.
 - Optional assertion descriptions for suitbl `is` forms.
