@@ -6,7 +6,11 @@
   #:use-module (scheme base)
   #:use-module (ice-9 exceptions)
 
-  #:export (scm->bencode
+  #:export (&bencode-encoding-exception
+            make-bencode-encoding-exception
+            bencode-encoding-exception?
+            bencode-encoding-exception-value
+            scm->bencode
             scm->bencode-string
             bencode->scm
             bencode-string->scm))
@@ -15,6 +19,19 @@
   &read-exception &exception make-read-exception read-exception?
   (read-reason read-exception-reason)
   (read-severity read-exception-severity))
+
+(define-exception-type
+  &bencode-encoding-exception &exception
+  make-bencode-encoding-exception
+  bencode-encoding-exception?
+  (value bencode-encoding-exception-value))
+
+(define (raise-bencode-encoding-exception value)
+  (raise-exception
+   (make-exception
+    (make-bencode-encoding-exception value)
+    (make-exception-with-message "value cannot be bencoded")
+    (make-exception-with-irritants value))))
 
 (define (bencode-exception port)
   (raise-exception
@@ -30,7 +47,7 @@
 
 (define (write-bencode-integer int port)
   (when (not (integer? int))
-    (bencode-exception port))
+    (raise-bencode-encoding-exception int))
   (write-u8-char #\i port)
   (write-u8-integer int port)
   (write-u8-char #\e port))
@@ -42,7 +59,7 @@
 
 (define (write-bencode-string str port)
   (when (not (string-like? str))
-    (bencode-exception port))
+    (raise-bencode-encoding-exception str))
   (let* ((str (cond
                ((keyword? str) (symbol->string (keyword->symbol str)))
                ((symbol? str) (symbol->string str))
@@ -63,7 +80,7 @@
   (for-each
    (lambda (x)
      (when (not (pair? x))
-       (bencode-exception port))
+       (raise-bencode-encoding-exception x))
      (write-bencode-string (car x) port)
      (scm->bencode (cdr x) port))
    lst)
@@ -80,7 +97,7 @@
    ((list? scm)
     (write-bencode-dictionary scm port))
    (else
-    (bencode-exception port))))
+    (raise-bencode-encoding-exception scm))))
 
 (define* (scm->bencode-string scm)
   (call-with-output-string
