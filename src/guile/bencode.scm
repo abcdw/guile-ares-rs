@@ -78,7 +78,9 @@
    ((vector? scm)
     (write-bencode-list scm port))
    ((list? scm)
-    (write-bencode-dictionary scm port))))
+    (write-bencode-dictionary scm port))
+   (else
+    (bencode-exception port))))
 
 (define* (scm->bencode-string scm)
   (call-with-output-string

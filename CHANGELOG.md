@@ -25,6 +25,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl `define-suite` now prefers `(define-suite (NAME) BODY ...)`; the old `(define-suite NAME BODY ...)` form remains as a deprecated alias.
 
 ### Fixed
+- Bencode serialization now rejects unsupported values instead of silently writing incomplete output.
 - suitbl discovery now ignores backup files and files under matching directories when selecting test modules.
 - suitbl discovery now computes test file paths correctly when `%load-path` entries end with `/`.
 
