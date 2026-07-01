@@ -20,6 +20,8 @@
 (define-module (ares-extension ares bencode)
   #:use-module (ares guile)
   #:use-module (bencode)
+  #:use-module ((rnrs io ports) #:select (call-with-bytevector-output-port))
+  #:use-module ((scheme base) #:select (write-bytevector))
   #:use-module (srfi srfi-197)
   #:export (ares.bencode))
 
@@ -40,10 +42,13 @@
            (message (bencode->scm input-port))
            (transport-reply!
             (lambda (reply)
-              (scm->bencode (add-reply-id message reply) output-port)
-              ;; Otherwise bencode message won't be
-              ;; flashed to the socket
-              (force-output output-port)))
+              (let ((encoded-reply
+                     (call-with-bytevector-output-port
+                      (lambda (port)
+                        (scm->bencode (add-reply-id message reply) port)))))
+                (write-bytevector encoded-reply output-port)
+                ;; Otherwise bencode message won't be flushed to the socket.
+                (force-output output-port))))
            (new-context
             (chain context
                    ;; Why nrepl/message and not transport/message?  While the
