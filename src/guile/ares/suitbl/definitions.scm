@@ -107,26 +107,11 @@ at macro-expansion time."
                            (assertion/location . location)))))))
 
     (syntax-case stx ()
-      ((_ (pred args ...) description)
-       (build-assertion stx
-                        #'((assertion/body-thunk
-                            . ,(lambda () (pred args ...)))
-                           (assertion/args-thunk
-                            . ,(lambda () (list args ...)))
-                           (assertion/body . (pred args ...))
-                           (assertion/description . ,description))))
       ((_ form description)
        (build-assertion stx
                         #'((assertion/body-thunk . ,(lambda () form))
                            (assertion/body . form)
                            (assertion/description . ,description))))
-      ((_ (pred args ...))
-       (build-assertion stx
-                        #'((assertion/body-thunk
-                            . ,(lambda () (pred args ...)))
-                           (assertion/args-thunk
-                            . ,(lambda () (list args ...)))
-                           (assertion/body . (pred args ...)))))
       ((_ form)
        (build-assertion stx
                         #'((assertion/body-thunk . ,(lambda () form))

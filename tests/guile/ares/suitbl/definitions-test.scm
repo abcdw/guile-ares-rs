@@ -10,7 +10,6 @@
   #:use-module ((ares suitbl state)
                 #:prefix state:)
   #:use-module (srfi srfi-197)
-  #:use-module (ice-9 exceptions)
   #:use-module ((ice-9 atomic)
                 #:select (make-atomic-box atomic-box-ref atomic-box-set!)))
 
@@ -122,7 +121,7 @@
        (is str)
        (is (= 1 (+ 2 -1)))
        (is str "string assertion")
-       (is (= 2 (+ 1 1)) "predicate assertion")))
+       (is (= 2 (+ 1 1)) "described assertion")))
 
     (is (equal? '(str
                   (= 1 (+ 2 -1))
@@ -132,31 +131,30 @@
 
     (let* ((assertion-1 (chain events-log (car _) (assoc-ref _ 'assertion)))
            (assertion-1-body (assoc-ref assertion-1 'assertion/body))
-           (assertion-1-body-value
-            ((assoc-ref assertion-1 'assertion/body-thunk))))
+           (assertion-1-body-thunk
+            (assoc-ref assertion-1 'assertion/body-thunk)))
       (is (equal? 'str assertion-1-body))
+      (is (procedure? assertion-1-body-thunk))
       (is (not (assoc-ref assertion-1 'assertion/description)))
-      (is (equal? "a1" assertion-1-body-value)))
+      (is (not (assoc-ref assertion-1 'assertion/args-thunk))))
 
     (let* ((assertion-2 (chain events-log (cadr _) (assoc-ref _ 'assertion)))
            (assertion-2-body (assoc-ref assertion-2 'assertion/body))
-           (assertion-2-body-value
-            ((assoc-ref assertion-2 'assertion/body-thunk)))
-           (assertion-2-args-value
-            ((assoc-ref assertion-2 'assertion/args-thunk))))
+           (assertion-2-body-thunk
+            (assoc-ref assertion-2 'assertion/body-thunk)))
       (is (equal? '(= 1 (+ 2 -1)) assertion-2-body))
+      (is (procedure? assertion-2-body-thunk))
       (is (not (assoc-ref assertion-2 'assertion/description)))
-      (is (equal? #t assertion-2-body-value))
-      (is (equal? '(1 1) assertion-2-args-value)))
+      (is (not (assoc-ref assertion-2 'assertion/args-thunk))))
 
     (let* ((assertion-3 (chain events-log (caddr _) (assoc-ref _ 'assertion)))
            (assertion-4 (chain events-log (cadddr _) (assoc-ref _ 'assertion))))
       (is (equal? "string assertion"
                   (assoc-ref assertion-3 'assertion/description)))
-      (is (equal? "predicate assertion"
+      (is (not (assoc-ref assertion-3 'assertion/args-thunk)))
+      (is (equal? "described assertion"
                   (assoc-ref assertion-4 'assertion/description)))
-      (is (equal? '(2 2)
-                  ((assoc-ref assertion-4 'assertion/args-thunk))))))
+      (is (not (assoc-ref assertion-4 'assertion/args-thunk)))))
 
   (test "test emits proper values to the test runner" ()
     (define events-log
@@ -266,27 +264,23 @@
        (is (string-contains warnings
                             "`(define-suite NAME BODY ...)` syntax is deprecated."))))))
 
-(define-suite (documentation-tests)
-  (test "exception, when macro used in place of predicate" ()
-    ;; Due to the way macros work, if you use `chain' or similiar
-    ;; macro in `is' assert, it will throw a quite unexpected
-    ;; exception.  This happens because `is' macro extracts a list of
-    ;; arguments to a separate thunk for better reporting in case of
-    ;; error.  This thunk is supposed to be evaluated, when the
-    ;; assertion fails to provide more clue to the user, however it
-    ;; means that those arguments will be placed in the context, where
-    ;; "predicate" doesn't exists and doesn't wrap them.
-    (define exception
-      (with-exception-handler
-       (lambda (ex) ex)
-       (lambda ()
-         (with-runner-events-to-list
-          ;; We have to use eval, otherwise this code won't compile
-          (eval
-           '(begin
-              (use-modules (srfi srfi-197) (ares suitbl core))
-              (is (chain 'hi (list _))))
-           (interaction-environment))))
-       #:unwind? #t))
-    (is (equal? "bad use of '_' syntactic keyword"
-                (exception-message exception)))))
+(define-suite (macro-inside-assertion-tests)
+  (test "macro forms can be used as assertion bodies" ()
+    (define test-runner
+      (runner:make-suitbl
+       #:config `((test-reporter . ,reporter:silent))))
+    (parameterize ((test-runner* test-runner))
+      (suite "macro assertion sample"
+        (test "chain + assertion" ()
+          (is (chain 'hi (list _)))
+          (chain (+ 2 2)
+            (= 4 _)
+            (is _ "#t from macro bound _ identifier"))))
+      (test-runner `((type . runner/run-tests))))
+    (define summary
+      (state:get-run-summary
+       (runner:get-state test-runner)))
+    (is (= 1 (assoc-ref summary 'tests)))
+    (is (= 2 (assoc-ref summary 'assertions)))
+    (is (= 0 (assoc-ref summary 'failures)))
+    (is (= 0 (assoc-ref summary 'errors)))))

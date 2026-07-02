@@ -23,6 +23,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl `suite-thunk` and `suite-thunk?` were renamed to `suite-loader` and `suite-loader?`; old names remain as deprecated aliases.
 - suitbl now warns when the deprecated `(test DESCRIPTION BODY ...)` form is used.
 - suitbl `define-suite` now prefers `(define-suite (NAME) BODY ...)`; the old `(define-suite NAME BODY ...)` form remains as a deprecated alias.
+- suitbl `is` now treats assertions as generic forms and no longer records predicate-form `assertion/args-thunk` metadata.
 
 ### Fixed
 - nREPL lookup now represents missing symbol information as an empty list, matching reference nREPL behavior.

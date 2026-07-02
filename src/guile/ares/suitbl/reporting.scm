@@ -18,7 +18,6 @@
             tests->pretty-string
             format-location
             format-assertion-failure-detail
-            pre-evaled-expression
             format-assertion-minimal
             format-assertion-verbose
 
@@ -91,49 +90,10 @@ no location is available."
 (define (format-assertion-failure-detail assertion-run)
   "Format extra detail for a failing ASSERTION-RUN.
 
-For binary predicate assertions, show the evaluated operands and the
-predicate name.  Otherwise, fall back to the returned value when one
-is available."
-  (let* ((assertion (assoc-ref assertion-run 'assertion))
-         (assert-body (assoc-ref assertion 'assertion/body))
-         (args-thunk (assoc-ref assertion 'assertion/args-thunk))
-         (run-result (assoc-ref assertion-run 'assertion-run/result)))
-    (if (and (list? assert-body) (= 3 (length assert-body)))
-        (let ((args-run-result
-               (running:with-exception-continuation args-thunk)))
-          (cond
-           ((running:returned? args-run-result)
-            (match (running:returned-value args-run-result)
-              ((first second)
-               (format #f "~a and\n~a are not ~a"
-                       (pretty-string first)
-                       (pretty-string second)
-                       (car assert-body)))))
-           ((running:raised? args-run-result)
-            (format #f "Evaluation of arguments thunk failed with:\n~a"
-                    (running:raised-exception args-run-result)))
-           (else #f)))
-        (and (running:returned? run-result)
-             (running:returned-value run-result)))))
-
-(define (pre-evaled-expression assertion-run)
-    (let* ((assertion (assoc-ref assertion-run 'assertion))
-           (assert-body (assoc-ref assertion 'assertion/body))
-           (args-thunk (assoc-ref assertion 'assertion/args-thunk))
-           (run-result (assoc-ref assertion-run 'assertion-run/result)))
-      (if (list? assert-body)
-          (let ((args-run-result
-                 (running:with-exception-continuation args-thunk)))
-            (cond
-             ((running:returned? args-run-result)
-              (cons (car assert-body)
-                    (running:returned-value args-run-result)))
-             ((running:raised? args-run-result)
-              (format #f "Evaluation of arguments thunk failed with:\n~a"
-                      (running:raised-exception args-run-result)))
-             (else #f)))
-          (and (running:returned? run-result)
-               (running:returned-value run-result)))))
+Return the assertion body's value when it is available."
+  (let ((run-result (assoc-ref assertion-run 'assertion-run/result)))
+    (and (running:returned? run-result)
+         (running:returned-value run-result))))
 
 (define (format-assertion assertion-run pass-formatter)
   (let* ((outcome (assoc-ref assertion-run 'assertion-run/outcome))
