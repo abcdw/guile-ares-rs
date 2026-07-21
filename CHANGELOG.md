@@ -25,6 +25,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl `define-suite` now prefers `(define-suite (NAME) BODY ...)`; the old `(define-suite NAME BODY ...)` form remains as a deprecated alias.
 
 ### Fixed
+- Ares now closes accepted client sockets when connection processing raises an exception.
 - Ares bencode transport now buffers replies before sending to avoid corrupting connections on encoding failures.
 - Truncated bencode input now raises `bencode-decoding-exception` instead of a generic character type error.
 - Bencode serialization and parsing now raise explicit encode-side and decode-side exceptions for unsupported values and malformed input.

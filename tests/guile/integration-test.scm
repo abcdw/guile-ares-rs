@@ -3,19 +3,25 @@
   #:use-module (ares nrepl client)
   #:use-module (bencode)
   #:use-module (fibers)
+  #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
   #:use-module (ice-9 threads)
   #:use-module (fibers conditions)
   #:use-module (srfi srfi-64)
   #:use-module (test-utils))
 
-(define* (call-with-nrepl-setup proc #:key (port 1134))
+(define* (call-with-nrepl-setup
+          proc
+          #:key
+          (port 1134)
+          (on-connection (@@ (ares server) make-client)))
   (let* ((server-started? (make-condition))
          (nrepl-server (call-with-new-thread
                         (lambda ()
                           (run-nrepl-server
                            #:port port
                            #:nrepl-port-file? #f
-                           #:started? server-started?))))
+                           #:started? server-started?
+                           #:on-connection on-connection))))
          (_ (wait server-started?))
          (client-socket (make-nrepl-client-socket #:port port)))
     (call-with-values
@@ -47,6 +53,34 @@
   (test-equal "nonblocking-socket created, but connection refused"
     'system-error
     (create-socket-in-thread-in-fiber)))
+
+(define (client-socket-closed-on-exception?)
+  (let ((server-client #f)
+        (client-failed? (make-condition)))
+    (call-with-nrepl-setup
+     (lambda (client)
+       (display "x" client)
+       (force-output client)
+       (wait client-failed?)
+       (let ((client-closed? (port-closed? server-client)))
+         (false-if-exception (close-port server-client))
+         client-closed?))
+     #:on-connection
+     (lambda (client _ thunk)
+       (set! server-client client)
+       (spawn-fiber
+        (lambda ()
+          (with-exception-handler
+           (lambda (_)
+             (signal-condition! client-failed?)
+             #t)
+           thunk
+           #:unwind? #t))))
+     #:port 1135)))
+
+(define-test client-socket-closed-on-exception-test
+  (test-assert "server closes client socket on exception"
+    (client-socket-closed-on-exception?)))
 
 (define-test simple-operations
   (call-with-nrepl-setup

@@ -5,6 +5,8 @@
   #:use-module (fibers conditions)
   #:use-module (ares extensions)
   #:use-module (ares-extension ares logging)
+  #:use-module ((ice-9 exceptions)
+                #:select (raise-exception with-exception-handler))
   #:use-module (ice-9 match)
   #:use-module (ice-9 atomic)
   #:export (run-nrepl-server))
@@ -26,11 +28,17 @@ loop inside a separate fiber."
        (on-connection
 	client id
 	(lambda ()
-	  (setvbuf client 'block 1024)
-	  ;; Disable Nagle's algorithm.  We buffer ourselves.
-	  (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
-	  (ares.loop:loop
-	   (ares.loop:add-ports initial-context client client))))
+          (with-exception-handler
+           (lambda (exception)
+             (false-if-exception (close-port client))
+             (raise-exception exception))
+           (lambda ()
+             (setvbuf client 'block 1024)
+             ;; Disable Nagle's algorithm.  We buffer ourselves.
+             (setsockopt client IPPROTO_TCP TCP_NODELAY 1)
+             (ares.loop:loop
+              (ares.loop:add-ports initial-context client client)))
+           #:unwind? #t)))
        (loop (1+ id))))))
 
 (define (make-default-socket family addr port)
