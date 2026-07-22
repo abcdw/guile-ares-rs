@@ -27,7 +27,7 @@
  (is 42)
  (is (= 2 3))
 
- (test "combine"
+ (test "combine" ()
    (define some-setup #f)
    (is 42)
    (is some-setup))
@@ -37,40 +37,40 @@
      'metadata '((tags . (integration)))
      "hello")
 
-   (test "addition"
+   (test "addition" ()
      (is (= 3 (+ 1 2)))
      (is (= 0 (+ -1 1))))
 
    ;; Test with metadata <--------------------------------------
-   (test "multiplication"
+   (test "multiplication" ()
      'metadata
      '((slow? . #t))
      (is (= 12 (* 3 4)))
      (is (= 0 (* 0 999))))
 
-   (test "equality"
+   (test "equality" ()
      (is (= 2 3))
      (is (= 2 (/ 4 2))))
 
-   (test "inequality"
+   (test "inequality" ()
      (is (= 2 3))
      (is (= 2 (/ 4 0))))
 
    (suite "edge cases"
-     (test "division by large numbers"
+     (test "division by large numbers" ()
        (is (= 0 (floor (/ 1 1000000)))))))
 
  (suite-thunk "some fancy tests"
-   (test "1"
+   (test "1" ()
      'hey)
-   (test "2"
+   (test "2" ()
      'hehey))
 
  (define-suite (some-cool-tests)
    (suite "inner suite"
-     (test "1"
+     (test "1" ()
        (is #t)))
-   (test "cool"
+   (test "cool" ()
      (is #f)))
  (some-cool-tests)
 
@@ -201,7 +201,7 @@ API-first, can be easily integrated in your IDE and other tools.
                 #:config '((log-runner-messages? . #t))))
  (runner-get-state-pretty)
 
- (test "basic arithmetic"
+ (test "basic arithmetic" ()
    (is (= 2 (+ 1 1)))
    (is (= 6 (* 2 3)))
    (is (= 0 (- 5 5))))
@@ -215,7 +215,7 @@ API-first, can be easily integrated in your IDE and other tools.
                 #:config '((log-runner-messages? . #t)
                            (auto-run? . #f))))
 
- (test "string operations"
+ (test "string operations" ()
    (is (string=? "ABC" (string-upcase "abc")))
    (is (= 5 (string-length "hello"))))
 
@@ -242,22 +242,22 @@ API-first, can be easily integrated in your IDE and other tools.
  (suite "math operations"
    (suite "empty one"
      'hey)
-   (test "addition"
+   (test "addition" ()
      (is (= 3 (+ 1 2)))
      (is (= 0 (+ -1 1))))
 
-   (test "multiplication"
+   (test "multiplication" ()
      'metadata
      '((slow? . #t))
      (is (= 12 (* 3 4)))
      (is (= 0 (* 0 999))))
 
-   (test "equality"
+   (test "equality" ()
      (is (= 2 2))
      (is (= 2 (/ 4 2))))
 
    (suite "edge cases"
-     (test "division by large numbers"
+     (test "division by large numbers" ()
        (is (= 0 (floor (/ 1 1000000))))))))
 
 
@@ -287,11 +287,11 @@ API-first, can be easily integrated in your IDE and other tools.
 ;; The suite loader can be called repeatedly to load tests again.
 
 (define-suite (list-tests)
-  (test "cons builds pairs"
+  (test "cons builds pairs" ()
     (is (equal? '(1 . 2) (cons 1 2)))
     (is (equal? '(1 2 3) (cons 1 '(2 3)))))
 
-  (test "map transforms lists"
+  (test "map transforms lists" ()
     (is (equal? '(2 4 6) (map (lambda (x) (* 2 x)) '(1 2 3))))))
 
 (comment
@@ -308,10 +308,10 @@ API-first, can be easily integrated in your IDE and other tools.
 
 (comment
  (suite "tagged suite" 'metadata '((tags . (integration)))
-   (test "fast check"
+   (test "fast check" ()
      (is (= 1 1)))
 
-   (test "slow check" 'metadata '((slow? . #t))
+   (test "slow check" () 'metadata '((slow? . #t))
          (is (= 2 (+ 1 1)))))
 
  ((test-runner*) `((type . runner/run-tests)))
@@ -334,12 +334,12 @@ API-first, can be easily integrated in your IDE and other tools.
   (runner:make-suitbl
    #:config `((test-reporter . ,reporter:minimal)))
   (suite "hehe"
-    (test "minimal demo"
+    (test "minimal demo" ()
       (is (= 1 1))
       (is (= 1 1))
       (is (= 1 1))
       (is (= 2 2)))
-    (test "minimal demo 2"
+    (test "minimal demo 2" ()
       (is (= 1 1))
       (is (= 2 2)))))
 
@@ -351,8 +351,8 @@ API-first, can be easily integrated in your IDE and other tools.
                    (list reporter:load-tree
                          reporter:run-summary)))))
   (suite "composed reporters"
-    (test "a" (is #t))
-    (test "b" (is #t)))))
+    (test "a" () (is #t))
+    (test "b" () (is #t)))))
 
 
 ;;;
@@ -364,7 +364,7 @@ API-first, can be easily integrated in your IDE and other tools.
   (runner:make-suitbl
    #:config `((test-reporter . ,reporter:silent)))
   (suite "quiet suite"
-    (test "no output" (is #t) (is #t)))
+    (test "no output" () (is #t) (is #t)))
 
   ;; Retrieve the run summary programmatically
   ((test-runner*) `((type . runner/get-run-summary))))

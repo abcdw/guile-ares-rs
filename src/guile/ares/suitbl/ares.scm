@@ -111,10 +111,10 @@
    (+ 5 number))
 
  (suite "just suite"
-   (test "some notimportant test"
+   (test "some notimportant test" ()
      (is #t))
-   (test "some important test"
+   (test "some important test" ()
      (sleep 1)
      (is (= 10 (our-function 5))))
-   (test "some minor test"
+   (test "some minor test" ()
      (is #t))))
