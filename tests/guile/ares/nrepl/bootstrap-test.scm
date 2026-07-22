@@ -1,6 +1,6 @@
 ;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
 ;;;
-;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023-2026 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of guile-ares-rs.
 ;;;
@@ -133,6 +133,26 @@
 
 (define (base-repl input-port output-port)
   (bootstrap-nrepl input-port output-port))
+
+(define (missing-symbol-lookup-response)
+  (repl-with-io-port
+   base-repl
+   (lambda (input output)
+     (scm->bencode
+      '(("id" . "missing-symbol")
+        ("ns" . "(ares nrepl bootstrap-test)")
+        ("op" . "lookup")
+        ("sym" . "ares-definitely-missing-symbol"))
+      input)
+     (read-when-ready output))))
+
+(define-test missing-symbol-lookup-test
+  (test-equal "Missing symbol has empty info"
+    '(("id" . "missing-symbol")
+      ("session" . "none")
+      ("status" . #("done"))
+      ("info" . #()))
+    (missing-symbol-lookup-response)))
 
 (define-test evaluation-extension-test
   (test-group "evaluation-extension"

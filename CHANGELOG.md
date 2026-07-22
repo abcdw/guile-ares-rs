@@ -25,6 +25,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl `define-suite` now prefers `(define-suite (NAME) BODY ...)`; the old `(define-suite NAME BODY ...)` form remains as a deprecated alias.
 
 ### Fixed
+- nREPL lookup now represents missing symbol information as an empty list, matching reference nREPL behavior.
 - Ares now sends a `bencode-encoding-error` nREPL response when a reply cannot be bencoded.
 - Ares now closes accepted client sockets when connection processing raises an exception.
 - Ares bencode transport now buffers replies before sending to avoid corrupting connections on encoding failures.

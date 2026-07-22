@@ -80,7 +80,7 @@ definition, documentation and other purposes."
                       (current-module)))
               (sym (and=> (assoc-ref message "sym") string->symbol)))
           (reply! `(("status" . #("done"))
-                    ("info" . ,(lookup-symbol ns sym))))))
+                    ("info" . ,(or (lookup-symbol ns sym) #()))))))
       #:unwind? #t)))
 
 (define operations
