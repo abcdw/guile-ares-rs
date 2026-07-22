@@ -19,7 +19,9 @@
 
 (define-module (ares-extension ares bencode)
   #:use-module (ares guile)
+  #:use-module (ares guile exceptions)
   #:use-module (bencode)
+  #:use-module ((ice-9 exceptions) #:select (with-exception-handler))
   #:use-module ((rnrs io ports) #:select (call-with-bytevector-output-port))
   #:use-module ((scheme base) #:select (write-bytevector))
   #:use-module (srfi srfi-197)
@@ -36,6 +38,29 @@
           reply
           (acons "id" (or id "unknown") reply))))
 
+  (define (encode-reply reply)
+    (call-with-bytevector-output-port
+     (lambda (port)
+       (scm->bencode reply port))))
+
+  (define (encode-reply-or-error message reply)
+    (with-exception-handler
+     (lambda (exception)
+       (chain
+        (if (bencode-encoding-exception? exception)
+            '(("status" . #("error" "bencode-encoding-error" "done")))
+            `(("ares.exception" . ,(exception->string exception))
+              ("status" . #("error"
+                             "something-broken-after-ares-bencode"
+                             "done"))))
+        (add-reply-id message _)
+        (encode-reply _)))
+     (lambda ()
+       (chain reply
+         (add-reply-id message _)
+         (encode-reply _)))
+     #:unwind? #t))
+
   (lambda (context)
     (let* ((input-port (assoc-ref context 'ares/input-port))
            (output-port (assoc-ref context 'ares/output-port))
@@ -43,9 +68,7 @@
            (transport-reply!
             (lambda (reply)
               (let ((encoded-reply
-                     (call-with-bytevector-output-port
-                      (lambda (port)
-                        (scm->bencode (add-reply-id message reply) port)))))
+                     (encode-reply-or-error message reply)))
                 (write-bytevector encoded-reply output-port)
                 ;; Otherwise bencode message won't be flushed to the socket.
                 (force-output output-port))))

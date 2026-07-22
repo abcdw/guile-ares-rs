@@ -22,6 +22,7 @@
   #:use-module (ares nrepl bootstrap)
   #:use-module (bencode)
   #:use-module (srfi srfi-1)
+  #:use-module ((srfi srfi-197) #:select (chain))
   #:use-module (srfi srfi-64)
   #:use-module (test-utils)
   #:use-module (fibers)
@@ -50,6 +51,33 @@
    (wait-until-port-readable-operation port))
   (bencode->scm port))
 
+(define (exercise-bencode-encoding-error-recovery input-port output-port)
+  (define (reply-to-next-message reply)
+    ((ares.bencode
+      (lambda (context)
+        ((assoc-ref context 'reply!) reply)))
+     `((ares/input-port . ,input-port)
+       (ares/output-port . ,output-port))))
+
+  (reply-to-next-message '(("value" . #f)))
+  (reply-to-next-message '(("value" . "ok")
+                           ("status" . #("done")))))
+
+(define (encoding-failure-responses)
+  (chain
+   (string-append
+    (scm->bencode-string '(("id" . "1")))
+    (scm->bencode-string '(("id" . "2"))))
+   (call-with-input-string _
+     (lambda (input)
+       (call-with-output-string
+        (lambda (output)
+          (exercise-bencode-encoding-error-recovery input output)))))
+   (call-with-input-string _
+     (lambda (input)
+       (list (bencode->scm input)
+             (bencode->scm input))))))
+
 (define (session-repl input-port output-port)
   (bootstrap-nrepl input-port output-port
                    #:initial-extensions
@@ -60,6 +88,15 @@
 
 (define (compare-messages list1 list2)
  (lset= equal? list1 list2))
+
+(define-test bencode-encoding-failure-test
+  (test-equal "Received an error and continued handling replies"
+    '((("id" . "1")
+       ("status" . #("error" "bencode-encoding-error" "done")))
+      (("id" . "2")
+       ("value" . "ok")
+       ("status" . #("done"))))
+    (encoding-failure-responses)))
 
 (define-test session-extension-test
   (test-group "session-extension"
