@@ -18,46 +18,46 @@
 ;;;
 
 (define-suite (preset-tests)
-  (test ("preset:only-slow! configures runner for slow tests" _)
+  (test "preset:only-slow! configures runner for slow tests" ()
     (define tr (make-test-runner-with-mixed-tests))
     (preset:only-slow! tr)
     (is (lset= equal?
                '("slow network call" "slow database query")
                (scheduled-descriptions tr))))
 
-  (test ("preset:only-fast! configures runner for fast tests" _)
+  (test "preset:only-fast! configures runner for fast tests" ()
     (define tr (make-test-runner-with-mixed-tests))
     (preset:only-fast! tr)
     (is (lset= equal?
                '("fast addition" "fast string check")
                (scheduled-descriptions tr))))
 
-  (test ("preset:matching! configures runner with pattern filter" _)
+  (test "preset:matching! configures runner with pattern filter" ()
     (define tr (make-test-runner-with-mixed-tests))
     (preset:matching! "database" tr)
     (is (equal? '("slow database query")
                 (scheduled-descriptions tr))))
 
-  (test ("preset:rerun-failed-or-all! configures runner for failed tests" _)
+  (test "preset:rerun-failed-or-all! configures runner for failed tests" ()
     (define tr (runner:make-silent))
     (with-test-runner tr
       (suite "suite with a failure"
-        (test ("good test" _)
+        (test "good test" ()
           (is #t))
-        (test ("bad test" _)
+        (test "bad test" ()
           (is #f))))
     (preset:rerun-failed-or-all! tr)
     (is (equal? '("bad test")
                 (scheduled-descriptions tr))))
 
-  (test ("preset:reset! restores default scheduling" _)
+  (test "preset:reset! restores default scheduling" ()
     (define tr (make-test-runner-with-mixed-tests))
     (preset:only-slow! tr)
     (is (= 2 (length (scheduled-descriptions tr))))
     (preset:reset! tr)
     (is (= 4 (length (scheduled-descriptions tr)))))
 
-  (test ("presets default to current test-runner*" _)
+  (test "presets default to current test-runner*" ()
     (define tr (make-test-runner-with-mixed-tests))
     (with-test-runner tr
       (preset:only-slow!))

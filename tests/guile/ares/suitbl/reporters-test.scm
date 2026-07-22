@@ -20,7 +20,7 @@
     (suite-node/children . ,children)))
 
 (define-suite (reporter-every-tests)
-  (test ("returns #t when at least one reporter succeeds" _)
+  (test "returns #t when at least one reporter succeeds" ()
     (define combined
       (reporter:reporter-every
        (list (lambda (msg) #f)
@@ -28,14 +28,14 @@
              (lambda (msg) #f))))
     (is (eq? #t (combined '((type . test))))))
 
-  (test ("returns #f when all reporters return #f" _)
+  (test "returns #f when all reporters return #f" ()
     (define combined
       (reporter:reporter-every
        (list (lambda (msg) #f)
              (lambda (msg) #f))))
     (is (not (combined '((type . test))))))
 
-  (test ("calls every reporter even if one succeeds early" _)
+  (test "calls every reporter even if one succeeds early" ()
     (define call-log '())
     (define combined
       (reporter:reporter-every
@@ -46,35 +46,35 @@
     (is (equal? '(c b a) call-log))))
 
 (define-suite (load-ignore-messages-tests)
-  (test ("returns #t for load/test" _)
+  (test "returns #t for load/test" ()
     (is (eq? #t
              (reporter:load-ignore-messages
               `((type . load/test)
                 (description . "some test"))))))
 
-  (test ("returns #t for load/suite-enter" _)
+  (test "returns #t for load/suite-enter" ()
     (is (eq? #t
              (reporter:load-ignore-messages
               `((type . load/suite-enter)
                 (description . "suite"))))))
 
-  (test ("returns #t for load/suite-leave" _)
+  (test "returns #t for load/suite-leave" ()
     (is (eq? #t
              (reporter:load-ignore-messages
               `((type . load/suite-leave)
                 (description . "suite"))))))
 
-  (test ("returns #f for unrelated message types" _)
+  (test "returns #f for unrelated message types" ()
     (is (not (reporter:load-ignore-messages
               `((type . run/start)))))))
 
 (define-suite (load-summary-reporter-tests)
-  (test ("returns #f for unrelated message types" _)
+  (test "returns #f for unrelated message types" ()
     (is (not (reporter:load-summary
               `((type . run/test-start)
                 (description . "some test"))))))
 
-  (test ("formats the summary output correctly" _)
+  (test "formats the summary output correctly" ()
     (define port (open-output-string))
     (reporter:load-summary
      `((type . load/end)
@@ -92,7 +92,7 @@
          (get-output-string port)))))
 
 (define-suite (run-plan-compact-reporter-tests)
-  (test ("formats the compact run line" _)
+  (test "formats the compact run line" ()
     (define port (open-output-string))
     (reporter:run-plan-compact
      `((type . run/start)
@@ -102,7 +102,7 @@
     (is (equal? "Running 3 of 5 loaded tests...\n"
                 (get-output-string port))))
 
-  (test ("pluralizes when exactly one loaded test" _)
+  (test "pluralizes when exactly one loaded test" ()
     (define port (open-output-string))
     (reporter:run-plan-compact
      `((type . run/start)
@@ -113,7 +113,7 @@
                 (get-output-string port)))))
 
 (define-suite (run-dots-reporter-tests)
-  (test ("prints legend on run/start" _)
+  (test "prints legend on run/start" ()
     (define port (open-output-string))
     (reporter:run-dots
      `((type . run/start)
@@ -121,7 +121,7 @@
     (is (equal? "Legend: .=pass, F=fail, E=error\n"
                 (get-output-string port))))
 
-  (test ("prints . for passing test" _)
+  (test "prints . for passing test" ()
     (define port (open-output-string))
     (reporter:run-dots
      `((type . run/test-end)
@@ -129,7 +129,7 @@
        (test-run . ((test-run/outcome . pass)))))
     (is (equal? "." (get-output-string port))))
 
-  (test ("prints F for failing test" _)
+  (test "prints F for failing test" ()
     (define port (open-output-string))
     (reporter:run-dots
      `((type . run/test-end)
@@ -137,7 +137,7 @@
        (test-run . ((test-run/outcome . fail)))))
     (is (equal? "F" (get-output-string port))))
 
-  (test ("prints E for erroring test" _)
+  (test "prints E for erroring test" ()
     (define port (open-output-string))
     (reporter:run-dots
      `((type . run/test-end)
@@ -145,15 +145,15 @@
        (test-run . ((test-run/outcome . error)))))
     (is (equal? "E" (get-output-string port))))
 
-  (test ("silently handles run/assertion-end" _)
+  (test "silently handles run/assertion-end" ()
     (is (eq? #t (reporter:run-dots
                  `((type . run/assertion-end))))))
 
-  (test ("silently handles run/test-start" _)
+  (test "silently handles run/test-start" ()
     (is (eq? #t (reporter:run-dots
                  `((type . run/test-start))))))
 
-  (test ("prints right-aligned counter at end of last line" _)
+  (test "prints right-aligned counter at end of last line" ()
     (define port (open-output-string))
     (reporter:run-dots
      `((type . run/test-end)
@@ -163,7 +163,7 @@
        (test-run . ((test-run/outcome . pass)))))
     (is (string-suffix? "[3/3]\n" (get-output-string port))))
 
-  (test ("prints counter at every 50th test" _)
+  (test "prints counter at every 50th test" ()
     (define port (open-output-string))
     (reporter:run-dots
      `((type . run/test-end)
@@ -174,7 +174,7 @@
     (define output (get-output-string port))
     (is (string-suffix? " [ 50/100]\n" output)))
 
-  (test ("does not print counter mid-line" _)
+  (test "does not print counter mid-line" ()
     (define port (open-output-string))
     (reporter:run-dots
      `((type . run/test-end)
@@ -184,7 +184,7 @@
        (test-run . ((test-run/outcome . pass)))))
     (is (equal? "." (get-output-string port))))
 
-  (test ("aligns counter across full and partial lines" _)
+  (test "aligns counter across full and partial lines" ()
     (define port (open-output-string))
     (let loop ((i 1))
       (when (<= i 53)
@@ -201,7 +201,7 @@
            (string-length (list-ref lines 1))))))
 
 (define-suite (run-dots-extended-reporter-tests)
-  (test ("prints legend on run/start" _)
+  (test "prints legend on run/start" ()
     (define port (open-output-string))
     (reporter:run-dots-extended
      `((type . run/start)
@@ -210,7 +210,7 @@
          "Legend: .=pass, Z=zero assertions, F=fail, E=error, A=aborted\n"
          (get-output-string port))))
 
-  (test ("prints Z for zero-assertions test" _)
+  (test "prints Z for zero-assertions test" ()
     (define port (open-output-string))
     (reporter:run-dots-extended
      `((type . run/test-end)
@@ -218,7 +218,7 @@
        (test-run . ((test-run/extended-outcome . zero-assertions)))))
     (is (equal? "Z" (get-output-string port))))
 
-  (test ("prints A for aborted test" _)
+  (test "prints A for aborted test" ()
     (define port (open-output-string))
     (reporter:run-dots-extended
      `((type . run/test-end)
@@ -226,7 +226,7 @@
        (test-run . ((test-run/extended-outcome . aborted)))))
     (is (equal? "A" (get-output-string port))))
 
-  (test ("prints . for passing test" _)
+  (test "prints . for passing test" ()
     (define port (open-output-string))
     (reporter:run-dots-extended
      `((type . run/test-end)
@@ -234,12 +234,12 @@
        (test-run . ((test-run/extended-outcome . pass)))))
     (is (equal? "." (get-output-string port))))
 
-  (test ("silently handles run/assertion-end and run/test-start" _)
+  (test "silently handles run/assertion-end and run/test-start" ()
     (is (eq? #t (reporter:run-dots-extended `((type . run/assertion-end)))))
     (is (eq? #t (reporter:run-dots-extended `((type . run/test-start)))))))
 
 (define-suite (junit-reporter-tests)
-  (test ("returns #f for unrelated message types" _)
+  (test "returns #f for unrelated message types" ()
     (is (not (reporter:junit
               `((type . run/test-start)
                 (description . "some test")))))
@@ -250,14 +250,14 @@
                  . ((assertion-run/result . (returned . #t))
                     (assertion-run/outcome . pass))))))))
 
-  (test ("emits JUnit XML on run-end" _)
+  (test "emits JUnit XML on run-end" ()
     (define port (open-output-string))
     (define test-runner
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "sample"
-        (test ("passing test" _)
+        (test "passing test" ()
           (is #t)))
       (test-runner `((type . runner/run-tests))))
     (define runner-state
@@ -272,14 +272,14 @@
     (is (string-contains xml-output "<testcase"))
     (is (string-contains xml-output "passing test")))
 
-  (test ("reports failures in JUnit XML" _)
+  (test "reports failures in JUnit XML" ()
     (define port (open-output-string))
     (define test-runner
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "fail-suite"
-        (test ("failing test" _)
+        (test "failing test" ()
           (is #f)))
       (test-runner `((type . runner/run-tests))))
     (define runner-state
@@ -292,14 +292,14 @@
     (is (string-contains xml-output "failures=\"1\""))
     (is (string-contains xml-output "<failure")))
 
-  (test ("reports errors in JUnit XML" _)
+  (test "reports errors in JUnit XML" ()
     (define port (open-output-string))
     (define test-runner
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
     (parameterize ((test-runner* test-runner))
       (suite "error-suite"
-        (test ("erroring test" _)
+        (test "erroring test" ()
           (is (throw 'boom))))
       (test-runner `((type . runner/run-tests))))
     (define runner-state

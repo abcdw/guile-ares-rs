@@ -11,19 +11,19 @@
 
 
 (define-suite (encode)
-  (test ("integers" _)
+  (test "integers" ()
     (is (equal? "i0e" (scm->bencode-string 0)) "0")
     (is (equal? "i42e" (scm->bencode-string 42)) "42")
     (is (equal? "i-42e" (scm->bencode-string -42)) "-42"))
 
-  (test ("strings" _)
+  (test "strings" ()
     (is (equal? "4:spam" (scm->bencode-string "spam")) "\"spam\"")
     (is (equal? "6:naïve" (scm->bencode-string "naïve")) "\"naïve\"")
     (is (equal? "0:" (scm->bencode-string "")) "empty string")
     (is (equal? "7:keyword" (scm->bencode-string #:keyword)) "\"keyword\"")
     (is (equal? "6:symbol" (scm->bencode-string 'symbol)) "\"symbol\""))
 
-  (test ("lists" _)
+  (test "lists" ()
     (is (equal? "le" (scm->bencode-string #())) "empty list")
     (is (equal? "l4:spami-42ee" (scm->bencode-string #("spam" -42)))
         "list with number and string")
@@ -35,7 +35,7 @@
     (is (equal? "l1:a1:be" (scm->bencode-string #(a b)))
         "list with symbols"))
 
-  (test ("dictionaries" _)
+  (test "dictionaries" ()
     (is (equal? "de" (scm->bencode-string '())) "empty dict")
     (is (equal? "d4:spami-42ee" (scm->bencode-string '(("spam" . -42))))
         "dict with number and string")
@@ -57,7 +57,7 @@
     (is (equal? "d1:ai1ee" (scm->bencode-string '((a . 1))))
         "dict with symbol keys"))
 
-  (test ("unsupported types" _)
+  (test "unsupported types" ()
     (is (throws-exception? (scm->bencode-string #f)
                            bencode-encoding-exception?)
         "top-level #f")
@@ -72,7 +72,7 @@
         "#f as dictionary value")))
 
 (define-suite (decode)
-  (test ("integers" _)
+  (test "integers" ()
     (is (equal? 0 (bencode-string->scm "i0e")) "i0e :: zero")
     (is (throws-exception? (bencode-string->scm "i0a")
                            bencode-decoding-exception?)
@@ -99,7 +99,7 @@
                            bencode-decoding-exception?)
         "i-12 :: unexpcted EOF"))
 
-  (test ("strings" _)
+  (test "strings" ()
     (is (equal? "" (bencode-string->scm "0:")) "0: :: empty string")
     (is (equal? "spam" (bencode-string->scm "4:spam"))
         "4:spam :: simple string")
@@ -110,7 +110,7 @@
                            bencode-decoding-exception?)
         "4:spa :: unexpected EOF"))
 
-  (test ("lists" _)
+  (test "lists" ()
     (is (equal? #() (bencode-string->scm "le")) "le :: empty list")
     (is (equal? #("spam" 34) (bencode-string->scm "l4:spami34ee"))
         "l4:spami34ee :: simple list with string and integer")
@@ -121,7 +121,7 @@
                            bencode-decoding-exception?)
         "l :: unexpected EOF"))
 
-  (test ("dictionaries" _)
+  (test "dictionaries" ()
     (is (equal? '() (bencode-string->scm "de")) "de :: empty string")
     (is (equal? `(("spam" . 34) ("hi" . #("ho")))
                 (bencode-string->scm "d4:spami34e2:hil2:hoee"))

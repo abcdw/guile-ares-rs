@@ -25,7 +25,7 @@
    #:unwind? #t))
 
 (define-suite (assertions-handling-tests)
-  (test ("is assert returns the value of its body" _)
+  (test "is assert returns the value of its body" ()
     (define tr (silent-runner))
     (define is-values
       (with-test-runner tr
@@ -46,11 +46,11 @@
          '(#t 123 some-symbol 123 heyhey 5 #f)
          is-values)))
 
-  (test ("assert exception is reported as error" _)
+  (test "assert exception is reported as error" ()
     (define tr (silent-runner))
     (define run-summary
       (with-test-runner tr
-        (test ("assert exception" ctx)
+        (test "assert exception" (ctx)
           (is (equal? "assert exception"
                       (assoc-ref (assoc-ref ctx 'test)
                                  'test/description)))
@@ -64,11 +64,11 @@
     (is (= 1 (assoc-ref run-summary 'tests)))))
 
 (define-suite (assertion-run-history-tests)
-  (test ("run history stores assertion runs in source order" _)
+  (test "run history stores assertion runs in source order" ()
     (define tr (silent-runner))
     (define run-history
       (with-test-runner tr
-        (test ("history test" _)
+        (test "history test" ()
           (is #t)
           (is #f)
           (is (error "assertion-run-history-tests/history test")))
@@ -112,7 +112,7 @@
           (running:raised-exception third-run-result))))))
 
 (define-suite (wrong-position-tests)
-  (test ("is raises suitbl wrong-position exception inside suite body" _)
+  (test "is raises suitbl wrong-position exception inside suite body" ()
     (define exception
       (capture-exception
        (lambda ()
@@ -125,11 +125,11 @@
     (is (equal? "Assert encountered inside suite, but outside of test"
                 (exception-message exception))))
 
-  (test ("test raises suitbl wrong-position exception inside test body" _)
+  (test "test raises suitbl wrong-position exception inside test body" ()
     (define tr (silent-runner))
     (with-test-runner tr
-      (test ("outer test" _)
-        (test ("inner test" _)
+      (test "outer test" ()
+        (test "inner test" ()
           (is #t))))
     (define run-history
       (state:get-run-history (runner:get-state tr)))
@@ -144,10 +144,10 @@
       (is (equal? "Test Macros can't be nested"
                   (exception-message exception)))))
 
-  (test ("suite raises suitbl wrong-position exception inside test body" _)
+  (test "suite raises suitbl wrong-position exception inside test body" ()
     (define tr (silent-runner))
     (with-test-runner tr
-      (test ("outer test" _)
+      (test "outer test" ()
         (suite "inner suite"
           (is #t))))
     (define run-history
@@ -164,7 +164,7 @@
                   (exception-message exception))))))
 
 (define-suite (re-raise-tests)
-  (test ("test body exception is replayed when re-raise is enabled" _)
+  (test "test body exception is replayed when re-raise is enabled" ()
     (define counter 0)
     (define tr
       (runner:make-suitbl
@@ -174,7 +174,7 @@
       (capture-exception
        (lambda ()
          (with-test-runner tr
-           (test ("replay-check" _)
+           (test "replay-check" ()
              (set! counter (+ counter 1))
              (error "re-raise-tests/test-body replay-check"))))))
     (is exception)
@@ -182,7 +182,7 @@
                 (exception-message exception)))
     (is (= 2 counter)))
 
-  (test ("is inside test is replayed after test body when re-raise is enabled" _)
+  (test "is inside test is replayed after test body when re-raise is enabled" ()
     (define test-body-counter 0)
     (define is-body-counter 0)
     (define after-is-counter 0)
@@ -194,7 +194,7 @@
       (capture-exception
        (lambda ()
          (with-test-runner tr
-           (test ("is replay-check" _)
+           (test "is replay-check" ()
              (set! test-body-counter (+ test-body-counter 1))
              (is (begin
                    (set! is-body-counter (+ is-body-counter 1))
@@ -207,7 +207,7 @@
     (is (= 2 is-body-counter))
     (is (= 1 after-is-counter)))
 
-  (test ("lonely is re-raises exception when re-raise is enabled" _)
+  (test "lonely is re-raises exception when re-raise is enabled" ()
     (define tr
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent)

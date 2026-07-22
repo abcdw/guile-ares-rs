@@ -25,7 +25,7 @@
 ;; stubs for friend, who will implement the functionality later.
 
 ;; Syntax for skipping? can be a xtest, can be
-;; (skip-next-test), can be (test "description" 'skip-it (is #f))
+;; (skip-next-test), can be (test "description" () 'skip-it (is #f))
 ;; probably the last one
 
 ;; We don't need to bake skipping syntax into test definition, because
@@ -192,18 +192,18 @@ because test macro is not composable and can't be wrapped.
 ;; (is-usage-tests)
 
 (define-suite (is-usage-tests)
-  (test ("basic atomic values" _)
+  (test "basic atomic values" ()
     (is #t)
     (is 123)
     (is 'some-symbol))
 
-  (test ("an expression asserting atmoic value of the variable" _)
+  (test "an expression asserting atmoic value of the variable" ()
     (let ((a 123))
       (is a))
     (define b 'heyhey)
     (is b))
 
-  (test ("predicates" _)
+  (test "predicates" ()
     (is (= 1 1))
     (is (even? 14))
     (is (lset= = '(1 2 2 3) '(1 2 2 3)))
@@ -211,7 +211,7 @@ because test macro is not composable and can't be wrapped.
 
   ;; TODO: [Andrew Tropin, 2025-05-01] Move to reporter tests
   #;
-  (test ("error message is good" _)
+  (test "error message is good" ()
     ;; TODO: [Andrew Tropin, 2025-04-08] Produce more sane error message
     ;; for cases with atomic or identifier expressions.
     (is #f)
@@ -221,7 +221,7 @@ because test macro is not composable and can't be wrapped.
            (+ 20000000000000000000000000
               20000000000000000000000000))))
 
-  (test ("if is assert fails when inside suite outside of test macro" _)
+  (test "if is assert fails when inside suite outside of test macro" ()
     (is
      (throws-exception?
       (with-silent-test-environment
@@ -232,34 +232,34 @@ because test macro is not composable and can't be wrapped.
          "Assert encountered inside suite, but outside of test"
          (exception-message ex))))))
 
-  (test ("is on it's own in empty env" _)
+  (test "is on it's own in empty env" ()
     (is (= 7
            (with-silent-test-environment
             (is 7)))))
 
-  (test ("nested is and is return value" _)
+  (test "nested is and is return value" ()
     (is (= 7 (is (+ 3 4))))))
 
 (define-suite (test-macro-usage-tests)
-  (test ("simple test case with metadata marking it as slow" _)
+  (test "simple test case with metadata marking it as slow" ()
     'metadata `((slow? . #t))
     ;; (sleep 1)
     (is #t))
 
-  (test ("zero asserts test macro works fine" _)
+  (test "zero asserts test macro works fine" ()
     "Not yet implemented")
 
-  (test ("standalone test macro usage" _)
+  (test "standalone test macro usage" ()
     (define standalone-test-macro-return-value
       (with-silent-test-environment
-       (test ("simple failure" _)
+       (test "simple failure" ()
          (is #t))))
 
     (is (unspecified? standalone-test-macro-return-value))
 
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
-       (test ("simple failure" _)
+       (test "simple failure" ()
          (is #f))
        (state:get-run-summary
         (runner:get-state))))
@@ -273,7 +273,7 @@ because test macro is not composable and can't be wrapped.
 
     (define run-summary-without-failures
       (with-silent-test-environment
-       (test ("simple success" _)
+       (test "simple success" ()
          (is #t))
        (state:get-run-summary
         (runner:get-state))))
@@ -285,14 +285,14 @@ because test macro is not composable and can't be wrapped.
        run-summary-without-failures)))))
 
 (define-suite (nested-suites-and-test-macros-tests)
-  (test ("expression throws programming-error on unbound variable" _)
+  (test "expression throws programming-error on unbound variable" ()
     (is (throws-exception? (+ b 1 2) programming-error?)))
 
-  (test ("nested test macro usage is forbidden" _)
+  (test "nested test macro usage is forbidden" ()
     (define run-history
       (with-silent-test-environment
-       (test ("outer test macro" _)
-         (test ("nested test macro" _) (is #t)))
+       (test "outer test macro" ()
+         (test "nested test macro" () (is #t)))
        (state:get-run-history
         (runner:get-state))))
     (define outer-test-run (car run-history))
@@ -303,10 +303,10 @@ because test macro is not composable and can't be wrapped.
                    (running:raised-exception
                     (assoc-ref outer-test-run 'test-run/result))))))
 
-  (test ("that suite nested in test case is forbidden" _)
+  (test "that suite nested in test case is forbidden" ()
     (define run-history
       (with-silent-test-environment
-       (test ("test macro" _)
+       (test "test macro" ()
          (suite "nested suite" (is #t)))
        (state:get-run-history
         (runner:get-state))))
@@ -323,26 +323,26 @@ because test macro is not composable and can't be wrapped.
 
   ;; The expression
   ;; (with-silent-test-environment
-  ;;  (test "test macro"
+  ;;  (test "test macro" ()
   ;;    (suite "nested suite" (is #t))))
   ;; expected to throw a 'specific-type-of-exception', but thrown
   ;; <pretty-printed-exception>
 
   (suite "nested test suite 1"
-    (test ("test macro 1#1" _)
+    (test "test macro 1#1" ()
       (is #t)
       (is "very true"))
     (suite "even more nested test suite 1.1"
-      (test ("test macro 1.1#1" _)
+      (test "test macro 1.1#1" ()
         (is (= 4 (+ 2 2)))))))
 
 (define failing-asserts-tests
   (suite-loader "suite"
-    (test ("simple failure" _)
+    (test "simple failure" ()
       (is #f))
-    (test ("simple error" _)
+    (test "simple error" ()
       (is (throw 'hi)))
-    (test ("error > failure" _)
+    (test "error > failure" ()
       (is #f)
       (is (throw 'hi)))))
 
@@ -355,14 +355,14 @@ because test macro is not composable and can't be wrapped.
   ;; (define suite-results
   ;;   (failing-asserts-tests))
   ;; (pk suite-results)
-  ;; (test "suite-results"
+  ;; (test "suite-results" ()
   ;;   (is (equal? 'hi suite-results)))
 
   ;; TODO: [Andrew Tropin, 2025-05-20] Improve this test, check that
   ;; metadata saved and we can retrive it.
   (suite "test suite with metadata"
     'metadata `((interesting? . #t))
-    (test ("simple" _)
+    (test "simple" ()
       (is #t)))
 
   (nested-suites-and-test-macros-tests))
@@ -371,8 +371,8 @@ because test macro is not composable and can't be wrapped.
 
 ;; (test-runner-operations-tests)
 (define-suite (test-runner-operations-tests)
-  (test ("\
-run summary is #f by default, but appears after test suite is executed" _)
+  (test "\
+run summary is #f by default, but appears after test suite is executed" ()
     (is (equal?
          #f
          (with-silent-test-environment
@@ -383,7 +383,7 @@ run summary is #f by default, but appears after test suite is executed" _)
          (null?
           (with-silent-test-environment
            (suite "suite1"
-             (test ("case1" _)
+             (test "case1" ()
                (is #t)))
            (state:get-run-summary
             (runner:get-state))))))
@@ -391,11 +391,11 @@ run summary is #f by default, but appears after test suite is executed" _)
     (define run-summary-with-failures-and-errors
       (with-silent-test-environment
        (suite "suite"
-         (test ("simple failure" _)
+         (test "simple failure" ()
            (is #f))
-         (test ("simple error" _)
+         (test "simple error" ()
            (is (throw 'hi)))
-         (test ("error > failure" _)
+         (test "error > failure" ()
            (is #f)
            (is (throw 'hi))))
        (state:get-run-summary
@@ -417,7 +417,7 @@ run summary is #f by default, but appears after test suite is executed" _)
 
 (define-suite (execution-timeout-tests)
   ;; https://legacy.cs.indiana.edu/~dyb/pubs/engines.pdf
-  (test ("test" _)
+  (test "test" ()
     (is #t)))
 
 
@@ -469,7 +469,7 @@ Loaded 200 tests and 12 test suits.
 [[(...)(..)(....)(.)(.)(..)][(...)][(.)()(..)][[(.)][(.)(.)(.)[(F.)[(.)]]]]]
 
 ┌Test nested test macro usage is forbidden
-(throws-exception? (with-silent-test-environment (test "outer test macro" (test "nested test macro" (is #t)))) (lambda (ex) (string=? "Test Macros can't be nested" (exception-message ex))))
+(throws-exception? (with-silent-test-environment (test "outer test macro" () (test "nested test macro" () (is #t)))) (lambda (ex) (string=? "Test Macros can't be nested" (exception-message ex))))
 X #f
 └Test nested test macro usage is forbidden
 

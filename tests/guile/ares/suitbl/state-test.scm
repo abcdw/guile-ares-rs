@@ -13,19 +13,19 @@
 
   (with-test-runner tr
     (suite "first suite"
-      (test ("good one" _)
+      (test "good one" ()
         (is #t)
         (is 123))
       (suite "nested-suite"
-        (test ("failing test" _)
+        (test "failing test" ()
           (is #f)
           (is (throw 'hi))))
-      (test ("another good one" _)
+      (test "another good one" ()
         (is #t))))
     tr)
 
 (define-suite (sample-test-suite-state-tests)
-  (test ("test runner has a correct suite forest" _)
+  (test "test runner has a correct suite forest" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
 
     (define state
@@ -43,7 +43,7 @@
              ((test . "another good one")))))
          (state:simplify-suite-forest suite-forest))))
 
-  (test ("test runnner has a correct run history" _)
+  (test "test runnner has a correct run history" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
 
     (define state
@@ -83,7 +83,7 @@
          (state:simplify-run-history run-history)))))
 
 (define-suite (run-summarization-tests)
-  (test ("run forest has run summary and outcome attached to each node" _)
+  (test "run forest has run summary and outcome attached to each node" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
 
     (define state
@@ -141,14 +141,14 @@
          (state:simplify-suite-forest run-forest-with-summary)))))
 
 (define-suite (schedule-tests-tests)
-  (test ("all loaded tests are scheduled when no schedule-tests in config" _)
+  (test "all loaded tests are scheduled when no schedule-tests in config" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
     (define state (runner:get-state tr))
     (define loaded (state:get-loaded-tests state))
     (define scheduled (state:get-scheduled-tests state '()))
     (is (equal? loaded scheduled)))
 
-  (test ("custom schedule-tests filters tests" _)
+  (test "custom schedule-tests filters tests" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
     (define state (runner:get-state tr))
     (define config
@@ -163,7 +163,7 @@
     (is (equal? "good one"
                 (assoc-ref (car scheduled) 'test/description))))
 
-  (test ("schedule-tests can return empty list" _)
+  (test "schedule-tests can return empty list" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
     (define state (runner:get-state tr))
     (define config
@@ -171,7 +171,7 @@
     (define scheduled (state:get-scheduled-tests state config))
     (is (null? scheduled)))
 
-  (test ("get-stats reflects scheduling" _)
+  (test "get-stats reflects scheduling" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
     (define state (runner:get-state tr))
     (define config
@@ -185,7 +185,7 @@
     (is (= 3 (assoc-ref stats 'loaded-tests-count)))
     (is (= 1 (assoc-ref stats 'selected-tests-count))))
 
-  (test ("get-stats with default scheduling shows all tests selected" _)
+  (test "get-stats with default scheduling shows all tests selected" ()
     (define tr (get-test-runner-with-sample-suite-loaded))
     (define state (runner:get-state tr))
     (define stats (state:get-stats state '()))
