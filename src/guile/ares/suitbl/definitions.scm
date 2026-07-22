@@ -146,7 +146,7 @@ at macro-expansion time."
         (format port ":~a" (assoc-ref location 'column))))
     (format port "\n")
     (format port "  `(test DESCRIPTION BODY ...)` syntax is deprecated.\n")
-    (format port "  Use `(test (DESCRIPTION _) BODY ...)` or `(test (DESCRIPTION context) BODY ...)`.")
+    (format port "  Use `(test DESCRIPTION () BODY ...)` or `(test DESCRIPTION (context) BODY ...)`.")
     (format port "\n")))
 
 (define (warn-deprecated-test-thunk location)
@@ -159,7 +159,7 @@ at macro-expansion time."
       (when (assoc-ref location 'column)
         (format port ":~a" (assoc-ref location 'column))))
     (format port "\n")
-    (format port "  Use `(test-loader DESCRIPTION BODY ...)` instead.")
+    (format port "  Use `(test-loader DESCRIPTION () BODY ...)` instead.")
     (format port "\n")))
 
 (define (warn-deprecated-suite-thunk location)
@@ -221,6 +221,27 @@ at macro-expansion time."
                    (test . ,test-entity))))))))
 
     (syntax-case stx (metadata)
+      ((_ test-description (context-name)
+          (quote metadata) metadata-value expression expressions ...)
+       (identifier? #'context-name)
+       (build-test-loader stx
+                          #'test-description
+                          #'metadata-value
+                          #'(lambda (context-name)
+                              expression expressions ...)
+                          #'(expression expressions ...)
+                          #'#f))
+
+      ((_ test-description ()
+          (quote metadata) metadata-value expression expressions ...)
+       (build-test-loader stx
+                          #'test-description
+                          #'metadata-value
+                          #'(lambda (%suitbl-context)
+                              expression expressions ...)
+                          #'(expression expressions ...)
+                          #'#f))
+
       ((_ (test-description context-name)
           (quote metadata) metadata-value expression expressions ...)
        (identifier? #'context-name)
@@ -232,7 +253,8 @@ at macro-expansion time."
                           #'(expression expressions ...)
                           #'#f))
 
-      ((_ test-description (quote metadata) metadata-value expression expressions ...)
+      ((_ test-description
+          (quote metadata) metadata-value expression expressions ...)
        (build-test-loader stx
                           #'test-description
                           #'metadata-value
@@ -241,8 +263,23 @@ at macro-expansion time."
                           #'(expression expressions ...)
                           #'#t))
 
-      ((_ test-head expression expressions ...)
-       #'(test-loader test-head 'metadata '() expression expressions ...)))))
+      ((_ test-description (context-name) expression expressions ...)
+       (identifier? #'context-name)
+       #'(test-loader test-description (context-name)
+           'metadata '() expression expressions ...))
+
+      ((_ test-description () expression expressions ...)
+       #'(test-loader test-description ()
+           'metadata '() expression expressions ...))
+
+      ((_ (test-description context-name) expression expressions ...)
+       (identifier? #'context-name)
+       #'(test-loader (test-description context-name)
+           'metadata '() expression expressions ...))
+
+      ((_ test-description expression expressions ...)
+       #'(test-loader test-description
+           'metadata '() expression expressions ...)))))
 
 (define-syntax test-thunk
   (lambda (stx)

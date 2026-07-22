@@ -161,9 +161,9 @@
   (test ("test emits proper values to the test runner" ctx)
     (define events-log
       (with-runner-events-to-list
-       (test ("t1" _) 'body)
-       (test ("t2" _) 'metadata '((good? . #t)) 'body)
-       (test ("t3" ctx) (assoc-ref ctx 'answer))))
+       (test "t1" () 'body)
+       (test "t2" () 'metadata '((good? . #t)) 'body)
+       (test "t3" (ctx) (assoc-ref ctx 'answer))))
     (define (event-test event)
       (assoc-ref event 'test))
     (define test-1 (event-test (car events-log)))

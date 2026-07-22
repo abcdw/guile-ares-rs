@@ -51,17 +51,17 @@ inside (aka test suits) from usual functions.  Use @code{define-suite}
 to define and export such suite loaders.
 
 (define-suite (addition-tests)
-  (test "small numbers addition"
+  (test "small numbers addition" ()
     (is (= 4 (+ 2 2)))
     (is (= 7 (+ 3 4))))
 
-  (test "big numbers addition"
+  (test "big numbers addition" ()
     (is (=    4000000000000
            (+ 2000000000000
               2000000000000)))))
 
 (define-suite (subtraction-tests)
-  (test "small numbers subtraction"
+  (test "small numbers subtraction" ()
     (is (= 1 (- 4 3)))
     (is (= 3 (- 7 4)))))
 

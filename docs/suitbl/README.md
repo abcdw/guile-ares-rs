@@ -25,6 +25,21 @@ suitbl implementation lives under `src/guile/ares/suitbl/`.
 
 ## Definition syntax
 
+Tests put the description before a context binding list. Use an empty list when
+the body does not need the test context:
+
+```scheme
+(test "adds small numbers" ()
+  (is (= 4 (+ 2 2))))
+```
+
+Bind the context by name when the body needs it:
+
+```scheme
+(test "uses its context" (ctx)
+  (is (assoc-ref ctx 'expected)))
+```
+
 Named suites should use the parenthesized form:
 
 ```scheme
