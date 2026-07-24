@@ -8,7 +8,7 @@
   #:use-module (ares suitbl runner)
 
   #:re-export (throws-exception?
-               test-runner*
+               current-test-runner
 
                is
                ;; Keep deprecated -thunk aliases for compatibility.

@@ -255,7 +255,7 @@
     (define test-runner
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
-    (parameterize ((test-runner* test-runner))
+    (parameterize ((current-test-runner test-runner))
       (suite "sample"
         (test "passing test" ()
           (is #t)))
@@ -277,7 +277,7 @@
     (define test-runner
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
-    (parameterize ((test-runner* test-runner))
+    (parameterize ((current-test-runner test-runner))
       (suite "fail-suite"
         (test "failing test" ()
           (is #f)))
@@ -297,7 +297,7 @@
     (define test-runner
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
-    (parameterize ((test-runner* test-runner))
+    (parameterize ((current-test-runner test-runner))
       (suite "error-suite"
         (test "erroring test" ()
           (is (throw 'boom))))

@@ -28,14 +28,14 @@
 
     (define (runner-events thunk)
       (let ((runner (make-logging-runner)))
-        (parameterize ((t:test-runner* runner))
+        (parameterize ((t:current-test-runner runner))
           (thunk)
           (runner '((type . runner/get-log))))))
 
     (define-test srfi-269
       (test-group "srfi-269"
         (test-assert "set-test-runner! returns the previous runner"
-          (let ((original-runner (t:test-runner*))
+          (let ((original-runner (t:current-test-runner))
                 (new-runner (lambda (message) message))
                 (previous-runner #f)
                 (current-runner #f))
@@ -43,12 +43,12 @@
               (lambda () #t)
               (lambda ()
                 (set! previous-runner (t:set-test-runner! new-runner))
-                (set! current-runner (t:test-runner*)))
+                (set! current-runner (t:current-test-runner)))
               (lambda ()
                 (t:set-test-runner! original-runner)))
             (and (eq? original-runner previous-runner)
                  (eq? new-runner current-runner)
-                 (eq? original-runner (t:test-runner*)))))
+                 (eq? original-runner (t:current-test-runner)))))
 
         (test-assert "test? recognizes test entities"
           (t:test? `((test/body-thunk . ,(lambda () #t))

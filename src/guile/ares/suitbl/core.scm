@@ -5,7 +5,7 @@
   #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module (ares suitbl definitions)
   #:export (with-test-runner)
-  #:re-export (test-runner*
+  #:re-export (current-test-runner
                set-test-runner!
 
                is
@@ -18,12 +18,12 @@
 
                define-suite))
 
-;; Forces to load runner module, so test-runner* is initialized
+;; Forces to load runner module, so current-test-runner is initialized
 (define %runner-module-force-load runner:make-suitbl)
 
 (define-syntax with-test-runner
   (lambda (stx)
     (syntax-case stx ()
       ((_ test-runner body body* ...)
-       #'(parameterize ((test-runner* test-runner))
+       #'(parameterize ((current-test-runner test-runner))
            body body* ...)))))

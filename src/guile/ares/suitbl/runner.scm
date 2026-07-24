@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl runner)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
-  #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
+  #:use-module ((ares suitbl definitions) #:select (current-test-runner test?))
   #:use-module ((ares suitbl exceptions)
                 #:select (raise-suitbl-wrong-position-exception))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
@@ -33,7 +33,7 @@
 The same test runner can be used to run and re-run tests and test
 suits multiple times.
 
-There is a test-runner* dynamic variable (parameter), to reset test
+There is a current-test-runner dynamic variable (parameter), to reset test
 environment just set it to new instance of test runner.
 
 |#
@@ -412,9 +412,9 @@ carries the final verdict."
   this)
 
 ;; Set default test runner.
-(test-runner* (make-suitbl))
+(current-test-runner (make-suitbl))
 
-(define* (get-state #:optional (runner (test-runner*)))
+(define* (get-state #:optional (runner (current-test-runner)))
   (runner '((type . runner/get-state))))
 
 (define (make-silent)

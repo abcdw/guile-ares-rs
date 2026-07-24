@@ -74,8 +74,8 @@
      (is #f)))
  (some-cool-tests)
 
- test-runner*
- (test-runner*)
+ current-test-runner
+ (current-test-runner)
 
  )
 
@@ -157,7 +157,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;;                          error message.
 
 (comment
- (test-runner* (runner:make-suitbl
+ (current-test-runner (runner:make-suitbl
                 #:config '((log-runner-messages? . #t))))
 
  ;; Simple truthy assertion
@@ -165,7 +165,7 @@ API-first, can be easily integrated in your IDE and other tools.
  (is 42)
  (is (= 2 (+ 3 2)))
 
- ((test-runner*)
+ ((current-test-runner)
   `((type . runner/get-log)))
 
  (begin
@@ -196,8 +196,8 @@ API-first, can be easily integrated in your IDE and other tools.
     (format #t "~y" _)))
 
 (comment
- (test-runner*)
- (test-runner* (runner:make-suitbl
+ (current-test-runner)
+ (current-test-runner (runner:make-suitbl
                 #:config '((log-runner-messages? . #t))))
  (runner-get-state-pretty)
 
@@ -206,12 +206,12 @@ API-first, can be easily integrated in your IDE and other tools.
    (is (= 6 (* 2 3)))
    (is (= 0 (- 5 5))))
 
- ((test-runner*) `((type . runner/get-log)))
+ ((current-test-runner) `((type . runner/get-log)))
  (runner-get-state-pretty)
 
  ;;; No auto-run
 
- (test-runner* (runner:make-suitbl
+ (current-test-runner (runner:make-suitbl
                 #:config '((log-runner-messages? . #t)
                            (auto-run? . #f))))
 
@@ -220,8 +220,8 @@ API-first, can be easily integrated in your IDE and other tools.
    (is (= 5 (string-length "hello"))))
 
 
- ((test-runner*) `((type . runner/get-log)))
- ((test-runner*) `((type . runner/run-tests)))
+ ((current-test-runner) `((type . runner/get-log)))
+ ((current-test-runner) `((type . runner/run-tests)))
 
  (runner-get-state-pretty)
 
@@ -236,7 +236,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;; The tree reporter prints a nice hierarchy when loading completes.
 
 (comment
- (test-runner* (runner:make-suitbl
+ (current-test-runner (runner:make-suitbl
                 #:config '((log-runner-messages? . #t))))
 
  (suite "math operations"
@@ -262,19 +262,19 @@ API-first, can be easily integrated in your IDE and other tools.
 
 
 (comment
- (chain ((test-runner*) `((type . runner/get-log)))
+ (chain ((current-test-runner) `((type . runner/get-log)))
    (map (lambda (m) (assoc-ref m 'type)) _))
 
  (chain (runner:get-state)
    (state:get-run-history _)
    (state:simplify-run-history _))
 
- (chain ((test-runner*) `((type . runner/get-log)))
+ (chain ((current-test-runner) `((type . runner/get-log)))
    (map (lambda (m) (assoc-ref m 'type)) _))
 
- ((test-runner*) `((type . runner/run-tests)))
+ ((current-test-runner) `((type . runner/run-tests)))
 
- ((test-runner*) `((type . runner/run-tests)
+ ((current-test-runner) `((type . runner/run-tests)
                    (runner/config
                     . ((schedule-tests . ,(lambda (tests state)
                                             (reverse tests))))))))
@@ -314,10 +314,10 @@ API-first, can be easily integrated in your IDE and other tools.
    (test "slow check" () 'metadata '((slow? . #t))
          (is (= 2 (+ 1 1)))))
 
- ((test-runner*) `((type . runner/run-tests)))
+ ((current-test-runner) `((type . runner/run-tests)))
 
  ;; Re-run, but skip slow tests via inline config
- ((test-runner*) `((type . runner/run-tests)
+ ((current-test-runner) `((type . runner/run-tests)
                    (runner/config
                     . ((schedule-tests . ,scheduler:fast))))))
 
@@ -367,7 +367,7 @@ API-first, can be easily integrated in your IDE and other tools.
     (test "no output" () (is #t) (is #t)))
 
   ;; Retrieve the run summary programmatically
-  ((test-runner*) `((type . runner/get-run-summary))))
+  ((current-test-runner) `((type . runner/get-run-summary))))
 
  )
 
@@ -380,7 +380,7 @@ API-first, can be easily integrated in your IDE and other tools.
 ;; Great for interactive workflows: focus on what matters right now.
 
 (comment
-  ((test-runner*) `((type . runner/run-tests)))
+  ((current-test-runner) `((type . runner/run-tests)))
 
  ;; Run only slow tests
  (preset:only-slow!)

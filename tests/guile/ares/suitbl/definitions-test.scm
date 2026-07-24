@@ -48,10 +48,10 @@
   (lambda (stx)
     (syntax-case stx ()
       ((_ body body* ...)
-       #'(parameterize ((test-runner*
+       #'(parameterize ((current-test-runner
                          (get-logging-test-runner)))
            body body* ...
-           ((test-runner*)
+           ((current-test-runner)
             `((type . runner/get-log))))))))
 
 (define (load-tests thunk)
@@ -98,7 +98,7 @@
 
 (define-suite (test-runner-parameter-tests)
   (test "set-test-runner! changes the current test runner" ()
-    (define original-runner (test-runner*))
+    (define original-runner (current-test-runner))
     (define new-runner (get-logging-test-runner))
     (define previous-runner #f)
     (define current-runner #f)
@@ -106,12 +106,12 @@
       (lambda () #t)
       (lambda ()
         (set! previous-runner (set-test-runner! new-runner))
-        (set! current-runner (test-runner*)))
+        (set! current-runner (current-test-runner)))
       (lambda ()
         (set-test-runner! original-runner)))
     (is (eq? original-runner previous-runner))
     (is (eq? new-runner current-runner))
-    (is (eq? original-runner (test-runner*)))))
+    (is (eq? original-runner (current-test-runner)))))
 
 (define-suite (definitions-to-runner-integration-tests)
   (test "is emits proper values to the test runner" ()
@@ -307,7 +307,7 @@
     (define test-runner
       (runner:make-suitbl
        #:config `((test-reporter . ,reporter:silent))))
-    (parameterize ((test-runner* test-runner))
+    (parameterize ((current-test-runner test-runner))
       (suite "macro assertion sample"
         (test "chain + assertion" ()
           (is (chain 'hi (list _)))

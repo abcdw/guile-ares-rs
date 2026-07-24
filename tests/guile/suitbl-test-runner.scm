@@ -34,7 +34,7 @@
   "Special test-runner's configuration, which manually validates number
 of executed tests."
   (let* ((test-runner (runner:make-suitbl)))
-    (parameterize ((test-runner* test-runner))
+    (parameterize ((current-test-runner test-runner))
       ((@ (ares suitbl ares) load-project-tests))
       (test-runner `((type . runner/run-tests)
                      (runner/config
@@ -61,6 +61,6 @@ expected number of tests is up-to-date."
   (let* ((test-runner (runner:make-suitbl
                        #:config
                        `((test-reporter . ,reporter:junit)))))
-    (parameterize ((test-runner* test-runner))
+    (parameterize ((current-test-runner test-runner))
       ((@ (ares suitbl ares) load-project-tests))
       (test-runner `((type . runner/run-tests))))))

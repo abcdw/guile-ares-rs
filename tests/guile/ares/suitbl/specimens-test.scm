@@ -78,7 +78,7 @@
      #:config `((auto-run? . #f)
                 (test-reporter . ,reporter))))
 
-  (parameterize ((test-runner* test-runner))
+  (parameterize ((current-test-runner test-runner))
     (all-tests)
     (test-runner `((type . runner/run-tests)))))
 

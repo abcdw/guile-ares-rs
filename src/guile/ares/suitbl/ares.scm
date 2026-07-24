@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl ares)
   #:use-module ((ares guile prelude) #:select (comment))
-  #:use-module ((ares suitbl core) #:select (suite test-runner*))
+  #:use-module ((ares suitbl core) #:select (suite current-test-runner))
   #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl state) #:prefix state:)
@@ -20,7 +20,7 @@
             load-project-tests))
 
 (define (run-tests)
-  ((test-runner*) `((type . runner/run-tests)
+  ((current-test-runner) `((type . runner/run-tests)
                     (runner/config
                      .
                      ((test-reporter . ,reporter:base)))))

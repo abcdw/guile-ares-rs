@@ -2,7 +2,7 @@
 ;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl definitions)
-  #:export (test-runner*
+  #:export (current-test-runner
             set-test-runner!
 
             is
@@ -41,17 +41,17 @@
 
 (define (missing-test-runner _)
   (format (current-error-port) "\
-The test-runner* is not set. Probably you imported test defining API
+The current-test-runner is not set. Probably you imported test defining API
 directly instead of using a downstream testing library. That's
 probably not what you want, unless you are a developer of a testing
 library and enjoy seeing this message. Please, use suitbl or other
 library, which sets an approriate test runner for you."))
 
-(define test-runner* (make-parameter missing-test-runner))
+(define current-test-runner (make-parameter missing-test-runner))
 
 (define (set-test-runner! runner)
   "Set the current test runner to RUNNER and return the previous runner."
-  (test-runner* runner))
+  (current-test-runner runner))
 
 (define (test? x)
   (and (list? x)
@@ -101,7 +101,7 @@ at macro-expansion time."
                                stx
                                (make-source-absolute (syntax-source stx))))
                     ((assertion-field ...) fields))
-        #'((test-runner*)
+        #'((current-test-runner)
            `((type . runner/run-assertion)
              (assertion . (assertion-field ...
                            (assertion/location . location)))))))
@@ -209,7 +209,7 @@ at macro-expansion time."
                      (test/metadata . ,metadata-value)
                      (test/location . location))))
               (lambda* (#:optional (metadata '()))
-                ((test-runner*)
+                ((current-test-runner)
                  `((type . runner/load-test)
                    (test . ,(amend-entity-metadata
                              test-entity 'test/metadata metadata)))))))))
@@ -296,7 +296,7 @@ more @code{is} asserts."
                    ;; Wrapping into identity to prevent setting procedure-name
                    (identity
                     (lambda* (#:optional (metadata '()))
-                      ((test-runner*)
+                      ((current-test-runner)
                        `((type . runner/load-suite)
                          (suite . ,(amend-entity-metadata
                                     suite-entity 'suite/metadata

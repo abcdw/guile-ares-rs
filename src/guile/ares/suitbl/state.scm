@@ -7,7 +7,7 @@
                 (atomic-box-update!
                  make-atomic-box
                  atomic-box-ref))
-  #:use-module ((ares suitbl definitions) #:select (test-runner* test?))
+  #:use-module ((ares suitbl definitions) #:select (current-test-runner test?))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((srfi srfi-1)

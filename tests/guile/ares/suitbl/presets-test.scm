@@ -57,7 +57,7 @@
     (preset:reset! tr)
     (is (= 4 (length (scheduled-descriptions tr)))))
 
-  (test "presets default to current test-runner*" ()
+  (test "presets default to current-test-runner" ()
     (define tr (make-test-runner-with-mixed-tests))
     (with-test-runner tr
       (preset:only-slow!))

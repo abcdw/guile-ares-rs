@@ -174,7 +174,7 @@ because test macro is not composable and can't be wrapped.
   (lambda (stx)
     (syntax-case stx ()
       ((_ body body* ...)
-       #'(parameterize ((test-runner*
+       #'(parameterize ((current-test-runner
                          (runner:make-suitbl
                           #:config `((test-reporter . ,reporter:silent)))))
            body body* ...)))))

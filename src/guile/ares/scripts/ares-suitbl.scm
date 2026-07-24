@@ -86,7 +86,7 @@
          (runner:make-suitbl
           #:config (append reporter-config scheduler-config)))
 
-       (parameterize ((test-runner* runner))
+       (parameterize ((current-test-runner runner))
          (load-project-tests)
          (runner '((type . runner/run-tests))))
 

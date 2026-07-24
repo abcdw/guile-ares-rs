@@ -8,7 +8,7 @@
    (guile (import (guile)))
    (else (import (scheme base))))
   (import (srfi 229))
-  (export test-runner*
+  (export current-test-runner
           set-test-runner!
 
           is
@@ -21,17 +21,17 @@
 
   (begin
     (define (missing-test-runner message)
-      (error "test-runner* is not set" message))
+      (error "current-test-runner is not set" message))
 
-    (define test-runner*
+    (define current-test-runner
       (make-parameter missing-test-runner))
 
     (define (set-test-runner! runner)
-      (let ((previous-runner (test-runner*)))
+      (let ((previous-runner (current-test-runner)))
         ;; For Scheme implementations not supporting setting of a parameter,
         ;; the initial value can be an atomic box and this function can set the
         ;; atomic box value instead of the parameter itself.
-        (test-runner* runner)
+        (current-test-runner runner)
         previous-runner))
 
     (define (alist-contains? alist key)
@@ -64,7 +64,7 @@
     (define-syntax is
       (syntax-rules ()
         ((_ (predicate argument ...))
-         ((test-runner*)
+         ((current-test-runner)
           (list (cons 'type 'runner/run-assert)
                 (cons 'assertion
                       (list
@@ -76,7 +76,7 @@
                              (quote (predicate argument ...)))
                        (cons 'assertion/location #f))))))
         ((_ form)
-         ((test-runner*)
+         ((current-test-runner)
           (list (cons 'type 'runner/run-assert)
                 (cons 'assertion
                       (list
@@ -97,7 +97,7 @@
                  (cons 'test/metadata metadata-value)
                  (cons 'test/location #f))))
            (lambda ()
-             ((test-runner*)
+             ((current-test-runner)
               (list (cons 'type 'runner/load-test)
                     (cons 'test test-entity))))))
         ((_ test-description body ...)
@@ -120,7 +120,7 @@
                  (cons 'suite/location #f))))
            (lambda/tag (make-suite-thunk-tag suite-entity)
              ()
-             ((test-runner*)
+             ((current-test-runner)
               (list (cons 'type 'runner/load-suite)
                     (cons 'suite suite-entity))))))
         ((_ suite-description body ...)
