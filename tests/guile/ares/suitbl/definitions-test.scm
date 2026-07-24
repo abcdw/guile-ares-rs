@@ -180,6 +180,27 @@
                 ((assoc-ref test-3 'test/body-procedure)
                  '((answer . value))))))
 
+  (test "test-loader amends metadata when called" ()
+    (define tmp-test-loader
+      (test-loader "tmp test loader" ()
+        'metadata
+        '((default? . #t)
+          (shared . default))
+        #t))
+    (define amended-metadata
+      (chain (with-runner-events-to-list
+              (tmp-test-loader '((added? . #t)
+                                 (shared . amended))))
+        (car _)
+        (assoc-ref _ 'test)
+        (assoc-ref _ 'test/metadata)))
+    (is (equal? '((added? . #t)
+                  (shared . amended)
+                  (default? . #t)
+                  (shared . default))
+                amended-metadata))
+    (is (equal? 'amended (assoc-ref amended-metadata 'shared))))
+
   (test "runner adds compound metadata inherited from suite" ()
     (define compound-metadata
       (chain (suite-loader "outer" 'metadata '((slow? . #t))

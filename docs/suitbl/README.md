@@ -50,16 +50,22 @@ Named suites should use the parenthesized form:
 The old bare-name form, `(define-suite some-cool-tests ...)`, remains accepted
 for compatibility and emits a deprecation warning.
 
-A suite loader accepts optional metadata when called.  This metadata amends the
-metadata declared by `suite-loader`, with call-time values taking precedence:
+Suite and test loaders accept optional metadata when called.  This metadata
+amends the metadata declared by the loader, with call-time values taking
+precedence:
 
 ```scheme
-(define load-tests
+(define load-suite
   (suite-loader "tests" 'metadata '((slow? . #t))
     ...))
 
-(load-tests '((module . example)
+(define load-test
+  (test-loader "works" () 'metadata '((slow? . #t))
+    ...))
+
+(load-suite '((module . example)
               (slow? . #f)))
+(load-test '((slow? . #f)))
 ```
 
 ## Test structure

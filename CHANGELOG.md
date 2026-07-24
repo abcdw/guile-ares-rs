@@ -21,7 +21,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl test entities now use `test/body-procedure` one-argument procedures instead of `test/body-thunk` thunks.
 - suitbl `test-thunk` was renamed to `test-loader`; `test-thunk` remains as a deprecated alias.
 - suitbl `suite-thunk` and `suite-thunk?` were renamed to `suite-loader` and `suite-loader?`; old names remain as deprecated aliases.
-- suitbl suite loaders now accept an optional metadata argument that amends their declared metadata.
+- suitbl suite and test loaders now accept an optional metadata argument that amends their declared metadata.
 - suitbl now warns when the deprecated `(test DESCRIPTION BODY ...)` form is used.
 - suitbl `define-suite` now prefers `(define-suite (NAME) BODY ...)`; the old `(define-suite NAME BODY ...)` form remains as a deprecated alias.
 - suitbl `is` now treats assertions as generic forms and no longer records predicate-form `assertion/args-thunk` metadata.

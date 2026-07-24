@@ -120,13 +120,13 @@ at macro-expansion time."
 (define (alist-merge l1 l2)
   (append l1 l2))
 
-(define (amend-suite-metadata suite-entity metadata)
+(define (amend-entity-metadata entity metadata-key metadata)
   (map (lambda (entry)
-         (if (eq? 'suite/metadata (car entry))
-             (cons 'suite/metadata
+         (if (eq? metadata-key (car entry))
+             (cons metadata-key
                    (alist-merge metadata (cdr entry)))
              entry))
-       suite-entity))
+       entity))
 
 (define (warn-deprecated-test-form location)
   (let ((port (current-warning-port)))
@@ -208,10 +208,11 @@ at macro-expansion time."
                      (test/description . ,test-description)
                      (test/metadata . ,metadata-value)
                      (test/location . location))))
-              (lambda ()
+              (lambda* (#:optional (metadata '()))
                 ((test-runner*)
                  `((type . runner/load-test)
-                   (test . ,test-entity))))))))
+                   (test . ,(amend-entity-metadata
+                             test-entity 'test/metadata metadata)))))))))
 
     (syntax-case stx (metadata)
       ((_ test-description (context-name)
@@ -297,8 +298,9 @@ more @code{is} asserts."
                     (lambda* (#:optional (metadata '()))
                       ((test-runner*)
                        `((type . runner/load-suite)
-                         (suite . ,(amend-suite-metadata
-                                    suite-entity metadata))))))))
+                         (suite . ,(amend-entity-metadata
+                                    suite-entity 'suite/metadata
+                                    metadata))))))))
 
              (set-procedure-properties!
               %suite-loader
