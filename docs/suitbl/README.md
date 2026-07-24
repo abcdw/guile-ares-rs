@@ -50,6 +50,18 @@ Named suites should use the parenthesized form:
 The old bare-name form, `(define-suite some-cool-tests ...)`, remains accepted
 for compatibility and emits a deprecation warning.
 
+A suite loader accepts optional metadata when called.  This metadata amends the
+metadata declared by `suite-loader`, with call-time values taking precedence:
+
+```scheme
+(define load-tests
+  (suite-loader "tests" 'metadata '((slow? . #t))
+    ...))
+
+(load-tests '((module . example)
+              (slow? . #f)))
+```
+
 ## Test structure
 
 suitbl tests are mainly in:

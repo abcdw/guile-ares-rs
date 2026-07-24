@@ -232,11 +232,28 @@
     (is (equal? '("s1" "s2") (simplify-log events-log)))
     (is (equal? '(integration) (get-tags (cadr events-log)))))
 
-  (test "suite-loader creates named suite loader" ()
+  (test "suite-loader creates named suite loader and amends metadata" ()
     (define tmp-suite-loader
-      (suite-loader "tmp suite loader" #t))
+      (suite-loader "tmp suite loader"
+        'metadata
+        '((default? . #t)
+          (shared . default))
+        #t))
+    (define amended-metadata
+      (chain (with-runner-events-to-list
+              (tmp-suite-loader '((added? . #t)
+                                  (shared . amended))))
+        (car _)
+        (assoc-ref _ 'suite)
+        (assoc-ref _ 'suite/metadata)))
     (is (suite-loader? tmp-suite-loader))
-    (is (not (suite-loader? (lambda () #t)))))
+    (is (not (suite-loader? (lambda () #t))))
+    (is (equal? '((added? . #t)
+                  (shared . amended)
+                  (default? . #t)
+                  (shared . default))
+                amended-metadata))
+    (is (equal? 'amended (assoc-ref amended-metadata 'shared))))
 
   (test "define-suite creates suite loader with parenthesized syntax" ()
     (call-with-values

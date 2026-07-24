@@ -120,6 +120,14 @@ at macro-expansion time."
 (define (alist-merge l1 l2)
   (append l1 l2))
 
+(define (amend-suite-metadata suite-entity metadata)
+  (map (lambda (entry)
+         (if (eq? 'suite/metadata (car entry))
+             (cons 'suite/metadata
+                   (alist-merge metadata (cdr entry)))
+             entry))
+       suite-entity))
+
 (define (warn-deprecated-test-form location)
   (let ((port (current-warning-port)))
     (format port "warning: deprecated suitbl test form")
@@ -286,10 +294,11 @@ more @code{is} asserts."
                   (%suite-loader
                    ;; Wrapping into identity to prevent setting procedure-name
                    (identity
-                    (lambda ()
+                    (lambda* (#:optional (metadata '()))
                       ((test-runner*)
                        `((type . runner/load-suite)
-                         (suite . ,suite-entity)))))))
+                         (suite . ,(amend-suite-metadata
+                                    suite-entity metadata))))))))
 
              (set-procedure-properties!
               %suite-loader
