@@ -3,7 +3,7 @@
 
 (define-module (ares suitbl definitions)
   #:export (current-test-runner
-            set-test-runner!
+            set-current-test-runner!
 
             is
             test test?
@@ -49,7 +49,7 @@ library, which sets an approriate test runner for you."))
 
 (define current-test-runner (make-parameter missing-test-runner))
 
-(define (set-test-runner! runner)
+(define (set-current-test-runner! runner)
   "Set the current test runner to RUNNER and return the previous runner."
   (current-test-runner runner))
 

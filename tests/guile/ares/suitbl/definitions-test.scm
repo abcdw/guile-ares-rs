@@ -97,7 +97,7 @@
     (is (not (suite-loader? (lambda () #t))))))
 
 (define-suite (test-runner-parameter-tests)
-  (test "set-test-runner! changes the current test runner" ()
+  (test "set-current-test-runner! changes the current test runner" ()
     (define original-runner (current-test-runner))
     (define new-runner (get-logging-test-runner))
     (define previous-runner #f)
@@ -105,10 +105,10 @@
     (dynamic-wind
       (lambda () #t)
       (lambda ()
-        (set! previous-runner (set-test-runner! new-runner))
+        (set! previous-runner (set-current-test-runner! new-runner))
         (set! current-runner (current-test-runner)))
       (lambda ()
-        (set-test-runner! original-runner)))
+        (set-current-test-runner! original-runner)))
     (is (eq? original-runner previous-runner))
     (is (eq? new-runner current-runner))
     (is (eq? original-runner (current-test-runner)))))

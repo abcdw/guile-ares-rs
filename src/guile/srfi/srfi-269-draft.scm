@@ -9,7 +9,7 @@
    (else (import (scheme base))))
   (import (srfi 229))
   (export current-test-runner
-          set-test-runner!
+          set-current-test-runner!
 
           is
           test test?
@@ -26,7 +26,7 @@
     (define current-test-runner
       (make-parameter missing-test-runner))
 
-    (define (set-test-runner! runner)
+    (define (set-current-test-runner! runner)
       (let ((previous-runner (current-test-runner)))
         ;; For Scheme implementations not supporting setting of a parameter,
         ;; the initial value can be an atomic box and this function can set the

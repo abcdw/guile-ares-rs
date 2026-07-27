@@ -34,7 +34,7 @@
 
     (define-test srfi-269
       (test-group "srfi-269"
-        (test-assert "set-test-runner! returns the previous runner"
+        (test-assert "set-current-test-runner! returns the previous runner"
           (let ((original-runner (t:current-test-runner))
                 (new-runner (lambda (message) message))
                 (previous-runner #f)
@@ -42,10 +42,10 @@
             (dynamic-wind
               (lambda () #t)
               (lambda ()
-                (set! previous-runner (t:set-test-runner! new-runner))
+                (set! previous-runner (t:set-current-test-runner! new-runner))
                 (set! current-runner (t:current-test-runner)))
               (lambda ()
-                (t:set-test-runner! original-runner)))
+                (t:set-current-test-runner! original-runner)))
             (and (eq? original-runner previous-runner)
                  (eq? new-runner current-runner)
                  (eq? original-runner (t:current-test-runner)))))
