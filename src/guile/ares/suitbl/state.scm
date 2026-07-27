@@ -15,7 +15,9 @@
 
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
-  #:export (save-event!
+  #:export (allocate-suite-id!
+
+            save-event!
             get-log
 
             make-suite-node
@@ -59,6 +61,14 @@
      (let* ((value (or (assoc-ref alist key) #f))
             (new-value (f value)))
        (update-alist-value alist key new-value)))))
+
+(define (allocate-suite-id! state)
+  "Atomically allocate and return the next suite ID in STATE."
+  (chain state
+    (update-atomic-alist-value!
+     _ 'runner/suite-id-counter
+     (lambda (counter) (1+ (or counter 0))))
+    (assoc-ref _ 'runner/suite-id-counter)))
 
 
 ;;;

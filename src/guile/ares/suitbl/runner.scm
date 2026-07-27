@@ -54,7 +54,8 @@ environment just set it to new instance of test runner.
                             (re-raise? . #f))))
   "A flexible test runner factory, which spawns new test runners."
   (define state
-    (make-atomic-box `((runner/run-history . #f)
+    (make-atomic-box `((runner/suite-id-counter . 0)
+                       (runner/run-history . #f)
                        (runner/config . ,(state:merge-runner-config
                                           config
                                           default-config)))))
@@ -78,6 +79,20 @@ environment just set it to new instance of test runner.
           (port (acons 'reporting/port port _))
           (#t   (acons 'suitbl/state state _))
           (#t   ((%test-reporter*) _))))))
+
+  (define (identify-suite-message message)
+    (define suite
+      (chain message
+        (assoc-ref _ 'suite)
+        (alist-cons 'suite/id (state:allocate-suite-id! state) _)))
+    (chain message
+      (alist-delete 'suite _)
+      (alist-cons 'suite suite _)))
+
+  (define (prepare-runner-message message)
+    (case (assoc-ref message 'type)
+      ((runner/load-suite) (identify-suite-message message))
+      (else message)))
 
   (define (re-raise?)
     (state:get-runner-config-value state 're-raise?))
@@ -283,8 +298,11 @@ carries the final verdict."
   (define (test-runner message)
     "Default test runner"
 
+    (define prepared-message
+      (prepare-runner-message message))
+
     (define ctx
-      `((runner/message . ,message)
+      `((runner/message . ,prepared-message)
         (suitbl/state . ,state)))
 
     (when (logging? ctx)

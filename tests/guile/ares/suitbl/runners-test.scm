@@ -111,6 +111,51 @@
          (exception-message
           (running:raised-exception third-run-result))))))
 
+(define-suite (suite-id-tests)
+  (test "runner assigns unique numeric IDs to suite load instances" ()
+    (define tr
+      (runner:make-suitbl
+       #:config `((auto-run? . #f)
+                  (test-reporter . ,reporter:silent))))
+    (define repeated-suite
+      (suite-loader "repeated suite"
+        (test "nested test" ()
+          (is #t))))
+    (define outer-node
+      (begin
+        (with-test-runner tr
+          (suite "outer suite"
+            (repeated-suite)
+            (repeated-suite)))
+        (car (state:get-suite-forest (runner:get-state tr)))))
+
+    (define outer-suite (assoc-ref outer-node 'suite))
+    (define repeated-nodes
+      (assoc-ref outer-node 'suite-node/children))
+    (define first-suite (assoc-ref (car repeated-nodes) 'suite))
+    (define second-suite (assoc-ref (cadr repeated-nodes) 'suite))
+    (define first-test
+      (assoc-ref
+       (car (assoc-ref (car repeated-nodes) 'suite-node/children))
+       'test))
+    (define second-test
+      (assoc-ref
+       (car (assoc-ref (cadr repeated-nodes) 'suite-node/children))
+       'test))
+    (define outer-id (assoc-ref outer-suite 'suite/id))
+    (define first-id (assoc-ref first-suite 'suite/id))
+    (define second-id (assoc-ref second-suite 'suite/id))
+
+    (is (not (= outer-id first-id)))
+    (is (not (= outer-id second-id)))
+    (is (not (= first-id second-id)))
+    (is (equal? (list outer-id first-id)
+                (map (lambda (suite) (assoc-ref suite 'suite/id))
+                     (assoc-ref first-test 'suite/path))))
+    (is (equal? (list outer-id second-id)
+                (map (lambda (suite) (assoc-ref suite 'suite/id))
+                     (assoc-ref second-test 'suite/path))))))
+
 (define-suite (wrong-position-tests)
   (test "is raises suitbl wrong-position exception inside suite body" ()
     (define exception
