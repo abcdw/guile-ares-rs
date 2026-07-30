@@ -150,7 +150,8 @@
           (let ((suite-loader
                  (t:suite-loader "deferred"
                    'metadata
-                   '((tag . suite))
+                   '((tag . suite)
+                     (shared . definition))
                    (t:test "inside" () #t))))
             (test-assert "suite-loader? recognizes suite loaders"
               (t:suite-loader? suite-loader))
@@ -158,16 +159,43 @@
               (not (t:suite-loader? (lambda () #t))))
             (let* ((events (runner-events (lambda () (suite-loader))))
                    (message (car events))
-                   (suite-entity (assoc-ref message 'suite)))
+                   (suite-entity (assoc-ref message 'suite))
+                   (amended-events
+                    (runner-events
+                     (lambda ()
+                       (suite-loader '((added? . #t)
+                                       (shared . invocation))))))
+                   (amended-suite-entity
+                    (assoc-ref (car amended-events) 'suite))
+                   (amended-metadata
+                    (assoc-ref amended-suite-entity 'suite/metadata))
+                   (reloaded-events
+                    (runner-events (lambda () (suite-loader))))
+                   (reloaded-suite-entity
+                    (assoc-ref (car reloaded-events) 'suite)))
               (test-equal "message type"
                 'runner/load-suite
                 (assoc-ref message 'type))
               (test-equal "description"
                 "deferred"
                 (assoc-ref suite-entity 'suite/description))
-              (test-equal "metadata"
-                '((tag . suite))
+              (test-equal "definition-time metadata"
+                '((tag . suite)
+                  (shared . definition))
                 (assoc-ref suite-entity 'suite/metadata))
+              (test-equal "call-time metadata precedes definition metadata"
+                '((added? . #t)
+                  (shared . invocation)
+                  (tag . suite)
+                  (shared . definition))
+                amended-metadata)
+              (test-equal "call-time metadata takes precedence"
+                'invocation
+                (assoc-ref amended-metadata 'shared))
+              (test-equal "calls do not modify definition-time metadata"
+                '((tag . suite)
+                  (shared . definition))
+                (assoc-ref reloaded-suite-entity 'suite/metadata))
               (test-equal "location"
                 #f
                 (assoc-ref suite-entity 'suite/location))
