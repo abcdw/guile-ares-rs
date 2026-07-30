@@ -13,7 +13,6 @@
 
           is
           test test?
-          test-thunk
           suite suite?
           suite-thunk suite-thunk?
 
@@ -39,7 +38,7 @@
 
     (define (test? obj)
       (and (list? obj)
-           (alist-contains? obj 'test/body-thunk)
+           (alist-contains? obj 'test/body-procedure)
            (alist-contains? obj 'test/description)))
 
     (define (suite? obj)
@@ -83,28 +82,38 @@
                        (cons 'assertion/body (quote form))
                        (cons 'assertion/location #f))))))))
 
-    (define-syntax test-thunk
-      (syntax-rules (quote metadata)
-        ((_ test-description (quote metadata) metadata-value body ...)
+    (define-syntax load-test
+      (syntax-rules ()
+        ((_ test-description metadata-value body-procedure body)
          (let ((test-entity
                 (list
-                 (cons 'test/body-thunk
-                       (lambda () body ... (if #f #f)))
-                 (cons 'test/body (quote (body ...)))
+                 (cons 'test/body-procedure body-procedure)
+                 (cons 'test/body (quote body))
                  (cons 'test/description test-description)
                  (cons 'test/metadata metadata-value)
                  (cons 'test/location #f))))
-           (lambda ()
-             ((current-test-runner)
-              (list (cons 'type 'runner/load-test)
-                    (cons 'test test-entity))))))
-        ((_ test-description body ...)
-         (test-thunk test-description 'metadata '() body ...))))
+           ((current-test-runner)
+            (list (cons 'type 'runner/load-test)
+                  (cons 'test test-entity)))))))
 
     (define-syntax test
-      (syntax-rules ()
-        ((_ test-description body ...)
-         ((test-thunk test-description body ...)))))
+      (syntax-rules (quote metadata)
+        ((_ test-description (context)
+            (quote metadata) metadata-value body body* ...)
+         (load-test test-description metadata-value
+           (lambda (context) body body* ...)
+           (body body* ...)))
+        ((_ test-description ()
+            (quote metadata) metadata-value body body* ...)
+         (load-test test-description metadata-value
+           (lambda (%test-context) body body* ...)
+           (body body* ...)))
+        ((_ test-description (context) body body* ...)
+         (test test-description (context)
+           'metadata '() body body* ...))
+        ((_ test-description () body body* ...)
+         (test test-description ()
+           'metadata '() body body* ...))))
 
     (define-syntax suite-thunk
       (syntax-rules (quote metadata)

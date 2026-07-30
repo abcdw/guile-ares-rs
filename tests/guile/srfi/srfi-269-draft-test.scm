@@ -57,7 +57,7 @@
                  (eq? original-runner (t:current-test-runner)))))
 
         (test-assert "test? recognizes test entities"
-          (t:test? `((test/body-thunk . ,(lambda () #t))
+          (t:test? `((test/body-procedure . ,(lambda (context) #t))
                      (test/description . "test"))))
 
         (test-assert "suite? recognizes suite entities"
@@ -100,13 +100,18 @@
         (test-group "test"
           (let* ((events (runner-events
                           (lambda ()
-                            (t:test "addition"
+                            (t:test "addition" ()
                               'metadata
                               '((tag . unit))
                               (define value 2)
-                              (t:is (= 4 (+ value value)))))))
+                              (t:is (= 4 (+ value value))))
+                            (t:test "context" (context)
+                              (t:is (= 42
+                                       (cdr (assq 'answer context))))))))
                  (message (car events))
-                 (test-entity (assoc-ref message 'test)))
+                 (test-entity (assoc-ref message 'test))
+                 (context-test-entity
+                  (assoc-ref (cadr events) 'test)))
             (test-equal "message type"
               'runner/load-test
               (assoc-ref message 'type))
@@ -121,23 +126,32 @@
               (assoc-ref test-entity 'test/location))
             (test-assert "entity predicate"
               (t:test? test-entity))
-            (test-assert "body thunk"
-              (procedure? (assoc-ref test-entity 'test/body-thunk)))
+            (test-assert "body procedure"
+              (procedure? (assoc-ref test-entity 'test/body-procedure)))
             (let* ((body-events
                     (runner-events
                      (lambda ()
-                       ((assoc-ref test-entity 'test/body-thunk)))))
+                       ((assoc-ref test-entity 'test/body-procedure) '()))))
                    (assertion (assoc-ref (car body-events) 'assertion)))
-              (test-equal "body thunk loads assertions"
+              (test-equal "body procedure loads assertions"
                 '(= 4 (+ value value))
-                (assoc-ref assertion 'assertion/body)))))
+                (assoc-ref assertion 'assertion/body)))
+            (let* ((body-events
+                    (runner-events
+                     (lambda ()
+                       ((assoc-ref context-test-entity 'test/body-procedure)
+                        '((answer . 42))))))
+                   (assertion (assoc-ref (car body-events) 'assertion)))
+              (test-equal "context is bound in the body procedure"
+                #t
+                ((assoc-ref assertion 'assertion/body-thunk))))))
 
         (test-group "suite"
           (let ((suite-loader
                  (t:suite-thunk "deferred"
                    'metadata
                    '((tag . suite))
-                   (t:test "inside" #t))))
+                   (t:test "inside" () #t))))
             (test-assert "suite-thunk? recognizes suite thunks"
               (t:suite-thunk? suite-loader))
             (test-assert "suite-thunk? rejects ordinary procedures"
@@ -163,7 +177,7 @@
         (test-group "define-suite"
           (begin
             (t:define-suite generated-suite
-              (t:test "inside generated suite" #t))
+              (t:test "inside generated suite" () #t))
             (test-assert "creates suite thunk"
               (t:suite-thunk? generated-suite))
             (let* ((events (runner-events (lambda () (generated-suite))))
