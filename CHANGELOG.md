@@ -13,7 +13,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - `set-current-test-runner!` helper for installing the current suitbl test runner.
 - `test-file-path?` predicate in `(ares suitbl discovery)`.
 - Optional assertion descriptions for suitbl `is` forms.
-- Runner-assigned `suite/id` values unique within each suitbl runner.
+- Runner-assigned `suite/id` and `test/id` values unique within each suitbl runner.
 
 ### Changed
 - Migrated bencode tests from SRFI-64 to suitbl.

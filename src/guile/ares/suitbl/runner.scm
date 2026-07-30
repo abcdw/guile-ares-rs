@@ -55,6 +55,7 @@ environment just set it to new instance of test runner.
   "A flexible test runner factory, which spawns new test runners."
   (define state
     (make-atomic-box `((runner/suite-id-counter . 0)
+                       (runner/test-id-counter . 0)
                        (runner/run-history . #f)
                        (runner/config . ,(state:merge-runner-config
                                           config
@@ -80,18 +81,23 @@ environment just set it to new instance of test runner.
           (#t   (acons 'suitbl/state state _))
           (#t   ((%test-reporter*) _))))))
 
-  (define (identify-suite-message message)
-    (define suite
+  (define (identify-entity-message message entity-key id-key allocate-id!)
+    (define entity
       (chain message
-        (assoc-ref _ 'suite)
-        (alist-cons 'suite/id (state:allocate-suite-id! state) _)))
+        (assoc-ref _ entity-key)
+        (alist-cons id-key (allocate-id! state) _)))
     (chain message
-      (alist-delete 'suite _)
-      (alist-cons 'suite suite _)))
+      (alist-delete entity-key _)
+      (alist-cons entity-key entity _)))
 
   (define (prepare-runner-message message)
     (case (assoc-ref message 'type)
-      ((runner/load-suite) (identify-suite-message message))
+      ((runner/load-suite)
+       (identify-entity-message
+        message 'suite 'suite/id state:allocate-suite-id!))
+      ((runner/load-test)
+       (identify-entity-message
+        message 'test 'test/id state:allocate-test-id!))
       (else message)))
 
   (define (re-raise?)

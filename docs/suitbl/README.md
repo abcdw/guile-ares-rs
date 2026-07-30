@@ -68,12 +68,14 @@ precedence:
 (load-test '((slow? . #f)))
 ```
 
-## Suite IDs
+## Suite and test IDs
 
-The standard `make-suitbl` runner assigns a positive integer `suite/id` to
-each suite load instance.  IDs are unique for the lifetime of one runner, so
-calling the same suite loader twice produces two different IDs.  They are not
-persistent identifiers and may be reused by a different runner or process.
+The standard `make-suitbl` runner assigns a `suite/id` to each suite
+load instance and a `test/id` to each test load instance.  IDs are
+unique for the lifetime of one runner, so calling the same suite or
+test loader twice produces two different IDs.  Suite and test ID sets
+are independent and can contain same values.  The IDs are not
+persistent and may be reused by a different runner or process.
 
 ## Test structure
 
