@@ -32,6 +32,12 @@
           (thunk)
           (runner '((type . runner/get-log))))))
 
+    (define (alist-contains-key? alist key)
+      (cond
+       ((null? alist) #f)
+       ((eq? key (caar alist)) #t)
+       (else (alist-contains-key? (cdr alist) key))))
+
     (define-test srfi-269
       (test-group "srfi-269"
         (test-assert "set-current-test-runner! returns the previous runner"
@@ -62,24 +68,34 @@
           (let* ((events (runner-events
                           (lambda ()
                             (let ((x 41))
-                              (t:is (= 42 (+ x 1)))))))
+                              (t:is (= 42 (+ x 1)))
+                              (t:is (and #t x) "x is true")))))
                  (message (car events))
-                 (assertion (assoc-ref message 'assertion)))
+                 (assertion (assoc-ref message 'assertion))
+                 (described-assertion
+                  (assoc-ref (cadr events) 'assertion)))
             (test-equal "message type"
-              'runner/run-assert
+              'runner/run-assertion
               (assoc-ref message 'type))
             (test-equal "assertion body datum"
               '(= 42 (+ x 1))
               (assoc-ref assertion 'assertion/body))
+            (test-assert "assertion without description omits description field"
+              (not (alist-contains-key? assertion 'assertion/description)))
             (test-equal "assertion location"
               #f
               (assoc-ref assertion 'assertion/location))
             (test-equal "body thunk value"
               #t
               ((assoc-ref assertion 'assertion/body-thunk)))
-            (test-equal "argument thunk values"
-              '(42 42)
-              ((assoc-ref assertion 'assertion/args-thunk)))))
+            (test-assert "generic assertions omit argument thunks"
+              (not (alist-contains-key? assertion 'assertion/args-thunk)))
+            (test-equal "described assertion body datum"
+              '(and #t x)
+              (assoc-ref described-assertion 'assertion/body))
+            (test-equal "assertion description"
+              "x is true"
+              (assoc-ref described-assertion 'assertion/description))))
 
         (test-group "test"
           (let* ((events (runner-events

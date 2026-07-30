@@ -63,21 +63,19 @@
 
     (define-syntax is
       (syntax-rules ()
-        ((_ (predicate argument ...))
+        ((_ form description)
          ((current-test-runner)
-          (list (cons 'type 'runner/run-assert)
+          (list (cons 'type 'runner/run-assertion)
                 (cons 'assertion
                       (list
                        (cons 'assertion/body-thunk
-                             (lambda () (predicate argument ...)))
-                       (cons 'assertion/args-thunk
-                             (lambda () (list argument ...)))
-                       (cons 'assertion/body
-                             (quote (predicate argument ...)))
+                             (lambda () form))
+                       (cons 'assertion/body (quote form))
+                       (cons 'assertion/description description)
                        (cons 'assertion/location #f))))))
         ((_ form)
          ((current-test-runner)
-          (list (cons 'type 'runner/run-assert)
+          (list (cons 'type 'runner/run-assertion)
                 (cons 'assertion
                       (list
                        (cons 'assertion/body-thunk
