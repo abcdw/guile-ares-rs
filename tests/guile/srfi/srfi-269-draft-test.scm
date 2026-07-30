@@ -148,14 +148,14 @@
 
         (test-group "suite"
           (let ((suite-loader
-                 (t:suite-thunk "deferred"
+                 (t:suite-loader "deferred"
                    'metadata
                    '((tag . suite))
                    (t:test "inside" () #t))))
-            (test-assert "suite-thunk? recognizes suite thunks"
-              (t:suite-thunk? suite-loader))
-            (test-assert "suite-thunk? rejects ordinary procedures"
-              (not (t:suite-thunk? (lambda () #t))))
+            (test-assert "suite-loader? recognizes suite loaders"
+              (t:suite-loader? suite-loader))
+            (test-assert "suite-loader? rejects ordinary procedures"
+              (not (t:suite-loader? (lambda () #t))))
             (let* ((events (runner-events (lambda () (suite-loader))))
                    (message (car events))
                    (suite-entity (assoc-ref message 'suite)))
@@ -176,10 +176,10 @@
 
         (test-group "define-suite"
           (begin
-            (t:define-suite generated-suite
+            (t:define-suite (generated-suite)
               (t:test "inside generated suite" () #t))
-            (test-assert "creates suite thunk"
-              (t:suite-thunk? generated-suite))
+            (test-assert "creates suite loader"
+              (t:suite-loader? generated-suite))
             (let* ((events (runner-events (lambda () (generated-suite))))
                    (suite-entity (assoc-ref (car events) 'suite)))
               (test-equal "generated description"

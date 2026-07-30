@@ -14,7 +14,7 @@
           is
           test test?
           suite suite?
-          suite-thunk suite-thunk?
+          suite-loader suite-loader?
 
           define-suite)
 
@@ -46,17 +46,17 @@
            (alist-contains? obj 'suite/body-thunk)
            (alist-contains? obj 'suite/description)))
 
-    (define suite-thunk-tag-key (list 'suite-thunk?))
+    (define suite-loader-tag-key (list 'suite-loader?))
 
-    (define (make-suite-thunk-tag suite-entity)
-      (cons suite-thunk-tag-key suite-entity))
+    (define (make-suite-loader-tag suite-entity)
+      (cons suite-loader-tag-key suite-entity))
 
-    (define (suite-thunk? obj)
+    (define (suite-loader? obj)
       (and (procedure? obj)
            (procedure/tag? obj)
            (let ((tag (procedure-tag obj)))
              (and (pair? tag)
-                  (eq? suite-thunk-tag-key (car tag))))))
+                  (eq? suite-loader-tag-key (car tag))))))
 
 
 
@@ -115,7 +115,7 @@
          (test test-description ()
            'metadata '() body body* ...))))
 
-    (define-syntax suite-thunk
+    (define-syntax suite-loader
       (syntax-rules (quote metadata)
         ((_ suite-description (quote metadata) metadata-value body ...)
          (let ((suite-entity
@@ -125,23 +125,21 @@
                  (cons 'suite/description suite-description)
                  (cons 'suite/metadata metadata-value)
                  (cons 'suite/location #f))))
-           (lambda/tag (make-suite-thunk-tag suite-entity)
+           (lambda/tag (make-suite-loader-tag suite-entity)
              ()
              ((current-test-runner)
               (list (cons 'type 'runner/load-suite)
                     (cons 'suite suite-entity))))))
         ((_ suite-description body ...)
-         (suite-thunk suite-description 'metadata '() body ...))))
+         (suite-loader suite-description 'metadata '() body ...))))
 
     (define-syntax suite
       (syntax-rules ()
         ((_ suite-description body ...)
-         ((suite-thunk suite-description body ...)))))
+         ((suite-loader suite-description body ...)))))
 
-    ;; TODO: [Andrew Tropin, 2026-04-14] There is no define-public in
-    ;; r7rs, update SRFI?
     (define-syntax define-suite
       (syntax-rules ()
-        ((_ suite-name body ...)
+        ((_ (suite-name) body ...)
          (define suite-name
-           (suite-thunk (symbol->string 'suite-name) body ...)))))))
+           (suite-loader (symbol->string 'suite-name) body ...)))))))
