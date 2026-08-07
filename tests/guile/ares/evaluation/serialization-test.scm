@@ -19,9 +19,10 @@
 ;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (ares evaluation serialization-test)
+  #:use-module (bencode)
   #:use-module (ice-9 control)
   #:use-module (ice-9 eval-string)
-  #:use-module ((srfi srfi-1) #:select (alist-delete))
+  #:use-module ((srfi srfi-1) #:select (alist-delete every))
   #:use-module (srfi srfi-64)
   #:use-module (ares evaluation serialization)
   #:use-module (test-utils))
@@ -38,6 +39,19 @@
        (begin
          (define vec (stack->nrepl-value stack))
          (test-equal (stack-length stack) (vector-length vec))
+         (test-assert "Stack response is bencode encodable"
+           (string? (scm->bencode-string
+                     `(("ares.evaluation/stack" . ,vec)))))
+         (test-assert "Environment bindings contain string names and values"
+           (every
+            (lambda (frame)
+              (every (lambda (binding)
+                       (and (vector? binding)
+                            (= 2 (vector-length binding))
+                            (string? (vector-ref binding 0))
+                            (string? (vector-ref binding 1))))
+                     (vector->list (assoc-ref frame 'environment))))
+            (vector->list vec)))
          (define frame (vector-ref vec (1- (vector-length vec))))
          (test-equal "make-stack" (assoc-ref frame 'procedure-name))
          (test-equal #("#t") (assoc-ref frame 'arguments))

@@ -112,6 +112,12 @@ a bug with bindings."
      '()
      (frame-bindings frame))))
 
+(define (binding->nrepl-value binding)
+  "Serialize a frame environment BINDING into an nREPL value."
+  (match-let (((name . value) binding))
+    (vector (format #f "~a" (or name '_))
+            (format #f "~s" value))))
+
 (define (frame->nrepl-value frame)
   "Serializes FRAME into a value that can be sent in nREPL messages."
   (define (ensure-list d) (if (list? d) d (list d)))
@@ -137,10 +143,7 @@ a bug with bindings."
                (ensure-list (frame-arguments frame)))))
         (environment
          (fallback '()
-          (map (lambda (binding)
-                 (match-let (((name . value) binding))
-                   (cons name (format #f "~s" value))))
-               (frame-environment frame))))
+          (map binding->nrepl-value (frame-environment frame))))
         (source
          (fallback #f
           (and-let* ((source (frame-source frame)))
