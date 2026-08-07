@@ -21,17 +21,74 @@ What about no-tear-down fixtures?
 What about parameterize and exception handlers? ctx -> (values
 new-ctx) doesn't support this use case
 
+
+Order of test/fixtures application: outer first, inner last?
+
+fixtures/re-order-test-fixtures
+fixtures/re-order-suite-fixtures
+
+suite/fixture doesn't know anything about test
+test/fixtures should be applied after suite/fixture
+test/fixture has test info in context
+
+
+ctx : suite-fixture/ctx + test/ctx + test-fixture/ctx
+test/fixture can enrich/use/override test context.
+
 |#
+
+
+(define (fixture1 f)
+  (lambda (ctx)
+    (define new-ctx)
+    (setup!)
+    (parameterize ((a 'ha))
+      (f new-ctx))
+    (teardown!)))
+
+(define (run-test-with-fixture fixt init-ctx test)
+  (define tr (lambda (ctx teardown!)
+               (test ctx)
+               (teardown!)))
+
+  (fixt init-ctx tr))
+
+(define (compose-fixtures f1 f2)
+  (lambda (ctx f)
+    (define ff
+      (lambda (ctx1 teardown1)
+        (define ff2
+          (lambda (ctx2 teardown2)
+
+            (define multi-teardown
+              (lambda ()
+                (teardown2)
+                (teardown1)))
+            (f ctx2 multi-teardown)))
+
+        (f2 ctx1 ff2)))
+    (f1 ctx ff)))
+
+;; (reduce compose-fixtures (list 1 2 3))
+;; reduce f1 f2 f3 -> f4
+
+
+(define composed-fixture
+  (fixture-compose fixture1 fixture2))
+
+;; (run-test-with-fixture composed-fixture '() sample-test)
 
 (define a (make-parameter 'a))
 (define b (make-parameter 'b))
-(define tmp #f)
+(define tmp 1)
 
 (define simple-fixture-a
   (lambda (ctx f)
     (parameterize ((a 'hello))
-      (set! tmp 'setup)
-      (define teardown (lambda () (set! tmp 'teardown)))
+      (set! tmp (1+ tmp))
+      (define teardown (lambda ()
+                         (format #t "teaaaardown!")
+                         (set! tmp (1- tmp))))
       (define new-ctx (acons 'a 'hello ctx))
       (f new-ctx teardown))))
 
@@ -46,7 +103,10 @@ new-ctx) doesn't support this use case
   '((nothing . interesting)))
 
 (define (sample-test ctx)
-  (format #t "ctx: ~a\na: ~a\nb: ~a\n" ctx a b))
+  (format #t "ctx: ~a\na: ~a\nb: ~a\n" ctx (a) (b)))
+
+;; (parameterize ((a 'ha))
+;;   (sample-test '(ho)))
 
 (define (fixture->continuation fixture initial-context)
   (define teardown-called? #f)
@@ -70,6 +130,38 @@ new-ctx) doesn't support this use case
 
 (define k
   (fixture->continuation simple-fixture-a initial-ctx))
+
+((k (lambda (ctx td) (sample-test ctx))))
+
+   (define (compose-fixture-continuation continuation fixture)
+     (let ((prompt-tag (make-prompt-tag "composed-fixture")))
+       (call-with-prompt
+        prompt-tag
+        (lambda ()
+          (continuation
+           (lambda (ctx1 teardown1)
+             (fixture
+              ctx1
+              (lambda (ctx2 teardown2)
+                ((abort-to-prompt prompt-tag)
+                 ctx2
+                 (lambda ()
+                   (teardown2))))))))
+        (lambda (composed-continuation)
+          composed-continuation))))
+
+   (define continuation-ab
+     (compose-fixture-continuation
+      k
+      simple-fixture-b))
+
+(continuation-ab (lambda (ctx td) (sample-test ctx)))
+((continuation-ab (lambda (ctx td) td)))
+((k (lambda (ctx td) td)))
+
+tmp
+;; (error "hi")
+;; ((k (lambda (ctx td) td)))
 
 #|
 (lambda (f)
