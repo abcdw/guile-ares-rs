@@ -1,3 +1,11 @@
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; Copyright © 2026 Andrew Tropin <andrew@trop.in>
+
+(define-module (ares suitbl fixture)
+  #:use-module (ice-9 control))
+
+
+
 #|
 fixture is a function doing a setup
 
@@ -11,6 +19,46 @@ What about parameterize and exception handlers? ctx -> (values
 new-ctx) doesn't support this use case
 
 |#
+
+(define a (make-parameter 'a))
+(define b (make-parameter 'b))
+(define tmp #f)
+
+(define simple-fixture-a
+  (lambda (ctx f)
+    (parameterize ((a 'hello))
+      (set! tmp 'setup)
+      (define teardown (lambda () (set! tmp 'teardown)))
+      (define new-ctx (acons 'a 'hello ctx))
+      (f new-ctx teardown))))
+
+(define simple-fixture-b
+  (lambda (ctx f)
+    (parameterize ((b 'hello))
+      (define teardown (lambda () 'hi))
+      (define new-ctx (acons 'b 'hoho ctx))
+      (f new-ctx teardown))))
+
+(define initial-ctx
+  '((nothing . interesting)))
+
+(define (sample-test ctx)
+  (format #t "ctx: ~a\na: ~a\nb: ~a\n" ctx a b))
+
+(define (fixture->continuation fixture initial-context)
+  (let ((prompt-tag (make-prompt-tag "fixture")))
+    (call-with-prompt
+        prompt-tag
+      (lambda ()
+        (fixture
+         initial-context
+         (lambda (ctx teardown)
+           ((abort-to-prompt prompt-tag) ctx teardown))))
+      (lambda (continuation)
+        continuation))))
+
+(define k
+  (fixture->continuation simple-fixture-a initial-ctx))
 
 #|
 (lambda (f)
