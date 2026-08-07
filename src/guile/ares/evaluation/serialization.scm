@@ -33,6 +33,7 @@
   #:use-module (ice-9 match)
   #:use-module (ice-9 and-let-star)
   #:use-module (srfi srfi-1)
+  #:use-module ((srfi srfi-197) #:select (chain-when))
   #:use-module (system vm frame)
   #:use-module (system vm program)
   #:export (exception->nrepl-messages
@@ -144,15 +145,18 @@ a bug with bindings."
          (fallback #f
           (and-let* ((source (frame-source frame)))
             (let ((file (source:file source)))
-              `((line . ,(source:line source))
-                (column . ,(source:column source))
-                ,@(if file
-                      `((file . ,(or (search-in-load-path file) file)))
-                      '())))))))
-    `((procedure-name . ,name)
-      (arguments . ,(list->vector arguments))
-      (environment . ,(list->vector environment))
-      ,@(if source `((source . ,source)) '()))))
+              (chain-when
+               `((line . ,(source:line source))
+                 (column . ,(source:column source)))
+               (file
+                (append _
+                        `((file . ,(or (search-in-load-path file)
+                                      file)))))))))))
+    (chain-when
+     `((procedure-name . ,name)
+       (arguments . ,(list->vector arguments))
+       (environment . ,(list->vector environment)))
+     (source (append _ `((source . ,source)))))))
 
 (define (stack->nrepl-value stack)
   "Serializes STACK into a value that can be sent in nREPL messages."
