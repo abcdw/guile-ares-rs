@@ -20,6 +20,7 @@
 
 (define-module (ares evaluation serialization-test)
   #:use-module (ice-9 control)
+  #:use-module (ice-9 eval-string)
   #:use-module ((srfi srfi-1) #:select (alist-delete))
   #:use-module (srfi srfi-64)
   #:use-module (ares evaluation serialization)
@@ -29,6 +30,7 @@
   (define basic-stack #f)
   (define error-stack #f)
   (define error-stack-2 #f)
+  (define source-without-file-stack #f)
 
   (define-syntax check-stack
     (syntax-rules ()
@@ -39,6 +41,9 @@
          (define frame (vector-ref vec (1- (vector-length vec))))
          (test-equal "make-stack" (assoc-ref frame 'procedure-name))
          (test-equal #("#t") (assoc-ref frame 'arguments))
+         (test-equal "Frame without source omits source field"
+                     #f
+                     (assq 'source frame))
          (if #f #f)))))
 
   (test-group "initialization"
@@ -54,11 +59,25 @@
             (with-exception-handler
              (lambda (exception) (return (make-stack #t)))
              (lambda () (alist-delete #f 'a))
-             #:unwind? #f))))
+             #:unwind? #f)))
+    (set! source-without-file-stack
+          ((eval-string
+            "(lambda () (let ((stack (make-stack #t))) (display \"\") stack))"
+            #:module (current-module)
+            #:file #f
+            #:compile? #t))))
 
   (test-group "basic stack" (check-stack basic-stack))
   (test-group "error stack" (check-stack error-stack))
-  (test-group "error stack 2" (check-stack error-stack-2)))
+  (test-group "error stack 2" (check-stack error-stack-2))
+  (test-group "source without file"
+    (define vec (stack->nrepl-value source-without-file-stack))
+    (define frame (vector-ref vec (- (vector-length vec) 2)))
+    (define source (assoc-ref frame 'source))
+    (test-assert "Source field is present" source)
+    (test-equal "Source without file omits file field"
+                #f
+                (assq 'file source))))
 
 (define-test test-interrupt-result->nrepl-messages
   (test-group "interrupt result"

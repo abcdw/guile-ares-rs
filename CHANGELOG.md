@@ -29,6 +29,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl `is` now treats assertions as generic forms and no longer records predicate-form `assertion/args-thunk` metadata.
 
 ### Fixed
+- Evaluation stack serialization now omits unavailable `source` and nested `file` fields instead of encoding them as false values.
 - nREPL lookup now represents missing symbol information as an empty list, matching reference nREPL behavior.
 - Ares now sends a `bencode-encoding-error` nREPL response when a reply cannot be bencoded.
 - Ares now closes accepted client sockets when connection processing raises an exception.

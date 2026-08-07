@@ -143,14 +143,16 @@ a bug with bindings."
         (source
          (fallback #f
           (and-let* ((source (frame-source frame)))
-            `((line . ,(source:line source))
-              (column . ,(source:column source))
-              (file . ,(or (and (source:file source) (search-in-load-path (source:file source)))
-                           (source:file source))))))))
+            (let ((file (source:file source)))
+              `((line . ,(source:line source))
+                (column . ,(source:column source))
+                ,@(if file
+                      `((file . ,(or (search-in-load-path file) file)))
+                      '())))))))
     `((procedure-name . ,name)
       (arguments . ,(list->vector arguments))
       (environment . ,(list->vector environment))
-      (source . ,source))))
+      ,@(if source `((source . ,source)) '()))))
 
 (define (stack->nrepl-value stack)
   "Serializes STACK into a value that can be sent in nREPL messages."
