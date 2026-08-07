@@ -2,6 +2,9 @@
 ;; Copyright © 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl fixture)
+  #:use-module ((ares suitbl exceptions)
+                #:select
+                (raise-suitbl-fixture-continuation-after-teardown-exception))
   #:use-module (ice-9 control))
 
 
@@ -46,6 +49,7 @@ new-ctx) doesn't support this use case
   (format #t "ctx: ~a\na: ~a\nb: ~a\n" ctx a b))
 
 (define (fixture->continuation fixture initial-context)
+  (define teardown-called? #f)
   (let ((prompt-tag (make-prompt-tag "fixture")))
     (call-with-prompt
         prompt-tag
@@ -53,9 +57,16 @@ new-ctx) doesn't support this use case
         (fixture
          initial-context
          (lambda (ctx teardown)
-           ((abort-to-prompt prompt-tag) ctx teardown))))
+           ((abort-to-prompt prompt-tag)
+            ctx
+            (lambda ()
+              (set! teardown-called? #t)
+              (teardown))))))
       (lambda (continuation)
-        continuation))))
+        (lambda arguments
+          (if teardown-called?
+              (raise-suitbl-fixture-continuation-after-teardown-exception)
+              (apply continuation arguments)))))))
 
 (define k
   (fixture->continuation simple-fixture-a initial-ctx))
