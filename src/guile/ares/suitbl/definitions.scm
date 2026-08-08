@@ -18,24 +18,6 @@
 
 
 ;;;
-;;; Tasks before SRFI finalization
-;;;
-
-;; TODO: [Andrew Tropin, 2025-08-06] Make all the tests to be disabled
-;; by default. Useful for production code to make no test code leaks
-;; into it.
-
-;; TODO: [Andrew Tropin, 2025-08-27] Write tests to check that test
-;; runner gets all the necessary information from test definitions.
-
-;; IDEA: [Andrew Tropin, 2025-09-18] Add support for docstrings for
-;; define-suite
-
-;; TODO: [Andrew Tropin, 2026-03-17] Decide default recommended
-;; semantics for evaluation of is, test, suite.
-
-
-;;;
 ;;; Test Definitions API
 ;;;
 

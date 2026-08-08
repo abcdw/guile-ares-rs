@@ -209,18 +209,6 @@ because test macro is not composable and can't be wrapped.
     (is (lset= = '(1 2 2 3) '(1 2 2 3)))
     (is (= 4 (+ 2 2))))
 
-  ;; TODO: [Andrew Tropin, 2025-05-01] Move to reporter tests
-  #;
-  (test "error message is good" ()
-    ;; TODO: [Andrew Tropin, 2025-04-08] Produce more sane error message
-    ;; for cases with atomic or identifier expressions.
-    (is #f)
-    (is (= 4 7))
-    (is (lset= = '(1 2 2 3) '(2 3 4 5)))
-    (is (= 40000000000000000000000000
-           (+ 20000000000000000000000000
-              20000000000000000000000000))))
-
   (test "if is assert fails when inside suite outside of test macro" ()
     (is
      (throws-exception?
@@ -318,16 +306,6 @@ because test macro is not composable and can't be wrapped.
                    (running:raised-exception
                     (assoc-ref outer-test-run 'test-run/result))))))
 
-  ;; TODO: [Andrew Tropin, 2025-05-23] Make reporter to provide
-  ;; following error:
-
-  ;; The expression
-  ;; (with-silent-test-environment
-  ;;  (test "test macro" ()
-  ;;    (suite "nested suite" (is #t))))
-  ;; expected to throw a 'specific-type-of-exception', but thrown
-  ;; <pretty-printed-exception>
-
   (suite "nested test suite 1"
     (test "test macro 1#1" ()
       (is #t)
@@ -347,19 +325,6 @@ because test macro is not composable and can't be wrapped.
       (is (throw 'hi)))))
 
 (define-suite (suite-usage-tests)
-
-  ;; TODO: [Andrew Tropin, 2025-05-09] Just think about what test
-  ;; suite returns, because the expectation that it returns run
-  ;; summary, however, it's not the case, when suite is nested
-
-  ;; (define suite-results
-  ;;   (failing-asserts-tests))
-  ;; (pk suite-results)
-  ;; (test "suite-results" ()
-  ;;   (is (equal? 'hi suite-results)))
-
-  ;; TODO: [Andrew Tropin, 2025-05-20] Improve this test, check that
-  ;; metadata saved and we can retrive it.
   (suite "test suite with metadata"
     'metadata `((interesting? . #t))
     (test "simple" ()
@@ -436,82 +401,17 @@ them explicitly, so our tests are not interfering with test reporters.
 By default print them as they come, but make it possible to print it
 after the whole test suite executed.
 
-Provide an API for running test from CLI.
-
-
-The future reporter:
-┌> base-test-runner-tests
-|┌> test-macro-usage-tests
-|| + test simple test case with metadata marking it as slow
-|| + test zero asserts test macro works fine
-|| + test standalone test macro usage
-|└> test-macro-usage-tests
-|┌> suite-usage-tests
-||┌> test suite with metadata
-||| + test simple
-||└> test suite with metadata
-||┌> nested-suites-and-test-macros-tests
-||| + test expression throws programming-error on unbound variable
-||| + test nested test macro usage is forbidden
-||| + test that suite nested in test case is forbidden
-|||┌> nested test suite 1
-|||| + test test macro 1#1
-||||┌> even more nested test suite 1.1
-||||| + test test macro 1.1#1
-||||└> even more nested test suite 1.1
-|||└> nested test suite 1
-||└> nested-suites-and-test-macros-tests
-|└> suite-usage-tests
-└> base-test-runner-tests
-
-Loaded 200 tests and 12 test suits.
-
-[[(...)(..)(....)(.)(.)(..)][(...)][(.)()(..)][[(.)][(.)(.)(.)[(F.)[(.)]]]]]
-
-┌Test nested test macro usage is forbidden
-(throws-exception? (with-silent-test-environment (test "outer test macro" () (test "nested test macro" () (is #t)))) (lambda (ex) (string=? "Test Macros can't be nested" (exception-message ex))))
-X #f
-└Test nested test macro usage is forbidden
-
-((errors . 0) (failures . 1) (assertions . 26) (tests . 16))
-
 |#
 
 
 ;;; Today/Next
 
 
-;; TODO: [Andrew Tropin, 2025-07-29] Add composable immutable filters
-;; and transformers, (failing-first, fast-first,
-;; only-failing-but-if-no-failing-just-all, only-last-loaded :: by
-;; default load test adds test, this filter will allow to restart only
-;; last loaded test), they can be enabled/disabled with transient
-;; flags
-
-;; TODO: [Andrew Tropin, 2025-05-15] Implement composable
-;; test-reporter-print-failures-and-errors, which will be
-;; executed at the end and provide detailed info of
-;; locations with failed tests
-
-;; TODO: [Andrew Tropin, 2025-05-19] Add delayed logging reporter
-
-;; TODO: [Andrew Tropin, 2025-05-19] Add testing started/finished
-;; message (make sure all test runners get this message) (maybe not,
-;; because it's necessary only for reporters to reset state) (the
-;; previous message related only to the message in parentheses before)
-
 ;; TODO: [Andrew Tropin, 2025-04-11] Specify test timeouts to 10 by
 ;; default, so the test evaluation never hangs.
 
 ;; TODO: [Andrew Tropin, 2025-04-22] Add enable-re-run-failed-tests-on-eval,
 ;; which will re-run last failed tests on each eval
-
-;; TODO: [Andrew Tropin, 2025-05-03] Add SRFI-64 migration tooling?
-
-;; TODO: [Andrew Tropin, 2025-05-01] Return back profiling to test-runner
-
-;; TODO: [Andrew Tropin, 2025-05-12] Add load-tests* syntax parameter,
-;; which will control if tests should be evaluated/loaded.
 
 ;; TODO: [Andrew Tropin, 2025-05-12] How to access private functions
 ;; of SUT (subject module under test)?  Rust have nested tests
