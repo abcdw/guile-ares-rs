@@ -101,7 +101,7 @@ test/fixture can enrich/use/override test context.
 ;; (parameterize ((a 'ha))
 ;;   (sample-test '(ho)))
 
-(define (fixture->continuation fixture initial-context)
+(define (activate fixture initial-context)
   (define teardown-called? #f)
   (let ((prompt-tag (make-prompt-tag "fixture")))
     (call-with-prompt
@@ -122,7 +122,7 @@ test/fixture can enrich/use/override test context.
               (apply continuation arguments)))))))
 
 (define k
-  (fixture->continuation simple-fixture-a initial-ctx))
+  (activate simple-fixture-a initial-ctx))
 
 ;; ((k (lambda (ctx td) (sample-test ctx))))
 
