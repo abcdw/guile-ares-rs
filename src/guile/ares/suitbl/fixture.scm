@@ -5,7 +5,8 @@
   #:use-module ((ares suitbl exceptions)
                 #:select
                 (raise-suitbl-fixture-continuation-after-teardown-exception))
-  #:use-module (ice-9 control))
+  #:use-module (ice-9 control)
+  #:export (compose))
 
 
 
@@ -58,21 +59,20 @@ test/fixture can enrich/use/override test context.
 
   (fixt init-ctx tr))
 
-(define (compose-fixtures f1 f2)
-  (lambda (ctx f)
-    (define ff
-      (lambda (ctx1 teardown1)
-        (define ff2
-          (lambda (ctx2 teardown2)
-
-            (define multi-teardown
-              (lambda ()
-                (teardown2)
-                (teardown1)))
-            (f ctx2 multi-teardown)))
-
-        (f2 ctx1 ff2)))
-    (f1 ctx ff)))
+(define (compose outer-fixture inner-fixture)
+  "Compose OUTER-FIXTURE and INNER-FIXTURE into one fixture."
+  (lambda (context proceed)
+    (outer-fixture
+     context
+     (lambda (outer-context outer-teardown!)
+       (inner-fixture
+        outer-context
+        (lambda (inner-context inner-teardown!)
+          (proceed
+           inner-context
+           (lambda ()
+             (inner-teardown!)
+             (outer-teardown!)))))))))
 
 (define a (make-parameter 'a))
 (define b (make-parameter 'b))
