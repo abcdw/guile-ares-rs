@@ -70,8 +70,8 @@
 
 
 
-(define-suite (fixture-run-tests)
-  (test "runs procedure in fixture dynamic extent" ()
+(define-suite (fixture-wrap-with-tests)
+  (test "wraps procedure in fixture dynamic extent" ()
     (define fixture-state (make-parameter 'outside))
     (define state-during-procedure #f)
     (define fixture
@@ -79,9 +79,11 @@
         (parameterize ((fixture-state 'inside))
           (proceed context (lambda () #t)))))
 
-    (fixture:run fixture '()
-                 (lambda (_)
-                   (set! state-during-procedure (fixture-state))))
+    ((fixture:wrap-with
+      fixture
+      (lambda (_)
+        (set! state-during-procedure (fixture-state))))
+     '())
 
     (is (eq? 'inside state-during-procedure)))
 
@@ -94,7 +96,9 @@
                    (set! teardown-called? #t)))))
 
     (is (throws-exception?
-         (fixture:run fixture '()
-                      (lambda (_)
-                        (error "procedure failed")))))
+         ((fixture:wrap-with
+           fixture
+           (lambda (_)
+             (error "procedure failed")))
+          '())))
     (is teardown-called?)))

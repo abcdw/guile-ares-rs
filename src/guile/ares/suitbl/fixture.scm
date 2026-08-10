@@ -7,7 +7,7 @@
                 (raise-suitbl-fixture-continuation-after-teardown-exception))
   #:use-module (ice-9 control)
   #:export (compose
-            run))
+            wrap-with))
 
 
 
@@ -24,7 +24,6 @@ fixture: context × proceed -> any
 proceed: context × teardown! -> any
 teardown!: () -> unspecified
 procedure1: any -> any
-run: fixture × context × procedure1 -> any
 wrap-with: fixture × procedure1 -> procedure1
 
 ## Fixture activation
@@ -60,15 +59,17 @@ test/fixture can enrich/use/override test context.
 
 |#
 
-(define (run fixture initial-context procedure)
-  "Run PROCEDURE with INITIAL-CONTEXT inside FIXTURE's dynamic extent."
-  (fixture
-   initial-context
-   (lambda (context teardown!)
-     (dynamic-wind
-       (lambda () #t)
-       (lambda () (procedure context))
-       teardown!))))
+(define (wrap-with fixture procedure)
+  "Return a procedure that accept a context, runs PROCEDURE inside
+FIXTURE's dynamic extent and calls FIXTURE's teardown."
+  (lambda (initial-context)
+    (fixture
+     initial-context
+     (lambda (context teardown!)
+       (dynamic-wind
+         (lambda () #t)
+         (lambda () (procedure context))
+         teardown!)))))
 
 (define (compose outer-fixture inner-fixture)
   "Compose OUTER-FIXTURE and INNER-FIXTURE into one fixture."
