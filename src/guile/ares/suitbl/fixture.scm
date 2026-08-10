@@ -6,7 +6,8 @@
                 #:select
                 (raise-suitbl-fixture-continuation-after-teardown-exception))
   #:use-module (ice-9 control)
-  #:export (compose))
+  #:export (compose
+            run))
 
 
 
@@ -43,21 +44,15 @@ test/fixture can enrich/use/override test context.
 
 |#
 
-
-(define (fixture1 f)
-  (lambda (ctx)
-    (define new-ctx)
-    (setup!)
-    (parameterize ((a 'ha))
-      (f new-ctx))
-    (teardown!)))
-
-(define (run-test-with-fixture fixt init-ctx test)
-  (define tr (lambda (ctx teardown!)
-               (test ctx)
-               (teardown!)))
-
-  (fixt init-ctx tr))
+(define (run fixture initial-context procedure)
+  "Run PROCEDURE with INITIAL-CONTEXT inside FIXTURE's dynamic extent."
+  (fixture
+   initial-context
+   (lambda (context teardown!)
+     (dynamic-wind
+       (lambda () #t)
+       (lambda () (procedure context))
+       teardown!))))
 
 (define (compose outer-fixture inner-fixture)
   "Compose OUTER-FIXTURE and INNER-FIXTURE into one fixture."

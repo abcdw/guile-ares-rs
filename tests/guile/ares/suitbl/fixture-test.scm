@@ -67,3 +67,34 @@
           (lambda (_ teardown!)
             (teardown!)))))
     (is outer-teardown-called?)))
+
+
+
+(define-suite (fixture-run-tests)
+  (test "runs procedure in fixture dynamic extent" ()
+    (define fixture-state (make-parameter 'outside))
+    (define state-during-procedure #f)
+    (define fixture
+      (lambda (context proceed)
+        (parameterize ((fixture-state 'inside))
+          (proceed context (lambda () #t)))))
+
+    (fixture:run fixture '()
+                 (lambda (_)
+                   (set! state-during-procedure (fixture-state))))
+
+    (is (eq? 'inside state-during-procedure)))
+
+  (test "runs teardown when procedure raises" ()
+    (define teardown-called? #f)
+    (define fixture
+      (lambda (context proceed)
+        (proceed context
+                 (lambda ()
+                   (set! teardown-called? #t)))))
+
+    (is (throws-exception?
+         (fixture:run fixture '()
+                      (lambda (_)
+                        (error "procedure failed")))))
+    (is teardown-called?)))
