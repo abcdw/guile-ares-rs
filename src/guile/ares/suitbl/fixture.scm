@@ -21,9 +21,25 @@ dynamic state, enriching the context and calling proceed function with
 new-context and teardown! in updated dynamic extent.
 
 fixture: context × proceed -> any
-proceed: new-context × teardown! -> any
+proceed: context × teardown! -> any
 teardown!: () -> unspecified
+procedure1: any -> any
+run: fixture × context × procedure1 -> any
+wrap-with: fixture × procedure1 -> procedure1
 
+## Fixture activation
+activation: proceed -> any
+activate: fixture × context -> activation
+extend: activation × fixture -> activation
+run-in: activation × procedure1 -> unspecified
+deactivate!: actvation -> unspecified
+
+
+call-with-activation fixture × context × procedure1 -> unspecified
+call-with-extension activation × fixture × procedure1 -> unspecified
+
+with-activation
+with-extension
 
 ## Adding fixtures to tests.
 
