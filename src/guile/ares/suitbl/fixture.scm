@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl fixture)
   #:use-module ((ares suitbl exceptions)
@@ -71,8 +71,10 @@ test/fixture can enrich/use/override test context.
           (proceed
            inner-context
            (lambda ()
-             (inner-teardown!)
-             (outer-teardown!)))))))))
+             (dynamic-wind
+               (lambda () #t)
+               inner-teardown!
+               outer-teardown!)))))))))
 
 (define a (make-parameter 'a))
 (define b (make-parameter 'b))

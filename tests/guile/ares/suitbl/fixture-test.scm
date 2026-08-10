@@ -2,6 +2,7 @@
 ;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl fixture-test)
+  #:use-module (ares suitbl checks)
   #:use-module (ares suitbl core)
   #:use-module ((ares suitbl fixture) #:prefix fixture:))
 
@@ -45,4 +46,24 @@
                   body
                   inner-teardown
                   outer-teardown)
-                (reverse events)))))
+                (reverse events))))
+
+  (test "runs outer teardown when inner teardown raises" ()
+    (define outer-teardown-called? #f)
+    (define outer
+      (lambda (context proceed)
+        (proceed context
+                 (lambda ()
+                   (set! outer-teardown-called? #t)))))
+    (define inner
+      (lambda (context proceed)
+        (proceed context
+                 (lambda ()
+                   (error "inner teardown failed")))))
+
+    (is (throws-exception?
+         ((fixture:compose outer inner)
+          '()
+          (lambda (_ teardown!)
+            (teardown!)))))
+    (is outer-teardown-called?)))
