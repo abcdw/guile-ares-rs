@@ -4,7 +4,8 @@
 (define-module (ares suitbl fixture-test)
   #:use-module (ares suitbl checks)
   #:use-module (ares suitbl core)
-  #:use-module ((ares suitbl fixture) #:prefix fixture:))
+  #:use-module ((ares suitbl fixture) #:prefix fixture:)
+  #:use-module ((srfi srfi-197) #:select (chain)))
 
 
 
@@ -74,31 +75,27 @@
   (test "wraps procedure in fixture dynamic extent" ()
     (define fixture-state (make-parameter 'outside))
     (define state-during-procedure #f)
-    (define fixture
+    (define dynamic-state-fixture
       (lambda (context proceed)
         (parameterize ((fixture-state 'inside))
           (proceed context (lambda () #t)))))
 
-    ((fixture:wrap-with
-      fixture
-      (lambda (_)
-        (set! state-during-procedure (fixture-state))))
-     '())
+    (chain (lambda (_) (set! state-during-procedure (fixture-state)))
+      (fixture:wrap-with dynamic-state-fixture _)
+      (_ '()))
 
     (is (eq? 'inside state-during-procedure)))
 
   (test "runs teardown when procedure raises" ()
     (define teardown-called? #f)
-    (define fixture
+    (define teardown-tracking-fixture
       (lambda (context proceed)
         (proceed context
                  (lambda ()
                    (set! teardown-called? #t)))))
 
     (is (throws-exception?
-         ((fixture:wrap-with
-           fixture
-           (lambda (_)
-             (error "procedure failed")))
-          '())))
+         (chain (lambda (_) (error "procedure failed"))
+           (fixture:wrap-with teardown-tracking-fixture _)
+           (_ '()))))
     (is teardown-called?)))
