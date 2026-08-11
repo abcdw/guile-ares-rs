@@ -23,6 +23,7 @@ new-context and teardown! in updated dynamic extent.
 fixture: context × proceed -> any
 proceed: context × teardown! -> any
 teardown!: () -> unspecified
+compose: fixture × fixture -> fixture
 procedure1: any -> any
 wrap-with: fixture × procedure1 -> procedure1
 
@@ -30,9 +31,8 @@ wrap-with: fixture × procedure1 -> procedure1
 activation: proceed -> any
 activate: fixture × context -> activation
 extend: activation × fixture -> activation
-run-in: activation × procedure1 -> unspecified
+run-in: activation × procedure1 -> any
 deactivate!: actvation -> unspecified
-
 
 call-with-activation fixture × context × procedure1 -> unspecified
 call-with-extension activation × fixture × procedure1 -> unspecified
