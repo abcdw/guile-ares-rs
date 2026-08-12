@@ -11,7 +11,7 @@
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl running) #:prefix running:)
   #:use-module ((srfi srfi-1)
-                #:select (alist-delete alist-cons fold filter-map))
+                #:select (alist-delete alist-cons append-map fold filter-map))
 
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
@@ -26,6 +26,8 @@
             simplify-suite-tree
             simplify-suite-forest
             simplify-run-history
+            test->enclosing-suites
+            test->fixtures
 
             add-loaded-test!
             add-suite-tree!
@@ -158,6 +160,24 @@
 ;;;
 ;;; Loaded and scheduled tests and suites
 ;;;
+
+(define (test->enclosing-suites state test)
+  "Return the suites enclosing TEST, from outermost to innermost."
+  (or (assoc-ref test 'test/suite-path) '()))
+
+(define (metadata->test-fixtures metadata)
+  (or (assoc-ref metadata 'test/fixtures) '()))
+
+(define (test->fixtures state test)
+  "Return fixtures applying to TEST, from outermost to innermost."
+  (append
+   (append-map
+    (lambda (suite)
+      (metadata->test-fixtures
+       (or (assoc-ref suite 'suite/metadata) '())))
+    (test->enclosing-suites state test))
+   (metadata->test-fixtures
+    (or (assoc-ref test 'test/metadata) '()))))
 
 (define (add-loaded-test! state test)
   (update-atomic-alist-value!

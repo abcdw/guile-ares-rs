@@ -297,3 +297,58 @@
     (is (equal? "re-raise-tests/lonely-is"
                 (exception-message exception)))))
 
+
+
+(define-suite (test-fixtures-metadata-tests)
+  (test "applies inherited and direct test fixtures in order" ()
+    (define events '())
+    (define body-context #f)
+
+    (define (record! event)
+      (set! events (cons event events)))
+
+    (define (make-recording-fixture name)
+      (lambda (context proceed)
+        (record! (list 'setup name))
+        (proceed
+         (acons name #t context)
+         (lambda ()
+           (record! (list 'teardown name))))))
+
+    (define tr (silent-runner))
+
+    (with-test-runner tr
+      (suite "outer"
+        'metadata
+        `((test/fixtures
+           . (,(make-recording-fixture 'outer-1)
+              ,(make-recording-fixture 'outer-2))))
+        (suite "inner"
+          'metadata
+          `((test/fixtures
+             . (,(make-recording-fixture 'inner))))
+          (test "fixture target" (ctx)
+            'metadata
+            `((test/fixtures
+               . (,(make-recording-fixture 'direct))))
+            (set! body-context ctx)
+            (record! 'body)))))
+
+    (is (equal? '((setup outer-1)
+                  (setup outer-2)
+                  (setup inner)
+                  (setup direct)
+                  body
+                  (teardown direct)
+                  (teardown inner)
+                  (teardown outer-2)
+                  (teardown outer-1))
+                (reverse events)))
+    (is (assoc-ref body-context 'outer-1))
+    (is (assoc-ref body-context 'outer-2))
+    (is (assoc-ref body-context 'inner))
+    (is (assoc-ref body-context 'direct))
+    (is (equal? "fixture target"
+                (assoc-ref (assoc-ref body-context 'test)
+                           'test/description)))))
+

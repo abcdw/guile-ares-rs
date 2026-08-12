@@ -4,6 +4,7 @@
 (define-module (ares suitbl runner)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
   #:use-module ((ares suitbl definitions) #:select (current-test-runner test?))
+  #:use-module ((ares suitbl fixture) #:prefix fixture:)
   #:use-module ((ares suitbl exceptions)
                 #:select (raise-suitbl-wrong-position-exception))
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
@@ -14,7 +15,8 @@
   #:use-module ((ice-9 exceptions) #:select (make-exception-with-message))
 
   #:use-module ((srfi srfi-1)
-                #:select (last drop-right fold alist-delete alist-cons find iota))
+                #:select (last drop-right fold fold-right
+                          alist-delete alist-cons find iota))
   #:use-module ((srfi srfi-197) #:select (chain chain-and chain-when))
 
   #:use-module ((ares suitbl state) #:prefix state:)
@@ -171,7 +173,11 @@ environment just set it to new instance of test runner.
       (%run-assertion assertion inside-test? assertion-runs)))
 
   (define* (%run-test test #:key run-progress)
-    (let ((test-body-procedure (assoc-ref test 'test/body-procedure)))
+    (let* ((test-body-procedure (assoc-ref test 'test/body-procedure))
+           (test-body-with-fixtures
+            (fold-right fixture:wrap-with
+                        test-body-procedure
+                        (state:test->fixtures state test))))
       (when (%inside-test?*)
         (raise-suitbl-wrong-position-exception
          'test 'test-body
@@ -189,7 +195,7 @@ environment just set it to new instance of test runner.
           (let ((test-run-result
                  (running:with-exception-continuation
                   (lambda ()
-                    (test-body-procedure (make-test-context test))))))
+                    (test-body-with-fixtures (make-test-context test))))))
             (define assertion-runs
               (reverse (atomic-box-ref (%assertion-runs*))))
             (define test-run
