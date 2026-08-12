@@ -1,7 +1,7 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; SPDX-FileCopyrightText: 2025, 2026 Andrew Tropin <andrew@trop.in>
 
-(define-module (ares suitbl runners-test)
+(define-module (ares suitbl runner-test)
   #:use-module (ares suitbl core)
   #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module (ares suitbl exceptions)
