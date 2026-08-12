@@ -69,7 +69,9 @@ to @code{(current-output-port)}.
 
 (test-reporter
  `((type . load/test)
-   (suite-path . ("suite1" "nested-suite"))
+   (suite-entity-stack
+    . (((suite/description . "nested-suite"))
+       ((suite/description . "suite1"))))
    (test . ((test/description . "basic arithmetics")))))
 
 

@@ -65,7 +65,7 @@ environment just set it to new instance of test runner.
   ;; TODO: [Andrew Tropin, 2025-06-05] Get rid of dynamic variables,
   ;; they can cause problems when using with continuations and thus
   ;; with concurrent test runs implemented on top of fibers
-  (define %suite-path* (make-parameter '()))
+  (define %suite-entity-stack* (make-parameter '()))
   (define %current-suite-node-items* (make-parameter #f))
   (define %inside-test?* (make-parameter #f))
   (define %assertion-runs* (make-parameter #f))
@@ -109,17 +109,17 @@ environment just set it to new instance of test runner.
              (assoc-ref assertion-run 'assertion-run/result)))
           assertion-runs))
 
-  (define (suite-path->metadata suite-path)
-    (if (null? suite-path)
+  (define (suite-entity-stack->metadata suite-entity-stack)
+    (if (null? suite-entity-stack)
         '()
         (append
-         (or (assoc-ref (car suite-path) 'suite/metadata) '())
-         (suite-path->metadata (cdr suite-path)))))
+         (or (assoc-ref (car suite-entity-stack) 'suite/metadata) '())
+         (suite-entity-stack->metadata (cdr suite-entity-stack)))))
 
-  (define (compound-test-metadata test suites)
+  (define (compound-test-metadata test suite-entity-stack)
     (append
      (or (assoc-ref test 'test/metadata) '())
-     (suite-path->metadata suites)))
+     (suite-entity-stack->metadata suite-entity-stack)))
 
   (define (make-test-context test)
     `((test . ,test)
@@ -163,7 +163,7 @@ environment just set it to new instance of test runner.
                          (assoc-ref _ 'assertion)))
            (inside-test? (%inside-test?*))
            (assertion-runs (%assertion-runs*)))
-      (when (and (not (null? (%suite-path*)))
+      (when (and (not (null? (%suite-entity-stack*)))
                  (not inside-test?))
         (raise-suitbl-wrong-position-exception
          'is 'suite-body
@@ -235,13 +235,13 @@ carries the final verdict."
       (lambda ()
         ((get-test-reporter)
          `((type . load/suite-enter)
-           (suite-path . ,(%suite-path*))
+           (suite-entity-stack . ,(%suite-entity-stack*))
            (suite . ,suite)))))
     (define suite-leave!
       (lambda ()
         ((get-test-reporter)
          `((type . load/suite-leave)
-           (suite-path . ,(%suite-path*))
+           (suite-entity-stack . ,(%suite-entity-stack*))
            (suite . ,suite)))))
 
     (lambda ()
@@ -256,7 +256,8 @@ carries the final verdict."
               'suite 'test-body
               "Test Suite can't be nested into Test Macro"))
            (parameterize ((%current-suite-node-items* (make-atomic-box '()))
-                          (%suite-path* (cons suite (%suite-path*))))
+                          (%suite-entity-stack*
+                           (cons suite (%suite-entity-stack*))))
              (suite-body-thunk)
              (chain (%current-suite-node-items*)
                (atomic-box-ref _)
@@ -361,16 +362,16 @@ carries the final verdict."
        *unspecified*)
 
       ((runner/load-test)
-       (when (and (null? (%suite-path*))
+       (when (and (null? (%suite-entity-stack*))
                   (state:get-runner-config-value
                    state 'reset-loaded-tests-on-suite-load?))
          (state:reset-loaded-tests! state))
        (let* ((test (chain ctx
                       (get-message _)
                       (assoc-ref _ 'test)))
-              (suite-path (reverse (%suite-path*)))
+              (suite-path (reverse (%suite-entity-stack*)))
               (compound-metadata
-               (compound-test-metadata test (%suite-path*)))
+               (compound-test-metadata test (%suite-entity-stack*)))
               (test-with-context
                (chain test
                  (alist-cons 'test/compound-metadata compound-metadata _)
@@ -380,11 +381,11 @@ carries the final verdict."
 
          ((get-test-reporter)
           `((type . load/test)
-            (suite-path . ,(%suite-path*))
+            (suite-entity-stack . ,(%suite-entity-stack*))
             (test . ,test-with-context)))
 
          (let ((suite-node-items (%current-suite-node-items*)))
-           ;; (pk (%suite-path*))
+           ;; (pk (%suite-entity-stack*))
            (if suite-node-items
                (atomic-box-update!
                 suite-node-items
@@ -397,7 +398,7 @@ carries the final verdict."
          *unspecified*))
 
       ((runner/load-suite)
-       (when (and (null? (%suite-path*))
+       (when (and (null? (%suite-entity-stack*))
                   (state:get-runner-config-value
                    state 'reset-loaded-tests-on-suite-load?))
          (state:reset-loaded-tests! state))
@@ -422,7 +423,7 @@ carries the final verdict."
                      `((type . load/end)
                        (suite-node . ,val))))))
             val))
-         (when (and (null? (%suite-path*))
+         (when (and (null? (%suite-entity-stack*))
                     (state:get-runner-config-value state 'auto-run?))
            (this `((type . runner/run-tests))))))
 
