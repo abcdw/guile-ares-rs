@@ -22,15 +22,17 @@
     (define (missing-test-runner message)
       (error "current-test-runner is not set" message))
 
+    (define default-test-runner missing-test-runner)
+
+    (define (run-with-default-test-runner message)
+      (default-test-runner message))
+
     (define current-test-runner
-      (make-parameter missing-test-runner))
+      (make-parameter run-with-default-test-runner))
 
     (define (set-current-test-runner! runner)
-      (let ((previous-runner (current-test-runner)))
-        ;; For Scheme implementations not supporting setting of a parameter,
-        ;; the initial value can be an atomic box and this function can set the
-        ;; atomic box value instead of the parameter itself.
-        (current-test-runner runner)
+      (let ((previous-runner default-test-runner))
+        (set! default-test-runner runner)
         previous-runner))
 
     (define (alist-contains? alist key)

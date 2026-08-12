@@ -40,21 +40,39 @@
 
     (define-test srfi-269
       (test-group "srfi-269"
-        (test-assert "set-current-test-runner! returns the previous runner"
-          (let ((original-runner (t:current-test-runner))
-                (new-runner (lambda (message) message))
+        (test-assert "set-current-test-runner! installs a runner and returns the previous runner"
+          (let ((first-runner (lambda (message) (cons 'first message)))
+                (second-runner (lambda (message) (cons 'second message)))
+                (original-runner #f)
                 (previous-runner #f)
-                (current-runner #f))
-            (dynamic-wind
-              (lambda () #t)
-              (lambda ()
-                (set! previous-runner (t:set-current-test-runner! new-runner))
-                (set! current-runner (t:current-test-runner)))
-              (lambda ()
-                (t:set-current-test-runner! original-runner)))
-            (and (eq? original-runner previous-runner)
-                 (eq? new-runner current-runner)
-                 (eq? original-runner (t:current-test-runner)))))
+                (result #f))
+
+            (set! original-runner (t:set-current-test-runner! first-runner))
+            (set! previous-runner (t:set-current-test-runner! second-runner))
+            (set! result ((t:current-test-runner) '(message)))
+            (t:set-current-test-runner! original-runner)
+
+            (and (eq? first-runner previous-runner)
+                 (equal? '(second message) result))))
+
+        (test-assert "parameterize overrides changes to the default runner"
+          (let ((default-runner (lambda (message) (cons 'default message)))
+                (updated-runner (lambda (message) (cons 'updated message)))
+                (override-runner (lambda (message) (cons 'override message)))
+                (original-runner #f)
+                (inside-result #f)
+                (outside-result #f))
+
+            (set! original-runner (t:set-current-test-runner! default-runner))
+            (parameterize ((t:current-test-runner override-runner))
+              (t:set-current-test-runner! updated-runner)
+              (set! inside-result ((t:current-test-runner) '(message))))
+            (set! outside-result ((t:current-test-runner) '(message)))
+
+            (t:set-current-test-runner! original-runner)
+
+            (and (equal? '(override message) inside-result)
+                 (equal? '(updated message) outside-result))))
 
         (test-assert "test? recognizes test entities"
           (t:test? `((test/body-procedure . ,(lambda (context) #t))
