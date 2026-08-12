@@ -188,7 +188,7 @@
            #f
            (let ((entry (car history)))
              (if (and (equal? (assoc-ref entry 'test) test)
-                      (equal? (assoc-ref (assoc-ref entry 'test) 'suite/path)
+                      (equal? (assoc-ref (assoc-ref entry 'test) 'test/suite-path)
                               suite-path))
                  entry
                  (loop (cdr history))))))))

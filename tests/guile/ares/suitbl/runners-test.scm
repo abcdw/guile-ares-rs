@@ -151,10 +151,10 @@
     (is (not (= first-id second-id)))
     (is (equal? (list outer-id first-id)
                 (map (lambda (suite) (assoc-ref suite 'suite/id))
-                     (assoc-ref first-test 'suite/path))))
+                     (assoc-ref first-test 'test/suite-path))))
     (is (equal? (list outer-id second-id)
                 (map (lambda (suite) (assoc-ref suite 'suite/id))
-                     (assoc-ref second-test 'suite/path))))))
+                     (assoc-ref second-test 'test/suite-path))))))
 
 (define-suite (test-id-tests)
   (test "runner assigns unique IDs to test load instances" ()

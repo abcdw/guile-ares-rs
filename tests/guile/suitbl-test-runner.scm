@@ -27,7 +27,7 @@
                      (assoc-ref _ 'suite/metadata)
                      (assoc-ref _ 'module)
                      (suitbl-module? _)))
-                 (or (assoc-ref t 'suite/path) '())))
+                 (or (assoc-ref t 'test/suite-path) '())))
           tests))
 
 (define-public (run-suitbl-tests)

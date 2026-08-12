@@ -126,7 +126,7 @@ environment just set it to new instance of test runner.
       (test/metadata . ,(or (assoc-ref test 'test/metadata) '()))
       (test/compound-metadata
        . ,(or (assoc-ref test 'test/compound-metadata) '()))
-      (suite/path . ,(or (assoc-ref test 'suite/path) '()))))
+      (test/suite-path . ,(or (assoc-ref test 'test/suite-path) '()))))
 
   (define (%run-assertion assertion inside-test? assertion-runs)
     (let* ((body-thunk (assoc-ref assertion 'assertion/body-thunk))
@@ -374,7 +374,7 @@ carries the final verdict."
               (test-with-context
                (chain test
                  (alist-cons 'test/compound-metadata compound-metadata _)
-                 (alist-cons 'suite/path suite-path _))))
+                 (alist-cons 'test/suite-path suite-path _))))
 
          (state:add-loaded-test! state test-with-context)
 
