@@ -8,4 +8,4 @@
 (define-module (ares version)
   #:export (ares-version))
 
-(define ares-version "0.9.7")
+(define ares-version "0.9.8")

@@ -8,7 +8,11 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-08-14
+
 ### Added
+- `(srfi 229)` implementation for tagged procedures.
+- `(srfi srfi-269-draft)` implementation tracking revision 3 of draft SRFI 269.
 - `(ares suitbl fixture)` API for composing and running fixtures.
 - `test/fixtures` metadata for wrapping suitbl tests with fixtures inherited from enclosing suites.
 - `(ares suitbl checks)` module with `throws-exception?` for test definitions.
@@ -109,6 +113,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ## [0.9.0] - 2023-12-04
 
 [Unreleased]: https://git.sr.ht/~abcdw/guile-ares-rs
+[0.9.8]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.8
 [0.9.7]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.7
 [0.9.6]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.6
 [0.9.5]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.5
