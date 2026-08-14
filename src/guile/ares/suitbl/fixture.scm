@@ -88,86 +88,88 @@ FIXTURE's dynamic extent and calls FIXTURE's teardown."
                inner-teardown!
                outer-teardown!)))))))))
 
-(define a (make-parameter 'a))
-(define b (make-parameter 'b))
-(define tmp 1)
+(define (comment)
+  (define a (make-parameter 'a))
+  (define b (make-parameter 'b))
+  (define tmp 1)
 
-(define simple-fixture-a
-  (lambda (ctx f)
-    (parameterize ((a 'hello))
-      (set! tmp (1+ tmp))
-      (define teardown (lambda ()
-                         (format #t "teaaaardown!")
-                         (set! tmp (1- tmp))))
-      (define new-ctx (acons 'a 'hello ctx))
-      (f new-ctx teardown))))
+  (define simple-fixture-a
+    (lambda (ctx f)
+      (parameterize ((a 'hello))
+        (set! tmp (1+ tmp))
+        (define teardown (lambda ()
+                           (format #t "teaaaardown!")
+                           (set! tmp (1- tmp))))
+        (define new-ctx (acons 'a 'hello ctx))
+        (f new-ctx teardown))))
 
-(define simple-fixture-b
-  (lambda (ctx f)
-    (parameterize ((b 'hello))
-      (define teardown (lambda () 'hi))
-      (define new-ctx (acons 'b 'hoho ctx))
-      (f new-ctx teardown))))
+  (define simple-fixture-b
+    (lambda (ctx f)
+      (parameterize ((b 'hello))
+        (define teardown (lambda () 'hi))
+        (define new-ctx (acons 'b 'hoho ctx))
+        (f new-ctx teardown))))
 
-(define initial-ctx
-  '((nothing . interesting)))
+  (define initial-ctx
+    '((nothing . interesting)))
 
-(define (sample-test ctx)
-  (format #t "ctx: ~a\na: ~a\nb: ~a\n" ctx (a) (b)))
+  (define (sample-test ctx)
+    (format #t "ctx: ~a\na: ~a\nb: ~a\n" ctx (a) (b)))
 
-;; (parameterize ((a 'ha))
-;;   (sample-test '(ho)))
+  ;; (parameterize ((a 'ha))
+  ;;   (sample-test '(ho)))
 
-(define (activate fixture initial-context)
-  (define teardown-called? #f)
-  (let ((prompt-tag (make-prompt-tag "fixture")))
-    (call-with-prompt
-        prompt-tag
-      (lambda ()
-        (fixture
-         initial-context
-         (lambda (ctx teardown)
-           ((abort-to-prompt prompt-tag)
-            ctx
-            (lambda ()
-              (set! teardown-called? #t)
-              (teardown))))))
-      (lambda (continuation)
-        (lambda arguments
-          (if teardown-called?
-              (raise-suitbl-fixture-continuation-after-teardown-exception)
-              (apply continuation arguments)))))))
+  (define (activate fixture initial-context)
+    (define teardown-called? #f)
+    (let ((prompt-tag (make-prompt-tag "fixture")))
+      (call-with-prompt
+          prompt-tag
+        (lambda ()
+          (fixture
+           initial-context
+           (lambda (ctx teardown)
+             ((abort-to-prompt prompt-tag)
+              ctx
+              (lambda ()
+                (set! teardown-called? #t)
+                (teardown))))))
+        (lambda (continuation)
+          (lambda arguments
+            (if teardown-called?
+                (raise-suitbl-fixture-continuation-after-teardown-exception)
+                (apply continuation arguments)))))))
 
-(define k
-  (activate simple-fixture-a initial-ctx))
+  (define k
+    (activate simple-fixture-a initial-ctx))
 
-;; ((k (lambda (ctx td) (sample-test ctx))))
+  ;; ((k (lambda (ctx td) (sample-test ctx))))
 
-(define (compose-fixture-continuation continuation fixture)
-  (let ((prompt-tag (make-prompt-tag "composed-fixture")))
-    (call-with-prompt
-        prompt-tag
-      (lambda ()
-        (continuation
-         (lambda (ctx1 teardown1)
-           (fixture
-            ctx1
-            (lambda (ctx2 teardown2)
-              ((abort-to-prompt prompt-tag)
-               ctx2
-               (lambda ()
-                 (teardown2))))))))
-      (lambda (composed-continuation)
-        composed-continuation))))
+  (define (compose-fixture-continuation continuation fixture)
+    (let ((prompt-tag (make-prompt-tag "composed-fixture")))
+      (call-with-prompt
+          prompt-tag
+        (lambda ()
+          (continuation
+           (lambda (ctx1 teardown1)
+             (fixture
+              ctx1
+              (lambda (ctx2 teardown2)
+                ((abort-to-prompt prompt-tag)
+                 ctx2
+                 (lambda ()
+                   (teardown2))))))))
+        (lambda (composed-continuation)
+          composed-continuation))))
 
-(define continuation-ab
-  (compose-fixture-continuation
-   k
-   simple-fixture-b))
+  (define continuation-ab
+    (compose-fixture-continuation
+     k
+     simple-fixture-b))
 
-(continuation-ab (lambda (ctx td) (sample-test ctx)))
-((continuation-ab (lambda (ctx td) td)))
-((k (lambda (ctx td) td)))
+  (continuation-ab (lambda (ctx td) (sample-test ctx)))
+  ((continuation-ab (lambda (ctx td) td)))
+  ((k (lambda (ctx td) td)))
 
-tmp
-;; ((k (lambda (ctx td) td)))
+  tmp
+  ;; ((k (lambda (ctx td) td)))
+  )
