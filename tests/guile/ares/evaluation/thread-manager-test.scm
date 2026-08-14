@@ -88,25 +88,32 @@
                     `(("value" . ,(object->string module))
                       ("status" . #("done")))))
 
-      (send-eval channel "(format #t \"beep beep I'm a sheep!\")")
+      (send-eval channel
+                 "(begin (format #t \"beep beep I'm a sheep!\") 'formatted)")
       (check-reply "received output" reply-channel
                   `(("out" . "beep beep I'm a sheep!")))
       (check-reply "format to stdout" reply-channel
-                  `(("value" . "#t")
+                  `(("value" . "formatted")
                     ("status" . #("done"))))
 
-      (send-eval channel "(format (current-error-port) \"beep beep I'm a sheep!\")")
+      (send-eval channel
+                 "(begin
+                    (format (current-error-port) \"beep beep I'm a sheep!\")
+                    'formatted)")
       (check-reply "received error output" reply-channel
                   `(("err" . "beep beep I'm a sheep!")))
       (check-reply "format to error port" reply-channel
-                  `(("value" . "#t")
+                  `(("value" . "formatted")
                     ("status" . #("done"))))
 
-      (send-eval channel "(format (current-warning-port) \"beep beep I'm a sheep!\")")
+      (send-eval channel
+                 "(begin
+                    (format (current-warning-port) \"beep beep I'm a sheep!\")
+                    'formatted)")
       (check-reply "received warning output" reply-channel
                   `(("err" . "beep beep I'm a sheep!")))
       (check-reply "format to warning output" reply-channel
-                  `(("value" . "#t")
+                  `(("value" . "formatted")
                     ("status" . #("done"))))
 
       (send-eval channel "(define kont #f)(call/cc (lambda (k) (set! kont k) 5))")

@@ -130,6 +130,8 @@
       (check-message "needs input" '(need-input))
       (send-raw stdin-channel "(hello world !)")
       (check-value "received input" '(hello world !))
-      (send channel '(evaluate (("code" . "(format #t \"Hello!\")"))))
+      (send channel
+            '(evaluate
+              (("code" . "(begin (format #t \"Hello!\") 'formatted)"))))
       (check-message "received stdout" '(output "Hello!"))
-      (check-value "write to stdout" #t)))))
+      (check-value "write to stdout" 'formatted)))))
