@@ -9,6 +9,7 @@
   #:use-module ((srfi srfi-1) #:select (fold))
   #:use-module ((srfi srfi-197) #:select (chain chain-and))
 
+  #:use-module ((ice-9 format) #:select (format))
   #:use-module ((ice-9 match) #:select (match))
   #:use-module ((ice-9 regex) #:select (match:suffix
                                         regexp-substitute/global))
