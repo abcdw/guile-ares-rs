@@ -7,9 +7,11 @@
    ;; won't work.
    (guile (import (guile)))
    (else (import (scheme base))))
-  (import (srfi 229))
+  (import (scheme write)
+          (srfi 229))
   (export current-test-runner
           set-current-test-runner!
+          simple-test-runner
 
           is
           test test?
@@ -34,6 +36,39 @@
       (let ((previous-runner default-test-runner))
         (set! default-test-runner runner)
         previous-runner))
+
+    (define (alist-ref alist key)
+      (cdr (assq key alist)))
+
+    (define (simple-test-runner message)
+      (case (alist-ref message 'type)
+        ((runner/load-suite)
+         (let ((suite (alist-ref message 'suite)))
+           (display "suite: ")
+           (display (alist-ref suite 'suite/description))
+           (newline)
+           ((alist-ref suite 'suite/body-thunk))))
+
+        ((runner/load-test)
+         (let ((test (alist-ref message 'test)))
+           (display "  test: ")
+           (display (alist-ref test 'test/description))
+           (newline)
+           ((alist-ref test 'test/body-procedure) '())))
+
+        ((runner/run-assertion)
+         (let* ((assertion (alist-ref message 'assertion))
+                (value ((alist-ref assertion 'assertion/body-thunk))))
+           (display "    ")
+           (display (if value "PASS " "FAIL "))
+           (write (alist-ref assertion 'assertion/body))
+           (newline)
+           value))
+
+        (else
+         (error "unknown SRFI-269 message" message))))
+
+    (set-current-test-runner! simple-test-runner)
 
     (define (alist-contains? alist key)
       (and (assoc key alist) #t))
