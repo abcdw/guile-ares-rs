@@ -3,6 +3,7 @@
 
 (define-module (ares suitbl definitions-test)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
+  #:use-module (ares suitbl checks)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl definitions)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
@@ -11,7 +12,8 @@
                 #:prefix state:)
   #:use-module (srfi srfi-197)
   #:use-module ((ice-9 atomic)
-                #:select (make-atomic-box atomic-box-ref atomic-box-set!)))
+                #:select (make-atomic-box atomic-box-ref atomic-box-set!))
+  #:use-module ((ice-9 exceptions) #:select (syntax-error?)))
 
 
 
@@ -179,6 +181,13 @@
     (is (equal? 'value
                 ((assoc-ref test-3 'test/body-procedure)
                  '((answer . value))))))
+
+  (test "test rejects deprecated syntax without a context binding" ()
+    (define module (make-fresh-user-module))
+    (module-use! module (resolve-interface '(ares suitbl core)))
+    (is (throws-exception?
+         (eval '(test "deprecated syntax" #t) module)
+         syntax-error?)))
 
   (test "test-loader amends metadata when called" ()
     (define tmp-test-loader

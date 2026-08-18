@@ -110,20 +110,6 @@ at macro-expansion time."
              entry))
        entity))
 
-(define (warn-deprecated-test-form location)
-  (let ((port (current-warning-port)))
-    (format port "warning: deprecated suitbl test form")
-    (when (and location (assoc-ref location 'filename))
-      (format port " at ~a" (assoc-ref location 'filename))
-      (when (assoc-ref location 'line)
-        (format port ":~a" (assoc-ref location 'line)))
-      (when (assoc-ref location 'column)
-        (format port ":~a" (assoc-ref location 'column))))
-    (format port "\n")
-    (format port "  `(test DESCRIPTION BODY ...)` syntax is deprecated.\n")
-    (format port "  Use `(test DESCRIPTION () BODY ...)` or `(test DESCRIPTION (context) BODY ...)`.")
-    (format port "\n")))
-
 (define (warn-deprecated-test-thunk location)
   (let ((port (current-warning-port)))
     (format port "warning: deprecated suitbl test-thunk form")
@@ -172,29 +158,25 @@ at macro-expansion time."
 
 (define-syntax test-loader
   (lambda (stx)
-    (define (build-test-loader stx description metadata body-procedure body deprecated?)
+    (define (build-test-loader stx description metadata body-procedure body)
       (with-syntax ((location (datum->syntax
                                stx
                                (make-source-absolute (syntax-source stx))))
                     (test-description description)
                     (metadata-value metadata)
                     (test-body-procedure body-procedure)
-                    ((test-body ...) body)
-                    (deprecated-test-form? deprecated?))
-        #'(begin
-            (when deprecated-test-form?
-              (warn-deprecated-test-form 'location))
-            (let ((test-entity
-                   `((test/body-procedure . ,test-body-procedure)
-                     (test/body . (test-body ...))
-                     (test/description . ,test-description)
-                     (test/metadata . ,metadata-value)
-                     (test/location . location))))
-              (lambda* (#:optional (metadata '()))
-                ((current-test-runner)
-                 `((type . runner/load-test)
-                   (test . ,(amend-entity-metadata
-                             test-entity 'test/metadata metadata)))))))))
+                    ((test-body ...) body))
+        #'(let ((test-entity
+                 `((test/body-procedure . ,test-body-procedure)
+                   (test/body . (test-body ...))
+                   (test/description . ,test-description)
+                   (test/metadata . ,metadata-value)
+                   (test/location . location))))
+            (lambda* (#:optional (metadata '()))
+              ((current-test-runner)
+               `((type . runner/load-test)
+                 (test . ,(amend-entity-metadata
+                           test-entity 'test/metadata metadata))))))))
 
     (syntax-case stx (metadata)
       ((_ test-description (context-name)
@@ -205,8 +187,7 @@ at macro-expansion time."
                           #'metadata-value
                           #'(lambda (context-name)
                               expression expressions ...)
-                          #'(expression expressions ...)
-                          #'#f))
+                          #'(expression expressions ...)))
 
       ((_ test-description ()
           (quote metadata) metadata-value expression expressions ...)
@@ -215,18 +196,7 @@ at macro-expansion time."
                           #'metadata-value
                           #'(lambda (%suitbl-context)
                               expression expressions ...)
-                          #'(expression expressions ...)
-                          #'#f))
-
-      ((_ test-description
-          (quote metadata) metadata-value expression expressions ...)
-       (build-test-loader stx
-                          #'test-description
-                          #'metadata-value
-                          #'(lambda (%suitbl-context)
-                              expression expressions ...)
-                          #'(expression expressions ...)
-                          #'#t))
+                          #'(expression expressions ...)))
 
       ((_ test-description (context-name) expression expressions ...)
        (identifier? #'context-name)
@@ -235,10 +205,6 @@ at macro-expansion time."
 
       ((_ test-description () expression expressions ...)
        #'(test-loader test-description ()
-           'metadata '() expression expressions ...))
-
-      ((_ test-description expression expressions ...)
-       #'(test-loader test-description
            'metadata '() expression expressions ...)))))
 
 (define-syntax test-thunk

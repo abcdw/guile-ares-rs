@@ -8,6 +8,9 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [Unreleased]
 
+### Removed
+- Support for the deprecated suitbl `(test DESCRIPTION BODY ...)` syntax.
+
 ## [0.9.8] - 2026-08-14
 
 ### Added
