@@ -1,7 +1,7 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; SPDX-FileCopyrightText: 2025, 2026 Andrew Tropin <andrew@trop.in>
 
-(define-library (srfi srfi-269-draft)
+(define-library (srfi srfi-269)
   (cond-expand
    ;; Without this import the module will be empty and eval in Ares
    ;; won't work.

@@ -1,11 +1,11 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
-(define-library (srfi srfi-269-draft-test)
+(define-library (srfi srfi-269-test)
   (import (scheme base)
           (guile)
           (srfi srfi-64)
-          (prefix (srfi srfi-269-draft) t:))
+          (prefix (srfi srfi-269) t:))
   (export srfi-269)
 
   (begin

@@ -8,6 +8,9 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [Unreleased]
 
+### Changed
+- `(srfi srfi-269-draft)` module renamed to `(srfi srfi-269)`.
+
 ### Removed
 - Support for the deprecated suitbl `(test DESCRIPTION BODY ...)` syntax.
 

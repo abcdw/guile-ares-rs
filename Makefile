@@ -32,7 +32,7 @@ check-suitbl:
 check-srfi-269:
 	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-module-tests) \
-(resolve-module '(srfi srfi-269-draft-test)))"
+(resolve-module '(srfi srfi-269-test)))"
 
 suitbl:
 	${GUILE_DEV} \
