@@ -3,7 +3,6 @@
 
 (define-module (ares suitbl definitions-test)
   #:use-module ((ares atomic) #:select (atomic-box-update!))
-  #:use-module (ares suitbl checks)
   #:use-module (ares suitbl core)
   #:use-module (ares suitbl definitions)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
@@ -12,8 +11,7 @@
                 #:prefix state:)
   #:use-module (srfi srfi-197)
   #:use-module ((ice-9 atomic)
-                #:select (make-atomic-box atomic-box-ref atomic-box-set!))
-  #:use-module ((ice-9 exceptions) #:select (syntax-error?)))
+                #:select (make-atomic-box atomic-box-ref atomic-box-set!)))
 
 
 
@@ -68,15 +66,9 @@
 
 (define (eval-suite-definition expression suite-name)
   (define module (make-fresh-user-module))
-  (define generated-suite #f)
-  (define warnings
-    (call-with-output-string
-     (lambda (port)
-       (parameterize ((current-warning-port port))
-         (module-use! module (resolve-interface '(ares suitbl core)))
-         (eval expression module)
-         (set! generated-suite (module-ref module suite-name))))))
-  (values generated-suite warnings))
+  (module-use! module (resolve-interface '(ares suitbl core)))
+  (eval expression module)
+  (module-ref module suite-name))
 
 (define-suite (predicates-tests)
   (test "test? predicate recognizes test structures" ()
@@ -182,13 +174,6 @@
                 ((assoc-ref test-3 'test/body-procedure)
                  '((answer . value))))))
 
-  (test "test rejects deprecated syntax without a context binding" ()
-    (define module (make-fresh-user-module))
-    (module-use! module (resolve-interface '(ares suitbl core)))
-    (is (throws-exception?
-         (eval '(test "deprecated syntax" #t) module)
-         syntax-error?)))
-
   (test "test-loader amends metadata when called" ()
     (define tmp-test-loader
       (test-loader "tmp test loader" ()
@@ -286,30 +271,14 @@
     (is (equal? 'amended (assoc-ref amended-metadata 'shared))))
 
   (test "define-suite creates suite loader with parenthesized syntax" ()
-    (call-with-values
-     (lambda ()
-       (eval-suite-definition
-        '(define-suite (generated-suite) #t)
-        'generated-suite))
-     (lambda (generated-suite warnings)
-       (is (suite-loader? generated-suite))
-       (is (equal? "generated-suite"
-                   (assoc-ref (procedure-property generated-suite 'suite)
-                              'suite/description)))
-       (is (string=? "" warnings)))))
-
-  (test "define-suite warns for deprecated bare-name syntax" ()
-    (call-with-values
-     (lambda ()
-       (eval-suite-definition
-        '(define-suite deprecated-generated-suite #t)
-        'deprecated-generated-suite))
-     (lambda (generated-suite warnings)
-       (is (suite-loader? generated-suite))
-       (is (string-contains warnings
-                            "warning: deprecated suitbl define-suite form"))
-       (is (string-contains warnings
-                            "`(define-suite NAME BODY ...)` syntax is deprecated."))))))
+    (define generated-suite
+      (eval-suite-definition
+       '(define-suite (generated-suite) #t)
+       'generated-suite))
+    (is (suite-loader? generated-suite))
+    (is (equal? "generated-suite"
+                (assoc-ref (procedure-property generated-suite 'suite)
+                           'suite/description)))))
 
 (define-suite (macro-inside-assertion-tests)
   (test "macro forms can be used as assertion bodies" ()

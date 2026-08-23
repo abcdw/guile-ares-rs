@@ -15,7 +15,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - `(srfi srfi-269-draft)` module renamed to `(srfi srfi-269)`.
 
 ### Removed
-- Support for the deprecated suitbl `(test DESCRIPTION BODY ...)` syntax.
+- Deprecated suitbl definition APIs: `(test DESCRIPTION BODY ...)`, `test-thunk`, `suite-thunk`, `suite-thunk?`, and `(define-suite NAME BODY ...)`.
 
 ## [0.9.8] - 2026-08-14
 

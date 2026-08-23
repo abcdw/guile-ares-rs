@@ -11,9 +11,8 @@
                current-test-runner
 
                is
-               ;; Keep deprecated -thunk aliases for compatibility.
-               test test-loader test-thunk
-               suite suite-loader suite-thunk
+               test test-loader
+               suite suite-loader
 
                define-suite
 

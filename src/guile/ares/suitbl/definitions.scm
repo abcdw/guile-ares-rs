@@ -8,10 +8,8 @@
             is
             test test?
             test-loader
-            test-thunk
             suite suite?
             suite-loader suite-loader?
-            suite-thunk suite-thunk?
 
             define-suite))
 
@@ -47,12 +45,7 @@ library, which sets an approriate test runner for you."))
 
 (define (suite-loader? x)
   (and (procedure? x)
-       (or (procedure-property x 'suitbl-suite-loader?)
-           (procedure-property x 'suitbl-suite-thunk?))))
-
-(define (suite-thunk? x)
-  (warn-deprecated-suite-thunk-predicate)
-  (suite-loader? x))
+       (procedure-property x 'suitbl-suite-loader?)))
 
 (define (make-source-absolute source)
   "Make the filename in a syntax SOURCE alist absolute.  If the
@@ -110,52 +103,6 @@ at macro-expansion time."
              entry))
        entity))
 
-(define (warn-deprecated-test-thunk location)
-  (let ((port (current-warning-port)))
-    (format port "warning: deprecated suitbl test-thunk form")
-    (when (and location (assoc-ref location 'filename))
-      (format port " at ~a" (assoc-ref location 'filename))
-      (when (assoc-ref location 'line)
-        (format port ":~a" (assoc-ref location 'line)))
-      (when (assoc-ref location 'column)
-        (format port ":~a" (assoc-ref location 'column))))
-    (format port "\n")
-    (format port "  Use `(test-loader DESCRIPTION () BODY ...)` instead.")
-    (format port "\n")))
-
-(define (warn-deprecated-suite-thunk location)
-  (let ((port (current-warning-port)))
-    (format port "warning: deprecated suitbl suite-thunk form")
-    (when (and location (assoc-ref location 'filename))
-      (format port " at ~a" (assoc-ref location 'filename))
-      (when (assoc-ref location 'line)
-        (format port ":~a" (assoc-ref location 'line)))
-      (when (assoc-ref location 'column)
-        (format port ":~a" (assoc-ref location 'column))))
-    (format port "\n")
-    (format port "  Use `(suite-loader DESCRIPTION BODY ...)` instead.")
-    (format port "\n")))
-
-(define (warn-deprecated-suite-thunk-predicate)
-  (let ((port (current-warning-port)))
-    (format port "warning: deprecated suitbl suite-thunk? predicate\n")
-    (format port "  Use `suite-loader?` instead.")
-    (format port "\n")))
-
-(define (warn-deprecated-define-suite-form location)
-  (let ((port (current-warning-port)))
-    (format port "warning: deprecated suitbl define-suite form")
-    (when (and location (assoc-ref location 'filename))
-      (format port " at ~a" (assoc-ref location 'filename))
-      (when (assoc-ref location 'line)
-        (format port ":~a" (assoc-ref location 'line)))
-      (when (assoc-ref location 'column)
-        (format port ":~a" (assoc-ref location 'column))))
-    (format port "\n")
-    (format port "  `(define-suite NAME BODY ...)` syntax is deprecated.\n")
-    (format port "  Use `(define-suite (NAME) BODY ...)` instead.")
-    (format port "\n")))
-
 (define-syntax test-loader
   (lambda (stx)
     (define (build-test-loader stx description metadata body-procedure body)
@@ -207,17 +154,6 @@ at macro-expansion time."
        #'(test-loader test-description ()
            'metadata '() expression expressions ...)))))
 
-(define-syntax test-thunk
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ arguments ...)
-       (with-syntax ((location (datum->syntax
-                                stx
-                                (make-source-absolute (syntax-source stx)))))
-         #'(begin
-             (warn-deprecated-test-thunk 'location)
-             (test-loader arguments ...)))))))
-
 (define-syntax test
   (lambda (stx)
     "Test represent a logical unit of testing, usually includes zero or
@@ -254,24 +190,12 @@ more @code{is} asserts."
               %suite-loader
               `((documentation . ,suite-description)
                 (suite . ,suite-entity)
-                (suitbl-suite-loader? . #t)
-                (suitbl-suite-thunk? . #t)))
+                (suitbl-suite-loader? . #t)))
              %suite-loader)))
 
       ((_ suite-description expression expressions ...)
        #'(suite-loader
           suite-description 'metadata '() expression expressions ...)))))
-
-(define-syntax suite-thunk
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ arguments ...)
-       (with-syntax ((location (datum->syntax
-                                stx
-                                (make-source-absolute (syntax-source stx)))))
-         #'(begin
-             (warn-deprecated-suite-thunk 'location)
-             (suite-loader arguments ...)))))))
 
 (define-syntax suite
   (lambda (stx)
@@ -283,23 +207,9 @@ test suites."
 
 (define-syntax define-suite
   (lambda (stx)
-    "Define a public suite loader named NAME.
-
-The preferred syntax is @code{(define-suite (NAME) BODY ...)}.
-The deprecated @code{(define-suite NAME BODY ...)} form remains
-accepted for compatibility."
+    "Define a public suite loader named NAME."
     (syntax-case stx ()
       ((_ (suite-name) expression ...)
        (identifier? #'suite-name)
        #'(define-public suite-name
-           (suite-loader (symbol->string 'suite-name) expression ...)))
-      ((_ suite-name expression ...)
-       (identifier? #'suite-name)
-       (with-syntax ((location (datum->syntax
-                                stx
-                                (make-source-absolute (syntax-source stx)))))
-         #'(define-public suite-name
-             (begin
-               (warn-deprecated-define-suite-form 'location)
-               (suite-loader (symbol->string 'suite-name)
-                 expression ...))))))))
+           (suite-loader (symbol->string 'suite-name) expression ...))))))

@@ -60,7 +60,7 @@
      (test "division by large numbers" ()
        (is (= 0 (floor (/ 1 1000000)))))))
 
- (suite-thunk "some fancy tests"
+ (suite-loader "some fancy tests"
    (test "1" ()
      'hey)
    (test "2" ()
@@ -130,7 +130,7 @@ API-first, can be easily integrated in your IDE and other tools.
  (preset:reset!))
 
 #|
-- is, test, suite, suite-thunk, define-suite
+- is, test, suite, suite-loader, define-suite
 - Metadata
 
 - Test loading, scheduling and execution

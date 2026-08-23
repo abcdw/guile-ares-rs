@@ -47,9 +47,6 @@ Named suites should use the parenthesized form:
   ...)
 ```
 
-The old bare-name form, `(define-suite some-cool-tests ...)`, remains accepted
-for compatibility and emits a deprecation warning.
-
 Suite and test loaders accept optional metadata when called.  This metadata
 amends the metadata declared by the loader, with call-time values taking
 precedence:
