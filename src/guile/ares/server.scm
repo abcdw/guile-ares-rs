@@ -4,6 +4,7 @@
   #:use-module (fibers)
   #:use-module (fibers conditions)
   #:use-module (ares extensions)
+  #:use-module (ares linux resource-limits)
   #:use-module (ares-extension ares logging)
   #:use-module ((ice-9 exceptions)
                 #:select (raise-exception with-exception-handler))
@@ -92,6 +93,7 @@ For every connection, @var{on-connection} is called with a socket,
 client id and a thunk that should be called to start the nREPL
 connection.  By default it runs thunk inside a new fiber."
 
+  (warn-if-zero-rttime-limit!)
   (define socket (make-default-socket family addr port))
   (define host (gethostbyaddr addr))
   (define hostname (hostent:name host))
