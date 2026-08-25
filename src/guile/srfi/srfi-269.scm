@@ -10,7 +10,7 @@
   (import (scheme write)
           (srfi 229))
   (export current-test-runner
-          set-current-test-runner!
+          set-default-test-runner!
           simple-test-runner
 
           is
@@ -32,7 +32,7 @@
     (define current-test-runner
       (make-parameter run-with-default-test-runner))
 
-    (define (set-current-test-runner! runner)
+    (define (set-default-test-runner! runner)
       (let ((previous-runner default-test-runner))
         (set! default-test-runner runner)
         previous-runner))
@@ -68,7 +68,7 @@
         (else
          (error "unknown SRFI-269 message" message))))
 
-    (set-current-test-runner! simple-test-runner)
+    (set-default-test-runner! simple-test-runner)
 
     (define (alist-contains? alist key)
       (and (assoc key alist) #t))

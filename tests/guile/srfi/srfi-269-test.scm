@@ -40,17 +40,17 @@
 
     (define-test srfi-269
       (test-group "srfi-269"
-        (test-assert "set-current-test-runner! installs a runner and returns the previous runner"
+        (test-assert "set-default-test-runner! installs a runner and returns the previous runner"
           (let ((first-runner (lambda (message) (cons 'first message)))
                 (second-runner (lambda (message) (cons 'second message)))
                 (original-runner #f)
                 (previous-runner #f)
                 (result #f))
 
-            (set! original-runner (t:set-current-test-runner! first-runner))
-            (set! previous-runner (t:set-current-test-runner! second-runner))
+            (set! original-runner (t:set-default-test-runner! first-runner))
+            (set! previous-runner (t:set-default-test-runner! second-runner))
             (set! result ((t:current-test-runner) '(message)))
-            (t:set-current-test-runner! original-runner)
+            (t:set-default-test-runner! original-runner)
 
             (and (eq? first-runner previous-runner)
                  (equal? '(second message) result))))
@@ -63,13 +63,13 @@
                 (inside-result #f)
                 (outside-result #f))
 
-            (set! original-runner (t:set-current-test-runner! default-runner))
+            (set! original-runner (t:set-default-test-runner! default-runner))
             (parameterize ((t:current-test-runner override-runner))
-              (t:set-current-test-runner! updated-runner)
+              (t:set-default-test-runner! updated-runner)
               (set! inside-result ((t:current-test-runner) '(message))))
             (set! outside-result ((t:current-test-runner) '(message)))
 
-            (t:set-current-test-runner! original-runner)
+            (t:set-default-test-runner! original-runner)
 
             (and (equal? '(override message) inside-result)
                  (equal? '(updated message) outside-result))))

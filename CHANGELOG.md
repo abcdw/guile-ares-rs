@@ -12,6 +12,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - Ares server startup now warns when it inherits a zero `RLIMIT_RTTIME` limit, which can cause the kernel to kill Ares during Fibers preemption.
 
 ### Changed
+- `set-current-test-runner!` was renamed to `set-default-test-runner!`.
 - `(srfi srfi-269-draft)` module renamed to `(srfi srfi-269)`.
 
 ### Removed

@@ -6,7 +6,7 @@
   #:use-module (ares suitbl definitions)
   #:export (with-test-runner)
   #:re-export (current-test-runner
-               set-current-test-runner!
+               set-default-test-runner!
 
                is
                test test?
