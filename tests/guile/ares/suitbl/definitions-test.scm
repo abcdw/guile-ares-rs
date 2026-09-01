@@ -180,26 +180,29 @@
                 ((assoc-ref test-3 'test/body-procedure)
                  '((answer . value))))))
 
-  (test "test-loader amends metadata when called" ()
+  (test "test-loader emits call metadata separately" ()
     (define tmp-test-loader
       (test-loader "tmp test loader" ()
         'metadata
         '((default? . #t)
           (shared . default))
         #t))
-    (define amended-metadata
-      (chain (with-runner-events-to-list
-              (tmp-test-loader '((added? . #t)
-                                 (shared . amended))))
-        (car _)
-        (assoc-ref _ 'test)
-        (assoc-ref _ 'test/metadata)))
-    (is (equal? '((added? . #t)
-                  (shared . amended)
-                  (default? . #t)
-                  (shared . default))
-                amended-metadata))
-    (is (equal? 'amended (assoc-ref amended-metadata 'shared))))
+
+    (define load-event
+      (car (with-runner-events-to-list
+            (tmp-test-loader '((added? . #t)
+                               (shared . amended))))))
+
+    (is (equal?
+         '((default? . #t)
+           (shared . default))
+         (chain load-event
+           (assoc-ref _ 'test)
+           (assoc-ref _ 'test/metadata))))
+    (is (equal?
+         '((added? . #t)
+           (shared . amended))
+         (assoc-ref load-event 'load/metadata))))
 
   (test "runner adds compound metadata inherited from suite" ()
     (define compound-metadata
@@ -253,28 +256,30 @@
     (is (equal? '("s1" "s2") (simplify-log events-log)))
     (is (equal? '(integration) (get-tags (cadr events-log)))))
 
-  (test "suite-loader creates named suite loader and amends metadata" ()
+  (test "suite-loader emits call metadata separately" ()
     (define tmp-suite-loader
       (suite-loader "tmp suite loader"
         'metadata
         '((default? . #t)
           (shared . default))
         #t))
-    (define amended-metadata
-      (chain (with-runner-events-to-list
-              (tmp-suite-loader '((added? . #t)
-                                  (shared . amended))))
-        (car _)
-        (assoc-ref _ 'suite)
-        (assoc-ref _ 'suite/metadata)))
+
+    (define load-event
+      (car (with-runner-events-to-list
+            (tmp-suite-loader '((added? . #t)
+                                (shared . amended))))))
+
     (is (suite-loader? tmp-suite-loader))
     (is (not (suite-loader? (lambda () #t))))
-    (is (equal? '((added? . #t)
-                  (shared . amended)
-                  (default? . #t)
+
+    (is (equal? '((default? . #t)
                   (shared . default))
-                amended-metadata))
-    (is (equal? 'amended (assoc-ref amended-metadata 'shared))))
+                (chain load-event
+                  (assoc-ref _ 'suite)
+                  (assoc-ref _ 'suite/metadata))))
+    (is (equal? '((added? . #t)
+                  (shared . amended))
+                (assoc-ref load-event 'load/metadata))))
 
   (test "define-suite creates suite loader with parenthesized syntax" ()
     (define generated-suite

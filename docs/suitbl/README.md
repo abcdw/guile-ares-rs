@@ -47,17 +47,20 @@ Named suites should use the parenthesized form:
   ...)
 ```
 
-Suite and test loaders accept optional metadata when called.  This metadata
-amends the metadata declared by the loader, with call-time values taking
-precedence:
+Suite and test loaders accept optional metadata when called.  They
+send it in the `load/metadata` field of the load message, separately
+from metadata originally declared.  The standard runner merges both
+when it loads the entity, with call-time values taking precedence:
 
 ```scheme
 (define load-suite
-  (suite-loader "tests" 'metadata '((slow? . #t))
+  (suite-loader "tests"
+    'metadata '((slow? . #t))
     ...))
 
 (define load-test
-  (test-loader "works" () 'metadata '((slow? . #t))
+  (test-loader "works" ()
+    'metadata '((slow? . #t))
     ...))
 
 (load-suite '((module . example)

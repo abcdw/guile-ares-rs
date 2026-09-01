@@ -100,17 +100,6 @@ at macro-expansion time."
                         #'((assertion/body-thunk . ,(lambda () form))
                            (assertion/body . form)))))))
 
-(define (alist-merge l1 l2)
-  (append l1 l2))
-
-(define (amend-entity-metadata entity metadata-key metadata)
-  (map (lambda (entry)
-         (if (eq? metadata-key (car entry))
-             (cons metadata-key
-                   (alist-merge metadata (cdr entry)))
-             entry))
-       entity))
-
 (define-syntax test-loader
   (lambda (stx)
     (define (build-test-loader stx description metadata body-procedure body)
@@ -130,8 +119,8 @@ at macro-expansion time."
             (lambda* (#:optional (metadata '()))
               ((current-test-runner)
                `((type . runner/load-test)
-                 (test . ,(amend-entity-metadata
-                           test-entity 'test/metadata metadata))))))))
+                 (load/metadata . ,metadata)
+                 (test . ,test-entity)))))))
 
     (syntax-case stx (metadata)
       ((_ test-description (context-name)
@@ -190,9 +179,8 @@ more @code{is} asserts."
                     (lambda* (#:optional (metadata '()))
                       ((current-test-runner)
                        `((type . runner/load-suite)
-                         (suite . ,(amend-entity-metadata
-                                    suite-entity 'suite/metadata
-                                    metadata))))))))
+                         (load/metadata . ,metadata)
+                         (suite . ,suite-entity)))))))
 
              (set-procedure-properties!
               %suite-loader

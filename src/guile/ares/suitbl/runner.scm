@@ -83,6 +83,19 @@ environment just set it to new instance of test runner.
           (#t   (acons 'suitbl/state state _))
           (#t   ((%test-reporter*) _))))))
 
+  (define (merge-load-metadata message entity-key metadata-key)
+    (define entity
+      (assoc-ref message entity-key))
+    (define merged-entity
+      (alist-cons
+       metadata-key
+       (append (or (assoc-ref message 'load/metadata) '())
+               (or (assoc-ref entity metadata-key) '()))
+       (alist-delete metadata-key entity)))
+    (chain message
+      (alist-delete entity-key _)
+      (alist-cons entity-key merged-entity _)))
+
   (define (identify-entity-message message entity-key id-key allocate-id!)
     (define entity
       (chain message
@@ -95,11 +108,15 @@ environment just set it to new instance of test runner.
   (define (prepare-runner-message message)
     (case (assoc-ref message 'type)
       ((runner/load-suite)
-       (identify-entity-message
-        message 'suite 'suite/id state:allocate-suite-id!))
+       (chain message
+         (merge-load-metadata _ 'suite 'suite/metadata)
+         (identify-entity-message
+          _ 'suite 'suite/id state:allocate-suite-id!)))
       ((runner/load-test)
-       (identify-entity-message
-        message 'test 'test/id state:allocate-test-id!))
+       (chain message
+         (merge-load-metadata _ 'test 'test/metadata)
+         (identify-entity-message
+          _ 'test 'test/id state:allocate-test-id!)))
       (else message)))
 
   (define (re-raise?)
