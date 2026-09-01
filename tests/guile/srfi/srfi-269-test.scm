@@ -133,6 +133,9 @@
             (test-equal "message type"
               'runner/load-test
               (assoc-ref message 'type))
+            (test-equal "load metadata"
+              '()
+              (assoc-ref message 'load/metadata))
             (test-equal "description"
               "addition"
               (assoc-ref test-entity 'test/description))
@@ -183,10 +186,9 @@
                      (lambda ()
                        (suite-loader '((added? . #t)
                                        (shared . invocation))))))
+                   (amended-message (car amended-events))
                    (amended-suite-entity
-                    (assoc-ref (car amended-events) 'suite))
-                   (amended-metadata
-                    (assoc-ref amended-suite-entity 'suite/metadata))
+                    (assoc-ref amended-message 'suite))
                    (reloaded-events
                     (runner-events (lambda () (suite-loader))))
                    (reloaded-suite-entity
@@ -194,6 +196,9 @@
               (test-equal "message type"
                 'runner/load-suite
                 (assoc-ref message 'type))
+              (test-equal "default load metadata"
+                '()
+                (assoc-ref message 'load/metadata))
               (test-equal "description"
                 "deferred"
                 (assoc-ref suite-entity 'suite/description))
@@ -201,15 +206,14 @@
                 '((tag . suite)
                   (shared . definition))
                 (assoc-ref suite-entity 'suite/metadata))
-              (test-equal "call-time metadata precedes definition metadata"
+              (test-equal "call-time metadata is emitted separately"
                 '((added? . #t)
-                  (shared . invocation)
-                  (tag . suite)
+                  (shared . invocation))
+                (assoc-ref amended-message 'load/metadata))
+              (test-equal "call-time metadata does not amend the entity"
+                '((tag . suite)
                   (shared . definition))
-                amended-metadata)
-              (test-equal "call-time metadata takes precedence"
-                'invocation
-                (assoc-ref amended-metadata 'shared))
+                (assoc-ref amended-suite-entity 'suite/metadata))
               (test-equal "calls do not modify definition-time metadata"
                 '((tag . suite)
                   (shared . definition))

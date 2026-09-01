@@ -95,17 +95,10 @@
              (and (pair? tag)
                   (eq? suite-loader-tag-key (car tag))))))
 
-    (define (amend-suite-metadata suite-entity metadata)
-      (map (lambda (entry)
-             (if (eq? 'suite/metadata (car entry))
-                 (cons 'suite/metadata
-                       (append metadata (cdr entry)))
-                 entry))
-           suite-entity))
-
-    (define (load-suite suite-entity)
+    (define (load-suite suite-entity metadata)
       ((current-test-runner)
        (list (cons 'type 'runner/load-suite)
+             (cons 'load/metadata metadata)
              (cons 'suite suite-entity))))
 
 
@@ -144,6 +137,7 @@
                  (cons 'test/location #f))))
            ((current-test-runner)
             (list (cons 'type 'runner/load-test)
+                  (cons 'load/metadata '())
                   (cons 'test test-entity)))))))
 
     (define-syntax test
@@ -177,10 +171,9 @@
                  (cons 'suite/location #f))))
            (case-lambda/tag (make-suite-loader-tag suite-entity)
              (()
-              (load-suite suite-entity))
+              (load-suite suite-entity '()))
              ((metadata)
-              (load-suite
-               (amend-suite-metadata suite-entity metadata))))))
+              (load-suite suite-entity metadata)))))
         ((_ suite-description body ...)
          (suite-loader suite-description 'metadata '() body ...))))
 
