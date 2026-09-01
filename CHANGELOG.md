@@ -15,6 +15,9 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - `set-current-test-runner!` was renamed to `set-default-test-runner!`.
 - `(srfi srfi-269-draft)` module renamed to `(srfi srfi-269)`.
 
+### Fixed
+- `set-default-test-runner!` now changes the default runner without replacing a dynamically parameterized current runner.
+
 ### Removed
 - Deprecated suitbl definition APIs: `(test DESCRIPTION BODY ...)`, `test-thunk`, `suite-thunk`, `suite-thunk?`, and `(define-suite NAME BODY ...)`.
 

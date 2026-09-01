@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl definitions)
   #:export (current-test-runner
@@ -27,11 +27,19 @@ probably not what you want, unless you are a developer of a testing
 library and enjoy seeing this message. Please, use suitbl or other
 library, which sets an approriate test runner for you."))
 
-(define current-test-runner (make-parameter missing-test-runner))
+(define default-test-runner missing-test-runner)
+
+(define (run-with-default-test-runner message)
+  (default-test-runner message))
+
+(define current-test-runner
+  (make-parameter run-with-default-test-runner))
 
 (define (set-default-test-runner! runner)
   "Set the default test runner to RUNNER and return the previous runner."
-  (current-test-runner runner))
+  (let ((previous-runner default-test-runner))
+    (set! default-test-runner runner)
+    previous-runner))
 
 (define (test? x)
   (and (list? x)

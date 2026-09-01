@@ -91,21 +91,27 @@
     (is (not (suite-loader? (lambda () #t))))))
 
 (define-suite (test-runner-parameter-tests)
-  (test "set-default-test-runner! changes the default test runner" ()
-    (define original-runner (current-test-runner))
-    (define new-runner (get-logging-test-runner))
-    (define previous-runner #f)
-    (define current-runner #f)
-    (dynamic-wind
-      (lambda () #t)
-      (lambda ()
-        (set! previous-runner (set-default-test-runner! new-runner))
-        (set! current-runner (current-test-runner)))
-      (lambda ()
-        (set-default-test-runner! original-runner)))
-    (is (eq? original-runner previous-runner))
-    (is (eq? new-runner current-runner))
-    (is (eq? original-runner (current-test-runner)))))
+  (test "parameterized runner takes precedence over changes to the default" ()
+    (define default-runner (lambda (_) 'default))
+    (define updated-runner (lambda (_) 'updated))
+    (define dynamic-runner (lambda (_) 'dynamic))
+
+    (define original-default (set-default-test-runner! default-runner))
+
+    (define result
+      (parameterize ((current-test-runner dynamic-runner))
+        (set-default-test-runner! updated-runner)
+        ((current-test-runner) 'message)))
+
+    (define previous-default
+      (set-default-test-runner! original-default))
+
+    (is
+     (eq? 'dynamic result)
+     "the dynamically parameterized runner takes precedence over set-default")
+
+    (is (eq? updated-runner previous-default)
+        "the default runner was updated")))
 
 (define-suite (definitions-to-runner-integration-tests)
   (test "is emits proper values to the test runner" ()
