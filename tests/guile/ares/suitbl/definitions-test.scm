@@ -180,6 +180,28 @@
                 ((assoc-ref test-3 'test/body-procedure)
                  '((answer . value))))))
 
+  (test "metadata marker is unaffected by a lexical metadata binding" ()
+    (define events-log
+      (with-runner-events-to-list
+       (let ((metadata 42)
+             (quote 42))
+         (test "test with shadowed metadata" ()
+           'metadata `((slow? . #t))
+           #t)
+         (suite "suite with shadowed metadata"
+           'metadata `((slow? . #t))
+           #t))))
+
+    (define test-entity (assoc-ref (car events-log) 'test))
+    (define suite-entity (assoc-ref (cadr events-log) 'suite))
+
+    (is (equal? '((slow? . #t))
+                (assoc-ref test-entity 'test/metadata))
+        "'metadata is recoginzed as a marker, not a part of the body")
+    (is (equal? '((slow? . #t))
+                (assoc-ref suite-entity 'suite/metadata))
+        "'metadata is recoginzed as a marker, not a part of the body"))
+
   (test "test-loader emits call metadata separately" ()
     (define tmp-test-loader
       (test-loader "tmp test loader" ()

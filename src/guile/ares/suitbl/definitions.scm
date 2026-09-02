@@ -76,6 +76,9 @@ at macro-expansion time."
                                 (string-append (getcwd) "/" found)))
                 source)))))))
 
+(define (%metadata-marker? stx)
+  (equal? '(quote metadata) (syntax->datum stx)))
+
 (define-syntax is
   (lambda (stx)
     "A flexible assertion macro.  The behavior can be customized by test runner."
@@ -122,10 +125,11 @@ at macro-expansion time."
                  (load/metadata . ,metadata)
                  (test . ,test-entity)))))))
 
-    (syntax-case stx (metadata)
+    (syntax-case stx ()
       ((_ test-description (context-name)
-          (quote metadata) metadata-value expression expressions ...)
-       (identifier? #'context-name)
+          metadata-marker metadata-value expression expressions ...)
+       (and (identifier? #'context-name)
+            (%metadata-marker? #'metadata-marker))
        (build-test-loader stx
                           #'test-description
                           #'metadata-value
@@ -134,7 +138,8 @@ at macro-expansion time."
                           #'(expression expressions ...)))
 
       ((_ test-description ()
-          (quote metadata) metadata-value expression expressions ...)
+          metadata-marker metadata-value expression expressions ...)
+       (%metadata-marker? #'metadata-marker)
        (build-test-loader stx
                           #'test-description
                           #'metadata-value
@@ -161,9 +166,10 @@ more @code{is} asserts."
 
 (define-syntax suite-loader
   (lambda (stx)
-    (syntax-case stx (metadata)
-      ((_ suite-description (quote metadata) metadata-value
+    (syntax-case stx ()
+      ((_ suite-description metadata-marker metadata-value
           expression expressions ...)
+       (%metadata-marker? #'metadata-marker)
        (with-syntax ((location (datum->syntax
                                 stx
                                 (make-source-absolute (syntax-source stx)))))

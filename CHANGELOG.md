@@ -17,6 +17,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - `(srfi srfi-269-draft)` module renamed to `(srfi srfi-269)`.
 
 ### Fixed
+- suitbl recognizes the `'metadata` syntax marker even when `metadata` is lexically bound at the use site.
 - `set-default-test-runner!` now changes the default runner without replacing a dynamically parameterized current runner.
 
 ### Removed
