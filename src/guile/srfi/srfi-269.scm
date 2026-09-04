@@ -109,6 +109,9 @@
              (cons 'load/metadata metadata)
              (cons 'suite suite-entity))))
 
+    (define (%metadata-marker? form)
+      (equal? '(quote metadata) form))
+
 
 
     (define-syntax is
@@ -133,10 +136,9 @@
                        (cons 'assertion/body (quote form))
                        (cons 'assertion/location #f))))))))
 
-    (define-syntax test-loader
-      (syntax-rules (quote metadata)
-        ((_ test-description (context)
-            (quote metadata) metadata-value body body* ...)
+    (define-syntax %make-test-loader
+      (syntax-rules ()
+        ((_ test-description (context) metadata-value body body* ...)
          (let ((test-entity
                 (list
                  (cons 'test/body-procedure
@@ -150,25 +152,31 @@
               (load-test test-entity '()))
              ((metadata)
               (load-test test-entity metadata)))))
-        ((_ test-description ()
-            (quote metadata) metadata-value body body* ...)
-         (test-loader test-description (%test-context)
-           'metadata metadata-value body body* ...))
-        ((_ test-description (context) body body* ...)
-         (test-loader test-description (context)
-           'metadata '() body body* ...))
-        ((_ test-description () body body* ...)
-         (test-loader test-description ()
-           'metadata '() body body* ...))))
+        ((_ test-description () metadata-value body body* ...)
+         (%make-test-loader test-description (%test-context)
+           metadata-value body body* ...))))
+
+    (define-syntax test-loader
+      (syntax-rules ()
+        ((_ test-description arguments
+            (marker-head marker-name) metadata-value body body* ...)
+         (if (%metadata-marker? (quote (marker-head marker-name)))
+             (%make-test-loader test-description arguments
+               metadata-value body body* ...)
+             (%make-test-loader test-description arguments '()
+               (marker-head marker-name) metadata-value body body* ...)))
+        ((_ test-description arguments body body* ...)
+         (%make-test-loader test-description arguments '()
+           body body* ...))))
 
     (define-syntax test
       (syntax-rules ()
         ((_ test-description arguments ...)
          ((test-loader test-description arguments ...)))))
 
-    (define-syntax suite-loader
-      (syntax-rules (quote metadata)
-        ((_ suite-description (quote metadata) metadata-value body ...)
+    (define-syntax %make-suite-loader
+      (syntax-rules ()
+        ((_ suite-description metadata-value body ...)
          (let ((suite-entity
                 (list
                  (cons 'suite/body-thunk
@@ -180,9 +188,18 @@
              (()
               (load-suite suite-entity '()))
              ((metadata)
-              (load-suite suite-entity metadata)))))
+              (load-suite suite-entity metadata)))))))
+
+    (define-syntax suite-loader
+      (syntax-rules ()
+        ((_ suite-description
+            (marker-head marker-name) metadata-value body ...)
+         (if (%metadata-marker? (quote (marker-head marker-name)))
+             (%make-suite-loader suite-description metadata-value body ...)
+             (%make-suite-loader suite-description '()
+               (marker-head marker-name) metadata-value body ...)))
         ((_ suite-description body ...)
-         (suite-loader suite-description 'metadata '() body ...))))
+         (%make-suite-loader suite-description '() body ...))))
 
     (define-syntax suite
       (syntax-rules ()

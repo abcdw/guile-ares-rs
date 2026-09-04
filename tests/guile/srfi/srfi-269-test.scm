@@ -228,6 +228,25 @@
                   (shared . definition))
                 (assoc-ref test-entity 'test/metadata)))))
 
+        (test-assert "metadata marker is unaffected by a lexical metadata binding"
+          (let* ((events
+                  (runner-events
+                   (lambda ()
+                     (let ((metadata 42)
+                           (quote 42))
+                       (t:test "test with shadowed metadata" ()
+                         'metadata `((slow? . #t))
+                         #t)
+                       (t:suite "suite with shadowed metadata"
+                         'metadata `((slow? . #t))
+                         #t)))))
+                 (test-entity (assoc-ref (car events) 'test))
+                 (suite-entity (assoc-ref (cadr events) 'suite)))
+            (and (equal? '((slow? . #t))
+                         (assoc-ref test-entity 'test/metadata))
+                 (equal? '((slow? . #t))
+                         (assoc-ref suite-entity 'suite/metadata)))))
+
         (test-group "suite"
           (let ((suite-loader
                  (t:suite-loader "deferred"
