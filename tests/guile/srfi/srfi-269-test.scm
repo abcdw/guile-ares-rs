@@ -167,6 +167,67 @@
                 #t
                 ((assoc-ref assertion 'assertion/body-thunk))))))
 
+        (test-group "test-loader"
+          (let ((test-loader #f))
+            (test-equal "construction is deferred"
+              '()
+              (runner-events
+               (lambda ()
+                 (set! test-loader
+                       (t:test-loader "deferred test" ()
+                         'metadata
+                         '((tag . test)
+                           (shared . definition))
+                         #t)))))
+
+            (test-assert "returns a procedure"
+              (procedure? test-loader))
+
+            (let* ((events (runner-events (lambda () (test-loader))))
+                   (message (car events))
+                   (test-entity (assoc-ref message 'test)))
+              (test-equal "message type"
+                'runner/load-test
+                (assoc-ref message 'type))
+              (test-equal "default load metadata"
+                '()
+                (assoc-ref message 'load/metadata))
+              (test-equal "description"
+                "deferred test"
+                (assoc-ref test-entity 'test/description))
+              (test-equal "definition-time metadata"
+                '((tag . test)
+                  (shared . definition))
+                (assoc-ref test-entity 'test/metadata))
+              (test-equal "location"
+                #f
+                (assoc-ref test-entity 'test/location))
+              (test-assert "entity predicate"
+                (t:test? test-entity)))
+
+            (let* ((events
+                    (runner-events
+                     (lambda ()
+                       (test-loader '((added? . #t)
+                                      (shared . invocation))))))
+                   (message (car events))
+                   (test-entity (assoc-ref message 'test)))
+              (test-equal "call-time metadata is emitted separately"
+                '((added? . #t)
+                  (shared . invocation))
+                (assoc-ref message 'load/metadata))
+              (test-equal "call-time metadata does not amend the entity"
+                '((tag . test)
+                  (shared . definition))
+                (assoc-ref test-entity 'test/metadata)))
+
+            (let* ((events (runner-events (lambda () (test-loader))))
+                   (test-entity (assoc-ref (car events) 'test)))
+              (test-equal "calls do not modify definition-time metadata"
+                '((tag . test)
+                  (shared . definition))
+                (assoc-ref test-entity 'test/metadata)))))
+
         (test-group "suite"
           (let ((suite-loader
                  (t:suite-loader "deferred"

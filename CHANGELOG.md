@@ -9,6 +9,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ## [Unreleased]
 
 ### Added
+- SRFI-269 now provides `test-loader` for deferred test loading with optional call-time metadata.
 - Ares server startup now warns when it inherits a zero `RLIMIT_RTTIME` limit, which can cause the kernel to kill Ares during Fibers preemption.
 
 ### Changed

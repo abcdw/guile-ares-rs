@@ -7,7 +7,8 @@
    ;; won't work.
    (guile (import (guile)))
    (else (import (scheme base))))
-  (import (scheme write)
+  (import (scheme case-lambda)
+          (scheme write)
           (srfi 229))
   (export current-test-runner
           set-default-test-runner!
@@ -15,6 +16,7 @@
 
           is
           test test?
+          test-loader
           suite suite?
           suite-loader suite-loader?
 
@@ -95,6 +97,12 @@
              (and (pair? tag)
                   (eq? suite-loader-tag-key (car tag))))))
 
+    (define (load-test test-entity metadata)
+      ((current-test-runner)
+       (list (cons 'type 'runner/load-test)
+             (cons 'load/metadata metadata)
+             (cons 'test test-entity))))
+
     (define (load-suite suite-entity metadata)
       ((current-test-runner)
        (list (cons 'type 'runner/load-suite)
@@ -125,39 +133,38 @@
                        (cons 'assertion/body (quote form))
                        (cons 'assertion/location #f))))))))
 
-    (define-syntax load-test
-      (syntax-rules ()
-        ((_ test-description metadata-value body-procedure body)
-         (let ((test-entity
-                (list
-                 (cons 'test/body-procedure body-procedure)
-                 (cons 'test/body (quote body))
-                 (cons 'test/description test-description)
-                 (cons 'test/metadata metadata-value)
-                 (cons 'test/location #f))))
-           ((current-test-runner)
-            (list (cons 'type 'runner/load-test)
-                  (cons 'load/metadata '())
-                  (cons 'test test-entity)))))))
-
-    (define-syntax test
+    (define-syntax test-loader
       (syntax-rules (quote metadata)
         ((_ test-description (context)
             (quote metadata) metadata-value body body* ...)
-         (load-test test-description metadata-value
-           (lambda (context) body body* ...)
-           (body body* ...)))
+         (let ((test-entity
+                (list
+                 (cons 'test/body-procedure
+                       (lambda (context) body body* ...))
+                 (cons 'test/body (quote (body body* ...)))
+                 (cons 'test/description test-description)
+                 (cons 'test/metadata metadata-value)
+                 (cons 'test/location #f))))
+           (case-lambda
+             (()
+              (load-test test-entity '()))
+             ((metadata)
+              (load-test test-entity metadata)))))
         ((_ test-description ()
             (quote metadata) metadata-value body body* ...)
-         (load-test test-description metadata-value
-           (lambda (%test-context) body body* ...)
-           (body body* ...)))
+         (test-loader test-description (%test-context)
+           'metadata metadata-value body body* ...))
         ((_ test-description (context) body body* ...)
-         (test test-description (context)
+         (test-loader test-description (context)
            'metadata '() body body* ...))
         ((_ test-description () body body* ...)
-         (test test-description ()
+         (test-loader test-description ()
            'metadata '() body body* ...))))
+
+    (define-syntax test
+      (syntax-rules ()
+        ((_ test-description arguments ...)
+         ((test-loader test-description arguments ...)))))
 
     (define-syntax suite-loader
       (syntax-rules (quote metadata)
