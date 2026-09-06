@@ -5,7 +5,7 @@
   (import (scheme base)
           (guile)
           (srfi srfi-64)
-          (prefix (srfi srfi-269) t:))
+          (prefix (srfi 269) t:))
   (export srfi-269)
 
   (begin

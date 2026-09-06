@@ -5,7 +5,10 @@ EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
 LOAD_PATHS=-L src/guile -L tests/guile -L dev/guile
+SRFI_269_R7RS_LOAD_PATHS=-L src/srfi-269/r7rs \
+-L tests/srfi-269/r7rs -L src/guile
 GUILE_DEV=${GUILE} $(LOAD_PATHS)
+GUILE_SRFI_269_R7RS=${GUILE} $(SRFI_269_R7RS_LOAD_PATHS)
 REPORTER?=compact
 SCHEDULER?=non-dev
 
@@ -17,7 +20,7 @@ server:
 
 ares: server
 
-check: check-suitbl suitbl
+check: check-suitbl check-srfi-269 suitbl
 	${GUILE_DEV} \
 	-c "((@ (ares srfi-64 test-runners) run-project-tests-cli))"
 
@@ -30,7 +33,7 @@ check-suitbl:
 	-c "((@ (suitbl-test-runner) run-suitbl-tests))"
 
 check-srfi-269:
-	${GUILE_DEV} \
+	${GUILE_SRFI_269_R7RS} \
 	-c "((@ (ares srfi-64 test-runners) run-module-tests) \
 (resolve-module '(srfi srfi-269-test)))"
 

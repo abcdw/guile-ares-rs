@@ -15,7 +15,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ### Changed
 - suitbl and SRFI-269 load messages now carry loader call-time metadata in `load/metadata`, separately from declared entity metadata; the standard suitbl runner merges both.
 - `set-current-test-runner!` was renamed to `set-default-test-runner!`.
-- `(srfi srfi-269-draft)` module renamed to `(srfi srfi-269)`.
+- `(srfi srfi-269-draft)` was renamed to the portable R7RS library `(srfi 269)` and moved to its own source tree under `src/srfi-269/r7rs`.
 
 ### Fixed
 - suitbl and SRFI-269 recognize the `'metadata` syntax marker even when `metadata` is lexically bound at the use site.
