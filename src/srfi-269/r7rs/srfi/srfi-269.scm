@@ -40,7 +40,8 @@
         previous-runner))
 
     (define (alist-ref alist key)
-      (cdr (assq key alist)))
+      (let ((entry (assq key alist)))
+        (and entry (cdr entry))))
 
     (define (simple-test-runner message)
       (case (alist-ref message 'type)
