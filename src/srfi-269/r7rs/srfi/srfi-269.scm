@@ -124,8 +124,7 @@
                        (cons 'assertion/body-thunk
                              (lambda () form))
                        (cons 'assertion/body (quote form))
-                       (cons 'assertion/description description)
-                       (cons 'assertion/location #f))))))
+                       (cons 'assertion/description description))))))
         ((_ form)
          ((current-test-runner)
           (list (cons 'type 'runner/run-assertion)
@@ -133,8 +132,7 @@
                       (list
                        (cons 'assertion/body-thunk
                              (lambda () form))
-                       (cons 'assertion/body (quote form))
-                       (cons 'assertion/location #f))))))))
+                       (cons 'assertion/body (quote form)))))))))
 
     (define-syntax %make-test-loader
       (syntax-rules ()
@@ -145,8 +143,7 @@
                        (lambda (context) body body* ...))
                  (cons 'test/body (quote (body body* ...)))
                  (cons 'test/description test-description)
-                 (cons 'test/metadata metadata-value)
-                 (cons 'test/location #f))))
+                 (cons 'test/metadata metadata-value))))
            (case-lambda
              (()
               (load-test test-entity '()))
@@ -182,8 +179,7 @@
                  (cons 'suite/body-thunk
                        (lambda () body ... (if #f #f)))
                  (cons 'suite/description suite-description)
-                 (cons 'suite/metadata metadata-value)
-                 (cons 'suite/location #f))))
+                 (cons 'suite/metadata metadata-value))))
            (case-lambda/tag (make-suite-loader-tag suite-entity)
              (()
               (load-suite suite-entity '()))
