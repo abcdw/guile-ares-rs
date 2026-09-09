@@ -16,10 +16,14 @@
            (define (test-name) e ...)
            (set-procedure-property! test-name 'srfi-64-test? #t)))))
 
+    (define (alist-ref alist key)
+      (let ((entry (assq key alist)))
+        (and entry (cdr entry))))
+
     (define (make-logging-runner)
       (let ((events '()))
         (lambda (message)
-          (let ((message-type (assoc-ref message 'type)))
+          (let ((message-type (alist-ref message 'type)))
             (if (eq? message-type 'runner/get-log)
                 (reverse events)
                 (begin
@@ -89,31 +93,31 @@
                               (t:is (= 42 (+ x 1)))
                               (t:is (and #t x) "x is true")))))
                  (message (car events))
-                 (assertion (assoc-ref message 'assertion))
+                 (assertion (alist-ref message 'assertion))
                  (described-assertion
-                  (assoc-ref (cadr events) 'assertion)))
+                  (alist-ref (cadr events) 'assertion)))
             (test-equal "message type"
               'runner/run-assertion
-              (assoc-ref message 'type))
+              (alist-ref message 'type))
             (test-equal "assertion body datum"
               '(= 42 (+ x 1))
-              (assoc-ref assertion 'assertion/body))
+              (alist-ref assertion 'assertion/body))
             (test-assert "assertion without description omits description field"
               (not (alist-contains-key? assertion 'assertion/description)))
             (test-equal "assertion location"
               #f
-              (assoc-ref assertion 'assertion/location))
+              (alist-ref assertion 'assertion/location))
             (test-equal "body thunk value"
               #t
-              ((assoc-ref assertion 'assertion/body-thunk)))
+              ((alist-ref assertion 'assertion/body-thunk)))
             (test-assert "generic assertions omit argument thunks"
               (not (alist-contains-key? assertion 'assertion/args-thunk)))
             (test-equal "described assertion body datum"
               '(and #t x)
-              (assoc-ref described-assertion 'assertion/body))
+              (alist-ref described-assertion 'assertion/body))
             (test-equal "assertion description"
               "x is true"
-              (assoc-ref described-assertion 'assertion/description))))
+              (alist-ref described-assertion 'assertion/description))))
 
         (test-group "test"
           (let* ((events (runner-events
@@ -127,45 +131,45 @@
                               (t:is (= 42
                                        (cdr (assq 'answer context))))))))
                  (message (car events))
-                 (test-entity (assoc-ref message 'test))
+                 (test-entity (alist-ref message 'test))
                  (context-test-entity
-                  (assoc-ref (cadr events) 'test)))
+                  (alist-ref (cadr events) 'test)))
             (test-equal "message type"
               'runner/load-test
-              (assoc-ref message 'type))
+              (alist-ref message 'type))
             (test-equal "load metadata"
               '()
-              (assoc-ref message 'load/metadata))
+              (alist-ref message 'load/metadata))
             (test-equal "description"
               "addition"
-              (assoc-ref test-entity 'test/description))
+              (alist-ref test-entity 'test/description))
             (test-equal "metadata"
               '((tag . unit))
-              (assoc-ref test-entity 'test/metadata))
+              (alist-ref test-entity 'test/metadata))
             (test-equal "location"
               #f
-              (assoc-ref test-entity 'test/location))
+              (alist-ref test-entity 'test/location))
             (test-assert "entity predicate"
               (t:test? test-entity))
             (test-assert "body procedure"
-              (procedure? (assoc-ref test-entity 'test/body-procedure)))
+              (procedure? (alist-ref test-entity 'test/body-procedure)))
             (let* ((body-events
                     (runner-events
                      (lambda ()
-                       ((assoc-ref test-entity 'test/body-procedure) '()))))
-                   (assertion (assoc-ref (car body-events) 'assertion)))
+                       ((alist-ref test-entity 'test/body-procedure) '()))))
+                   (assertion (alist-ref (car body-events) 'assertion)))
               (test-equal "body procedure loads assertions"
                 '(= 4 (+ value value))
-                (assoc-ref assertion 'assertion/body)))
+                (alist-ref assertion 'assertion/body)))
             (let* ((body-events
                     (runner-events
                      (lambda ()
-                       ((assoc-ref context-test-entity 'test/body-procedure)
+                       ((alist-ref context-test-entity 'test/body-procedure)
                         '((answer . 42))))))
-                   (assertion (assoc-ref (car body-events) 'assertion)))
+                   (assertion (alist-ref (car body-events) 'assertion)))
               (test-equal "context is bound in the body procedure"
                 #t
-                ((assoc-ref assertion 'assertion/body-thunk))))))
+                ((alist-ref assertion 'assertion/body-thunk))))))
 
         (test-group "test-loader"
           (let ((test-loader #f))
@@ -185,23 +189,23 @@
 
             (let* ((events (runner-events (lambda () (test-loader))))
                    (message (car events))
-                   (test-entity (assoc-ref message 'test)))
+                   (test-entity (alist-ref message 'test)))
               (test-equal "message type"
                 'runner/load-test
-                (assoc-ref message 'type))
+                (alist-ref message 'type))
               (test-equal "default load metadata"
                 '()
-                (assoc-ref message 'load/metadata))
+                (alist-ref message 'load/metadata))
               (test-equal "description"
                 "deferred test"
-                (assoc-ref test-entity 'test/description))
+                (alist-ref test-entity 'test/description))
               (test-equal "definition-time metadata"
                 '((tag . test)
                   (shared . definition))
-                (assoc-ref test-entity 'test/metadata))
+                (alist-ref test-entity 'test/metadata))
               (test-equal "location"
                 #f
-                (assoc-ref test-entity 'test/location))
+                (alist-ref test-entity 'test/location))
               (test-assert "entity predicate"
                 (t:test? test-entity)))
 
@@ -211,22 +215,22 @@
                        (test-loader '((added? . #t)
                                       (shared . invocation))))))
                    (message (car events))
-                   (test-entity (assoc-ref message 'test)))
+                   (test-entity (alist-ref message 'test)))
               (test-equal "call-time metadata is emitted separately"
                 '((added? . #t)
                   (shared . invocation))
-                (assoc-ref message 'load/metadata))
+                (alist-ref message 'load/metadata))
               (test-equal "call-time metadata does not amend the entity"
                 '((tag . test)
                   (shared . definition))
-                (assoc-ref test-entity 'test/metadata)))
+                (alist-ref test-entity 'test/metadata)))
 
             (let* ((events (runner-events (lambda () (test-loader))))
-                   (test-entity (assoc-ref (car events) 'test)))
+                   (test-entity (alist-ref (car events) 'test)))
               (test-equal "calls do not modify definition-time metadata"
                 '((tag . test)
                   (shared . definition))
-                (assoc-ref test-entity 'test/metadata)))))
+                (alist-ref test-entity 'test/metadata)))))
 
         (test-assert "metadata marker is unaffected by a lexical metadata binding"
           (let* ((events
@@ -240,12 +244,12 @@
                        (t:suite "suite with shadowed metadata"
                          'metadata `((slow? . #t))
                          #t)))))
-                 (test-entity (assoc-ref (car events) 'test))
-                 (suite-entity (assoc-ref (cadr events) 'suite)))
+                 (test-entity (alist-ref (car events) 'test))
+                 (suite-entity (alist-ref (cadr events) 'suite)))
             (and (equal? '((slow? . #t))
-                         (assoc-ref test-entity 'test/metadata))
+                         (alist-ref test-entity 'test/metadata))
                  (equal? '((slow? . #t))
-                         (assoc-ref suite-entity 'suite/metadata)))))
+                         (alist-ref suite-entity 'suite/metadata)))))
 
         (test-group "suite"
           (let ((suite-loader
@@ -260,7 +264,7 @@
               (not (t:suite-loader? (lambda () #t))))
             (let* ((events (runner-events (lambda () (suite-loader))))
                    (message (car events))
-                   (suite-entity (assoc-ref message 'suite))
+                   (suite-entity (alist-ref message 'suite))
                    (amended-events
                     (runner-events
                      (lambda ()
@@ -268,39 +272,39 @@
                                        (shared . invocation))))))
                    (amended-message (car amended-events))
                    (amended-suite-entity
-                    (assoc-ref amended-message 'suite))
+                    (alist-ref amended-message 'suite))
                    (reloaded-events
                     (runner-events (lambda () (suite-loader))))
                    (reloaded-suite-entity
-                    (assoc-ref (car reloaded-events) 'suite)))
+                    (alist-ref (car reloaded-events) 'suite)))
               (test-equal "message type"
                 'runner/load-suite
-                (assoc-ref message 'type))
+                (alist-ref message 'type))
               (test-equal "default load metadata"
                 '()
-                (assoc-ref message 'load/metadata))
+                (alist-ref message 'load/metadata))
               (test-equal "description"
                 "deferred"
-                (assoc-ref suite-entity 'suite/description))
+                (alist-ref suite-entity 'suite/description))
               (test-equal "definition-time metadata"
                 '((tag . suite)
                   (shared . definition))
-                (assoc-ref suite-entity 'suite/metadata))
+                (alist-ref suite-entity 'suite/metadata))
               (test-equal "call-time metadata is emitted separately"
                 '((added? . #t)
                   (shared . invocation))
-                (assoc-ref amended-message 'load/metadata))
+                (alist-ref amended-message 'load/metadata))
               (test-equal "call-time metadata does not amend the entity"
                 '((tag . suite)
                   (shared . definition))
-                (assoc-ref amended-suite-entity 'suite/metadata))
+                (alist-ref amended-suite-entity 'suite/metadata))
               (test-equal "calls do not modify definition-time metadata"
                 '((tag . suite)
                   (shared . definition))
-                (assoc-ref reloaded-suite-entity 'suite/metadata))
+                (alist-ref reloaded-suite-entity 'suite/metadata))
               (test-equal "location"
                 #f
-                (assoc-ref suite-entity 'suite/location))
+                (alist-ref suite-entity 'suite/location))
               (test-assert "entity predicate"
                 (t:suite? suite-entity)))))
 
@@ -311,7 +315,7 @@
             (test-assert "creates suite loader"
               (t:suite-loader? generated-suite))
             (let* ((events (runner-events (lambda () (generated-suite))))
-                   (suite-entity (assoc-ref (car events) 'suite)))
+                   (suite-entity (alist-ref (car events) 'suite)))
               (test-equal "generated description"
                 "generated-suite"
-                (assoc-ref suite-entity 'suite/description)))))))))
+                (alist-ref suite-entity 'suite/description)))))))))
