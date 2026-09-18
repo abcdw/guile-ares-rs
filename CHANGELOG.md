@@ -13,6 +13,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - Ares server startup now warns when it inherits a zero `RLIMIT_RTTIME` limit, which can cause the kernel to kill Ares during Fibers preemption.
 
 ### Changed
+- The suitbl `base` reporter now shows extended dot progress and prints failure details after the progress output.
 - SRFI-269 entities now omit unavailable `assertion/location`, `test/location`, and `suite/location` fields instead of including them with false values.
 - suitbl and SRFI-269 load messages now carry loader call-time metadata in `load/metadata`, separately from declared entity metadata; the standard suitbl runner merges both.
 - `set-current-test-runner!` was renamed to `set-default-test-runner!`.

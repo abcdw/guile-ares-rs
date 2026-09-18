@@ -405,8 +405,9 @@ message."
     (list _ unhandled)
     (reporter-first _)))
 
-(define (make-base-reporter verbose-reporter)
-  (chain (list verbose-reporter
+(define (make-base-reporter run-reporter)
+  (chain (list run-plan-compact
+               run-reporter
                (make-ignore-reporter '(run/test-start run/assertion-end))
 
                (make-newline-reporter '(run/end))
@@ -416,14 +417,15 @@ message."
                load-ignore-messages
                load-tree
                load-summary
-               run-plan-compact
                run-summary)
     (reporter-every _)
     (list _ unhandled)
     (reporter-first _)))
 
 (define base
-  (make-base-reporter verbose-only-failed))
+  (make-base-reporter
+   (reporter-every (list run-dots-extended
+                         run-failed-test-runs))))
 
 (define base-all
   (make-base-reporter verbose-all))
