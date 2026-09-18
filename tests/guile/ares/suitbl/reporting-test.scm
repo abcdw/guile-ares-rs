@@ -4,7 +4,8 @@
 (define-module (ares suitbl reporting-test)
   #:use-module (ares suitbl core)
   #:use-module ((ares suitbl reporting)
-                #:select (count-suites-and-tests)))
+                #:select (count-suites-and-tests
+                          format-test-run-verbose)))
 
 (define (make-test-node description)
   `((test . ((test/description . ,description)))))
@@ -17,6 +18,34 @@
   `((suite . ((suite/description . ,description)
               (suite/metadata . ((module-suite? . #t)))))
     (suite-node/children . ,children)))
+
+
+;;;
+;;; Test run formatting
+;;;
+
+(define-suite (test-run-formatting-tests)
+  (test "includes non-empty captured output in verbose reports" ()
+    (define formatted
+      (format-test-run-verbose
+       '((test . ((test/description . "output test")))
+         (test-run/assertion-runs . ())
+         (test-run/outcome . fail)
+         (test-run/stdout . "stdout without newline")
+         (test-run/stderr . "stderr with newline\n"))))
+    (define formatted-without-output
+      (format-test-run-verbose
+       '((test . ((test/description . "quiet test")))
+         (test-run/assertion-runs . ())
+         (test-run/outcome . pass)
+         (test-run/stdout . "")
+         (test-run/stderr . ""))))
+
+    (is (string-contains
+         formatted
+         "Standard output:\nstdout without newline\nStandard error:\nstderr with newline\n"))
+    (is (not (string-contains formatted-without-output "Standard output:")))
+    (is (not (string-contains formatted-without-output "Standard error:")))))
 
 (define-suite (count-suites-and-tests-tests)
   (test "single test node" ()

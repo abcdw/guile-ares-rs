@@ -197,6 +197,15 @@ location, and metadata."
                (pad-new-lines _ "   ")))
      (format #f "\n~a\n" location))))
 
+(define (format-test-run-output label output)
+  "Format non-empty captured OUTPUT as a section named LABEL."
+  (and (string? output)
+       (not (string-null? output))
+       (format #f "~a:\n~a~a"
+               label
+               output
+               (if (string-suffix? "\n" output) "" "\n"))))
+
 (define (format-test-run-verbose test-run)
   "Format TEST-RUN as a verbose multi-line report block."
   (and (list? test-run)
@@ -224,6 +233,13 @@ location, and metadata."
                      (running:raised? _))
                (chain-and (format-test-run-body-error test-run)
                  (format #t "~a" _)))
+
+             (chain-and (assoc-ref test-run 'test-run/stdout)
+               (format-test-run-output "Standard output" _)
+               (format #t "~a" _))
+             (chain-and (assoc-ref test-run 'test-run/stderr)
+               (format-test-run-output "Standard error" _)
+               (format #t "~a" _))
 
              (chain (- %verbose-test-run-line-width 2)
                (string-repeat "─" _)
