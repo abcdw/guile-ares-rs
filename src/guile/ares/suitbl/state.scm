@@ -1,5 +1,5 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Copyright © 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
+;; SPDX-FileCopyrightText: 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares suitbl state)
   #:use-module ((ares atomic)
@@ -131,6 +131,11 @@
       (alist-delete key _)
       (alist-cons key (f v) _))))
 
+(define (alist-cons-non-empty-string key value alist)
+  (if (and (string? value) (not (string-null? value)))
+      (alist-cons key value alist)
+      alist))
+
 (define (simplify-suite-node node)
   (chain node
     (alist-update _ 'suite-node/children
@@ -220,10 +225,14 @@
              (entry (find-test-run-entry test suite-path)))
         (if entry
             (let ((test-run-summary (assoc-ref entry 'test-run/summary))
-                  (test-run-outcome (assoc-ref entry 'test-run/outcome)))
+                  (test-run-outcome (assoc-ref entry 'test-run/outcome))
+                  (stdout (assoc-ref entry 'test-run/stdout))
+                  (stderr (assoc-ref entry 'test-run/stderr)))
               (chain node
                 (alist-cons 'test-run/summary test-run-summary _)
-                (alist-cons 'test-run/outcome test-run-outcome _)))
+                (alist-cons 'test-run/outcome test-run-outcome _)
+                (alist-cons-non-empty-string 'test-run/stdout stdout _)
+                (alist-cons-non-empty-string 'test-run/stderr stderr _)))
             node)))
 
      ((suite-node? node)

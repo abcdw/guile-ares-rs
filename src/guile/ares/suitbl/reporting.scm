@@ -47,6 +47,9 @@
    ""
    (iota n)))
 
+(define (non-empty-string? value)
+  (and (string? value) (not (string-null? value))))
+
 (define (tests->pretty-string l)
   (map
    (lambda (i)
@@ -199,8 +202,7 @@ location, and metadata."
 
 (define (format-test-run-output label output)
   "Format non-empty captured OUTPUT as a section named LABEL."
-  (and (string? output)
-       (not (string-null? output))
+  (and (non-empty-string? output)
        (format #f "~a:\n~a~a"
                label
                output
@@ -262,6 +264,14 @@ location, and metadata."
   "Convert TEST-RUN-SUMMARY alist to JUnit testcase attributes"
   `((assertions ,(number->string (assoc-ref test-run-summary 'assertions)))))
 
+(define (test-node->junit-output-elements node)
+  "Convert captured test output in NODE to JUnit output elements."
+  (let ((stdout (assoc-ref node 'test-run/stdout))
+        (stderr (assoc-ref node 'test-run/stderr)))
+    (append
+     (if (non-empty-string? stdout) `((system-out ,stdout)) '())
+     (if (non-empty-string? stderr) `((system-err ,stderr)) '()))))
+
 (define (node->junit-sxml node classname-path)
   "Convert a single node (suite or test) to JUnit SXML"
   (cond
@@ -305,9 +315,11 @@ location, and metadata."
                              ((fail)
                               '((failure (@ (message "Test failed")
                                             (type "AssertionError")))))
-                             (else '()))))
+                             (else '())))
+           (output-elements (test-node->junit-output-elements node)))
       `(testcase (@ ,@attributes)
-                 ,@status-element)))
+                 ,@status-element
+                 ,@output-elements)))
 
    (else '())))
 

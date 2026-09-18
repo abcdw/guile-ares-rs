@@ -258,6 +258,8 @@
     (parameterize ((current-test-runner test-runner))
       (suite "sample"
         (test "passing test" ()
+          (display "stdout <tag> & data\n")
+          (display "stderr <problem> & details\n" (current-error-port))
           (is #t)))
       (test-runner `((type . runner/run-tests))))
     (define runner-state
@@ -270,7 +272,13 @@
     (is (string-contains xml-output "<testsuites"))
     (is (string-contains xml-output "<testsuite"))
     (is (string-contains xml-output "<testcase"))
-    (is (string-contains xml-output "passing test")))
+    (is (string-contains xml-output "passing test"))
+    (is (string-contains
+         xml-output
+         "<system-out>stdout &lt;tag&gt; &amp; data\n</system-out>"))
+    (is (string-contains
+         xml-output
+         "<system-err>stderr &lt;problem&gt; &amp; details\n</system-err>")))
 
   (test "reports failures in JUnit XML" ()
     (define port (open-output-string))
