@@ -207,39 +207,44 @@ environment just set it to new instance of test runner.
                '())))
 
       (define result
-        (parameterize ((%inside-test?* #t)
-                       (%assertion-runs* (make-atomic-box '())))
-          (let ((test-run-result
-                 (running:with-exception-continuation
-                  (lambda ()
-                    (test-body-with-fixtures (make-test-context test))))))
-            (define assertion-runs
-              (reverse (atomic-box-ref (%assertion-runs*))))
-            (define test-run
-              (running:make-test-run test test-run-result assertion-runs))
+        (let ((stdout-port (open-output-string))
+              (stderr-port (open-output-string)))
+          (parameterize ((current-output-port stdout-port)
+                         (current-error-port stderr-port)
+                         (%inside-test?* #t)
+                         (%assertion-runs* (make-atomic-box '())))
+            (let ((test-run-result
+                   (running:with-exception-continuation
+                    (lambda ()
+                      (test-body-with-fixtures (make-test-context test))))))
+              (define assertion-runs
+                (reverse (atomic-box-ref (%assertion-runs*))))
+              (define test-run
+                (running:make-test-run
+                 test test-run-result assertion-runs
+                 #:stdout (get-output-string stdout-port)
+                 #:stderr (get-output-string stderr-port)))
 
-            ((get-test-reporter)
-             `((type . run/test-end)
-               (test . ,test)
-               (test-run . ,test-run)
-               ,@(if run-progress
-                     `((run-progress . ,run-progress))
-                     '())))
+              ((get-test-reporter)
+               `((type . run/test-end)
+                 (test . ,test)
+                 (test-run . ,test-run)
+                 ,@(if run-progress
+                       `((run-progress . ,run-progress))
+                       '())))
 
-            (when (re-raise?)
+              (when (re-raise?)
+                (let ((raised-assertion-run
+                       (first-erroring-assertion-run assertion-runs)))
+                  (when raised-assertion-run
+                    ((running:raised-continuation
+                      (assoc-ref raised-assertion-run
+                                 'assertion-run/result)))))
 
-              (define raised-assertion-run
-                (first-erroring-assertion-run
-                 assertion-runs))
-              (when raised-assertion-run
-                ((running:raised-continuation
-                  (assoc-ref raised-assertion-run
-                             'assertion-run/result))))
+                (when (running:raised? test-run-result)
+                  ((running:raised-continuation test-run-result))))
 
-              (when (running:raised? test-run-result)
-                ((running:raised-continuation test-run-result))))
-
-            test-run)))
+              test-run))))
 
       result))
 

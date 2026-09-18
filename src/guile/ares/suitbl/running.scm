@@ -259,8 +259,11 @@ are present, run outcome is considered 'error."
     'zero-assertions)
    (else test-run-outcome)))
 
-(define (make-test-run test test-run-result assertion-runs)
-  "Build a test run record from TEST, TEST-RUN-RESULT, and ASSERTION-RUNS."
+(define* (make-test-run test test-run-result assertion-runs
+                        #:key (stdout "") (stderr ""))
+  "Build a test run record from TEST, TEST-RUN-RESULT, and ASSERTION-RUNS.
+
+STDOUT and STDERR contain output captured while running the test."
   (let* ((assertion-summary
           (assertion-runs->assertion-summary assertion-runs))
          (test-run-outcome
@@ -275,6 +278,8 @@ are present, run outcome is considered 'error."
            test-run-result assertion-summary test-run-outcome)))
     `((test . ,test)
       (test-run/result . ,test-run-result)
+      (test-run/stdout . ,stdout)
+      (test-run/stderr . ,stderr)
       (test-run/assertion-runs . ,assertion-runs)
       (test-run/summary . ,test-run-summary)
       (test-run/outcome . ,test-run-outcome)

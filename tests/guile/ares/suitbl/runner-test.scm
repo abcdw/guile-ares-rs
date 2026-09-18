@@ -111,6 +111,35 @@
          (exception-message
           (running:raised-exception third-run-result))))))
 
+
+;;;
+;;; Test output capture
+;;;
+
+(define-suite (test-output-capture-tests)
+  (test "captures stdout and stderr in the test run" ()
+    (define tr (silent-runner))
+    (define inherited-stdout (open-output-string))
+    (define inherited-stderr (open-output-string))
+
+    (parameterize ((current-output-port inherited-stdout)
+                   (current-error-port inherited-stderr))
+      (with-test-runner tr
+        (suite "output suite"
+          (test "writes output" ()
+            (display "hello from stdout\n")
+            (display "hello from stderr\n" (current-error-port))
+            (is #t)))))
+
+    (define test-run
+      (car (state:get-run-history (runner:get-state tr))))
+    (is (equal? "hello from stdout\n"
+                (assoc-ref test-run 'test-run/stdout)))
+    (is (equal? "hello from stderr\n"
+                (assoc-ref test-run 'test-run/stderr)))
+    (is (string-null? (get-output-string inherited-stdout)))
+    (is (string-null? (get-output-string inherited-stderr)))))
+
 (define-suite (suite-id-tests)
   (test "runner assigns unique IDs to suite load instances" ()
     (define tr
