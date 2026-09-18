@@ -68,6 +68,18 @@ when it loads the entity, with call-time values taking precedence:
 (load-test '((slow? . #f)))
 ```
 
+## Captured test output
+
+The standard runner captures `current-output-port` and `current-error-port`
+while each test runs.  Capture covers the test's fixtures and body.  The
+resulting strings are retained in its test-run record as `test-run/stdout` and
+`test-run/stderr`, so test output does not interfere with progress reporting.
+
+Human-readable verbose reports print only non-empty captured streams.  The
+`base` and `compact` reporters show these reports for failed and erroring tests,
+while `base-all` shows them for every test.  The JUnit reporter writes non-empty
+streams as `system-out` and `system-err` elements.
+
 ## Suite and test IDs
 
 The standard `make-suitbl` runner assigns a `suite/id` to each suite

@@ -6,7 +6,6 @@
   #:use-module (ares suitbl definitions)
   #:export (all-tests))
 
-;; TODO: [Andrew Tropin, 2026-04-21] Add tests with stdout/stderr
 ;; TODO: [Andrew Tropin, 2026-04-21] Add inifinite tests
 
 
@@ -26,6 +25,9 @@
 (define failing-tests
   (suite-loader "failing tests"
     (test "contains a failing assertion among passing ones" ()
+      (display "specimen output before assertion failure\n")
+      (display "specimen error output before assertion failure\n"
+               (current-error-port))
       (is (= 4 (+ 2 2)))
       (is (equal? '(a b c d e f g h j k l m n o p q r)
                   (list 'a 'b 'c 'd 'e 'f 'g 'h 'j 'k 'l 'm 'n 'o 'p 'q 'r)))
