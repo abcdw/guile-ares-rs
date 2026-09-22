@@ -6,6 +6,7 @@
             set-default-test-runner!
 
             is
+            metadata
             test test?
             test-loader
             suite suite?
@@ -79,6 +80,21 @@ at macro-expansion time."
 (define (%metadata-marker? stx)
   (equal? '(quote metadata) (syntax->datum stx)))
 
+(define (warn-deprecated-metadata-syntax location)
+  (let ((port (current-warning-port)))
+    (format port "warning: deprecated suitbl metadata syntax")
+    (when (and location (assoc-ref location 'filename))
+      (format port " at ~a" (assoc-ref location 'filename))
+      (when (assoc-ref location 'line)
+        (format port ":~a" (assoc-ref location 'line)))
+      (when (assoc-ref location 'column)
+        (format port ":~a" (assoc-ref location 'column))))
+    (format port "\n")
+    (format port "  Use `(metadata METADATA)` instead of `'metadata METADATA`.\n")))
+
+(define-syntax metadata
+  (syntax-rules ()))
+
 (define-syntax is
   (lambda (stx)
     "A flexible assertion macro.  The behavior can be customized by test runner."
@@ -125,11 +141,10 @@ at macro-expansion time."
                  (load/metadata . ,metadata)
                  (test . ,test-entity)))))))
 
-    (syntax-case stx ()
+    (syntax-case stx (metadata)
       ((_ test-description (context-name)
-          metadata-marker metadata-value expression expressions ...)
-       (and (identifier? #'context-name)
-            (%metadata-marker? #'metadata-marker))
+          (metadata metadata-value) expression expressions ...)
+       (identifier? #'context-name)
        (build-test-loader stx
                           #'test-description
                           #'metadata-value
@@ -138,8 +153,7 @@ at macro-expansion time."
                           #'(expression expressions ...)))
 
       ((_ test-description ()
-          metadata-marker metadata-value expression expressions ...)
-       (%metadata-marker? #'metadata-marker)
+          (metadata metadata-value) expression expressions ...)
        (build-test-loader stx
                           #'test-description
                           #'metadata-value
@@ -147,14 +161,37 @@ at macro-expansion time."
                               expression expressions ...)
                           #'(expression expressions ...)))
 
+      ((_ test-description (context-name)
+          metadata-marker metadata-value expression expressions ...)
+       (and (identifier? #'context-name)
+            (%metadata-marker? #'metadata-marker))
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
+         #'(begin
+             (warn-deprecated-metadata-syntax 'location)
+             (test-loader test-description (context-name)
+               (metadata metadata-value) expression expressions ...))))
+
+      ((_ test-description ()
+          metadata-marker metadata-value expression expressions ...)
+       (%metadata-marker? #'metadata-marker)
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
+         #'(begin
+             (warn-deprecated-metadata-syntax 'location)
+             (test-loader test-description ()
+               (metadata metadata-value) expression expressions ...))))
+
       ((_ test-description (context-name) expression expressions ...)
        (identifier? #'context-name)
        #'(test-loader test-description (context-name)
-           'metadata '() expression expressions ...))
+           (metadata '()) expression expressions ...))
 
       ((_ test-description () expression expressions ...)
        #'(test-loader test-description ()
-           'metadata '() expression expressions ...)))))
+           (metadata '()) expression expressions ...)))))
 
 (define-syntax test
   (lambda (stx)
@@ -166,10 +203,9 @@ more @code{is} asserts."
 
 (define-syntax suite-loader
   (lambda (stx)
-    (syntax-case stx ()
-      ((_ suite-description metadata-marker metadata-value
+    (syntax-case stx (metadata)
+      ((_ suite-description (metadata metadata-value)
           expression expressions ...)
-       (%metadata-marker? #'metadata-marker)
        (with-syntax ((location (datum->syntax
                                 stx
                                 (make-source-absolute (syntax-source stx)))))
@@ -195,9 +231,20 @@ more @code{is} asserts."
                 (suitbl-suite-loader? . #t)))
              %suite-loader)))
 
+      ((_ suite-description metadata-marker metadata-value
+          expression expressions ...)
+       (%metadata-marker? #'metadata-marker)
+       (with-syntax ((location (datum->syntax
+                                stx
+                                (make-source-absolute (syntax-source stx)))))
+         #'(begin
+             (warn-deprecated-metadata-syntax 'location)
+             (suite-loader suite-description
+               (metadata metadata-value) expression expressions ...))))
+
       ((_ suite-description expression expressions ...)
        #'(suite-loader
-          suite-description 'metadata '() expression expressions ...)))))
+          suite-description (metadata '()) expression expressions ...)))))
 
 (define-syntax suite
   (lambda (stx)

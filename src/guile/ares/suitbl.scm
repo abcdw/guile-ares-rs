@@ -11,6 +11,7 @@
                current-test-runner
 
                is
+               metadata
                test test-loader
                suite suite-loader
 

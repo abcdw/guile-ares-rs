@@ -9,6 +9,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ## [Unreleased]
 
 ### Added
+- suitbl now provides `(metadata METADATA)` syntax for declaring test and suite metadata.
 - SRFI-269 now provides `test-loader` for deferred test loading with optional call-time metadata.
 - Ares server startup now warns when it inherits a zero `RLIMIT_RTTIME` limit, which can cause the kernel to kill Ares during Fibers preemption.
 
@@ -18,6 +19,9 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl and SRFI-269 load messages now carry loader call-time metadata in `load/metadata`, separately from declared entity metadata; the standard suitbl runner merges both.
 - `set-current-test-runner!` was renamed to `set-default-test-runner!`.
 - `(srfi srfi-269-draft)` was renamed to the portable R7RS library `(srfi 269)` and moved to its own source tree under `src/srfi-269/r7rs`.
+
+### Deprecated
+- suitbl's `'metadata METADATA` definition syntax now emits a warning; use `(metadata METADATA)` instead.
 
 ### Fixed
 - suitbl and SRFI-269 recognize the `'metadata` syntax marker even when `metadata` is lexically bound at the use site.
