@@ -55,12 +55,12 @@ when it loads the entity, with call-time values taking precedence:
 ```scheme
 (define load-suite
   (suite-loader "tests"
-    'metadata '((slow? . #t))
+    (metadata '((slow? . #t)))
     ...))
 
 (define load-test
   (test-loader "works" ()
-    'metadata '((slow? . #t))
+    (metadata '((slow? . #t)))
     ...))
 
 (load-suite '((module . example)

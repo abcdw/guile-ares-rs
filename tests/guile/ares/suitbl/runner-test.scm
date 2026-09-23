@@ -319,18 +319,18 @@
 
     (with-test-runner tr
       (suite "outer"
-        'metadata
-        `((test/fixtures
-           . (,(make-recording-fixture 'outer-1)
-              ,(make-recording-fixture 'outer-2))))
+        (metadata
+         `((test/fixtures
+            . (,(make-recording-fixture 'outer-1)
+               ,(make-recording-fixture 'outer-2)))))
         (suite "inner"
-          'metadata
-          `((test/fixtures
-             . (,(make-recording-fixture 'inner))))
+          (metadata
+           `((test/fixtures
+              . (,(make-recording-fixture 'inner)))))
           (test "fixture target" (ctx)
-            'metadata
-            `((test/fixtures
-               . (,(make-recording-fixture 'direct))))
+            (metadata
+             `((test/fixtures
+                . (,(make-recording-fixture 'direct)))))
             (set! body-context ctx)
             (record! 'body)))))
 

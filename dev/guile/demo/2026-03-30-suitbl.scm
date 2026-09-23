@@ -34,7 +34,7 @@
 
  (suite "math operations"
    (suite "empty sweet with metadata"
-     'metadata '((tags . (integration)))
+     (metadata '((tags . (integration))))
      "hello")
 
    (test "addition" ()
@@ -43,8 +43,7 @@
 
    ;; Test with metadata <--------------------------------------
    (test "multiplication" ()
-     'metadata
-     '((slow? . #t))
+     (metadata '((slow? . #t)))
      (is (= 12 (* 3 4)))
      (is (= 0 (* 0 999))))
 
@@ -247,8 +246,7 @@ API-first, can be easily integrated in your IDE and other tools.
      (is (= 0 (+ -1 1))))
 
    (test "multiplication" ()
-     'metadata
-     '((slow? . #t))
+     (metadata '((slow? . #t)))
      (is (= 12 (* 3 4)))
      (is (= 0 (* 0 999))))
 
@@ -303,15 +301,15 @@ API-first, can be easily integrated in your IDE and other tools.
 ;;; 5. Metadata on tests and suites
 ;;;
 
-;; Both `test` and `suite` accept an optional 'metadata alist.
+;; Both `test` and `suite` accept an optional `(metadata ALIST)` form.
 ;; Schedulers and reporters can use metadata to filter or annotate.
 
 (comment
- (suite "tagged suite" 'metadata '((tags . (integration)))
+ (suite "tagged suite" (metadata '((tags . (integration))))
    (test "fast check" ()
      (is (= 1 1)))
 
-   (test "slow check" () 'metadata '((slow? . #t))
+   (test "slow check" () (metadata '((slow? . #t)))
          (is (= 2 (+ 1 1)))))
 
  ((current-test-runner) `((type . runner/run-tests)))

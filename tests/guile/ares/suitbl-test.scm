@@ -230,7 +230,7 @@ because test macro is not composable and can't be wrapped.
 
 (define-suite (test-macro-usage-tests)
   (test "simple test case with metadata marking it as slow" ()
-    'metadata `((slow? . #t))
+    (metadata `((slow? . #t)))
     ;; (sleep 1)
     (is #t))
 
@@ -326,7 +326,7 @@ because test macro is not composable and can't be wrapped.
 
 (define-suite (suite-usage-tests)
   (suite "test suite with metadata"
-    'metadata `((interesting? . #t))
+    (metadata `((interesting? . #t)))
     (test "simple" ()
       (is #t)))
 

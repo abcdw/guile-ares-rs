@@ -39,7 +39,7 @@
       (suite "root"
         (test "regular test" ()
           (is #t))
-        (suite "dev suite" 'metadata '((dev? . #t))
+        (suite "dev suite" (metadata '((dev? . #t)))
           (test "dev test" ()
             (is #t)))))
     (define state (runner->state tr))
@@ -53,7 +53,7 @@
     (define tr (runner:make-silent))
     (with-test-runner tr
       (suite "root"
-        (suite "dev suite" 'metadata '((dev? . #t))
+        (suite "dev suite" (metadata '((dev? . #t)))
           (suite "nested suite"
             (test "nested dev test" ()
               (is #t))))
@@ -129,8 +129,8 @@
     (with-test-runner tr
       (suite "root"
         (suite "module suite"
-          'metadata `((module-suite? . #t)
-                       (module . ,mod))
+          (metadata `((module-suite? . #t)
+                      (module . ,mod)))
           (test "test in current module" ()
             (is #t)))
         (suite "other suite"
@@ -150,8 +150,8 @@
     (with-test-runner tr
       (suite "root"
         (suite "module suite"
-          'metadata `((module-suite? . #t)
-                       (module . ,mod))
+          (metadata `((module-suite? . #t)
+                      (module . ,mod)))
           (test "test in current module" ()
             (is #t)))))
     (define state (runner->state tr))

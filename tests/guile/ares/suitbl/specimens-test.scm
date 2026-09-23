@@ -64,8 +64,7 @@
 
 (define all-tests
   (suite-loader "all tests"
-    'metadata
-    '((dev? . #t))
+    (metadata '((dev? . #t)))
     (passing-tests)
     (failing-tests)))
 

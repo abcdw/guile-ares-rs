@@ -19,11 +19,11 @@
     (suite "mixed tests"
       (test "fast addition" ()
         (is (= 4 (+ 2 2))))
-      (test "slow network call" () 'metadata '((slow? . #t))
+      (test "slow network call" () (metadata '((slow? . #t)))
         (is #t))
       (test "fast string check" ()
         (is (string? "hello")))
-      (test "slow database query" () 'metadata '((slow? . #t))
+      (test "slow database query" () (metadata '((slow? . #t)))
         (is #t))))
   tr)
 

@@ -160,7 +160,7 @@
     (define events-log
       (with-runner-events-to-list
        (test "t1" () 'body)
-       (test "t2" () 'metadata '((good? . #t)) 'body)
+       (test "t2" () (metadata '((good? . #t))) 'body)
        (test "t3" (ctx) (assoc-ref ctx 'answer))))
     (define (event-test event)
       (assoc-ref event 'test))
@@ -205,9 +205,9 @@
   (test "test-loader emits call metadata separately" ()
     (define tmp-test-loader
       (test-loader "tmp test loader" ()
-        'metadata
-        '((default? . #t)
-          (shared . default))
+        (metadata
+         '((default? . #t)
+           (shared . default)))
         #t))
 
     (define load-event
@@ -228,7 +228,7 @@
 
   (test "runner adds compound metadata inherited from suite" ()
     (define compound-metadata
-      (chain (suite-loader "outer" 'metadata '((slow? . #t))
+      (chain (suite-loader "outer" (metadata '((slow? . #t)))
                (test "t1" ()
                  (is #t)))
         (load-tests _)
@@ -240,17 +240,17 @@
   (test "runner merges compound metadata from nested suites and test" ()
     (define compound-metadata
       (chain (suite-loader "outer"
-               'metadata
-               '((shared . outer)
-                 (outer? . #t))
+               (metadata
+                '((shared . outer)
+                  (outer? . #t)))
                (suite "inner"
-                 'metadata
-                 '((shared . inner)
-                   (inner? . #t))
+                 (metadata
+                  '((shared . inner)
+                    (inner? . #t)))
                  (test "t1" ()
-                   'metadata
-                   '((shared . test)
-                     (test? . #t))
+                   (metadata
+                    '((shared . test)
+                      (test? . #t)))
                    (is #t))))
         (load-tests _)
         (car _)
@@ -269,7 +269,7 @@
     (define events-log
       (with-runner-events-to-list
        (suite "s1" 'body)
-       (suite "s2" 'metadata '((tags . (integration))) 'body)))
+       (suite "s2" (metadata '((tags . (integration)))) 'body)))
     (define (get-tags suite)
       (chain suite
         (assoc-ref _ 'suite)
@@ -281,9 +281,9 @@
   (test "suite-loader emits call metadata separately" ()
     (define tmp-suite-loader
       (suite-loader "tmp suite loader"
-        'metadata
-        '((default? . #t)
-          (shared . default))
+        (metadata
+         '((default? . #t)
+           (shared . default)))
         #t))
 
     (define load-event

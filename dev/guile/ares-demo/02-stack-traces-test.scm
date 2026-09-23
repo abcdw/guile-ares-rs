@@ -11,8 +11,7 @@
     (is (even? 4))))
 
 (define-suite (kek)
-  'metadata
-  '((demo? . #t))
+  (metadata '((demo? . #t)))
 
   (test "another fine" ()
     ;; (sleep 1)
