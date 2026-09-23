@@ -3,7 +3,8 @@
 
 (define-module (ares suitbl ares)
   #:use-module ((ares guile prelude) #:select (comment))
-  #:use-module ((ares suitbl core) #:select (suite current-test-runner))
+  #:use-module ((ares suitbl core)
+                #:select (metadata suite current-test-runner))
   #:use-module ((ares suitbl runner) #:prefix runner:)
   #:use-module ((ares suitbl reporters) #:prefix reporter:)
   #:use-module ((ares suitbl state) #:prefix state:)
@@ -33,9 +34,9 @@
 
 (define (load-module-suite m)
   (suite (format #f "~a" (module-name m))
-    'metadata
-    `((module-suite? . #t)
-      (module . ,m))
+    (metadata
+     `((module-suite? . #t)
+       (module . ,m)))
     (for-each (lambda (ts) (ts))
               (get-module-public-suites m))))
 
@@ -59,8 +60,7 @@
    (lambda ()
      (let ((test-modules (get-all-test-modules)))
        (suite "project tests"
-         'metadata
-         '((project-suite? . #t))
+         (metadata '((project-suite? . #t)))
          (for-each load-module-suite test-modules))))))
 
 (define (add-indicies tests)
