@@ -136,9 +136,10 @@
                              (lambda () form))
                        (cons 'assertion/body (quote form)))))))))
 
-    (define-syntax %make-test-loader
-      (syntax-rules ()
-        ((_ test-description (context) metadata-value body body* ...)
+    (define-syntax test-loader
+      (syntax-rules (metadata)
+        ((_ test-description (context)
+            (metadata metadata-value) body body* ...)
          (let ((test-entity
                 (list
                  (cons 'test/body-procedure
@@ -151,28 +152,25 @@
               (load-test test-entity '()))
              ((metadata)
               (load-test test-entity metadata)))))
-        ((_ test-description () metadata-value body body* ...)
-         (%make-test-loader test-description (%test-context)
-           metadata-value body body* ...))))
-
-    (define-syntax test-loader
-      (syntax-rules (metadata)
-        ((_ test-description arguments
+        ((_ test-description ()
             (metadata metadata-value) body body* ...)
-         (%make-test-loader test-description arguments
-           metadata-value body body* ...))
-        ((_ test-description arguments body body* ...)
-         (%make-test-loader test-description arguments '()
-           body body* ...))))
+         (test-loader test-description (%test-context)
+           (metadata metadata-value) body body* ...))
+        ((_ test-description (context) body body* ...)
+         (test-loader test-description (context)
+           (metadata '()) body body* ...))
+        ((_ test-description () body body* ...)
+         (test-loader test-description ()
+           (metadata '()) body body* ...))))
 
     (define-syntax test
       (syntax-rules ()
         ((_ test-description arguments ...)
          ((test-loader test-description arguments ...)))))
 
-    (define-syntax %make-suite-loader
-      (syntax-rules ()
-        ((_ suite-description metadata-value body ...)
+    (define-syntax suite-loader
+      (syntax-rules (metadata)
+        ((_ suite-description (metadata metadata-value) body ...)
          (let ((suite-entity
                 (list
                  (cons 'suite/body-thunk
@@ -183,14 +181,9 @@
              (()
               (load-suite suite-entity '()))
              ((metadata)
-              (load-suite suite-entity metadata)))))))
-
-    (define-syntax suite-loader
-      (syntax-rules (metadata)
-        ((_ suite-description (metadata metadata-value) body ...)
-         (%make-suite-loader suite-description metadata-value body ...))
+              (load-suite suite-entity metadata)))))
         ((_ suite-description body ...)
-         (%make-suite-loader suite-description '() body ...))))
+         (suite-loader suite-description (metadata '()) body ...))))
 
     (define-syntax suite
       (syntax-rules ()
