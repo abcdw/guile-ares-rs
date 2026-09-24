@@ -15,6 +15,7 @@
           simple-test-runner
 
           is
+          testing
           metadata
           test test?
           test-loader
@@ -116,25 +117,50 @@
     (define-syntax metadata
       (syntax-rules ()))
 
+    (define %current-assertion-context
+      (make-parameter '()))
+
+    (define-syntax testing
+      (syntax-rules ()
+        ((_ description body body* ...)
+         (let ((description* description))
+           (parameterize
+               ((%current-assertion-context
+                 (append (%current-assertion-context)
+                         (list description*))))
+             body body* ...)))))
+
     (define-syntax is
       (syntax-rules ()
         ((_ form description)
-         ((current-test-runner)
-          (list (cons 'type 'runner/run-assertion)
-                (cons 'assertion
-                      (list
-                       (cons 'assertion/body-thunk
-                             (lambda () form))
-                       (cons 'assertion/body (quote form))
-                       (cons 'assertion/description description))))))
+         (let ((assertion-context (%current-assertion-context)))
+           ((current-test-runner)
+            (list (cons 'type 'runner/run-assertion)
+                  (cons 'assertion
+                        (list
+                         (cons 'assertion/body-thunk
+                               (lambda ()
+                                 (parameterize
+                                     ((%current-assertion-context
+                                       assertion-context))
+                                   form)))
+                         (cons 'assertion/body (quote form))
+                         (cons 'assertion/context assertion-context)
+                         (cons 'assertion/description description)))))))
         ((_ form)
-         ((current-test-runner)
-          (list (cons 'type 'runner/run-assertion)
-                (cons 'assertion
-                      (list
-                       (cons 'assertion/body-thunk
-                             (lambda () form))
-                       (cons 'assertion/body (quote form)))))))))
+         (let ((assertion-context (%current-assertion-context)))
+           ((current-test-runner)
+            (list (cons 'type 'runner/run-assertion)
+                  (cons 'assertion
+                        (list
+                         (cons 'assertion/body-thunk
+                               (lambda ()
+                                 (parameterize
+                                     ((%current-assertion-context
+                                       assertion-context))
+                                   form)))
+                         (cons 'assertion/body (quote form))
+                         (cons 'assertion/context assertion-context)))))))))
 
     (define-syntax test-loader
       (syntax-rules (metadata)

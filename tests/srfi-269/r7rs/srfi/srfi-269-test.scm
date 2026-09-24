@@ -119,6 +119,75 @@
               "x is true"
               (alist-ref described-assertion 'assertion/description))))
 
+        (test-group "testing"
+          (let* ((events
+                  (runner-events
+                   (lambda ()
+                     (t:is #t)
+                     (t:testing "outer"
+                       (t:is #t)
+                       (t:testing "inner"
+                         (t:is #t)))
+                     (t:is #t))))
+                 (contexts
+                  (let loop ((remaining-events events))
+                    (if (null? remaining-events)
+                        '()
+                        (cons
+                         (alist-ref
+                          (alist-ref (car remaining-events) 'assertion)
+                          'assertion/context)
+                         (loop (cdr remaining-events)))))))
+            (test-equal "captures nested assertion contexts"
+              '(()
+                ("outer")
+                ("outer" "inner")
+                ())
+              contexts)
+            (test-equal "emits no runner message"
+              4
+              (length events)))
+
+          (let ((evaluations 0))
+            (let ((result
+                   (t:testing
+                       (begin
+                         (set! evaluations (+ evaluations 1))
+                         "context")
+                     'ignored
+                     'result)))
+              (test-equal "evaluates its description once"
+                1
+                evaluations)
+              (test-equal "returns its last body value"
+                'result
+                result)))
+
+          (let* ((outer-event
+                  (car
+                   (runner-events
+                    (lambda ()
+                      (t:testing "deferred"
+                        (t:is (t:is #t)))))))
+                 (outer-assertion
+                  (alist-ref outer-event 'assertion))
+                 (nested-events
+                  (runner-events
+                   (lambda ()
+                     ((alist-ref outer-assertion
+                                 'assertion/body-thunk)))))
+                 (nested-assertion
+                  (alist-ref (car nested-events) 'assertion)))
+            (test-equal "records deferred assertion context"
+              '("deferred")
+              (alist-ref outer-assertion 'assertion/context))
+            (test-equal "deferred assertion emits one nested assertion"
+              1
+              (length nested-events))
+            (test-equal "restores context for nested assertions"
+              '("deferred")
+              (alist-ref nested-assertion 'assertion/context))))
+
         (test-group "test"
           (let* ((events (runner-events
                           (lambda ()
