@@ -130,9 +130,9 @@
                          (list description*))))
              body body* ...)))))
 
-    (define-syntax is
+    (define-syntax %run-assertion
       (syntax-rules ()
-        ((_ form description)
+        ((_ form assertion-field ...)
          (let ((assertion-context (%current-assertion-context)))
            ((current-test-runner)
             (list (cons 'type 'runner/run-assertion)
@@ -146,21 +146,16 @@
                                    form)))
                          (cons 'assertion/body (quote form))
                          (cons 'assertion/context assertion-context)
-                         (cons 'assertion/description description)))))))
+                         assertion-field ...))))))))
+
+    (define-syntax is
+      (syntax-rules ()
+        ((_ form description)
+         (%run-assertion
+          form
+          (cons 'assertion/description description)))
         ((_ form)
-         (let ((assertion-context (%current-assertion-context)))
-           ((current-test-runner)
-            (list (cons 'type 'runner/run-assertion)
-                  (cons 'assertion
-                        (list
-                         (cons 'assertion/body-thunk
-                               (lambda ()
-                                 (parameterize
-                                     ((%current-assertion-context
-                                       assertion-context))
-                                   form)))
-                         (cons 'assertion/body (quote form))
-                         (cons 'assertion/context assertion-context)))))))))
+         (%run-assertion form))))
 
     (define-syntax test-loader
       (syntax-rules (metadata)
