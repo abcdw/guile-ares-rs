@@ -123,8 +123,7 @@
           (let* ((events (runner-events
                           (lambda ()
                             (t:test "addition" ()
-                              'metadata
-                              '((tag . unit))
+                              (t:metadata '((tag . unit)))
                               (define value 2)
                               (t:is (= 4 (+ value value))))
                             (t:test "context" (context)
@@ -179,9 +178,9 @@
                (lambda ()
                  (set! test-loader
                        (t:test-loader "deferred test" ()
-                         'metadata
-                         '((tag . test)
-                           (shared . definition))
+                         (t:metadata
+                          '((tag . test)
+                            (shared . definition)))
                          #t)))))
 
             (test-assert "returns a procedure"
@@ -232,31 +231,12 @@
                   (shared . definition))
                 (alist-ref test-entity 'test/metadata)))))
 
-        (test-assert "metadata marker is unaffected by a lexical metadata binding"
-          (let* ((events
-                  (runner-events
-                   (lambda ()
-                     (let ((metadata 42)
-                           (quote 42))
-                       (t:test "test with shadowed metadata" ()
-                         'metadata `((slow? . #t))
-                         #t)
-                       (t:suite "suite with shadowed metadata"
-                         'metadata `((slow? . #t))
-                         #t)))))
-                 (test-entity (alist-ref (car events) 'test))
-                 (suite-entity (alist-ref (cadr events) 'suite)))
-            (and (equal? '((slow? . #t))
-                         (alist-ref test-entity 'test/metadata))
-                 (equal? '((slow? . #t))
-                         (alist-ref suite-entity 'suite/metadata)))))
-
         (test-group "suite"
           (let ((suite-loader
                  (t:suite-loader "deferred"
-                   'metadata
-                   '((tag . suite)
-                     (shared . definition))
+                   (t:metadata
+                    '((tag . suite)
+                      (shared . definition)))
                    (t:test "inside" () #t))))
             (test-assert "suite-loader? recognizes suite loaders"
               (t:suite-loader? suite-loader))

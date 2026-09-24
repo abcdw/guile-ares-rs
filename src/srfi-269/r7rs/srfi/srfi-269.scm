@@ -15,6 +15,7 @@
           simple-test-runner
 
           is
+          metadata
           test test?
           test-loader
           suite suite?
@@ -110,10 +111,10 @@
              (cons 'load/metadata metadata)
              (cons 'suite suite-entity))))
 
-    (define (%metadata-marker? form)
-      (equal? '(quote metadata) form))
-
 
+
+    (define-syntax metadata
+      (syntax-rules ()))
 
     (define-syntax is
       (syntax-rules ()
@@ -155,14 +156,11 @@
            metadata-value body body* ...))))
 
     (define-syntax test-loader
-      (syntax-rules ()
+      (syntax-rules (metadata)
         ((_ test-description arguments
-            (marker-head marker-name) metadata-value body body* ...)
-         (if (%metadata-marker? (quote (marker-head marker-name)))
-             (%make-test-loader test-description arguments
-               metadata-value body body* ...)
-             (%make-test-loader test-description arguments '()
-               (marker-head marker-name) metadata-value body body* ...)))
+            (metadata metadata-value) body body* ...)
+         (%make-test-loader test-description arguments
+           metadata-value body body* ...))
         ((_ test-description arguments body body* ...)
          (%make-test-loader test-description arguments '()
            body body* ...))))
@@ -188,13 +186,9 @@
               (load-suite suite-entity metadata)))))))
 
     (define-syntax suite-loader
-      (syntax-rules ()
-        ((_ suite-description
-            (marker-head marker-name) metadata-value body ...)
-         (if (%metadata-marker? (quote (marker-head marker-name)))
-             (%make-suite-loader suite-description metadata-value body ...)
-             (%make-suite-loader suite-description '()
-               (marker-head marker-name) metadata-value body ...)))
+      (syntax-rules (metadata)
+        ((_ suite-description (metadata metadata-value) body ...)
+         (%make-suite-loader suite-description metadata-value body ...))
         ((_ suite-description body ...)
          (%make-suite-loader suite-description '() body ...))))
 

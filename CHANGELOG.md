@@ -19,6 +19,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - The suitbl `base` reporter now shows extended dot progress and prints failure details after the progress output.
 - SRFI-269 entities now omit unavailable `assertion/location`, `test/location`, and `suite/location` fields instead of including them with false values.
 - suitbl and SRFI-269 load messages now carry loader call-time metadata in `load/metadata`, separately from declared entity metadata; the standard suitbl runner merges both.
+- SRFI-269 metadata declarations now use `(metadata METADATA)` instead of `'metadata METADATA`.
 - `set-current-test-runner!` was renamed to `set-default-test-runner!`.
 - `(srfi srfi-269-draft)` was renamed to the portable R7RS library `(srfi 269)` and moved to its own source tree under `src/srfi-269/r7rs`.
 
@@ -26,7 +27,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl's `'metadata METADATA` definition syntax now emits a warning; use `(metadata METADATA)` instead.
 
 ### Fixed
-- suitbl and SRFI-269 recognize the `'metadata` syntax marker even when `metadata` is lexically bound at the use site.
+- suitbl recognizes the `'metadata` syntax marker even when `metadata` is lexically bound at the use site.
 - `set-default-test-runner!` now changes the default runner without replacing a dynamically parameterized current runner.
 
 ### Removed
