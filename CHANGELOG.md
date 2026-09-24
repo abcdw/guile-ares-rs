@@ -27,6 +27,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 - suitbl's `'metadata METADATA` definition syntax now emits a warning; use `(metadata METADATA)` instead.
 
 ### Fixed
+- Ares now resolves R7RS SRFI library namespaces such as `(srfi 269)` when evaluating code from Arei.
 - suitbl recognizes the `'metadata` syntax marker even when `metadata` is lexically bound at the use site.
 - `set-default-test-runner!` now changes the default runner without replacing a dynamically parameterized current runner.
 

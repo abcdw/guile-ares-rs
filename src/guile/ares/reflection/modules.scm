@@ -1,21 +1,5 @@
-;;; guile-ares-rs --- Asynchronous Reliable Extensible Sleek RPC Server
-;;;
-;;; Copyright © 2024 Andrew Tropin <andrew@trop.in>
-;;;
-;;; This file is part of guile-ares-rs.
-;;;
-;;; guile-ares-rs is free software; you can redistribute it and/or modify it
-;;; under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 3 of the License, or (at
-;;; your option) any later version.
-;;;
-;;; guile-ares-rs is distributed in the hope that it will be useful, but
-;;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;;; General Public License for more details.
-;;;
-;;; You should have received a copy of the GNU General Public License
-;;; along with guile-ares-rs.  If not, see <http://www.gnu.org/licenses/>.
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; SPDX-FileCopyrightText: 2024, 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (ares reflection modules)
   #:use-module (ares file)
@@ -67,16 +51,15 @@ it."
     (search-in-load-path (string-join name-parts "/"))))
 
 (define (string->resolved-module str)
-  "Tries to resolve STR to a module object."
-  (and-let* ((module-name (with-input-from-string str read))
-             (_ (pair? module-name)))
-    ;; If module-name is present try to find a respective module,
-    ;; but don't create it if it doesn't exists yet.
-    ;; #:ensure #t creates a module with empty
-    ;; environment, so nothing will be available, which
-    ;; can be even more confusing than fallback to
-    ;; current-module.
-    (resolve-module module-name #:ensure #f)))
+  "Try to resolve the Guile module or R7RS library named by STR."
+  (and (string? str)
+       (and-let* ((name (with-input-from-string str read))
+                  (interface
+                   (false-if-exception
+                    (resolve-r6rs-interface name))))
+         ;; The R6RS resolver implements R7RS SRFI name translation, but
+         ;; returns an interface.  Evaluation needs the underlying module.
+         (resolve-module (module-name interface) #:ensure #f))))
 
 ;; https://git.sr.ht/~whereiseveryone/toys/tree/master/item/toys/discovery.scm
 ;; (scheme-modules)
