@@ -4,12 +4,12 @@ GUILE=$(GUIXTM) -- shell guile guile-fibers \
 EMACS=$(GUIXTM) -- shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIXTM) -- shell hut -- hut
 GUIX=$(GUIXTM) --
-LOAD_PATHS=-L src/guile -L tests/guile -L dev/guile
+DEV_LOAD_PATHS=-L src/guile -L tests/guile -L dev/guile
 SRFI_269_R7RS_LOAD_PATHS=-L src/srfi-269/r7rs \
 -L tests/srfi-269/r7rs -L src/guile
 SRFI_269_GUILE_LOAD_PATHS=-L src/srfi-269/guile \
 -L tests/srfi-269/guile -L src/guile
-GUILE_DEV=${GUILE} $(LOAD_PATHS)
+GUILE_DEV=${GUILE} $(DEV_LOAD_PATHS)
 GUILE_SRFI_269_R7RS=${GUILE} $(SRFI_269_R7RS_LOAD_PATHS)
 GUILE_SRFI_269_GUILE=${GUILE} $(SRFI_269_GUILE_LOAD_PATHS)
 REPORTER?=compact
@@ -50,7 +50,7 @@ suitbl:
 	-s ./src/guile/ares/scripts/ares-suitbl.scm \
 	-r '$(REPORTER)' \
 	$(if $(SCHEDULER),-s '$(SCHEDULER)') \
-	-- $(LOAD_PATHS)
+	-- $(DEV_LOAD_PATHS)
 
 suitbl-specimens:
 	${MAKE} suitbl \
