@@ -9,6 +9,7 @@
                set-default-test-runner!
 
                is
+               testing
                metadata
                test test?
                test-loader

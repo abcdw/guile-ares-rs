@@ -6,6 +6,7 @@
             set-default-test-runner!
 
             is
+            testing
             metadata
             test test?
             test-loader
@@ -95,29 +96,49 @@ at macro-expansion time."
 (define-syntax metadata
   (syntax-rules ()))
 
+(define %current-assertion-context
+  (make-parameter '()))
+
+(define-syntax testing
+  (syntax-rules ()
+    ((_ description body body* ...)
+     (let ((description* description))
+       (parameterize
+           ((%current-assertion-context
+             (append (%current-assertion-context)
+                     (list description*))))
+         body body* ...)))))
+
 (define-syntax is
   (lambda (stx)
     "A flexible assertion macro.  The behavior can be customized by test runner."
-    (define (build-assertion stx fields)
+    (define (build-assertion stx assertion-form fields)
       (with-syntax ((location (datum->syntax
                                stx
                                (make-source-absolute (syntax-source stx))))
+                    (assertion-form assertion-form)
                     ((assertion-field ...) fields))
-        #'((current-test-runner)
-           `((type . runner/run-assertion)
-             (assertion . (assertion-field ...
-                           (assertion/location . location)))))))
+        #'(let ((assertion-context (%current-assertion-context)))
+            ((current-test-runner)
+             `((type . runner/run-assertion)
+               (assertion
+                . ((assertion/body-thunk
+                    . ,(lambda ()
+                         (parameterize
+                             ((%current-assertion-context assertion-context))
+                           assertion-form)))
+                   (assertion/body . assertion-form)
+                   (assertion/context . ,assertion-context)
+                   assertion-field ...
+                   (assertion/location . location))))))))
 
     (syntax-case stx ()
       ((_ form description)
        (build-assertion stx
-                        #'((assertion/body-thunk . ,(lambda () form))
-                           (assertion/body . form)
-                           (assertion/description . ,description))))
+                        #'form
+                        #'((assertion/description . ,description))))
       ((_ form)
-       (build-assertion stx
-                        #'((assertion/body-thunk . ,(lambda () form))
-                           (assertion/body . form)))))))
+       (build-assertion stx #'form #'())))))
 
 (define-syntax test-loader
   (lambda (stx)

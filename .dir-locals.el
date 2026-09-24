@@ -7,6 +7,7 @@
    (eval . (put 'suite 'scheme-indent-function 1))
    (eval . (put 'test-thunk 'scheme-indent-function 1))
    (eval . (put 'test 'scheme-indent-function 1))
+   (eval . (put 'testing 'scheme-indent-function 1))
    (eval . (put 'chain 'scheme-indent-function 1))
    (eval . (put 'chain-and 'scheme-indent-function 1))
    (eval . (put 'with-test-runner 'scheme-indent-function 1))

@@ -156,6 +156,66 @@
                   (assoc-ref assertion-4 'assertion/description)))
       (is (not (assoc-ref assertion-4 'assertion/args-thunk)))))
 
+  (test "testing captures nested assertion contexts" ()
+    (define (emit-through-procedure)
+      (is #t))
+
+    (define events-log
+      (with-runner-events-to-list
+       (is #t)
+       (testing "outer"
+         (emit-through-procedure)
+         (testing "inner"
+           (is #t)))
+       (is #t)))
+
+    (define contexts
+      (map (lambda (event)
+             (chain event
+               (assoc-ref _ 'assertion)
+               (assoc-ref _ 'assertion/context)))
+           events-log))
+
+    (is (equal? '(()
+                  ("outer")
+                  ("outer" "inner")
+                  ())
+                contexts))
+    (is (= 4 (length events-log))
+        "testing itself emits no runner message"))
+
+  (test "testing evaluates its description once and returns the last body value" ()
+    (define evaluations 0)
+    (define result
+      (testing (begin (set! evaluations (+ evaluations 1)) "context")
+        'ignored
+        'result))
+
+    (is (= 1 evaluations))
+    (is (eq? 'result result)))
+
+  (test "assertion bodies restore context for nested assertions" ()
+    (define outer-event
+      (car
+       (with-runner-events-to-list
+        (testing "deferred"
+          (is (is #t))))))
+    (define outer-assertion
+      (assoc-ref outer-event 'assertion))
+    (define nested-events
+      (with-runner-events-to-list
+       ((assoc-ref outer-assertion 'assertion/body-thunk))))
+    (define nested-assertion
+      (chain nested-events
+        (car _)
+        (assoc-ref _ 'assertion)))
+
+    (is (equal? '("deferred")
+                (assoc-ref outer-assertion 'assertion/context)))
+    (is (= 1 (length nested-events)))
+    (is (equal? '("deferred")
+                (assoc-ref nested-assertion 'assertion/context))))
+
   (test "test emits proper values to the test runner" ()
     (define events-log
       (with-runner-events-to-list

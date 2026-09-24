@@ -9,6 +9,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ## [Unreleased]
 
 ### Added
+- suitbl now provides `testing` for attaching nested human-readable context to assertions.
 - suitbl now provides `(metadata METADATA)` syntax for declaring test and suite metadata.
 - suitbl now captures each test's standard output and standard error in its test-run record.
 - SRFI-269 now provides `test-loader` for deferred test loading with optional call-time metadata.

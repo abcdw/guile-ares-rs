@@ -9,8 +9,8 @@ suitbl implementation lives under `src/guile/ares/suitbl/`.
 
 - `core.scm` - entry point for core API re-exports and `with-test-runner`.
 - `checks.scm` - test-definition check helpers, including `throws-exception?`.
-- `definitions.scm` - test DSL (`is`, `test`, `suite`, `define-suite`),
-  current test-runner helpers, and test entity shapes.
+- `definitions.scm` - test DSL (`is`, `testing`, `test`, `suite`,
+  `define-suite`), current test-runner helpers, and test entity shapes.
 - `exceptions.scm` - suitbl-specific exception types for DSL misuse and other
   structured failures.
 - `runner.scm` - test runner implementation (`make-suitbl`).
@@ -67,6 +67,26 @@ when it loads the entity, with call-time values taking precedence:
               (slow? . #f)))
 (load-test '((slow? . #f)))
 ```
+
+## Assertion context
+
+Use `testing` to give related assertions shared human-readable context:
+
+```scheme
+(test "permission inheritance" ()
+  (testing "administrator"
+    (testing "project permissions"
+      (is (member 'project/write permissions)))))
+```
+
+Each `is` captures the descriptions of its dynamically enclosing `testing`
+forms under `assertion/context`, ordered from outermost to innermost.  An
+assertion outside `testing` has an empty context.  The assertion body restores
+its captured context when run, so nested assertions keep the context even when
+a runner defers execution.
+
+`testing` sends no runner message.  It evaluates its description once and
+returns the values produced by its last body form.
 
 ## Captured test output
 
