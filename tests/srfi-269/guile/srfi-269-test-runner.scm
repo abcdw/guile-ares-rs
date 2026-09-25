@@ -2,27 +2,32 @@
 ;; SPDX-FileCopyrightText: 2026 Andrew Tropin <andrew@trop.in>
 
 (define-module (srfi-269-test-runner)
-  #:use-module ((ares suitbl runner) #:prefix runner:)
-  #:use-module ((ares suitbl state) #:prefix state:)
-  #:use-module ((srfi srfi-269) #:prefix srfi-269:)
-  #:use-module (srfi srfi-269-test)
+  #:use-module (test-suite lib)
   #:export (run-tests))
 
 
 
-(define (successful-run? summary)
-  (and summary
-       (zero? (+ (or (assoc-ref summary 'failures) 0)
-                 (or (assoc-ref summary 'errors) 0)))))
+(define failure-results
+  '(fail upass error))
 
 (define (run-tests)
-  (define test-runner
-    (runner:make-suitbl))
+  (define counter
+    (make-count-reporter))
+  (define successful? #t)
 
-  (parameterize ((srfi-269:current-test-runner test-runner))
-    (srfi-269-tests)
-    (test-runner '((type . runner/run-tests))))
+  (define (outcome-reporter result _name . _arguments)
+    (when (memq result failure-results)
+      (set! successful? #f)))
 
-  (unless (successful-run?
-           (state:get-run-summary (runner:get-state test-runner)))
-    (exit 1)))
+  (let ((reporters (list (car counter)
+                         user-reporter
+                         outcome-reporter)))
+    (for-each register-reporter reporters)
+    (dynamic-wind
+      (lambda () #t)
+      (lambda ()
+        (resolve-module '(srfi srfi-269-test)))
+      (lambda ()
+        (for-each unregister-reporter reporters)))
+    (print-counts ((cadr counter)))
+    (exit (if successful? 0 1))))

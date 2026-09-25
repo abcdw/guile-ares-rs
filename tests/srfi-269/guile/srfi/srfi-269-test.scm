@@ -3,11 +3,11 @@
 
 (define-module (srfi srfi-269-test)
   #:use-module (srfi srfi-269)
-  #:export (srfi-269-tests))
+  #:use-module (test-suite lib))
 
 
 
-(define-suite (srfi-269-tests)
+(with-test-prefix "srfi-269"
   ;; TODO: Replace this placeholder with implementation tests.
-  (test "test skeleton" ()
-    (is #t)))
+  (pass-if "test skeleton"
+    #t))
