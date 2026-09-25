@@ -123,17 +123,15 @@ time."
 
 (define-syntax test-loader
   (lambda (stx)
-    (define (build-test-loader stx description metadata body-procedure body)
+    (define (build-test-loader stx description metadata body-procedure)
       (with-syntax ((location (datum->syntax
                                stx
                                (make-source-absolute (syntax-source stx))))
                     (test-description description)
                     (metadata-value metadata)
-                    (test-body-procedure body-procedure)
-                    ((test-body ...) body))
+                    (test-body-procedure body-procedure))
         #'(let ((test-entity
                  `((test/body-procedure . ,test-body-procedure)
-                   (test/body . (test-body ...))
                    (test/description . ,test-description)
                    (test/metadata . ,metadata-value)
                    (test/location . location))))
@@ -151,8 +149,7 @@ time."
                           #'test-description
                           #'metadata-value
                           #'(lambda (context-name)
-                              expression expressions ...)
-                          #'(expression expressions ...)))
+                              expression expressions ...)))
 
       ((_ test-description ()
           (metadata metadata-value) expression expressions ...)
@@ -160,8 +157,7 @@ time."
                           #'test-description
                           #'metadata-value
                           #'(lambda (%srfi-269-context)
-                              expression expressions ...)
-                          #'(expression expressions ...)))
+                              expression expressions ...)))
 
       ((_ test-description (context-name) expression expressions ...)
        (identifier? #'context-name)

@@ -165,7 +165,6 @@
                 (list
                  (cons 'test/body-procedure
                        (lambda (context) body body* ...))
-                 (cons 'test/body (quote (body body* ...)))
                  (cons 'test/description test-description)
                  (cons 'test/metadata metadata-value))))
            (case-lambda
