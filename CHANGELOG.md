@@ -8,6 +8,8 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-09-25
+
 ### Added
 - suitbl now provides `testing` for attaching nested human-readable context to assertions.
 - SRFI-269 now provides `testing` for attaching nested human-readable context to assertions.
@@ -140,6 +142,7 @@ The long lines are not hard-wrapped.  Use softwrapping in your editor for readin
 ## [0.9.0] - 2023-12-04
 
 [Unreleased]: https://git.sr.ht/~abcdw/guile-ares-rs
+[0.9.9]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.9
 [0.9.8]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.8
 [0.9.7]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.7
 [0.9.6]: https://git.sr.ht/~abcdw/guile-ares-rs/refs/0.9.6
