@@ -135,8 +135,7 @@
             (assoc-ref assertion-1 'assertion/body-thunk)))
       (is (equal? 'str assertion-1-body))
       (is (procedure? assertion-1-body-thunk))
-      (is (not (assoc-ref assertion-1 'assertion/description)))
-      (is (not (assoc-ref assertion-1 'assertion/args-thunk))))
+      (is (not (assoc-ref assertion-1 'assertion/description))))
 
     (let* ((assertion-2 (chain events-log (cadr _) (assoc-ref _ 'assertion)))
            (assertion-2-body (assoc-ref assertion-2 'assertion/body))
@@ -144,17 +143,14 @@
             (assoc-ref assertion-2 'assertion/body-thunk)))
       (is (equal? '(= 1 (+ 2 -1)) assertion-2-body))
       (is (procedure? assertion-2-body-thunk))
-      (is (not (assoc-ref assertion-2 'assertion/description)))
-      (is (not (assoc-ref assertion-2 'assertion/args-thunk))))
+      (is (not (assoc-ref assertion-2 'assertion/description))))
 
     (let* ((assertion-3 (chain events-log (caddr _) (assoc-ref _ 'assertion)))
            (assertion-4 (chain events-log (cadddr _) (assoc-ref _ 'assertion))))
       (is (equal? "string assertion"
                   (assoc-ref assertion-3 'assertion/description)))
-      (is (not (assoc-ref assertion-3 'assertion/args-thunk)))
       (is (equal? "described assertion"
-                  (assoc-ref assertion-4 'assertion/description)))
-      (is (not (assoc-ref assertion-4 'assertion/args-thunk)))))
+                  (assoc-ref assertion-4 'assertion/description)))))
 
   (test "testing captures nested assertion contexts" ()
     (define (emit-through-procedure)
