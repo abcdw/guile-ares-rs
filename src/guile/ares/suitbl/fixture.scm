@@ -88,6 +88,28 @@ FIXTURE's dynamic extent and calls FIXTURE's teardown."
                inner-teardown!
                outer-teardown!)))))))))
 
+(define (activate fixture initial-context)
+  "Suspend FIXTURE at its proceed call and return an activation procedure.
+Calling the activation re-enters FIXTURE's dynamic extent.  Teardown runs only
+when the supplied proceed procedure explicitly invokes its teardown argument."
+  (define teardown-called? #f)
+  (let ((activation-prompt-tag (make-prompt-tag "fixture activation")))
+    (call-with-prompt activation-prompt-tag
+      (lambda ()
+        (fixture
+         initial-context
+         (lambda (context teardown!)
+           ((abort-to-prompt activation-prompt-tag)
+            context
+            (lambda ()
+              (set! teardown-called? #t)
+              (teardown!))))))
+      (lambda (continuation)
+        (lambda (proceed)
+          (if teardown-called?
+              (raise-suitbl-fixture-continuation-after-teardown-exception)
+              (continuation proceed)))))))
+
 (define (comment)
   (define a (make-parameter 'a))
   (define b (make-parameter 'b))
@@ -118,26 +140,6 @@ FIXTURE's dynamic extent and calls FIXTURE's teardown."
 
   ;; (parameterize ((a 'ha))
   ;;   (sample-test '(ho)))
-
-  (define (activate fixture initial-context)
-    (define teardown-called? #f)
-    (let ((prompt-tag (make-prompt-tag "fixture")))
-      (call-with-prompt
-          prompt-tag
-        (lambda ()
-          (fixture
-           initial-context
-           (lambda (ctx teardown)
-             ((abort-to-prompt prompt-tag)
-              ctx
-              (lambda ()
-                (set! teardown-called? #t)
-                (teardown))))))
-        (lambda (continuation)
-          (lambda arguments
-            (if teardown-called?
-                (raise-suitbl-fixture-continuation-after-teardown-exception)
-                (apply continuation arguments)))))))
 
   (define k
     (activate simple-fixture-a initial-ctx))
