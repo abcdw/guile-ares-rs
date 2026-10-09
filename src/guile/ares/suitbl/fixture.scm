@@ -16,9 +16,21 @@
 
 ## Fixtures
 
-fixture is a function accepting a test context, optionally modifying
-dynamic state, enriching the context and calling proceed function with
-new-context and teardown! in updated dynamic extent.
+A fixture accepts a test context and a proceed procedure.  It may
+modify dynamic state, set up needed resources, and enrich the context,
+then call the proceed procedure with the updated context and a teardown
+procedure while that dynamic state is active.
+
+A runner may suspend a fixture at its call to proceed and re-enter its
+dynamic extent multiple times.  Exiting that extent therefore does not
+necessarily mean that the fixture is finished.  Final cleanup for
+successfully established resources must be placed in the teardown
+procedure passed to proceed.
+
+The runner is responsible for invoking teardown and handling
+exceptions from proceed.  Fixtures should let such exceptions
+propagate rather than guard against them or attempt final cleanup
+themselves.
 
 fixture: context × proceed -> any
 proceed: context × teardown! -> any
