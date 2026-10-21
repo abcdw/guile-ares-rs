@@ -1,0 +1,89 @@
+From b2b24439f971f3e038bb40fb0fe3609842d8f076 Mon Sep 17 00:00:00 2001
+From: Felecarp <felecarp@tuta.io>
+Date: Fri, 23 Oct 2026 15:21:29 +0200
+Subject: [PATCH] srfi-269: guile source location into r7rs implementation
+
+---
+ src/srfi-269/r7rs/srfi/srfi-269.scm | 55 ++++++++++++++++++++++++-----
+ 1 file changed, 47 insertions(+), 8 deletions(-)
+
+diff --git a/src/srfi-269/r7rs/srfi/srfi-269.scm b/src/srfi-269/r7rs/srfi/srfi-269.scm
+index b4e0b8c..d4e6e8f 100644
+--- a/src/srfi-269/r7rs/srfi/srfi-269.scm
++++ b/src/srfi-269/r7rs/srfi/srfi-269.scm
+@@ -148,25 +148,64 @@
+                          (cons 'assertion/context assertion-context)
+                          assertion-field ...))))))))
+ 
++    (cond-expand
++     (guile
++      (define-syntax %run-assertion/implementation-specific-fields
++	(syntax-rules ()
++	  ((_ form assertion-field ...)
++	   (%run-assertion form
++			   assertion-field ...
++			   (cons 'assertion/body-syntax (quote-syntax form))
++			   (cons 'assertion/location (syntax-source (quote-syntax form))))))))
++     (else
++      (define-syntax %run-assertion/implementation-specific-fields
++	(syntax-rules ()
++	  ((_ form assertion-field ...)
++	   (%run-assertion form assertion-field ...))))))
++
+     (define-syntax is
+       (syntax-rules ()
+         ((_ form description)
+-         (%run-assertion
++         (%run-assertion/implementation-specific-fields
+           form
+           (cons 'assertion/description description)))
+         ((_ form)
+-         (%run-assertion form))))
++         (%run-assertion/implementation-specific-fields form))))
++
++    (define-syntax %make-test-entity
++      (syntax-rules ()
++	((_ test-description context metadata-value test-fields ... (body body* ...))
++	 (list (cons 'test/body-procedure
++                     (lambda (context) body body* ...))
++               (cons 'test/body (quote (body body* ...)))
++               (cons 'test/description test-description)
++               (cons 'test/metadata metadata-value)
++	       test-fields ...))))
++
++    (cond-expand
++     (guile
++      (define-syntax %make-test-entity/implementation-specific-fields
++	(syntax-rules ()
++	  ((_ test-description context metadata-value test-fields ... (body body* ...))
++	   (%make-test-entity test-description context metadata-value
++			      test-fields ...
++			      (cons 'test/body-syntax (quote-syntax (body body* ...)))
++			      (cons 'test/location (syntax-source (quote-syntax (body body* ...))))
++			      (body body* ...))))))
++     (else
++      (define-syntax %make-test-entity/implementation-specific-fields
++	(syntax-rules ()
++	  ((_ test-description context metadata-value test-fields ... (body body* ...))
++	   (%make-test-entity test-description context metadata-value
++			      test-fields ...
++			      (body body* ...)))))))
+ 
+     (define-syntax test-loader
+       (syntax-rules (metadata)
+         ((_ test-description (context)
+             (metadata metadata-value) body body* ...)
+-         (let ((test-entity
+-                (list
+-                 (cons 'test/body-procedure
+-                       (lambda (context) body body* ...))
+-                 (cons 'test/description test-description)
+-                 (cons 'test/metadata metadata-value))))
++         (let ((test-entity (%make-test-entity/implementation-specific-fields
++			     test-description context metadata-value (body body* ...))))
+            (case-lambda
+              (()
+               (load-test test-entity '()))
+-- 
+2.55.0
+
